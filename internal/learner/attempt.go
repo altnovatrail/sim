@@ -38,6 +38,7 @@ type ItemResult struct {
 	FirstRight bool // the first verdict of the item, the one the model reads (R06 learner-model)
 	Right      bool // whether it was right by the attempt's end
 	Wrong      int  // its wrong answers before it was right, or all of them
+	Unreadable bool // its first answer was unreadable and written again (S-unreadable)
 }
 
 // Attempt is an attempt of a learner on a task.
@@ -86,6 +87,14 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 	if a.Technique {
 		lift = l.a.TechniqueLift
 	}
+	// What an attempt holds comes from the place attempts in a fixed order: the technique, the shock,
+	// the error (docs/architecture.md, section 3.4).
+	if l.a.AttemptShock != 0 {
+		lift += float64(l.a.AttemptShock * l.attempts.Normal())
+	}
+	holdsError := l.a.ErrorChance > 0 && l.attempts.Fraction() < l.a.ErrorChance && !t.Rubric
+	solvedAt, seen := l.solved[task.ID]
+	repeat := l.a.RepeatChance > 0 && seen && !task.Template && at-solvedAt <= int64(l.a.RepeatDays)*secondsPerDay
 	if t.Rubric {
 		a.End, a.Closure = at+EssaySeconds, ClosedDone
 		return a, nil
@@ -98,8 +107,16 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 		if err != nil {
 			return Attempt{}, err
 		}
+		if repeat {
+			p = l.a.RepeatChance
+		}
 		right := l.answers.Fraction() < p
-		a.Items = append(a.Items, ItemResult{Place: it.Place, FirstRight: right, Right: right, Wrong: b2i(!right)})
+		if holdsError && hasPrimary(t, i) {
+			right = false
+		}
+		res := ItemResult{Place: it.Place, FirstRight: right, Right: right, Wrong: b2i(!right)}
+		res.Unreadable = l.unreadable(t)
+		a.Items = append(a.Items, res)
 	}
 	for r := 1; r <= rungs && slices.ContainsFunc(a.Items, func(x ItemResult) bool { return !x.Right }); r++ {
 		a.Rungs = r
@@ -111,6 +128,12 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 			if err != nil {
 				return Attempt{}, err
 			}
+			if repeat {
+				p = l.a.RepeatChance
+			}
+			// An answer again that could not be read is written once more, and its fraction is the one
+			// that counts: it takes no verdict and adds no mistake.
+			l.unreadable(t)
 			if l.retries.Fraction() < p {
 				a.Items[k].Right = true
 			} else {
@@ -129,6 +152,8 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 	a.End = at + per*int64(len(a.Items))
 	l.practise(t, a)
 	l.learn(t, a)
+	// The solution goes to the device when the attempt closes right or with it shown (R82 spec).
+	l.solved[task.ID] = a.End
 	return a, nil
 }
 
@@ -239,4 +264,20 @@ func (l *Learner) learn(t *pack.Task, a Attempt) {
 			m.Level += l.a.JumpBy
 		}
 	}
+}
+
+// hasPrimary tells whether the item at index i has one of the task's primary skills (W-error).
+func hasPrimary(t *pack.Task, i int) bool {
+	return slices.ContainsFunc(t.ItemPrimary(i), func(s string) bool { return slices.Contains(t.Candidate.Task.Primary, s) })
+}
+
+// unreadable counts an answer of an item on a sheet, and tells whether it is the UnreadableEvery-th,
+// unreadable first and written again (S-unreadable): every answer counts, the first and those
+// after a rung (docs/architecture.md, section 3.2).
+func (l *Learner) unreadable(t *pack.Task) bool {
+	if l.a.UnreadableEvery <= 0 || t.Canvas != formatv0.CanvasKindHandwritingSheet {
+		return false
+	}
+	l.sheetItems++
+	return l.sheetItems%l.a.UnreadableEvery == 0
 }

@@ -85,7 +85,6 @@ type Run struct {
 	hasLast    bool
 	issued     map[string]engine.SkillIssue
 	choices    map[string]int64
-	solutions  map[string]int64
 
 	rec Record
 }
@@ -105,7 +104,7 @@ func New(l *learner.Learner, modules []*pack.Module, limit Limit) (*Run, error) 
 	}
 	r := &Run{
 		l: l, cal: l.NewCalendar(), graphs: learnermodel.Graphs{}, limit: limit, rubrics: map[string]bool{},
-		issued: map[string]engine.SkillIssue{}, choices: map[string]int64{}, solutions: map[string]int64{},
+		issued: map[string]engine.SkillIssue{}, choices: map[string]int64{},
 		rec: Record{Unit: l.Unit, Learner: l},
 	}
 	r.modules = slices.SortedFunc(slices.Values(modules), func(x, y *pack.Module) int { return strings.Compare(x.ID, y.ID) })
@@ -194,11 +193,12 @@ func (r *Run) Step() error {
 		if err != nil {
 			return err
 		}
+		_, seen := r.l.SolvedAt(t.Candidate.Task.ID)
 		a, err := r.l.Answer(t, at)
 		if err != nil {
 			return fmt.Errorf("%w: %w", ErrRun, err)
 		}
-		e, err := r.close(m, t, a, choice.Reason, "", at)
+		e, err := r.close(m, t, a, choice.Reason, "", at, seen)
 		if err != nil {
 			return err
 		}
@@ -214,6 +214,10 @@ func (r *Run) Step() error {
 		if err != nil {
 			return err
 		}
+		seen := map[string]bool{}
+		for _, lt := range lesson.Lesson.Tasks {
+			_, seen[lt.ID] = r.l.SolvedAt(lt.ID)
+		}
 		pass, err := r.l.PassLesson(m, lesson, at)
 		if err != nil {
 			return fmt.Errorf("%w: %w", ErrRun, err)
@@ -228,7 +232,7 @@ func (r *Run) Step() error {
 			if err != nil {
 				return fmt.Errorf("%w: %w", ErrRun, err)
 			}
-			e, err := r.close(m, t, a, choice.Reason, lesson.Lesson.ID, at)
+			e, err := r.close(m, t, a, choice.Reason, lesson.Lesson.ID, at, seen[a.Task])
 			if err != nil {
 				return err
 			}
@@ -288,8 +292,9 @@ func (r *Run) summary() engine.Summary {
 	for _, id := range slices.Sorted(maps.Keys(r.choices)) {
 		s.Modules = append(s.Modules, engine.ModuleChoices{Module: id, Choices: r.choices[id]})
 	}
-	for _, id := range slices.Sorted(maps.Keys(r.solutions)) {
-		s.Tasks = append(s.Tasks, engine.TaskSolution{Task: id, SolutionSentAt: r.solutions[id]})
+	ids, ats := r.l.Solved()
+	for i, id := range ids {
+		s.Tasks = append(s.Tasks, engine.TaskSolution{Task: id, SolutionSentAt: ats[i]})
 	}
 	return s
 }
@@ -320,8 +325,9 @@ func (r *Run) lesson(id string) (*pack.Module, *pack.Lesson, error) {
 // the model's state; the attempt closed by "Done" of a task with a rubric; the solution sent to the
 // device when the attempt closed right or with the solution shown (R82 spec); the summary of each
 // primary skill, handed out at issued — the time of the choice of the task, or of its lesson —;
-// and the last closed attempt.
-func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine.ReasonCode, lesson string, issued int64) (*learnermodel.Evidence, error) {
+// and the last closed attempt. seen tells whether the task's solution went to the device before
+// the attempt, as the learner keeps it.
+func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine.ReasonCode, lesson string, issued int64, seen bool) (*learnermodel.Evidence, error) {
 	task := t.Candidate.Task
 	results := results(t, a)
 	for _, res := range results {
@@ -335,7 +341,6 @@ func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine
 		r.rubricDone = append(r.rubricDone, engine.RubricDone{Task: task.ID, At: a.End})
 		return nil, nil
 	}
-	_, seen := r.solutions[task.ID]
 	e, err := r.evidence(m, t, a, seen)
 	if err != nil {
 		return nil, err
@@ -345,7 +350,6 @@ func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine
 		return nil, fmt.Errorf("%w: the model refuses the evidence of %s: %w", ErrRun, task.ID, err)
 	}
 	r.state = state
-	r.solutions[task.ID] = a.End
 	for _, res := range a.Items {
 		r.rec.Answers += b2i(res.Place > 0)
 	}
@@ -389,6 +393,8 @@ func (r *Run) evidence(m *pack.Module, t *pack.Task, a learner.Attempt, seen boo
 		}
 		ia := learnermodel.ItemAnswer{
 			Place: res.Place, Submitted: true,
+			// An answer written again after it could not be read: no verdict and no mistake (R04 spec).
+			Unverdicted:  unreadable(res.Unreadable),
 			FirstVerdict: first, HasFirstVerdict: true,
 			FinalVerdict: final, HasFinalVerdict: true,
 		}
@@ -433,4 +439,13 @@ func b2i(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+// unreadable gives the reasons of the submissions of an item before its first verdict: one that
+// could not be read, when the learner wrote it again (S-unreadable).
+func unreadable(yes bool) []learnermodel.UnverdictedReason {
+	if yes {
+		return []learnermodel.UnverdictedReason{learnermodel.UnverdictedUnreadableOther}
+	}
+	return nil
 }

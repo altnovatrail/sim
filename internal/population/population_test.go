@@ -1,6 +1,7 @@
 package population
 
 import (
+	"maps"
 	"reflect"
 	"slices"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"github.com/altnovatrail/sim/internal/published"
 	"github.com/altnovatrail/sim/internal/run"
 	"github.com/altnovatrail/sim/internal/seed"
+	"github.com/altnovatrail/sim/internal/synthetic"
 )
 
 // changed gives the names of the fields of a in which it differs from the base population's.
@@ -90,6 +92,12 @@ func TestPopulationsRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	syn, err := synthetic.Modules()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ms = maps.Clone(ms)
+	maps.Copy(ms, syn)
 	techniques := 0
 	for _, p := range All() {
 		for _, g := range p.Graphs {
@@ -161,5 +169,60 @@ func TestSetsApart(t *testing.T) {
 				seen[first] = where
 			}
 		}
+	}
+}
+
+// The populations of S-, F- and W-: each the base population with the fields of its one assumption,
+// on the graphs and to the limit docs/architecture.md, section 3.2, gives it. F- share the calendar
+// with a break, and each but F-model changes one more thing on it.
+func TestOwn(t *testing.T) {
+	cal := []string{"SessionChance", "BreakStartFrom", "BreakStartTo", "BreakMin", "BreakMax", "BreakEndBy"}
+	with := func(fields ...string) []string { return append(slices.Clone(cal), fields...) }
+	want := []struct {
+		name   string
+		fields []string
+		graphs [][]string
+		limit  run.Limit
+	}{
+		{"S-scale1.5", []string{"BandStep"}, olympiad, run.Maths},
+		{"S-scale3.5", []string{"BandStep"}, olympiad, run.Maths},
+		{"S-predicate", []string{"PredicateGuess"}, [][]string{{synthetic.Sheet}}, run.Maths},
+		{"S-adult", []string{"Adult", "AdultFrom", "AdultTo"}, olympiad, run.Maths},
+		{"S-unreadable", []string{"UnreadableEvery"}, olympiad, run.Maths},
+		{"F-model", with(), maths, run.Forgetting},
+		{"F-none", with("Forgets"), maths, run.Forgetting},
+		{"F-exp", with("ExponentialLaw", "LawBase"), maths, run.Forgetting},
+		{"F-C1", with("LawC"), maths, run.Forgetting},
+		{"F-growth5", with("Growth"), maths, run.Forgetting},
+		{"F-break", with("BreakDrop"), maths, run.Forgetting},
+		{"W-shock", []string{"AttemptShock"}, grade3, run.Maths},
+		{"W-error", []string{"ErrorChance"}, grade3, run.Maths},
+		{"W-badday", []string{"BadDayChance", "BadDayDrop"}, grade3, run.Maths},
+		{"W-repeat", []string{"RepeatChance", "RepeatDays"}, maths, run.Maths},
+	}
+	if len(Own) != len(want) {
+		t.Fatalf("%d own populations, want %d", len(Own), len(want))
+	}
+	order := func(fields []string) []string {
+		var out []string
+		v := reflect.TypeOf(learner.Assumptions{})
+		for i := range v.NumField() {
+			if slices.Contains(fields, v.Field(i).Name) {
+				out = append(out, v.Field(i).Name)
+			}
+		}
+		return out
+	}
+	for i, w := range want {
+		p := Own[i]
+		if p.Name != w.name || !reflect.DeepEqual(p.Graphs, w.graphs) || p.Limit != w.limit {
+			t.Errorf("population %d: %s on %v, limit %+v", i, p.Name, p.Graphs, p.Limit)
+		}
+		if got := changed(p.Assumptions(0)); !slices.Equal(got, order(w.fields)) {
+			t.Errorf("%s changes %v; want %v", p.Name, got, order(w.fields))
+		}
+	}
+	if len(All()) != len(Standalone)+len(Own) {
+		t.Errorf("All has %d populations", len(All()))
 	}
 }

@@ -184,3 +184,214 @@ func TestNewFieldsRefused(t *testing.T) {
 		}
 	}
 }
+
+// S-adult: no grade, the first band, a level 2.5 to 5 above it, the age category adult.
+func TestAdult(t *testing.T) {
+	a := Base()
+	a.Adult, a.AdultFrom, a.AdultTo = true, 2.5, 5
+	for n := range 40 {
+		l := learnerWith(t, "S-adult", n, a, olympiad)
+		m := l.modules[olympiad]
+		// The params of an adult: no grade, the level, the three offsets, then its shift above.
+		p, _ := seed.Working.Place(l.Unit, seed.Params)
+		level := p.Normal()
+		for range 3 {
+			p.Normal()
+		}
+		shift := 2.5 + float64(2.5*p.Fraction())
+		if m.Grade.Known || m.StartBand != 1 || l.Age != "adult" || m.Level != level+shift || shift < 2.5 || shift > 5 {
+			t.Fatalf("an adult: %+v, age %q, want the level %v", m, l.Age, level+shift)
+		}
+	}
+}
+
+// F-: the calendar has one break, from a day between the 30th and the 60th, 14 to 60 days long and
+// over by the 120th, with no session in it; after it, F-break's level falls by 1 once.
+func TestBreak(t *testing.T) {
+	a := Base()
+	a.SessionChance = 3.0 / 7
+	a.BreakStartFrom, a.BreakStartTo, a.BreakMin, a.BreakMax, a.BreakEndBy, a.BreakDrop = 30, 60, 14, 60, 120, 1
+	for n := range 30 {
+		l := learnerWith(t, "F-break", n, a, olympiad)
+		c := l.NewCalendar()
+		if c.BreakStart < 30 || c.BreakStart > 60 || c.BreakEnd-c.BreakStart < 14 || c.BreakEnd-c.BreakStart > 60 || c.BreakEnd > 120 {
+			t.Fatalf("a break from day %d to %d", c.BreakStart, c.BreakEnd)
+		}
+		level := l.modules[olympiad].Level
+		tk := task(t, olympiad, "enum-34-d1-1")
+		for range 200 {
+			at := c.Next()
+			if c.Day() >= c.BreakStart && c.Day() < c.BreakEnd {
+				t.Fatalf("a session on day %d, in the break %d–%d", c.Day(), c.BreakStart, c.BreakEnd)
+			}
+			if _, err := l.Answer(tk, at); err != nil {
+				t.Fatal(err)
+			}
+			if l.modules[olympiad].Level != level || c.After(at) != (c.Day() >= c.BreakEnd) {
+				t.Fatalf("day %d, the break ending %d: level %v, after %v", c.Day(), c.BreakEnd, l.modules[olympiad].Level, c.After(at))
+			}
+			p, _ := l.Chance(tk, 0, at, 0)
+			l.a.BreakDrop = 0
+			noDrop, _ := l.Chance(tk, 0, at, 0)
+			l.a.BreakDrop = 1
+			if (p < noDrop) != c.After(at) {
+				t.Fatalf("day %d: P* %v with the fall, %v without", c.Day(), p, noDrop)
+			}
+			if l.NewCalendar() != c {
+				t.Fatal("a second calendar")
+			}
+			c.Done(at + 120)
+		}
+	}
+}
+
+// F-exp: the law R* = 0.9^(Δt/τ*).
+func TestExponentialLaw(t *testing.T) {
+	a := Base()
+	a.ExponentialLaw, a.LawBase = true, 0.9
+	l := learnerWith(t, "F-exp", 0, a, olympiad)
+	s := l.skills[task(t, olympiad, "enum-34-d1-1").Candidate.Task.Primary[0]]
+	s.Stability, s.Last, s.Practised = 2, Start, true
+	if got, want := l.Retention(s, Start+6*secondsPerDay), 0.9*0.9*0.9; math.Abs(got-want) > 1e-15 {
+		t.Errorf("R* = %v, want %v", got, want)
+	}
+}
+
+// W-shock, W-error, W-badday and W-repeat change an attempt as their tables say.
+func TestPageAssumptions(t *testing.T) {
+	tk := tasks(t, grade3)[0]
+	t.Run("W-error", func(t *testing.T) {
+		a := Base()
+		a.ErrorChance = 1
+		l := learnerWith(t, "W-error", 0, a, grade3)
+		at, err := l.Answer(tk, Start)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, res := range at.Items {
+			if res.FirstRight && hasPrimary(tk, int(res.Place-1)) {
+				t.Fatalf("item %d right at first in an attempt that holds an error", res.Place)
+			}
+		}
+	})
+	t.Run("W-shock", func(t *testing.T) {
+		a := Base()
+		a.AttemptShock = 1
+		l := learnerWith(t, "W-shock", 0, a, grade3)
+		shocks, _ := seed.Working.Place(l.Unit, seed.Attempts)
+		rights := map[bool]int{}
+		for k := range 50 {
+			shock := shocks.Normal()
+			at, err := l.Answer(tk, Start+int64(k)*secondsPerDay)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, res := range at.Items {
+				if res.FirstRight {
+					rights[shock > 0]++
+				}
+			}
+		}
+		if rights[true] <= rights[false] {
+			t.Errorf("right first answers after a shock up %d, down %d", rights[true], rights[false])
+		}
+	})
+	t.Run("W-badday", func(t *testing.T) {
+		a := Base()
+		a.BadDayChance, a.BadDayDrop = 1, 1
+		l := learnerWith(t, "W-badday", 0, a, grade3)
+		c := l.NewCalendar()
+		at := c.Next()
+		if !c.Bad(at) {
+			t.Fatal("a day of a chance 1 of being bad is not")
+		}
+		bad, _ := l.Chance(tk, 0, at, 0)
+		c.bad = map[int]bool{}
+		good, _ := l.Chance(tk, 0, at, 0)
+		if bad >= good {
+			t.Errorf("a bad day does not lower P*: %v, %v", bad, good)
+		}
+	})
+	t.Run("W-repeat", func(t *testing.T) {
+		a := Base()
+		a.RepeatChance, a.RepeatDays = 1, 30
+		l := learnerWith(t, "W-repeat", 0, a, grade3)
+		if _, err := l.Answer(tk, Start); err != nil {
+			t.Fatal(err)
+		}
+		at, err := l.Answer(tk, Start+10*secondsPerDay)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, res := range at.Items {
+			if !res.FirstRight {
+				t.Fatalf("item %d not right on a repeat of chance 1", res.Place)
+			}
+		}
+	})
+}
+
+// S-unreadable: every twentieth answer of an item on a sheet is unreadable first; none on a
+// workbook.
+func TestUnreadable(t *testing.T) {
+	a := Base()
+	a.UnreadableEvery = 20
+	l := learnerWith(t, "S-unreadable", 0, a, olympiad)
+	tk := task(t, olympiad, "enum-34-d1-1")
+	// Every answer on the sheet counts, the first and those after a rung: the task has one item, so
+	// an attempt gives 1 + its rungs answers.
+	counted, marked := 0, 0
+	for k := 1; k <= 60; k++ {
+		at, err := l.Answer(tk, Start+int64(k)*secondsPerDay)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := at.Items[0].Unreadable; got != ((counted+1)%20 == 0) {
+			t.Fatalf("attempt %d, answer %d: unreadable %v", k, counted+1, got)
+		}
+		if at.Items[0].Unreadable {
+			marked++
+		}
+		counted += 1 + at.Rungs
+	}
+	if marked == 0 {
+		t.Error("no first answer unreadable in 60 attempts")
+	}
+	w := learnerWith(t, "S-unreadable", 0, a, grade3)
+	for k := range 30 {
+		at, _ := w.Answer(tasks(t, grade3)[0], Start+int64(k)*secondsPerDay)
+		for _, res := range at.Items {
+			if res.Unreadable {
+				t.Fatal("an unreadable answer on a workbook")
+			}
+		}
+	}
+}
+
+// The bounds of the fields of S-, F- and W-, and an adult where no module has adults.
+func TestOwnFieldsRefused(t *testing.T) {
+	for _, change := range []func(*Assumptions){
+		func(a *Assumptions) { a.ErrorChance = 2 },
+		func(a *Assumptions) { a.BadDayChance = -0.1 },
+		func(a *Assumptions) { a.RepeatChance = 95 },
+		func(a *Assumptions) { a.RepeatDays = -1 },
+		func(a *Assumptions) { a.UnreadableEvery = -20 },
+		func(a *Assumptions) { a.AttemptShock = -1 },
+		func(a *Assumptions) { a.ExponentialLaw, a.LawBase = true, 1.5 },
+		func(a *Assumptions) { a.Adult, a.AdultFrom, a.AdultTo = true, 5, 2.5 },
+		func(a *Assumptions) {
+			a.BreakMax, a.BreakMin, a.BreakStartFrom, a.BreakStartTo, a.BreakEndBy = 60, 14, 30, 60, 50
+		},
+	} {
+		a := Base()
+		change(&a)
+		if _, err := New(seed.Working, "X", 0, []*pack.Module{module(t, olympiad)}, a); !errors.Is(err, ErrAssumptions) {
+			t.Errorf("%+v: %v", a, err)
+		}
+	}
+	a := Base()
+	a.Adult, a.AdultFrom, a.AdultTo = true, 2.5, 5
+	if _, err := New(seed.Working, "S-adult", 0, []*pack.Module{module(t, grade3)}, a); !errors.Is(err, ErrAssumptions) {
+		t.Errorf("an adult in school maths for grade 3: %v", err)
+	}
+}

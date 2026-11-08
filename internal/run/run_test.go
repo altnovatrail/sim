@@ -326,3 +326,43 @@ func TestRunTemplate(t *testing.T) {
 		}
 	}
 }
+
+// An answer that could not be read and was written again reaches the model as a submission with no
+// verdict before the first one (R04 spec): S-unreadable on olympiad maths.
+func TestRunUnreadable(t *testing.T) {
+	mods := modules(t, olympiad)
+	a := learner.Base()
+	a.UnreadableEvery = 20
+	l, err := learner.New(seed.Working, "S-unreadable", 0, mods, a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := New(l, mods, Maths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec, err := r.All()
+	if err != nil {
+		t.Fatal(err)
+	}
+	marked := 0
+	for _, s := range rec.Steps {
+		for i, at := range s.Attempts {
+			if s.Evidence[i] == nil {
+				continue
+			}
+			for k, res := range at.Items {
+				got := s.Evidence[i].Items[k].Unverdicted
+				if res.Unreadable != (len(got) == 1 && got[0] == learnermodel.UnverdictedUnreadableOther) {
+					t.Fatalf("%s item %d: unreadable %v, reasons %v", at.Task, res.Place, res.Unreadable, got)
+				}
+				if res.Unreadable {
+					marked++
+				}
+			}
+		}
+	}
+	if marked == 0 {
+		t.Error("no unreadable answer in a run of 200")
+	}
+}

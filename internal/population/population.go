@@ -9,6 +9,7 @@ import (
 
 	"github.com/altnovatrail/sim/internal/learner"
 	"github.com/altnovatrail/sim/internal/run"
+	"github.com/altnovatrail/sim/internal/synthetic"
 )
 
 // The modules of the first slice, by full ID (R41 spec).
@@ -111,9 +112,49 @@ var Standalone = []Population{
 	{Name: "G0-skills1", Graphs: maths, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.SkillSpread = 1 })},
 }
 
+// breaks gives the calendar of F-model: a day is a session with the chance 3/7, and one break of
+// 14–60 days begins on a day from the 30th to the 60th and ends by the 120th of 180
+// (docs/architecture.md, section 3.2).
+func breaks(a *learner.Assumptions) {
+	a.SessionChance = 3.0 / 7
+	a.BreakStartFrom, a.BreakStartTo, a.BreakMin, a.BreakMax, a.BreakEndBy = 30, 60, 14, 60, 120
+}
+
+// Own are the populations of NovaTrail's own model and engine: the scale of bands, guessing of a
+// predicate, an adult without a grade, an unreadable answer (S-); forgetting by other laws, on a
+// calendar with a break (F-); pages of a workbook (W-) (docs/architecture.md, section 3.2). The
+// rest, A-, L- and E-, come with T19. S-predicate runs on the synthetic sheet alone: no published
+// package has a predicate, and in the criterion and the gate its checks are "no graph" (R04).
+var Own = []Population{
+	{Name: "S-scale1.5", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.BandStep = 1.5 })},
+	{Name: "S-scale3.5", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.BandStep = 3.5 })},
+	{Name: "S-predicate", Graphs: [][]string{{synthetic.Sheet}}, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.PredicateGuess = 0.1 })},
+	{Name: "S-adult", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) {
+		a.Adult, a.AdultFrom, a.AdultTo = true, 2.5, 5
+	})},
+	{Name: "S-unreadable", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.UnreadableEvery = 20 })},
+	{Name: "F-model", Graphs: maths, Limit: run.Forgetting, sides: one(breaks)},
+	{Name: "F-none", Graphs: maths, Limit: run.Forgetting, sides: one(func(a *learner.Assumptions) { breaks(a); a.Forgets = false })},
+	{Name: "F-exp", Graphs: maths, Limit: run.Forgetting, sides: one(func(a *learner.Assumptions) {
+		breaks(a)
+		a.ExponentialLaw, a.LawBase = true, 0.9
+	})},
+	{Name: "F-C1", Graphs: maths, Limit: run.Forgetting, sides: one(func(a *learner.Assumptions) { breaks(a); a.LawC = 1 })},
+	{Name: "F-growth5", Graphs: maths, Limit: run.Forgetting, sides: one(func(a *learner.Assumptions) { breaks(a); a.Growth = 5 })},
+	{Name: "F-break", Graphs: maths, Limit: run.Forgetting, sides: one(func(a *learner.Assumptions) { breaks(a); a.BreakDrop = 1 })},
+	{Name: "W-shock", Graphs: grade3, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.AttemptShock = 1 })},
+	{Name: "W-error", Graphs: grade3, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.ErrorChance = 0.2 })},
+	{Name: "W-badday", Graphs: grade3, Limit: run.Maths, sides: one(func(a *learner.Assumptions) {
+		a.BadDayChance, a.BadDayDrop = 0.1, 1
+	})},
+	{Name: "W-repeat", Graphs: maths, Limit: run.Maths, sides: one(func(a *learner.Assumptions) {
+		a.RepeatChance, a.RepeatDays = 0.95, 30
+	})},
+}
+
 // All gives the populations the bench has, a copy, so that no caller changes them for another.
 func All() []Population {
-	return slices.Clone(Standalone)
+	return slices.Concat(Standalone, Own)
 }
 
 // Named gives a population by its name.
