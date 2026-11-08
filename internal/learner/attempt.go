@@ -125,16 +125,10 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 // R* at the attempt's start; and sets its last practice to the attempt's start (R04, R06
 // learner-model; docs/architecture.md, section 3.1). The skills move in the order of their IDs.
 func (l *Learner) practise(t *pack.Task, a Attempt) {
-	task := t.Candidate.Task
 	right, all := map[string]int{}, map[string]int{}
 	var ids []string
 	for _, res := range a.Items {
-		it := task.Items[res.Place-1]
-		primary := task.Primary
-		if it.OwnSkills {
-			primary = it.Primary
-		}
-		for _, id := range primary {
+		for _, id := range t.ItemPrimary(int(res.Place - 1)) {
 			if l.skills[id] == nil {
 				continue
 			}

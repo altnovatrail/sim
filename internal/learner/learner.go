@@ -217,10 +217,7 @@ func (l *Learner) Chance(t *pack.Task, item int, at int64, rung int) (float64, e
 		return 0, err
 	}
 	it := task.Items[item]
-	primary := task.Primary
-	if it.OwnSkills {
-		primary = it.Primary
-	}
+	primary := t.ItemPrimary(item)
 	var offset, retention float64
 	n := 0
 	for _, id := range primary {

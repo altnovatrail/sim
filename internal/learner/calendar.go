@@ -58,3 +58,9 @@ func (c *Calendar) Done(end int64) {
 func (c *Calendar) Day() int {
 	return c.day
 }
+
+// EndSession ends the session under way: the next attempt is given on the next day that has a
+// session. The run calls it when the engine has nothing to give (R16 in docs/decisions.md).
+func (c *Calendar) EndSession() {
+	c.left = 0
+}
