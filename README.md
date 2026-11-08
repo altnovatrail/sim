@@ -19,7 +19,11 @@ A component of [NovaTrail](https://github.com/altnovatrail/spec/tree/v0.9.9), a 
 
 ## Status
 
-Detailing is done, and the code epic, E2, is laid out in [RUN.md](RUN.md). The first epic decided what the component's card left open: the virtual learners, the criteria with their bands, and how the CI of learner-model, engine and modules takes the gate. spec took its recommendation on that last point and closed its open question with it (R103 spec). learner-model, engine and modules have each released their first version, so E2 runs through to the simulator's first tag. That tag is the gate in their CI. The Go module and its CI are in place: the shared checks of .github, with the same bits held on every build, CodeQL for Go and the coverage in Codecov. The program `sim` has no commands yet; [docs/architecture.md](docs/architecture.md), section 3, is what the tasks of E2 build.
+Detailing is done, and the code epic, E2, is laid out in [RUN.md](RUN.md). The first epic decided what the component's card left open: the virtual learners, the criteria with their bands, and how the CI of learner-model, engine and modules takes the gate. spec took its recommendation on that last point and closed its open question with it (R103 spec). learner-model, engine and modules have each released their first version, so E2 runs through to the simulator's first tag. That tag is the gate in their CI. The Go module and its CI are in place: the shared checks of .github, with the same bits held on every build, CodeQL for Go and the coverage in Codecov. The bench runs: `sim run`, `sim compare`, `sim judge` and `sim gate`; [docs/architecture.md](docs/architecture.md), section 3, is what the tasks of E2 build.
+
+## Gate
+
+`just gate` builds the bench on the commits of the libraries that [gate.json](gate.json) names, through a `go.work` it writes in a temporary folder, runs the gate and holds its numbers to their bands; `just gate exact` holds them to the recorded numbers to the last bit, as this repository's CI does on amd64 and arm64, and `just gate record "<reason>"` records the bands anew. A caller puts its own code in place of a library with `GATE_LEARNER_MODEL=<folder>` or `GATE_ENGINE=<folder>`.
 
 ## Documents
 

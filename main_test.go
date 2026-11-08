@@ -23,9 +23,9 @@ func TestRun(t *testing.T) {
 		{name: "--help", args: []string{"--help"}, status: 0, stdout: usage},
 		{
 			name:   "unknown command",
-			args:   []string{"gate", "-update"},
+			args:   []string{"nope", "-update"},
 			status: 2,
-			stderr: "sim: unknown command \"gate\"\n\n" + usage,
+			stderr: "sim: unknown command \"nope\"\n\n" + usage,
 		},
 	}
 	for _, c := range cases {

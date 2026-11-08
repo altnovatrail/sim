@@ -178,3 +178,20 @@ func itemSlots(task pack.Task) [][]learnermodel.Slot {
 func itoa[N ~int32](n N) string {
 	return strconv.Itoa(int(n))
 }
+
+// Pinned names the three packages of the first slice by the pinned index, each with its version and
+// package digest.
+func TestPinned(t *testing.T) {
+	ps, err := Pinned()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ps) != 3 || ps[0].Module != "novatrail/english-essays" || ps[2].Module != "novatrail/olympiad-math" {
+		t.Fatalf("Pinned = %+v", ps)
+	}
+	for _, p := range ps {
+		if p.Version != "0.1.0" || len(p.Digest) != len("sha256:")+64 {
+			t.Errorf("%+v", p)
+		}
+	}
+}

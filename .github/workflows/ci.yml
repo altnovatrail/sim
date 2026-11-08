@@ -46,3 +46,44 @@ jobs:
     uses: altnovatrail/.github/.github/workflows/go.yml@706f4067a66c91b0442033f82a7924eeb8b60497 # v0.1.21
     with:
       same-bits: true
+
+  # The gate (R09, R26; docs/architecture.md, sections 3.7 and 3.9): the bench built on the commits
+  # of gate.json through go.work, in the toolchain stage of sim's devcontainer, on amd64 and arm64.
+  # Its own CI holds the numbers to the recorded ones to the last bit, so that the two architectures
+  # give the same bits as each other and as the record; a caller holds them to their bands. The
+  # caches of Go are kept between runs by the commits the gate builds on; the steps' times show the
+  # gate cold and with the cache.
+  gate:
+    name: Gate / ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go
+          key: gate-${{ matrix.arch }}-${{ hashFiles('go.sum', 'gate.json', '.devcontainer/Dockerfile') }}
+
+      - name: Toolchain image
+        run: docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
+
+      - name: gate
+        run: |
+          mkdir -p "$RUNNER_TEMP/go"
+          set -o pipefail
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOCACHE=/go/build --env GOMODCACHE=/go/mod \
+              --volume "$RUNNER_TEMP/go:/go" \
+              --volume "$PWD:/work" --workdir /work \
+              toolchain just gate exact | tee -a "$GITHUB_STEP_SUMMARY"

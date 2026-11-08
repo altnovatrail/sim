@@ -160,3 +160,84 @@ ci-licenses:
         exit 1
     fi
     go run {{ GO_LICENSES }} check ./... --allowed_licenses="$ALLOWED_LICENSES"
+
+# The gate (docs/architecture.md, sections 3.7 and 3.9; R09, R26 in docs/decisions.md). It builds
+# the bench only on the commits gate.json names: it fetches each library at its commit into a
+# temporary folder — or takes the caller's own code from GATE_LEARNER_MODEL or GATE_ENGINE, a
+# folder, in its place —, writes go.work there with the three modules and points GOWORK at it, and
+# builds sim once. The run goes as processes, one part of the learners each, as many as the
+# processors: R09 keeps goroutines out of code. Then sim holds the build to gate.json — the versions
+# the workspace chose, the go lines, the point sim's go.mod names, the packages — and the numbers to
+# their bands, and writes the table. mode is bands, as the callers hold them; exact, the recorded
+# numbers to the last bit, as sim's own CI holds them on amd64 and arm64; or record, which writes the
+# bands into gate.json anew, for the reason given.
+# Run the gate on the commits of gate.json: mode bands, exact or record.
+gate mode="bands" reason="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{ mode }}" in bands|exact|record) ;; *) echo "gate: mode {{ mode }}: bands, exact or record" >&2; exit 2 ;; esac
+    root="$PWD"
+    tmp="$(mktemp -d)"
+    pids=()
+    # A part that fails stops the others before the folder they write into goes.
+    trap 'for p in "${pids[@]}"; do kill "$p" 2>/dev/null || true; done; wait; rm -rf "$tmp"' EXIT
+    GOWORK=off go build -o "$tmp/plain" .
+    libraries="$("$tmp/plain" gate libraries gate.json)"
+    uses=("$root")
+    gomods=(-go "$root")
+    commits=()
+    while read -r path repo commit version; do
+        name="${path##*/}"
+        var="GATE_$(printf '%s' "$name" | tr 'a-z-' 'A-Z_')"
+        dir="${!var:-}"
+        if [ -z "$dir" ]; then
+            dir="$tmp/$name"
+            git init -q "$dir"
+            git -C "$dir" fetch -q --depth 1 "https://github.com/$repo" "$commit"
+            git -C "$dir" -c advice.detachedHead=false checkout -q FETCH_HEAD
+            # The tag gate.json names is on the commit it names: the job "Go" builds go.mod's tag,
+            # and the gate the commit (R26). An annotated tag points at its commit through ^{}.
+            if [ -n "${version:-}" ]; then
+                tags="$(git ls-remote "https://github.com/$repo" "refs/tags/$version" "refs/tags/$version^{}")"
+                tagged="$(printf '%s\n' "$tags" | awk -v ref="refs/tags/$version^{}" '$2 == ref { print $1 }')"
+                if [ -z "$tagged" ]; then
+                    tagged="$(printf '%s\n' "$tags" | awk '{ print $1 }')"
+                fi
+                if [ "$tagged" != "$commit" ]; then
+                    echo "gate: $path $version is on ${tagged:-no commit}, and gate.json names $commit" >&2
+                    exit 1
+                fi
+            fi
+        fi
+        dir="$(cd "$dir" && pwd)"
+        head="$(git -C "$dir" rev-parse HEAD)"
+        echo "gate: $path at $head${!var:+, from the caller}" >&2
+        uses+=("$dir")
+        gomods+=(-go "$dir")
+        commits+=(-commit "$path=$head")
+    done <<< "$libraries"
+    {
+        echo "go $(sed -n 's/^go //p' go.mod)"
+        echo "use ("
+        for u in "${uses[@]}"; do echo "	$u"; done
+        echo ")"
+    } > "$tmp/go.work"
+    export GOWORK="$tmp/go.work"
+    go build -o "$tmp/sim" .
+    n="$(nproc)"
+    for k in $(seq 0 $((n - 1))); do
+        "$tmp/sim" gate run -part "$k/$n" "${commits[@]}" -out "$tmp/part-$k.jsonl" &
+        pids+=("$!")
+    done
+    failed=0
+    for p in "${pids[@]}"; do wait "$p" || failed=1; done
+    pids=()
+    if [ "$failed" != 0 ]; then
+        echo "gate: a part of the run failed" >&2
+        exit 1
+    fi
+    case "{{ mode }}" in
+        bands) "$tmp/sim" gate check -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
+        exact) "$tmp/sim" gate check -exact -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
+        record) "$tmp/sim" gate record -reason {{ quote(reason) }} -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
+    esac

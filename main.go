@@ -17,6 +17,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/altnovatrail/sim/internal/bench"
@@ -37,6 +38,9 @@ sim is NovaTrail's learner simulator. Its commands:
            number of each cell, a, b and a-b with its 95 % interval
   judge    judge candidates against the base by a criterion, as a judgement
            file names them, and write the report
+  merge    merge the files of the parts of a run into the file of the whole
+  gate     the gate: its libraries, a part of its run, its check against
+           the gate file, and the recording of its bands
 
 Run "sim <command> -h" for its flags.
 `
@@ -67,6 +71,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = compareCommand(args[1:], stdout, stderr)
 	case "judge":
 		err = judgeCommand(args[1:], stdout, stderr)
+	case "merge":
+		err = mergeCommand(args[1:], stdout, stderr)
+	case "gate":
+		err = gateCommand(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "sim: unknown command %q\n\n%s", args[0], usage)
 		return 2
@@ -104,19 +112,12 @@ func runCommand(args []string, stdout, stderr io.Writer) error {
 	set := fs.String("set", "working", "the set of learners: working, or held-out-<criterion>-<n>")
 	rule := fs.String("rule", "engine", "the rule that chooses: engine, or ceiling")
 	out := fs.String("out", "", "the file of results; stdout when empty")
-	commits := map[string]string{}
-	fs.Func("commit", "a library the build names no version of, as <module path>=<full SHA>; repeatable", func(v string) error {
-		path, sha, ok := strings.Cut(v, "=")
-		if !ok || path == "" || sha == "" {
-			return fmt.Errorf("want <module path>=<full SHA>, got %q", v)
-		}
-		commits[path] = sha
-		return nil
-	})
+	commits := commitFlag(fs)
+	part := partFlag(fs)
 	if err := parse(fs, args); err != nil {
 		return err
 	}
-	c := bench.Config{Learners: *learners, Commits: commits}
+	c := bench.Config{Learners: *learners, Commits: commits, Part: *part}
 	if *pops == "all" {
 		for _, p := range population.All() {
 			c.Populations = append(c.Populations, p.Name)
@@ -139,26 +140,111 @@ func runCommand(args []string, stdout, stderr io.Writer) error {
 	if *learners <= 0 {
 		return fmt.Errorf("-learners %d: want at least one", *learners)
 	}
-	if *out == "" {
-		return bench.Run(c, stdout)
+	return writeTo(*out, stdout, func(w io.Writer) error { return bench.Run(c, w) })
+}
+
+// commitFlag adds the flag -commit to a command: a library the build names no version of, as
+// <module path>=<full SHA>, repeatable.
+func commitFlag(fs *flag.FlagSet) map[string]string {
+	commits := map[string]string{}
+	fs.Func("commit", "a library the build names no version of, as <module path>=<full SHA>; repeatable", func(v string) error {
+		path, sha, ok := strings.Cut(v, "=")
+		if !ok || path == "" || sha == "" {
+			return fmt.Errorf("want <module path>=<full SHA>, got %q", v)
+		}
+		commits[path] = sha
+		return nil
+	})
+	return commits
+}
+
+// partFlag adds the flag -part to a command: the part k of n of the learners, so that a recipe runs
+// the parts as processes and merges their files (R09; the amendment of 2026-11-08 to R24).
+func partFlag(fs *flag.FlagSet) *bench.Part {
+	p := &bench.Part{}
+	fs.Func("part", "the part k/n of the learners, those whose number gives k mod n; all of them when not given", func(v string) error {
+		k, n, ok := strings.Cut(v, "/")
+		var err error
+		if p.K, err = strconv.Atoi(k); err == nil && ok {
+			p.N, err = strconv.Atoi(n)
+		}
+		if err != nil || !ok || p.N < 1 || p.K < 0 || p.K >= p.N {
+			return fmt.Errorf("want k/n with 0 ≤ k < n, got %q", v)
+		}
+		return nil
+	})
+	return p
+}
+
+// writeTo writes what write gives to stdout, or to a file: beside its place, and put there only once
+// write is done, so that a run that fails leaves a file that was there as it was. The file keeps the
+// mode of the one it replaces, or takes 0644, as git checks a file out.
+func writeTo(path string, stdout io.Writer, write func(io.Writer) error) error {
+	if path == "" {
+		return write(stdout)
 	}
-	// The file is written beside its place and put there only once the run is done, so that a run
-	// that fails leaves a file that was there as it was.
-	f, err := os.CreateTemp(filepath.Dir(*out), filepath.Base(*out)+".*")
+	mode := os.FileMode(0o644)
+	if st, err := os.Stat(path); err == nil {
+		mode = st.Mode().Perm()
+	}
+	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*")
 	if err != nil {
 		return err
 	}
-	err = bench.Run(c, f)
+	if err = f.Chmod(mode); err == nil {
+		err = write(f)
+	}
 	if cerr := f.Close(); err == nil {
 		err = cerr
 	}
 	if err == nil {
-		err = os.Rename(f.Name(), *out)
+		err = os.Rename(f.Name(), path)
 	}
 	if err != nil {
 		os.Remove(f.Name())
 	}
 	return err
+}
+
+// readResults reads files of results.
+func readResults(paths []string) ([]*bench.File, error) {
+	var out []*bench.File
+	for _, path := range paths {
+		f, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		file, err := bench.Read(f)
+		f.Close()
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", path, err)
+		}
+		out = append(out, file)
+	}
+	return out, nil
+}
+
+// mergeCommand is "sim merge".
+func mergeCommand(args []string, stdout, stderr io.Writer) error {
+	fs := flag.NewFlagSet("merge", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	out := fs.String("out", "", "the file of the whole; stdout when empty")
+	if err := parse(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() == 0 {
+		fmt.Fprintln(stderr, "usage: sim merge [-out <file>] <part>…")
+		return errUsage
+	}
+	parts, err := readResults(fs.Args())
+	if err != nil {
+		return err
+	}
+	whole, err := bench.Merge(parts)
+	if err != nil {
+		return err
+	}
+	return writeTo(*out, stdout, func(w io.Writer) error { return bench.Write(whole, w) })
 }
 
 // compareCommand is "sim compare".
@@ -174,21 +260,11 @@ func compareCommand(args []string, stdout, stderr io.Writer) error {
 		fmt.Fprintln(stderr, "usage: sim compare [-a-oracle] [-b-oracle] <a> <b>")
 		return errUsage
 	}
-	var sides [2]bench.Side
-	for k, path := range fs.Args() {
-		f, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		file, err := bench.Read(f)
-		f.Close()
-		if err != nil {
-			return fmt.Errorf("%s: %w", path, err)
-		}
-		sides[k] = bench.Side{File: file}
+	files, err := readResults(fs.Args())
+	if err != nil {
+		return err
 	}
-	sides[0].Oracle, sides[1].Oracle = *aOracle, *bOracle
-	return bench.Compare(sides[0], sides[1], stdout)
+	return bench.Compare(bench.Side{File: files[0], Oracle: *aOracle}, bench.Side{File: files[1], Oracle: *bOracle}, stdout)
 }
 
 // judgement is a judgement file: the criterion, the files of results of the base, of the ceiling of
