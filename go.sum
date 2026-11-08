@@ -1,0 +1,6 @@
+github.com/altnovatrail/learner-model v0.1.0 h1:KK3u66KFWfWV8NmI+ueCXZQVXyUrg8zfDtiyo8+Me9Q=
+github.com/altnovatrail/learner-model v0.1.0/go.mod h1:RXiblPvAomqm/gZw1jRhGO7Ns8dI7m1uk5g9zmUkxEU=
+github.com/altnovatrail/spec v0.9.9 h1:KaMi67kThcnTe4TUZKIr9AvHJUj1k0AW9Zqks95RIvw=
+github.com/altnovatrail/spec v0.9.9/go.mod h1:/JG4n8d9/3wY4DZg8V7PLoB1Y48uPjAyIBqoH/rwxXE=
+go.yaml.in/yaml/v4 v4.0.0 h1:/LG1pNO84Z4l603j/xMn69CcS5OYhMQ/f7l2LoQUGuw=
+go.yaml.in/yaml/v4 v4.0.0/go.mod h1:aZqd9kCMsGL7AuUv/m/PvWLdg5sjJsZ4oHDEnfPPfY0=
