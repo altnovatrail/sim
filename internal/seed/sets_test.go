@@ -112,3 +112,16 @@ func TestBetweenAndPermutation(t *testing.T) {
 		t.Fatalf("Permutation(5) = %v", p)
 	}
 }
+
+// Named gives a set by its experiment: working, or a held-out set R04 has recorded.
+func TestNamed(t *testing.T) {
+	if s, err := Named("working"); err != nil || s != Working {
+		t.Errorf("Named(working) = %v, %v", s, err)
+	}
+	if s, err := Named("held-out-engine-1"); err != nil || s != (Set{Seed: 20261109, Experiment: "held-out-engine-1"}) {
+		t.Errorf("Named(held-out-engine-1) = %v, %v", s, err)
+	}
+	if _, err := Named("held-out-pair-1"); err != ErrNotRecorded {
+		t.Errorf("Named(held-out-pair-1): %v", err)
+	}
+}

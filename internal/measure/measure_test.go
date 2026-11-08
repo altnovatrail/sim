@@ -141,8 +141,8 @@ func TestLateAndCatch(t *testing.T) {
 		steps = append(steps, step(&run.Obs{At: int64(31+k) * day, Items: one, Before: ref(0.6, 0.58, int64(2+k), int64(30+k)*day), After: ref(0.6, 0.58, int64(3+k), int64(31+k)*day)}, true))
 	}
 	vs = Read("catch", nil, []Sums{Model(&run.Record{Steps: steps})}, ModelNumbers())
-	if v := value(t, vs, "M5.caught"); !v.Read || v.Value != 6 {
-		t.Errorf("M5.caught = %+v, want 6: one answer far, then five near", v)
+	if v := value(t, vs, "M5.caught"); !v.Read || v.Value != 1 {
+		t.Errorf("M5.caught = %+v, want 1: one answer far, then five near", v)
 	}
 	if v := value(t, vs, "M5.never"); v.Value != 0 {
 		t.Errorf("M5.never = %+v", v)

@@ -138,3 +138,95 @@ func TestStepSkills(t *testing.T) {
 		t.Errorf("nothing: %v", got)
 	}
 }
+
+// The ceiling of the engine gives tasks by P*: more items in the corridor than the engine, a
+// repetition when forgetting takes a skill the truth has mastered below 0.775, and the invariants of
+// the pool kept — no task with a seen solution next; where the pool gives nothing, the engine
+// chooses.
+func TestCeiling(t *testing.T) {
+	corridor := func(rec *Record) float64 {
+		in, all := 0, 0
+		for _, s := range rec.Steps {
+			for _, o := range s.Obs {
+				if o == nil {
+					continue
+				}
+				for _, it := range o.Items {
+					all++
+					in += b2i(it.PGiven >= CorridorLow && it.PGiven <= CorridorHigh)
+				}
+			}
+		}
+		return float64(float64(in) / float64(max(1, all)))
+	}
+	var base, ceil float64
+	reviews := 0
+	for n := range 6 {
+		mods := modules(t, olympiad)
+		l, err := learner.New(seed.Working, "F-model", n, mods, forgetting())
+		if err != nil {
+			t.Fatal(err)
+		}
+		r, err := New(l, mods, Forgetting)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rec, err := r.Use(Ceiling).All()
+		if err != nil {
+			t.Fatal(err)
+		}
+		ceil += corridor(rec)
+		same, err := learner.New(seed.Working, "F-model", n, mods, forgetting())
+		if err != nil {
+			t.Fatal(err)
+		}
+		e, err := New(same, mods, Forgetting)
+		if err != nil {
+			t.Fatal(err)
+		}
+		engineRec, err := e.All()
+		if err != nil {
+			t.Fatal(err)
+		}
+		base += corridor(engineRec)
+		last := ""
+		for _, s := range rec.Steps {
+			if s.Choice.Kind != engine.ChoiceTask {
+				continue
+			}
+			if s.Choice.ID == last && !slices.ContainsFunc(s.Input.Modules[0].Pool, func(c engine.Candidate) bool { return c.Task.ID == last && c.Task.Template }) {
+				t.Errorf("%s: %s given twice in a row", rec.Unit, last)
+			}
+			last = s.Choice.ID
+			reviews += b2i(s.Choice.Reason == engine.ReasonRepetition)
+		}
+	}
+	if ceil <= base {
+		t.Errorf("the ceiling's shares in the corridor, summed, %v are no more than the engine's %v", ceil, base)
+	}
+	if reviews == 0 {
+		t.Error("the ceiling gives no repetition to learners who forget")
+	}
+	// Essays: the pool gives tasks of a choice, and the ceiling gives them; it never fails.
+	mods := modules(t, essays)
+	l, err := learner.New(seed.Working, "E-base", 0, mods, learner.Base())
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := New(l, mods, Essays)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Use(Ceiling).All(); err != nil {
+		t.Error(err)
+	}
+}
+
+// forgetting gives the assumptions of F-model: a calendar of sessions three days a week with one
+// break.
+func forgetting() learner.Assumptions {
+	a := learner.Base()
+	a.SessionChance = 3.0 / 7
+	a.BreakStartFrom, a.BreakStartTo, a.BreakMin, a.BreakMax, a.BreakEndBy = 30, 60, 14, 60, 120
+	return a
+}

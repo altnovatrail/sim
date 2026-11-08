@@ -1,8 +1,10 @@
 package run
 
 import (
+	"cmp"
 	"maps"
 	"slices"
+	"strings"
 
 	"github.com/altnovatrail/engine"
 	learnermodel "github.com/altnovatrail/learner-model"
@@ -29,7 +31,20 @@ type Pool struct {
 	// Reachable are the skills within reach by the truth, by full ID: skills with a verdict whose
 	// prerequisites the truth holds, with a task of the pool the rule could give on them.
 	Reachable []string
+
+	// best is the task the ceiling of the engine gives, and review the one it gives as a repetition,
+	// when a skill is due; empty when there is none, and for the engine's rule.
+	best, review string
 }
+
+// Rule is the rule that chooses in a run: the engine, or the ceiling of the engine
+// (docs/architecture.md, section 3.6; R24 in docs/decisions.md).
+type Rule int
+
+const (
+	Engine  Rule = iota // engine.Choose: the base, or a candidate built in its place
+	Ceiling             // the choice by P* from the same pool
+)
 
 // Skills gives the skills a choice is on: a lesson's skills, or a task's primary skills as
 // learner-model and the engine count them — the items' own, and the task's when an item takes them
@@ -102,6 +117,7 @@ func (r *Run) pool(at int64) (*Pool, error) {
 	type within struct {
 		task  learnermodel.Task
 		share float64
+		gap   float64 // |mean P* − 0.775| of its items with a verdict
 		on    []string
 	}
 	var tasks []within
@@ -115,7 +131,7 @@ func (r *Run) pool(at int64) (*Pool, error) {
 				continue
 			}
 			var on []string
-			in, all := 0, 0
+			in, all, sum := 0, 0, 0.0
 			for k, it := range c.Task.Items {
 				if len(it.Slots) == 0 {
 					continue
@@ -125,6 +141,7 @@ func (r *Run) pool(at int64) (*Pool, error) {
 					return nil, err
 				}
 				all++
+				sum += ps
 				in += b2i(ps >= CorridorLow && ps <= CorridorHigh)
 				for _, id := range t.ItemPrimary(k) {
 					if verdict(m, id) {
@@ -135,7 +152,19 @@ func (r *Run) pool(at int64) (*Pool, error) {
 			if all == 0 || len(on) == 0 || slices.ContainsFunc(on, func(id string) bool { return !isOpen(m, id) }) {
 				continue // no item with a verdict on a skill with one, or a skill out of reach by the truth
 			}
-			tasks = append(tasks, within{task: c.Task, share: float64(float64(in) / float64(all)), on: on})
+			gap := float64(sum/float64(all)) - learner.Mastery // the middle of the corridor
+			tasks = append(tasks, within{task: c.Task, share: float64(float64(in) / float64(all)), gap: max(gap, -gap), on: on})
+		}
+	}
+	due := map[string]bool{}
+	if r.rule == Ceiling {
+		// The ceiling's order: the larger share, then the mean P* nearer the middle, then the ID.
+		slices.SortStableFunc(tasks, func(a, b within) int {
+			return cmp.Or(cmp.Compare(b.share, a.share), cmp.Compare(a.gap, b.gap), strings.Compare(a.task.ID, b.task.ID))
+		})
+		for _, id := range r.verdicts {
+			band := r.l.TaughtOn(id)
+			due[id] = r.l.TrulyMasteredAt(id, band, at) && r.l.ReferenceAt(id, band, at) < learner.Mastery
 		}
 	}
 	for _, second := range []bool{false, true} {
@@ -145,10 +174,16 @@ func (r *Run) pool(at int64) (*Pool, error) {
 			if !given(w.task, at, r.l.SolvedAt, last, second) {
 				continue
 			}
+			if !p.Given && r.rule == Ceiling {
+				p.best = w.task.ID
+			}
 			p.Given = true
 			p.Ceiling = max(p.Ceiling, w.share)
 			for _, id := range w.on {
 				reach[id] = true
+				if due[id] && p.review == "" {
+					p.review = w.task.ID
+				}
 			}
 		}
 		if p.Given || second {
@@ -157,6 +192,23 @@ func (r *Run) pool(at int64) (*Pool, error) {
 		}
 	}
 	return nil, nil // not reached: the second pass returns
+}
+
+// ceiling is the choice of the ceiling of the engine on a pool (docs/architecture.md, section
+// 3.6): when a skill the truth has mastered is due — P* of the reference task of its first band
+// taught fell below 0.775 by forgetting —, the best task on it, as a repetition; otherwise the task
+// with the largest share of items with P* in the corridor, the mean P* nearest 0.775 among equal
+// shares, with the exceptions of R82 spec the rule has. When the pool gives no such task — tasks
+// with a rubric, lessons, or nothing —, the engine chooses: the ceiling is a ceiling of P*, and
+// where there is no P* it is the engine.
+func (r *Run) ceiling(in engine.Input, p *Pool) (engine.Choice, error) {
+	switch {
+	case p.review != "":
+		return engine.Choice{Kind: engine.ChoiceTask, ID: p.review, Reason: engine.ReasonRepetition}, nil
+	case p.best != "":
+		return engine.Choice{Kind: engine.ChoiceTask, ID: p.best, Reason: engine.ReasonQueue}, nil
+	}
+	return engine.Choose(in)
 }
 
 // holds tells whether the truth holds the prerequisites of a skill of a module at a time: each is

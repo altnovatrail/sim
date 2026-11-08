@@ -25,6 +25,18 @@ var heldOut = map[string]uint64{
 	"held-out-engine-1": 20261109,
 }
 
+// Named gives a set by the name of its experiment: working, or a held-out set R04 has recorded.
+func Named(experiment string) (Set, error) {
+	if experiment == Working.Experiment {
+		return Working, nil
+	}
+	s, ok := heldOut[experiment]
+	if !ok {
+		return Set{}, ErrNotRecorded
+	}
+	return Set{Seed: s, Experiment: experiment}, nil
+}
+
 // ErrNotRecorded is a held-out set R04 has not recorded yet.
 var ErrNotRecorded = errors.New("seed: no such held-out set is recorded in R04")
 
