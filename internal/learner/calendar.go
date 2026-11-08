@@ -21,15 +21,39 @@ type Calendar struct {
 	day  int   // the day of the session under way, or before the first, -1
 	left int   // the attempts left in it
 	next int64 // when its next attempt is given
+	// The break, days from BreakStart to BreakEnd, the last not included; none when they are equal.
+	BreakStart, BreakEnd int
+	bad                  map[int]bool // the bad days with a session
 }
 
-// NewCalendar gives the calendar of the learner's place calendar.
+// NewCalendar gives the calendar of the learner's place calendar, made once and kept for the
+// learner's bad days and its break. A population with a break draws it first: its start, then its length,
+// evenly, so that it ends by BreakEndBy (docs/architecture.md, section 3.2).
 func (l *Learner) NewCalendar() *Calendar {
+	if l.cal != nil {
+		return l.cal // a learner has one calendar: its bad days and its break are drawn once
+	}
 	s, err := l.set.Place(l.Unit, seed.Calendar)
 	if err != nil {
 		panic(err) // the unit is the bench's own
 	}
-	return &Calendar{s: s, a: l.a, day: -1}
+	c := &Calendar{s: s, a: l.a, day: -1, bad: map[int]bool{}}
+	if l.a.BreakMax > 0 {
+		c.BreakStart = int(s.Between(int64(l.a.BreakStartFrom), int64(l.a.BreakStartTo)))
+		c.BreakEnd = c.BreakStart + int(s.Between(int64(l.a.BreakMin), int64(min(l.a.BreakMax, l.a.BreakEndBy-c.BreakStart))))
+	}
+	l.cal = c
+	return c
+}
+
+// After tells whether a time is past the end of the break (F-break).
+func (c *Calendar) After(at int64) bool {
+	return c.BreakEnd > c.BreakStart && at >= Start+int64(c.BreakEnd)*secondsPerDay
+}
+
+// Bad tells whether the day of a time is a bad day with a session (W-badday).
+func (c *Calendar) Bad(at int64) bool {
+	return c.bad[int((at-Start)/secondsPerDay)]
 }
 
 // Next gives when the next attempt is given: in the session under way while it has attempts
@@ -38,9 +62,15 @@ func (c *Calendar) Next() int64 {
 	if c.left == 0 {
 		for {
 			c.day++
+			if c.day >= c.BreakStart && c.day < c.BreakEnd {
+				continue
+			}
 			if c.s.Fraction() < c.a.SessionChance {
 				break
 			}
+		}
+		if c.a.BadDayChance > 0 {
+			c.bad[c.day] = c.s.Fraction() < c.a.BadDayChance
 		}
 		c.left = c.a.SessionAttempts
 		c.next = Start + int64(c.day)*secondsPerDay + sessionStart

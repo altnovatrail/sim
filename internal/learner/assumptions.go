@@ -63,6 +63,35 @@ type Assumptions struct {
 	// answer, one fraction of the place attempts each attempt, and TechniqueLift what that adds to
 	// the logit of its items (G8).
 	TechniqueChance, TechniqueLift float64
+
+	// Adult makes a learner an adult without a grade (S-adult): the first band to start in, a level
+	// AdultFrom to AdultTo above it, drawn evenly, and the age category adult.
+	Adult              bool
+	AdultFrom, AdultTo float64
+	// UnreadableEvery makes every UnreadableEvery-th answer of an item on a sheet unreadable first,
+	// written again (S-unreadable): no verdict and no mistake (R04 spec).
+	UnreadableEvery int
+	// The break of the calendar (F-): one break, starting on a day from BreakStartFrom to
+	// BreakStartTo, BreakMin to BreakMax days long, drawn evenly, ending by day BreakEndBy; and
+	// BreakDrop, by which the level of every module falls after it (F-break).
+	BreakStartFrom, BreakStartTo, BreakMin, BreakMax, BreakEndBy int
+	BreakDrop                                                    float64
+	// ExponentialLaw turns the law of retention into R* = LawBase^(Δt/τ*) (F-exp).
+	ExponentialLaw bool
+	LawBase        float64
+	// AttemptShock is the spread of a shift N(0, σ²) of the logit of all items of an attempt, one
+	// for each attempt (W-shock).
+	AttemptShock float64
+	// ErrorChance is the chance that an attempt holds an error: every item with one of the task's
+	// primary skills is not yet right at its first answer (W-error).
+	ErrorChance float64
+	// BadDayChance is the chance that a day with a session is bad, and BadDayDrop by how much the
+	// level of every module falls on it (W-badday).
+	BadDayChance, BadDayDrop float64
+	// RepeatChance is P* of every item of a task, not a template, whose solution went to the device
+	// within RepeatDays days (W-repeat).
+	RepeatChance float64
+	RepeatDays   int
 }
 
 // Base gives the assumptions of the base population: the model's own, but the author's miss

@@ -3,6 +3,7 @@ package learner
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"sync"
@@ -31,6 +32,10 @@ type Learner struct {
 	skills  map[string]*Skill
 
 	answers, retries, attempts, seeds *seed.Stream
+
+	cal        *Calendar        // the learner's one calendar, once made: its bad days and its break
+	sheetItems int              // answers of items on a sheet so far, for S-unreadable
+	solved     map[string]int64 // when the solution of each task last went to the device
 }
 
 // Module is the learner's truth in one module.
@@ -68,6 +73,23 @@ func (a Assumptions) validate() error {
 	if a.JumpBy != 0 && !(a.JumpFrom >= 1 && a.JumpFrom <= a.JumpTo) {
 		return fmt.Errorf("%w: a jump between answers %d and %d", ErrAssumptions, a.JumpFrom, a.JumpTo)
 	}
+	if a.BreakMax > 0 && !(a.BreakMin >= 1 && a.BreakMin <= a.BreakMax && a.BreakStartFrom >= 0 && a.BreakStartFrom <= a.BreakStartTo && a.BreakStartTo+a.BreakMin <= a.BreakEndBy) {
+		return fmt.Errorf("%w: a break from day %d–%d, %d–%d days long, by day %d", ErrAssumptions, a.BreakStartFrom, a.BreakStartTo, a.BreakMin, a.BreakMax, a.BreakEndBy)
+	}
+	if a.ExponentialLaw && !(a.LawBase > 0 && a.LawBase < 1) {
+		return fmt.Errorf("%w: a law of base %v", ErrAssumptions, a.LawBase)
+	}
+	if a.Adult && a.AdultFrom > a.AdultTo {
+		return fmt.Errorf("%w: an adult %v to %v above the first band", ErrAssumptions, a.AdultFrom, a.AdultTo)
+	}
+	for _, c := range []float64{a.ErrorChance, a.BadDayChance, a.RepeatChance} {
+		if !(c >= 0 && c <= 1) {
+			return fmt.Errorf("%w: a chance of %v", ErrAssumptions, c)
+		}
+	}
+	if a.UnreadableEvery < 0 || a.RepeatDays < 0 || a.AttemptShock < 0 {
+		return fmt.Errorf("%w: unreadable every %d, a repeat within %d days, a shock of %v", ErrAssumptions, a.UnreadableEvery, a.RepeatDays, a.AttemptShock)
+	}
 	if !(a.TechniqueChance >= 0 && a.TechniqueChance <= 1) || a.LearnFade < 0 {
 		return fmt.Errorf("%w: the technique with the chance %v, a fade of %v", ErrAssumptions, a.TechniqueChance, a.LearnFade)
 	}
@@ -101,7 +123,7 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 	}
 	params := place(seed.Params)
 	l := &Learner{
-		Unit: unit, a: a, set: set, modules: map[string]*Module{}, skills: map[string]*Skill{},
+		Unit: unit, a: a, set: set, modules: map[string]*Module{}, skills: map[string]*Skill{}, solved: map[string]int64{},
 		answers: place(seed.Answers), retries: place(seed.Retries), attempts: place(seed.Attempts), seeds: place(seed.Attempt),
 	}
 	sorted := slices.SortedFunc(slices.Values(modules), func(x, y *pack.Module) int { return strings.Compare(x.ID, y.ID) })
@@ -109,6 +131,9 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 	var grades []int32
 	gradedModules := 0
 	for _, pm := range sorted {
+		if a.Adult {
+			break
+		}
 		g := gradesOf(pm)
 		if len(g) == 0 {
 			continue
@@ -132,7 +157,7 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 	}
 	for _, pm := range sorted {
 		m := &Module{Pack: pm, StartBand: 1}
-		if len(gradesOf(pm)) > 0 {
+		if len(gradesOf(pm)) > 0 && !a.Adult {
 			m.Grade = grade
 			band, err := learnermodel.BandByGrade(m.Grade, pm.Graph.Bands)
 			if err != nil {
@@ -160,9 +185,17 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 		}
 		l.modules[pm.ID] = m
 	}
-	if grade.Known {
+	switch {
+	case a.Adult:
+		l.Age = "adult"
+		for _, pm := range sorted {
+			if !slices.Contains(pm.Ages, "adult") {
+				return nil, fmt.Errorf("%w: an adult in %s, whose audience has no adult", ErrAssumptions, pm.ID)
+			}
+		}
+	case grade.Known:
 		l.Age = "under_13"
-	} else {
+	default:
 		ages := slices.Clone(sorted[0].Ages)
 		for _, pm := range sorted[1:] {
 			ages = slices.DeleteFunc(ages, func(x string) bool { return !slices.Contains(pm.Ages, x) })
@@ -181,6 +214,9 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 		}
 		if a.BandBias != 0 && len(pm.Graph.Bands) > 0 {
 			m.HardBand = int32(params.Below(uint64(len(pm.Graph.Bands)))) + 1
+		}
+		if a.Adult {
+			m.Level += a.AdultFrom + float64(float64(a.AdultTo-a.AdultFrom)*params.Fraction())
 		}
 	}
 	return l, nil
@@ -227,6 +263,9 @@ func (l *Learner) Retention(s *Skill, at int64) float64 {
 	days := float64(float64(at-s.Last) / secondsPerDay)
 	if days <= 0 {
 		return 1
+	}
+	if l.a.ExponentialLaw {
+		return detmath.Pow(l.a.LawBase, float64(days/s.Stability))
 	}
 	return detmath.Pow(1+float64(float64(l.a.LawF*days)/s.Stability), -l.a.LawC)
 }
@@ -277,7 +316,14 @@ func (l *Learner) chance(t *pack.Task, item int, at int64, rung int, lift float6
 	} else {
 		retention = 1
 	}
-	logit := float64(l.a.Slope*float64(m.Level+offset-l.Difficulty(t))) + float64(l.a.RungLift*float64(rung)) + lift
+	level := m.Level
+	if l.cal != nil && l.a.BadDayDrop != 0 && l.cal.Bad(at) {
+		level -= l.a.BadDayDrop
+	}
+	if l.cal != nil && l.a.BreakDrop != 0 && l.cal.After(at) {
+		level -= l.a.BreakDrop
+	}
+	logit := float64(l.a.Slope*float64(level+offset-l.Difficulty(t))) + float64(l.a.RungLift*float64(rung)) + lift
 	c := l.guess(it.Slots)
 	return c + float64(float64(float64(1-c)*retention)*detmath.Sigmoid(logit)), nil
 }
@@ -327,4 +373,23 @@ func missOf(set seed.Set, module, task string) float64 {
 		misses.z[k] = z
 	}
 	return z
+}
+
+// SolvedAt tells when the solution of a task last went to the device, if it did: when an attempt on
+// it closed right or with the solution shown (R82 spec). The run reads it for the evidence and the
+// summary, and W-repeat for its chance, so the fact has one source.
+func (l *Learner) SolvedAt(task string) (int64, bool) {
+	at, ok := l.solved[task]
+	return at, ok
+}
+
+// Solved gives the tasks whose solution went to the device, and when it last did, in the order of
+// their IDs.
+func (l *Learner) Solved() ([]string, []int64) {
+	ids := slices.Sorted(maps.Keys(l.solved))
+	ats := make([]int64, len(ids))
+	for i, id := range ids {
+		ats[i] = l.solved[id]
+	}
+	return ids, ats
 }
