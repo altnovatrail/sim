@@ -164,6 +164,9 @@ func m2(s Sums, obs []*run.Obs, rights [][]bool) {
 					cuts = append(cuts, p.name)
 				}
 			}
+			if it.Pause >= 7*day {
+				cuts = append(cuts, "after7") // after pauses of at least 7 days, the cut of "forgets"
+			}
 			if it.Many {
 				cuts = append(cuts, "pages")
 			}
@@ -565,7 +568,7 @@ func ModelNumbers() []Number {
 			Number{"M1.rms." + itoa(k), root("M1."+itoa(k)+".sq", "M1."+itoa(k)+".n")},
 			Number{"M1.mean." + itoa(k), ratio("M1."+itoa(k)+".sum", "M1."+itoa(k)+".n")})
 	}
-	cuts := []string{"all", "pages", "help"}
+	cuts := []string{"all", "pages", "help", "after7"}
 	for _, p := range pauses {
 		cuts = append(cuts, p.name)
 	}

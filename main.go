@@ -4,11 +4,13 @@
 // bench live in internal/ packages (R10 in docs/decisions.md), and a caller that builds sim with
 // go.work runs it as `go run github.com/altnovatrail/sim <command>`.
 //
-// Its commands run cells of learners into a file of results and compare two such files by learner
-// (R24); the rest come with the tasks of epic E2 in RUN.md.
+// Its commands run cells of learners into a file of results, compare two such files by learner
+// (R24) and judge candidates by a criterion (R25); the rest come with the tasks of epic E2 in RUN.md.
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -18,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/altnovatrail/sim/internal/bench"
+	"github.com/altnovatrail/sim/internal/criterion"
 	"github.com/altnovatrail/sim/internal/population"
 	runpkg "github.com/altnovatrail/sim/internal/run"
 	"github.com/altnovatrail/sim/internal/seed"
@@ -32,6 +35,8 @@ sim is NovaTrail's learner simulator. Its commands:
            line a learner, to stdout or -out
   compare  read two files of results in pairs by learner and write each
            number of each cell, a, b and a-b with its 95 % interval
+  judge    judge candidates against the base by a criterion, as a judgement
+           file names them, and write the report
 
 Run "sim <command> -h" for its flags.
 `
@@ -60,6 +65,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = runCommand(args[1:], stdout, stderr)
 	case "compare":
 		err = compareCommand(args[1:], stdout, stderr)
+	case "judge":
+		err = judgeCommand(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "sim: unknown command %q\n\n%s", args[0], usage)
 		return 2
@@ -182,4 +189,101 @@ func compareCommand(args []string, stdout, stderr io.Writer) error {
 	}
 	sides[0].Oracle, sides[1].Oracle = *aOracle, *bOracle
 	return bench.Compare(sides[0], sides[1], stdout)
+}
+
+// judgement is a judgement file: the criterion, the files of results of the base, of the ceiling of
+// the engine and of each candidate, and of the confirmation when it has run; a path is relative to
+// the judgement file.
+type judgement struct {
+	Criterion  string `json:"criterion"`
+	Base       string `json:"base"`
+	Ceiling    string `json:"ceiling"`
+	Candidates []struct {
+		Name      string `json:"name"`
+		File      string `json:"file"`
+		Group     string `json:"group"`
+		Goal      string `json:"goal"`
+		Constants int    `json:"constants"`
+		NewField  bool   `json:"new_field"`
+		Distance  int    `json:"distance"`
+		Library   string `json:"library"`
+	} `json:"candidates"`
+	Confirm *struct {
+		Base      string `json:"base"`
+		Ceiling   string `json:"ceiling"`
+		Candidate string `json:"candidate"`
+	} `json:"confirm"`
+}
+
+// judgeCommand is "sim judge".
+func judgeCommand(args []string, stdout, stderr io.Writer) error {
+	fs := flag.NewFlagSet("judge", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	if err := parse(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(stderr, "usage: sim judge <judgement file>")
+		return errUsage
+	}
+	raw, err := os.ReadFile(fs.Arg(0))
+	if err != nil {
+		return err
+	}
+	var j judgement
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&j); err != nil {
+		return fmt.Errorf("%s: %w", fs.Arg(0), err)
+	}
+	dir := filepath.Dir(fs.Arg(0))
+	read := func(path string) (*bench.File, error) {
+		if path == "" {
+			return nil, nil
+		}
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(dir, path)
+		}
+		f, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		file, err := bench.Read(f)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", path, err)
+		}
+		return file, nil
+	}
+	in := criterion.Input{Criterion: j.Criterion}
+	if in.Base, err = read(j.Base); err != nil {
+		return err
+	}
+	if in.Ceiling, err = read(j.Ceiling); err != nil {
+		return err
+	}
+	for _, c := range j.Candidates {
+		f, err := read(c.File)
+		if err != nil {
+			return err
+		}
+		in.Candidates = append(in.Candidates, criterion.Candidate{Name: c.Name, File: f, Group: c.Group, Goal: c.Goal,
+			Constants: c.Constants, NewField: c.NewField, Distance: c.Distance, Library: c.Library})
+	}
+	if c := j.Confirm; c != nil {
+		in.Confirm = &criterion.Confirm{}
+		for _, x := range []struct {
+			path string
+			to   **bench.File
+		}{{c.Base, &in.Confirm.Base}, {c.Ceiling, &in.Confirm.Ceiling}, {c.Candidate, &in.Confirm.Candidate}} {
+			if *x.to, err = read(x.path); err != nil {
+				return err
+			}
+		}
+	}
+	r, err := criterion.Judge(in)
+	if err != nil {
+		return err
+	}
+	return r.Write(stdout)
 }

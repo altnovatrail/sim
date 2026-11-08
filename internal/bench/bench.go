@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/altnovatrail/sim/internal/invariant"
 	"github.com/altnovatrail/sim/internal/learner"
 	"github.com/altnovatrail/sim/internal/measure"
 	"github.com/altnovatrail/sim/internal/pack"
@@ -39,6 +40,8 @@ type Header struct {
 	Set       seed.Set          `json:"set"`
 	Rule      string            `json:"rule"`
 	Libraries map[string]string `json:"libraries"`
+	// Invariants tells that each line records the breaches of I1–I4 on its run: under the engine.
+	Invariants bool `json:"invariants"`
 }
 
 // Line is one learner of a cell: its population, graph and number, and the sums of its run — of the
@@ -49,6 +52,9 @@ type Line struct {
 	N          int          `json:"n"`
 	Sums       measure.Sums `json:"sums"`
 	Oracle     measure.Sums `json:"oracle"`
+	// Breaches are the breaches of the invariants I1–I4 on the run, under the engine; the ceiling of
+	// the engine is no branch of engine, and its runs are not checked (R25 in docs/decisions.md).
+	Breaches []string `json:"breaches,omitempty"`
 }
 
 // Config is what to run: the populations by name, the learners of each graph, the set and the rule;
@@ -157,7 +163,7 @@ func Run(c Config, w io.Writer) error {
 	}
 	buf := bufio.NewWriter(w)
 	enc := json.NewEncoder(buf)
-	if err := enc.Encode(Header{Set: c.Set, Rule: rule, Libraries: names}); err != nil {
+	if err := enc.Encode(Header{Set: c.Set, Rule: rule, Libraries: names, Invariants: c.Rule == run.Engine}); err != nil {
 		return err
 	}
 	for _, p := range pops {
@@ -211,7 +217,13 @@ func one(c Config, p population.Population, graph []string, mods []*pack.Module,
 	}
 	sums := measure.Model(rec)
 	maps.Copy(sums, measure.Engine(rec)) // the keys of the two are apart, but for learners, 1 in both
-	return Line{Population: p.Name, Graph: graph, N: n, Sums: sums, Oracle: measure.Oracle(rec)}, nil
+	line := Line{Population: p.Name, Graph: graph, N: n, Sums: sums, Oracle: measure.Oracle(rec)}
+	if c.Rule == run.Engine {
+		for _, b := range invariant.Check(rec) {
+			line.Breaches = append(line.Breaches, b.String())
+		}
+	}
+	return line, nil
 }
 
 // File is a file of results read back.
@@ -264,40 +276,21 @@ func cellOf(l Line) string {
 // difference a − b with its 95 % interval from the same resamples in both, tab-separated; a number
 // a cell cannot read is "-", and a cell on a graph with no published package says so.
 func Compare(a, b Side, w io.Writer) error {
-	if a.File.Header.Set != b.File.Header.Set {
-		return fmt.Errorf("%w: the sides ran on different sets of learners, %v and %v", ErrBench, a.File.Header.Set, b.File.Header.Set)
-	}
-	if len(a.File.Lines) != len(b.File.Lines) {
-		return fmt.Errorf("%w: %d learners on one side and %d on the other", ErrBench, len(a.File.Lines), len(b.File.Lines))
-	}
-	sums := func(s Side, l Line) measure.Sums {
-		if s.Oracle {
-			return l.Oracle
-		}
-		return l.Sums
+	cells, err := Cells(a, b)
+	if err != nil {
+		return err
 	}
 	numbers := numbersOf(a, b)
 	if _, err := fmt.Fprintln(w, "cell\tnumber\ta\tb\ta-b\tlow\thigh"); err != nil {
 		return err
 	}
-	for start := 0; start < len(a.File.Lines); {
-		first := a.File.Lines[start]
-		cell := cellOf(first)
-		var as, bs []measure.Sums
-		end := start
-		for ; end < len(a.File.Lines) && cellOf(a.File.Lines[end]) == cell; end++ {
-			la, lb := a.File.Lines[end], b.File.Lines[end]
-			if cellOf(lb) != cell || la.N != lb.N {
-				return fmt.Errorf("%w: learner %s/%d against %s/%d: the sides are not the same learners", ErrBench, cell, la.N, cellOf(lb), lb.N)
-			}
-			as, bs = append(as, sums(a, la)), append(bs, sums(b, lb))
-		}
-		pairs, err := measure.ReadPair(cell, first.Graph, as, bs, numbers)
+	for _, c := range cells {
+		pairs, err := measure.ReadPair(c.Cell, c.Graph, c.A, c.B, numbers)
 		if err != nil {
 			return err
 		}
 		for _, p := range pairs {
-			name := cell
+			name := c.Cell
 			if p.Diff.NoGraph {
 				name += " (no graph)"
 			}
@@ -305,9 +298,46 @@ func Compare(a, b Side, w io.Writer) error {
 				return err
 			}
 		}
-		start = end
 	}
 	return nil
+}
+
+// Cell is a cell of two sides, its learners in pairs: the n-th of A and of B the same learner.
+type Cell struct {
+	Cell, Population string
+	Graph            []string
+	A, B             []measure.Sums
+}
+
+// Cells reads two sides in pairs by learner: the same set, the same cells and the same learners in
+// the same order, or none.
+func Cells(a, b Side) ([]Cell, error) {
+	if a.File.Header.Set != b.File.Header.Set {
+		return nil, fmt.Errorf("%w: the sides ran on different sets of learners, %v and %v", ErrBench, a.File.Header.Set, b.File.Header.Set)
+	}
+	if len(a.File.Lines) != len(b.File.Lines) {
+		return nil, fmt.Errorf("%w: %d learners on one side and %d on the other", ErrBench, len(a.File.Lines), len(b.File.Lines))
+	}
+	sums := func(s Side, l Line) measure.Sums {
+		if s.Oracle {
+			return l.Oracle
+		}
+		return l.Sums
+	}
+	var out []Cell
+	for k, la := range a.File.Lines {
+		lb := b.File.Lines[k]
+		cell := cellOf(la)
+		if cellOf(lb) != cell || la.N != lb.N {
+			return nil, fmt.Errorf("%w: learner %s/%d against %s/%d: the sides are not the same learners", ErrBench, cell, la.N, cellOf(lb), lb.N)
+		}
+		if len(out) == 0 || out[len(out)-1].Cell != cell {
+			out = append(out, Cell{Cell: cell, Population: la.Population, Graph: la.Graph})
+		}
+		c := &out[len(out)-1]
+		c.A, c.B = append(c.A, sums(a, la)), append(c.B, sums(b, lb))
+	}
+	return out, nil
 }
 
 // numbersOf gives the numbers two sides compare: the measures of the model, and of the engine unless

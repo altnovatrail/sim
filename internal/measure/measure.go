@@ -36,8 +36,14 @@ type Number struct {
 type Value struct {
 	Name             string
 	Value, Low, High float64
-	Read             bool
-	NoGraph          bool
+	// SE is the standard error of the value: the standard deviation of its values over the
+	// resamples.
+	SE      float64
+	Read    bool
+	NoGraph bool
+	// Resampled are its values over the resamples, in their order, when it is read: the k-th of two
+	// numbers of the same learners comes of the same resample (R25 in docs/decisions.md).
+	Resampled []float64
 }
 
 // Resamples is the number of resamples of the learners an interval is read from, and tail the
@@ -120,10 +126,27 @@ func Read(cell string, graph []string, learners []Sums, numbers []Number) []Valu
 func interval(v Value, ok bool, vals []float64) Value {
 	v.Read = ok && len(vals) == Resamples
 	if v.Read {
-		sorted := slices.Sorted(slices.Values(vals))
-		v.Low, v.High = sorted[tail], sorted[Resamples-1-tail]
+		v.Resampled = vals
+		v.Low, v.High = Ends(vals)
+		mean := 0.0
+		for _, x := range vals {
+			mean += x
+		}
+		mean = float64(mean / Resamples)
+		sq := 0.0
+		for _, x := range vals {
+			sq += float64((x - mean) * (x - mean))
+		}
+		v.SE = math.Sqrt(float64(sq / (Resamples - 1)))
 	}
 	return v
+}
+
+// Ends gives the ends of the 95 % interval of values over the resamples: the 51st lowest and the
+// 51st highest of Resamples.
+func Ends(vals []float64) (float64, float64) {
+	sorted := slices.Sorted(slices.Values(vals))
+	return sorted[tail], sorted[len(sorted)-1-tail]
 }
 
 // resample calls f with the places of Resamples resamples of n learners, drawn from the place of the
