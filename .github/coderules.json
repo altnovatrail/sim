@@ -41,6 +41,7 @@
     "strconv",
     "strings",
     "testing",
+    "github.com/altnovatrail/engine",
     "github.com/altnovatrail/learner-model",
     "github.com/altnovatrail/learner-model/detmath",
     "github.com/altnovatrail/spec",

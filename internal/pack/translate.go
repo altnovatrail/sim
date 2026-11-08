@@ -331,3 +331,14 @@ func (m *Module) Instance(id string, attemptSeed uint64) (int, formatv0.Numbers,
 	}
 	return n, t.numbers[n], nil
 }
+
+// ItemPrimary gives the primary skills of the item at index i of the task: the item's own, when it
+// has skills of its own, and the task's otherwise (the text of the format, section 12). The truth,
+// the engine's results and the measures read an item's skills by this one rule.
+func (t *Task) ItemPrimary(i int) []string {
+	it := t.Candidate.Task.Items[i]
+	if it.OwnSkills {
+		return it.Primary
+	}
+	return t.Candidate.Task.Primary
+}
