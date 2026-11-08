@@ -36,10 +36,11 @@ const (
 // ItemResult is how one item of an attempt went.
 type ItemResult struct {
 	Place      int32
-	FirstRight bool // the first verdict of the item, the one the model reads (R06 learner-model)
-	Right      bool // whether it was right by the attempt's end
-	Wrong      int  // its wrong answers before it was right, or all of them
-	Unreadable bool // its first answer was unreadable and written again (S-unreadable)
+	FirstRight bool    // the first verdict of the item, the one the model reads (R06 learner-model)
+	Right      bool    // whether it was right by the attempt's end
+	Wrong      int     // its wrong answers before it was right, or all of them
+	Unreadable bool    // its first answer was unreadable and written again (S-unreadable)
+	Chance     float64 // P* of its first answer, as the truth gave it
 }
 
 // Attempt is an attempt of a learner on a task.
@@ -118,7 +119,10 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 		if holdsError && hasPrimary(t, i) {
 			right = false
 		}
-		res := ItemResult{Place: it.Place, FirstRight: right, Right: right, Wrong: b2i(!right)}
+		res := ItemResult{Place: it.Place, FirstRight: right, Right: right, Wrong: b2i(!right), Chance: p}
+		if holdsError && hasPrimary(t, i) {
+			res.Chance = 0
+		}
 		res.Unreadable = l.unreadable(t)
 		a.Items = append(a.Items, res)
 	}
@@ -212,12 +216,20 @@ type Pass struct {
 	Abandoned bool      // the pass was left at a link (L-abandon)
 }
 
+// Each is what a lesson's pass calls around each of its tasks, so that the caller reads the truth
+// and the model between them, as they stand when the task is given and once it is answered.
+type Each struct {
+	Before func(t *pack.Task, at int64) error
+	After  func(t *pack.Task, a Attempt) error
+}
+
 // PassLesson has the learner pass a lesson of a module given at a time, link by link in the author's
 // order to its end (docs/architecture.md, section 3.1): an explanation or a worked example takes two
 // minutes and changes nothing of the truth (R15) but for L-explain, where the first one reached
 // teaches the lesson's skills once; a task is answered as any task is. L-abandon leaves a pass at a
-// link drawn evenly, and the next pass of the lesson goes on from that link.
-func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64) (Pass, error) {
+// link drawn evenly, and the next pass of the lesson goes on from that link. each, when given, is
+// called around each task: Before when it is given, After once it is answered.
+func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64, each *Each) (Pass, error) {
 	if _, err := l.Module(m.ID); err != nil {
 		return Pass{}, err
 	}
@@ -251,9 +263,19 @@ func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64) (Pas
 		if err != nil {
 			return Pass{}, err
 		}
+		if each != nil {
+			if err := each.Before(t, at); err != nil {
+				return Pass{}, err
+			}
+		}
 		a, err := l.Answer(t, at)
 		if err != nil {
 			return Pass{}, err
+		}
+		if each != nil {
+			if err := each.After(t, a); err != nil {
+				return Pass{}, err
+			}
 		}
 		p.Attempts = append(p.Attempts, a)
 		at = a.End

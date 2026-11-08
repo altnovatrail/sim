@@ -53,7 +53,10 @@ type Step struct {
 	// Instances is the number of the instance of each attempt's template, chosen by the attempt's
 	// seed as the platform chooses it; -1 for a task that is no template.
 	Instances []int
-	Pass      *learner.Pass // the pass of a lesson, when the choice is one
+	// Obs is what the measures read of each attempt with a verdict: the model and the truth before
+	// and after it; nil for an attempt of a task with a rubric (R22 in docs/decisions.md).
+	Obs  []*Obs
+	Pass *learner.Pass // the pass of a lesson, when the choice is one
 }
 
 // Record is a learner's run.
@@ -204,6 +207,10 @@ func (r *Run) Step() error {
 			return err
 		}
 		_, seen := r.l.SolvedAt(t.Candidate.Task.ID)
+		before, err := r.observeBefore(m, t, at, seen, &in.Readout)
+		if err != nil {
+			return err
+		}
 		a, err := r.l.Answer(t, at)
 		if err != nil {
 			return fmt.Errorf("%w: %w", ErrRun, err)
@@ -212,6 +219,11 @@ func (r *Run) Step() error {
 		if err != nil {
 			return err
 		}
+		o, err := r.observeAfter(m, t, a, before)
+		if err != nil {
+			return err
+		}
+		step.Obs = []*Obs{o}
 		n, err := instance(m, t, a)
 		if err != nil {
 			return err
@@ -228,7 +240,35 @@ func (r *Run) Step() error {
 		for _, lt := range lesson.Lesson.Tasks {
 			_, seen[lt.ID] = r.l.SolvedAt(lt.ID)
 		}
-		pass, err := r.l.PassLesson(m, lesson, at)
+		// Each task of the lesson is closed as it is answered, so that the model and the truth are read
+		// before and after it as they stand then, with the tasks before it and not those after.
+		var before *Obs
+		each := &learner.Each{
+			Before: func(t *pack.Task, at int64) (err error) {
+				before, err = r.observeBefore(m, t, at, seen[t.Candidate.Task.ID], nil)
+				return err
+			},
+			After: func(t *pack.Task, a learner.Attempt) error {
+				e, err := r.close(m, t, a, choice.Reason, lesson.Lesson.ID, at, seen[a.Task])
+				if err != nil {
+					return err
+				}
+				n, err := instance(m, t, a)
+				if err != nil {
+					return err
+				}
+				o, err := r.observeAfter(m, t, a, before)
+				if err != nil {
+					return err
+				}
+				step.Evidence, step.Instances, step.Obs = append(step.Evidence, e), append(step.Instances, n), append(step.Obs, o)
+				return nil
+			},
+		}
+		pass, err := r.l.PassLesson(m, lesson, at, each)
+		if errors.Is(err, ErrRun) {
+			return err
+		}
 		if err != nil {
 			return fmt.Errorf("%w: %w", ErrRun, err)
 		}
@@ -236,21 +276,6 @@ func (r *Run) Step() error {
 			is := r.issued[s]
 			is.Skill, is.Issued, is.LastIssued = s, true, at
 			r.issued[s] = is
-		}
-		for _, a := range pass.Attempts {
-			t, err := m.Task(a.Task)
-			if err != nil {
-				return fmt.Errorf("%w: %w", ErrRun, err)
-			}
-			e, err := r.close(m, t, a, choice.Reason, lesson.Lesson.ID, at, seen[a.Task])
-			if err != nil {
-				return err
-			}
-			n, err := instance(m, t, a)
-			if err != nil {
-				return err
-			}
-			step.Evidence, step.Instances = append(step.Evidence, e), append(step.Instances, n)
 		}
 		r.pass(lesson, pass)
 		step.Attempts, step.Pass = pass.Attempts, &pass
@@ -296,13 +321,9 @@ func instance(m *pack.Module, t *pack.Task, a learner.Attempt) (int, error) {
 
 // input builds the engine's input at a time as api would build it (architecture 3.6 engine).
 func (r *Run) input(at int64) (engine.Input, error) {
-	ids := make([]string, len(r.modules))
-	for i, m := range r.modules {
-		ids[i] = m.ID
-	}
-	ro, err := learnermodel.Read(r.state, r.graphs, at, r.grade, ids)
+	ro, err := r.readAt(at)
 	if err != nil {
-		return engine.Input{}, fmt.Errorf("%w: the model refuses to read at %d: %w", ErrRun, at, err)
+		return engine.Input{}, err
 	}
 	return engine.Input{
 		Time: at, Readout: ro, Modules: r.suited, Runs: slices.Clone(r.runs), RubricDone: slices.Clone(r.rubricDone),

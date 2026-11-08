@@ -233,17 +233,36 @@ func TestBreak(t *testing.T) {
 				t.Fatalf("day %d, the break ending %d: level %v, after %v", c.Day(), c.BreakEnd, l.modules[olympiad].Level, c.After(at))
 			}
 			p, _ := l.Chance(tk, 0, at, 0)
+			id := tk.Candidate.Task.Primary[0]
+			truth, _, _ := l.Truth(id, at)
+			ref, mastered := l.ReferenceAt(id, 1, at), l.TrulyMasteredAt(id, 1, at)
+			lv2, _ := l.LevelAt(olympiad, at)
 			l.a.BreakDrop = 0
 			noDrop, _ := l.Chance(tk, 0, at, 0)
+			truth0, _, _ := l.Truth(id, at)
+			ref0, mastered0 := l.ReferenceAt(id, 1, at), l.TrulyMasteredAt(id, 1, at)
 			l.a.BreakDrop = 1
-			if (p < noDrop) != c.After(at) {
-				t.Fatalf("day %d: P* %v with the fall, %v without", c.Day(), p, noDrop)
+			if (p < noDrop) != c.After(at) || (truth < truth0) != c.After(at) || (ref < ref0) != c.After(at) || (mastered && !mastered0) {
+				t.Fatalf("day %d: P* %v with the fall, %v without; truth %v and %v", c.Day(), p, noDrop, truth, truth0)
+			}
+			if want := level - float64(b2i(c.After(at))); lv2 != want {
+				t.Fatalf("day %d: the level %v, want %v", c.Day(), lv2, want)
 			}
 			if l.NewCalendar() != c {
 				t.Fatal("a second calendar")
 			}
 			c.Done(at + 120)
 		}
+		if end, ok := l.DropAt(); !ok || end != Start+int64(c.BreakEnd)*secondsPerDay {
+			t.Fatalf("the fall at %d, %v", end, ok)
+		}
+		l.a.BreakDrop = 0
+		if _, ok := l.DropAt(); ok {
+			t.Fatal("a break with no fall drops the level")
+		}
+	}
+	if _, err := learnerOf(t, "G0", 0, olympiad).LevelAt(grade3, Start); err == nil {
+		t.Error("the level of a module the learner does not learn")
 	}
 }
 
@@ -512,7 +531,7 @@ func TestLessonsAndEssays(t *testing.T) {
 		lesson := &m.Lessons[i]
 		stops.Fraction()
 		link := int(stops.Below(uint64(lesson.Links)))
-		p, err := l.PassLesson(m, lesson, Start)
+		p, err := l.PassLesson(m, lesson, Start, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -532,11 +551,11 @@ func TestLessonsAndEssays(t *testing.T) {
 	lesson := &m.Lessons[0]
 	id := lesson.Lesson.Skills[0]
 	before := x.skills[id].Offset
-	if _, err := x.PassLesson(m, lesson, Start); err != nil {
+	if _, err := x.PassLesson(m, lesson, Start, nil); err != nil {
 		t.Fatal(err)
 	}
 	once := x.skills[id].Offset
-	if _, err := x.PassLesson(m, lesson, Start+secondsPerDay); err != nil {
+	if _, err := x.PassLesson(m, lesson, Start+secondsPerDay, nil); err != nil {
 		t.Fatal(err)
 	}
 	if math.Abs(once-before-0.25) > 1e-12 || x.skills[id].Offset != once {
@@ -545,12 +564,12 @@ func TestLessonsAndEssays(t *testing.T) {
 	// The next pass of a lesson left goes on from the link where it was left.
 	long := &m.Lessons[0]
 	r := learnerWith(t, "L-abandon", 1, a, olympiad)
-	first, err := r.PassLesson(m, long, Start)
+	first, err := r.PassLesson(m, long, Start, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	r.a.AbandonChance = 0
-	second, err := r.PassLesson(m, long, Start+secondsPerDay)
+	second, err := r.PassLesson(m, long, Start+secondsPerDay, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -563,7 +582,7 @@ func TestLessonsAndEssays(t *testing.T) {
 	tasksOnly.Lesson.Tasks = lesson.Lesson.Tasks[:1]
 	y := learnerWith(t, "L-explain", 1, e, olympiad)
 	before = y.skills[id].Offset
-	if _, err := y.PassLesson(m, &tasksOnly, Start); err != nil {
+	if _, err := y.PassLesson(m, &tasksOnly, Start, nil); err != nil {
 		t.Fatal(err)
 	}
 	if y.skills[id].Offset != before {
