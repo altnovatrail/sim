@@ -145,8 +145,8 @@ func TestPractise(t *testing.T) {
 	}
 }
 
-// A lesson is passed link by link: its links with no task take two minutes each, before its tasks,
-// and each task is answered as any task is.
+// A lesson is passed link by link in the author's order: its links with no task take two minutes
+// each, and each task is answered as any task is.
 func TestPassLesson(t *testing.T) {
 	m := module(t, olympiad)
 	l := learnerOf(t, "L-explain", 1, olympiad)
@@ -159,8 +159,19 @@ func TestPassLesson(t *testing.T) {
 		if len(p.Attempts) != len(lesson.Lesson.Tasks) || p.Lesson != lesson.Lesson.ID {
 			t.Fatalf("%s: %d attempts for %d tasks", p.Lesson, len(p.Attempts), len(lesson.Lesson.Tasks))
 		}
-		first := Start + int64(lesson.Links-len(lesson.Lesson.Tasks))*LinkSeconds
-		if len(p.Attempts) > 0 && (p.Attempts[0].Start != first || p.End != p.Attempts[len(p.Attempts)-1].End) {
+		before := 0 // the links before the first task, in the author's order
+		for _, i := range lesson.Order {
+			if i >= 0 {
+				break
+			}
+			before++
+		}
+		first := Start + int64(before)*LinkSeconds
+		after := 0 // the links after the last task
+		for k := len(lesson.Order) - 1; k >= 0 && lesson.Order[k] < 0; k-- {
+			after++
+		}
+		if len(p.Attempts) > 0 && (p.Attempts[0].Start != first || p.End != p.Attempts[len(p.Attempts)-1].End+int64(after)*LinkSeconds) {
 			t.Fatalf("%s: the first task at %d, want %d; the end %d", p.Lesson, p.Attempts[0].Start, first, p.End)
 		}
 	}

@@ -92,6 +92,25 @@ type Assumptions struct {
 	// within RepeatDays days (W-repeat).
 	RepeatChance float64
 	RepeatDays   int
+
+	// LevelCorrelation ties the levels of a learner's modules: the second and later draw their
+	// N(0, 1) as ρ·z₁ + √(1 − ρ²)·z (A-linked).
+	LevelCorrelation float64
+	// TeacherBoost makes the skills that teach an anchor skill stronger by that much: the learner
+	// knows the anchor outside the platform (A-unpractised).
+	TeacherBoost float64
+	// TeacherFades stops a skill that teaches an anchor skill from growing its stability, g = 0, once
+	// the truth has mastered it (A-fading).
+	TeacherFades bool
+	// AbandonChance is the chance that a pass of a lesson is abandoned at a link drawn evenly, one
+	// fraction and one link of the place attempts each pass (L-abandon).
+	AbandonChance float64
+	// ExplainLift makes the explanations and the worked examples of a lesson teach: at its first
+	// pass, the offsets of its skills grow by that much (L-explain).
+	ExplainLift float64
+	// LeaveChance is the chance that an attempt of a task with a rubric is left, closed "left", one
+	// fraction of the place attempts each such attempt (E-leave).
+	LeaveChance float64
 }
 
 // Base gives the assumptions of the base population: the model's own, but the author's miss

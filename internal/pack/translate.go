@@ -44,8 +44,11 @@ type Task struct {
 // Lesson is a lesson of the module: what engine takes of it, and its links beside.
 type Lesson struct {
 	Lesson engine.Lesson
-	Links  int      // its segments: explanations, worked examples and tasks, in the author's order
-	Ages   []string // its own age categories; none, the module's
+	Links  int // its segments: explanations, worked examples and tasks, in the author's order
+	// Order gives each link in the author's order: the index of its task in Lesson.Tasks, or -1 for
+	// an explanation or a worked example.
+	Order []int
+	Ages  []string // its own age categories; none, the module's
 }
 
 // ErrTranslate is a canonical view the bench cannot translate.
@@ -199,8 +202,10 @@ func Translate(cv *formatv0.CanonicalView) (*Module, error) {
 		l := Lesson{Lesson: engine.Lesson{ID: full("lesson", string(id)), Skills: fulls("skill", skillIDs(sl.Skills))}, Links: len(sl.Segments)}
 		for _, seg := range sl.Segments {
 			if seg.Task == nil {
+				l.Order = append(l.Order, -1)
 				continue
 			}
+			l.Order = append(l.Order, len(l.Lesson.Tasks))
 			task, ok := byLocal[*seg.Task]
 			if !ok {
 				return nil, fmt.Errorf("%w: %s, lesson %s names the task %s, which the module has not", ErrTranslate, module, id, *seg.Task)

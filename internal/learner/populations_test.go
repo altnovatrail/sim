@@ -5,8 +5,10 @@ import (
 	"math"
 	"testing"
 
+	"github.com/altnovatrail/learner-model/detmath"
 	"github.com/altnovatrail/sim/internal/pack"
 	"github.com/altnovatrail/sim/internal/seed"
+	"github.com/altnovatrail/sim/internal/synthetic"
 )
 
 func learnerWith(t *testing.T, population string, n int, a Assumptions, ids ...string) *Learner {
@@ -393,5 +395,190 @@ func TestOwnFieldsRefused(t *testing.T) {
 	a.Adult, a.AdultFrom, a.AdultTo = true, 2.5, 5
 	if _, err := New(seed.Working, "S-adult", 0, []*pack.Module{module(t, grade3)}, a); !errors.Is(err, ErrAssumptions) {
 		t.Errorf("an adult in school maths for grade 3: %v", err)
+	}
+}
+
+func syntheticModules(t *testing.T) []*pack.Module {
+	t.Helper()
+	ms, err := synthetic.Modules()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return []*pack.Module{ms[synthetic.Sheet], ms[synthetic.Workbook]}
+}
+
+// A-linked: the levels of a learner's two modules are tied as ρ = 0.7 says; without it, they are not.
+func TestLevelCorrelation(t *testing.T) {
+	corr := func(rho float64) float64 {
+		a := Base()
+		a.LevelCorrelation = rho
+		var sx, sy, sxx, syy, sxy float64
+		const n = 600
+		for k := range n {
+			l, err := New(seed.Working, "A-linked", k, syntheticModules(t), a)
+			if err != nil {
+				t.Fatal(err)
+			}
+			x := l.modules[synthetic.Sheet].Level - float64(a.BandStep*float64(l.modules[synthetic.Sheet].StartBand-1))
+			y := l.modules[synthetic.Workbook].Level
+			sx, sy, sxx, syy, sxy = sx+x, sy+y, sxx+float64(x*x), syy+float64(y*y), sxy+float64(x*y)
+		}
+		cov := float64(sxy/n) - float64(float64(sx/n)*float64(sy/n))
+		vx := float64(sxx/n) - float64(float64(sx/n)*float64(sx/n))
+		vy := float64(syy/n) - float64(float64(sy/n)*float64(sy/n))
+		return float64(cov / math.Sqrt(float64(vx*vy)))
+	}
+	if c := corr(0.7); math.Abs(c-0.7) > 0.08 {
+		t.Errorf("tied at 0.7, the levels correlate %v", c)
+	}
+	if c := corr(0); math.Abs(c) > 0.12 {
+		t.Errorf("untied, the levels correlate %v", c)
+	}
+}
+
+// A-unpractised and A-fading: the skill that teaches the anchor is stronger by the boost; once the
+// truth has mastered it, it grows its stability no more.
+func TestTeacher(t *testing.T) {
+	a := Base()
+	a.TeacherBoost = 2
+	l, err := New(seed.Working, "A-unpractised", 0, syntheticModules(t), a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := New(seed.Working, "A-unpractised", 0, syntheticModules(t), Base())
+	tables := synthetic.Workbook + "/skill/tables"
+	if got := l.skills[tables].Offset - b.skills[tables].Offset; math.Abs(got-2) > 1e-12 {
+		t.Errorf("the teaching skill is stronger by %v", got)
+	}
+	if got := l.skills[synthetic.Workbook+"/skill/compare"].Offset - b.skills[synthetic.Workbook+"/skill/compare"].Offset; got != 0 {
+		t.Errorf("a skill that teaches nothing is stronger by %v", got)
+	}
+	if !l.TrulyMastered(tables, 1) {
+		t.Fatalf("a skill 2 above its level is not mastered: P* %v", l.Reference(tables, 1))
+	}
+	// A-fading against the same learner without it: the same answers, a mastered teaching skill, and
+	// the stability grows only without fading.
+	ms, _ := synthetic.Modules()
+	page, _ := ms[synthetic.Workbook].Task(synthetic.Workbook + "/task/tables-page-1")
+	stability := func(fades bool) (float64, float64) {
+		f := Base()
+		f.TeacherFades = fades
+		fl, _ := New(seed.Working, "A-fading", 0, syntheticModules(t), f)
+		s := fl.skills[tables]
+		s.Offset += 10 // the truth masters it
+		s.Stability, s.Last, s.Practised = 2, Start, true
+		at, err := fl.Answer(page, Start+20*secondsPerDay)
+		if err != nil {
+			t.Fatal(err)
+		}
+		right := 0
+		for _, res := range at.Items {
+			right += b2i(res.FirstRight)
+		}
+		return s.Stability, float64(float64(right) / float64(len(at.Items)))
+	}
+	fading, share := stability(true)
+	plain, again := stability(false)
+	if share != again || share == 0 {
+		t.Fatalf("the two learners answered apart: %v, %v", share, again)
+	}
+	if want := max(1, float64(2*detmath.Pow(0.5, 1-share))); fading != want || plain <= fading {
+		t.Errorf("the stability of a mastered teaching skill: %v with fading, want %v; %v without", fading, want, plain)
+	}
+}
+
+// The reference task: 1/5 + 4/5 · σ(θ* + δ* − β) on the band, and 0 for a skill with no truth.
+func TestReference(t *testing.T) {
+	l := learnerWith(t, "G0", 0, Base(), olympiad)
+	id := task(t, olympiad, "enum-34-d1-1").Candidate.Task.Primary[0]
+	s := l.skills[id]
+	want := 0.2 + float64(0.8*detmath.Sigmoid(s.Module.Level+s.Offset-2.5))
+	if got := l.Reference(id, 2); math.Abs(got-want) > 1e-15 {
+		t.Errorf("Reference = %v, want %v", got, want)
+	}
+	if l.Reference("no/skill/x", 1) != 0 || l.TrulyMastered("no/skill/x", 1) {
+		t.Error("a skill with no truth is mastered")
+	}
+}
+
+// L-abandon, L-explain and E-leave.
+func TestLessonsAndEssays(t *testing.T) {
+	m := module(t, olympiad)
+	a := Base()
+	a.AbandonChance = 1
+	l := learnerWith(t, "L-abandon", 0, a, olympiad)
+	stops, _ := seed.Working.Place(l.Unit, seed.Attempts)
+	for i := range m.Lessons {
+		lesson := &m.Lessons[i]
+		stops.Fraction()
+		link := int(stops.Below(uint64(lesson.Links)))
+		p, err := l.PassLesson(m, lesson, Start)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := 0 // the tasks among the links before the one it is left at, in the author's order
+		for _, i := range lesson.Order[:link] {
+			if i >= 0 {
+				want++
+			}
+		}
+		if !p.Abandoned || len(p.Attempts) != want {
+			t.Fatalf("%s left at link %d of %d: abandoned %v, %d attempts, want %d", p.Lesson, link, lesson.Links, p.Abandoned, len(p.Attempts), want)
+		}
+	}
+	e := Base()
+	e.ExplainLift = 0.25
+	x := learnerWith(t, "L-explain", 0, e, olympiad)
+	lesson := &m.Lessons[0]
+	id := lesson.Lesson.Skills[0]
+	before := x.skills[id].Offset
+	if _, err := x.PassLesson(m, lesson, Start); err != nil {
+		t.Fatal(err)
+	}
+	once := x.skills[id].Offset
+	if _, err := x.PassLesson(m, lesson, Start+secondsPerDay); err != nil {
+		t.Fatal(err)
+	}
+	if math.Abs(once-before-0.25) > 1e-12 || x.skills[id].Offset != once {
+		t.Errorf("the first pass lifted the skill by %v, the second by %v", once-before, x.skills[id].Offset-once)
+	}
+	// The next pass of a lesson left goes on from the link where it was left.
+	long := &m.Lessons[0]
+	r := learnerWith(t, "L-abandon", 1, a, olympiad)
+	first, err := r.PassLesson(m, long, Start)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.a.AbandonChance = 0
+	second, err := r.PassLesson(m, long, Start+secondsPerDay)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second.Abandoned || len(first.Attempts)+len(second.Attempts) != len(long.Lesson.Tasks) {
+		t.Errorf("left with %d attempts, gone on with %d, of %d tasks", len(first.Attempts), len(second.Attempts), len(long.Lesson.Tasks))
+	}
+	// The explanations teach only when a pass reaches one: not a lesson of tasks alone.
+	tasksOnly := *lesson
+	tasksOnly.Lesson.ID, tasksOnly.Order = "x/lesson/tasks-only", []int{0}
+	tasksOnly.Lesson.Tasks = lesson.Lesson.Tasks[:1]
+	y := learnerWith(t, "L-explain", 1, e, olympiad)
+	before = y.skills[id].Offset
+	if _, err := y.PassLesson(m, &tasksOnly, Start); err != nil {
+		t.Fatal(err)
+	}
+	if y.skills[id].Offset != before {
+		t.Errorf("a lesson of tasks alone taught by %v", y.skills[id].Offset-before)
+	}
+	lv := Base()
+	lv.LeaveChance = 1
+	w := learnerWith(t, "E-leave", 0, lv, essays)
+	for _, tk := range tasks(t, essays) {
+		at, err := w.Answer(tk, Start)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if tk.Rubric != (at.Closure == ClosedLeft) {
+			t.Fatalf("%s: rubric %v, closed %v", tk.Candidate.Task.ID, tk.Rubric, at.Closure)
+		}
 	}
 }
