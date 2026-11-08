@@ -94,3 +94,12 @@ func (c *Calendar) Day() int {
 func (c *Calendar) EndSession() {
 	c.left = 0
 }
+
+// DropAt gives the time the learner's break ends and its level falls, and whether it falls: F-break
+// (M3 after a break). The break of the other F- populations drops nothing.
+func (l *Learner) DropAt() (int64, bool) {
+	if l.cal == nil || l.cal.BreakEnd <= l.cal.BreakStart || l.a.BreakDrop == 0 {
+		return 0, false
+	}
+	return Start + int64(l.cal.BreakEnd)*secondsPerDay, true
+}

@@ -337,12 +337,9 @@ func (l *Learner) chance(t *pack.Task, item int, at int64, rung int, lift float6
 	} else {
 		retention = 1
 	}
-	level := m.Level
+	level := l.level(m, at)
 	if l.cal != nil && l.a.BadDayDrop != 0 && l.cal.Bad(at) {
 		level -= l.a.BadDayDrop
-	}
-	if l.cal != nil && l.a.BreakDrop != 0 && l.cal.After(at) {
-		level -= l.a.BreakDrop
 	}
 	logit := float64(l.a.Slope*float64(level+offset-l.Difficulty(t))) + float64(l.a.RungLift*float64(rung)) + lift
 	c := l.guess(it.Slots)
@@ -421,16 +418,41 @@ func teaches(m *pack.Module, id string) bool {
 	return i >= 0 && len(m.Graph.Skills[i].Teaches) > 0
 }
 
-// mastery is the middle of the corridor of success, 0.775: the truth has mastered a skill on a band
+// Mastery is the middle of the corridor of success, 0.775: the truth has mastered a skill on a band
 // when P* of the reference task reaches it (docs/architecture.md, section 3.5).
-const mastery = 0.775
+const Mastery = 0.775
 
 // TrulyMastered tells whether the truth has mastered a skill on a band: P* of the reference task —
 // difficulty 3 on that band, no miss, a choice of five options, R* = 1 — is at least 0.775, as
 // "truly mastered" in standalone (docs/architecture.md, section 3.5). It reads no number of the
 // model: not its threshold, not its guess.
 func (l *Learner) TrulyMastered(id string, band int32) bool {
-	return l.Reference(id, band) >= mastery
+	return l.Reference(id, band) >= Mastery
+}
+
+// TrulyMasteredAt is TrulyMastered at a time: with the level the truth has then, fallen after the
+// break of F-break. A bad day is not counted: it lowers the answers of that day, not what the learner
+// knows (docs/architecture.md, section 3.5; R22).
+func (l *Learner) TrulyMasteredAt(id string, band int32, at int64) bool {
+	s := l.skills[id]
+	return s != nil && l.reference(s, band, l.level(s.Module, at)) >= Mastery
+}
+
+// level gives θ* of a module at a time: fallen by BreakDrop after the break (F-break).
+func (l *Learner) level(m *Module, at int64) float64 {
+	if l.cal != nil && l.a.BreakDrop != 0 && l.cal.After(at) {
+		return m.Level - l.a.BreakDrop
+	}
+	return m.Level
+}
+
+// LevelAt gives θ* of a module at a time, as level does.
+func (l *Learner) LevelAt(module string, at int64) (float64, error) {
+	m, err := l.Module(module)
+	if err != nil {
+		return 0, err
+	}
+	return l.level(m, at), nil
 }
 
 // Reference gives P* of the reference task of a skill on a band: c + (1 − c) · σ(a · (θ* + δ* −
@@ -442,9 +464,14 @@ func (l *Learner) Reference(id string, band int32) float64 {
 	if s == nil {
 		return 0
 	}
+	return l.reference(s, band, s.Module.Level)
+}
+
+// reference gives P* of the reference task of a skill on a band at a level of its module.
+func (l *Learner) reference(s *Skill, band int32, level float64) float64 {
 	beta := float64(l.a.BandStep * float64(band-1))
 	c := l.guess([]learnermodel.Slot{{Check: learnermodel.CheckKindChoice, Options: 5, HasOptions: true}})
-	return c + float64(float64(1-c)*detmath.Sigmoid(float64(l.a.Slope*float64(s.Module.Level+s.Offset-beta))))
+	return c + float64(float64(1-c)*detmath.Sigmoid(float64(l.a.Slope*float64(level+s.Offset-beta))))
 }
 
 // taughtOn gives the band a skill is first taught on in its module's graph, the first if none.
@@ -454,4 +481,34 @@ func taughtOn(m *pack.Module, id string) int32 {
 		return 1
 	}
 	return m.Graph.Skills[i].BandsTaught[0]
+}
+
+// Truth gives θ* + δ* of a skill with a verdict at a time, with the level fallen after the break of
+// F-break, and its R* then; false for a skill the learner has no truth of.
+func (l *Learner) Truth(id string, at int64) (float64, float64, bool) {
+	s := l.skills[id]
+	if s == nil {
+		return 0, 0, false
+	}
+	return l.level(s.Module, at) + s.Offset, l.Retention(s, at), true
+}
+
+// TaughtOn gives the first band the graph teaches a skill on; 1 for a skill with no truth.
+func (l *Learner) TaughtOn(id string) int32 {
+	if s := l.skills[id]; s != nil {
+		return s.TaughtOn
+	}
+	return 1
+}
+
+// ReferenceAt gives P* of the reference task of a skill on a band at a time: with the level then, as
+// TrulyMasteredAt reads it, and the skill's R* then, c + (1 − c) · R* · σ (docs/architecture.md,
+// section 3.5, M5).
+func (l *Learner) ReferenceAt(id string, band int32, at int64) float64 {
+	s := l.skills[id]
+	if s == nil {
+		return 0
+	}
+	c := l.guess([]learnermodel.Slot{{Check: learnermodel.CheckKindChoice, Options: 5, HasOptions: true}})
+	return c + float64(float64(l.reference(s, band, l.level(s.Module, at))-c)*l.Retention(s, at))
 }

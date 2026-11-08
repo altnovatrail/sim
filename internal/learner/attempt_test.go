@@ -2,11 +2,13 @@ package learner
 
 import (
 	"errors"
+	"slices"
 	"testing"
 
 	learnermodel "github.com/altnovatrail/learner-model"
 
 	"github.com/altnovatrail/learner-model/detmath"
+	"github.com/altnovatrail/sim/internal/pack"
 	"github.com/altnovatrail/sim/internal/seed"
 )
 
@@ -152,7 +154,7 @@ func TestPassLesson(t *testing.T) {
 	l := learnerOf(t, "L-explain", 1, olympiad)
 	for i := range m.Lessons {
 		lesson := &m.Lessons[i]
-		p, err := l.PassLesson(m, lesson, Start)
+		p, err := l.PassLesson(m, lesson, Start, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -176,8 +178,38 @@ func TestPassLesson(t *testing.T) {
 		}
 	}
 	other := learnerOf(t, "G0", 1, grade3)
-	if _, err := other.PassLesson(m, &m.Lessons[0], Start); err == nil {
+	if _, err := other.PassLesson(m, &m.Lessons[0], Start, nil); err == nil {
 		t.Error("a lesson of a module the learner does not learn: no error")
+	}
+	// Each is called around every task, in order, and stops the pass on its error.
+	var calls []string
+	each := &Each{
+		Before: func(tk *pack.Task, at int64) error { calls = append(calls, "before "+tk.Candidate.Task.ID); return nil },
+		After: func(tk *pack.Task, a Attempt) error {
+			calls = append(calls, "after "+a.Task)
+			return nil
+		},
+	}
+	lesson := &m.Lessons[0]
+	p, err := learnerOf(t, "G0", 2, olympiad).PassLesson(m, lesson, Start, each)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want []string
+	for _, a := range p.Attempts {
+		want = append(want, "before "+a.Task, "after "+a.Task)
+	}
+	if !slices.Equal(calls, want) {
+		t.Errorf("each called %v, want %v", calls, want)
+	}
+	stop := errors.New("stop")
+	for _, e := range []*Each{
+		{Before: func(*pack.Task, int64) error { return stop }, After: each.After},
+		{Before: each.Before, After: func(*pack.Task, Attempt) error { return stop }},
+	} {
+		if _, err := learnerOf(t, "G0", 3, olympiad).PassLesson(m, lesson, Start, e); !errors.Is(err, stop) {
+			t.Errorf("an error of each: %v", err)
+		}
 	}
 }
 
