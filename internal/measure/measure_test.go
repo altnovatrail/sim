@@ -2,6 +2,7 @@ package measure
 
 import (
 	"math"
+	"reflect"
 	"testing"
 
 	"github.com/altnovatrail/engine"
@@ -37,7 +38,7 @@ func TestRead(t *testing.T) {
 	if !mean.Read || mean.Value != 4 || mean.Low > 4 || mean.High < 4 || mean.Low < 1 || mean.High > 7 || mean.Low == mean.High {
 		t.Errorf("mean %+v", mean)
 	}
-	if a[0] != b[0] || a[2] != b[2] {
+	if !reflect.DeepEqual(a[0], b[0]) || !reflect.DeepEqual(a[2], b[2]) {
 		t.Error("two reads of one cell give two intervals")
 	}
 	if value(t, a, "none").Read {
@@ -49,7 +50,7 @@ func TestRead(t *testing.T) {
 	if mean.NoGraph {
 		t.Error("a published graph is no graph")
 	}
-	if v := Read("cell", []string{"novatrail/olympiad-math", synthetic.Sheet}, learners, numbers); !v[0].NoGraph || v[0] != (Value{Name: "mean", Value: mean.Value, Low: mean.Low, High: mean.High, Read: true, NoGraph: true}) {
+	if v := Read("cell", []string{"novatrail/olympiad-math", synthetic.Sheet}, learners, numbers); !v[0].NoGraph || v[0].Value != mean.Value || v[0].Low != mean.Low || v[0].High != mean.High || !v[0].Read {
 		t.Errorf("a graph with a synthetic module: %+v", v[0])
 	}
 	if v := Read("empty", nil, nil, numbers); v[0].Read {

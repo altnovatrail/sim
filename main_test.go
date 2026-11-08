@@ -46,7 +46,7 @@ func TestRun(t *testing.T) {
 
 // The usage names the command form and its commands.
 func TestUsage(t *testing.T) {
-	for _, want := range []string{"usage: sim <command>", "\n  run ", "\n  compare "} {
+	for _, want := range []string{"usage: sim <command>", "\n  run ", "\n  compare ", "\n  judge "} {
 		if !strings.Contains(usage, want) {
 			t.Errorf("usage does not say %q:\n%s", want, usage)
 		}
@@ -127,6 +127,60 @@ func TestCommands(t *testing.T) {
 	}
 	if got := run([]string{"compare", a, bad}, &stdout, &stderr); got != 1 {
 		t.Errorf("sim compare with a file of no header = %d", got)
+	}
+}
+
+// "sim judge" reads a judgement file — its runs relative to it — and writes the report; a file it
+// cannot read or a judgement it refuses gives status 1, flags it does not take status 2.
+func TestJudge(t *testing.T) {
+	dir := t.TempDir()
+	var stdout, stderr bytes.Buffer
+	for _, c := range [][]string{
+		{"run", "-populations", "G0", "-learners", "3", "-out", filepath.Join(dir, "base.jsonl")},
+		{"run", "-populations", "G0", "-learners", "3", "-rule", "ceiling", "-out", filepath.Join(dir, "ceil.jsonl")},
+		{"run", "-populations", "G0", "-learners", "3", "-set", "held-out-model-1", "-out", filepath.Join(dir, "held.jsonl")},
+		{"run", "-populations", "G0", "-learners", "3", "-set", "held-out-model-1", "-rule", "ceiling", "-out", filepath.Join(dir, "held-ceil.jsonl")},
+	} {
+		if got := run(c, &stdout, &stderr); got != 0 {
+			t.Fatalf("sim %q = %d: %s", c, got, stderr.String())
+		}
+	}
+	write := func(name, body string) string {
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	good := write("j.json", `{"criterion":"model","base":"base.jsonl","ceiling":"ceil.jsonl",
+		"candidates":[{"name":"same","file":"base.jsonl","group":"still","constants":1}],
+		"confirm":{"base":"held.jsonl","ceiling":"held-ceil.jsonl","candidate":"held.jsonl"}}`)
+	stdout.Reset()
+	if got := run([]string{"judge", good}, &stdout, &stderr); got != 0 {
+		t.Fatalf("sim judge = %d: %s", got, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "# The criterion of the model") || !strings.Contains(stdout.String(), "the base stays") {
+		t.Errorf("the report:\n%s", stdout.String())
+	}
+	for _, c := range []struct {
+		args   []string
+		status int
+	}{
+		{[]string{"judge"}, 2},
+		{[]string{"judge", "-nope", good}, 2},
+		{[]string{"judge", filepath.Join(dir, "none.json")}, 1},
+		{[]string{"judge", write("unknown.json", `{"criterion":"model","extra":1}`)}, 1},
+		{[]string{"judge", write("nobase.json", `{"criterion":"model","base":"none.jsonl"}`)}, 1},
+		{[]string{"judge", write("noceil.json", `{"criterion":"model","base":"base.jsonl","ceiling":"none.jsonl"}`)}, 1},
+		{[]string{"judge", write("nocand.json", `{"criterion":"model","base":"base.jsonl","ceiling":"ceil.jsonl","candidates":[{"name":"x","file":"none.jsonl"}]}`)}, 1},
+		{[]string{"judge", write("noconf.json", `{"criterion":"model","base":"base.jsonl","ceiling":"ceil.jsonl","confirm":{"base":"none.jsonl"}}`)}, 1},
+		{[]string{"judge", write("bad.json", `{"criterion":"model","base":"j.json","ceiling":"ceil.jsonl"}`)}, 1},
+		{[]string{"judge", write("refused.json", `{"criterion":"taste","base":"base.jsonl","ceiling":"ceil.jsonl"}`)}, 1},
+	} {
+		stderr.Reset()
+		if got := run(c.args, &stdout, &stderr); got != c.status {
+			t.Errorf("sim %q = %d, want %d: %s", c.args, got, c.status, stderr.String())
+		}
 	}
 }
 

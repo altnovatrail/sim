@@ -50,8 +50,8 @@ func TestRun(t *testing.T) {
 		if len(cells) == 0 || cells[len(cells)-1] != cellOf(l) {
 			cells = append(cells, cellOf(l))
 		}
-		if l.Sums["learners"] != 1 || l.Oracle["learners"] != 1 {
-			t.Errorf("%s/%d has no sums", cellOf(l), l.N)
+		if l.Sums["learners"] != 1 || l.Oracle["learners"] != 1 || len(l.Breaches) != 0 {
+			t.Errorf("%s/%d has no sums, or breaches %v", cellOf(l), l.N, l.Breaches)
 		}
 	}
 	want := []string{"G0/novatrail/olympiad-math", "G0/novatrail/grade-3-math", "S-predicate/synthetic/sheet"}

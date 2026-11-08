@@ -1,7 +1,10 @@
 package measure
 
 import (
+	"reflect"
 	"testing"
+
+	"github.com/altnovatrail/sim/internal/run"
 )
 
 // The oracle is the ceiling of the model where it is one: no error of the estimate, no false
@@ -54,7 +57,7 @@ func TestReadPair(t *testing.T) {
 	}
 	read := 0
 	for _, p := range pairs {
-		if p.A != p.B || (p.Diff.Read && (p.Diff.Value != 0 || p.Diff.Low != 0 || p.Diff.High != 0)) {
+		if !reflect.DeepEqual(p.A, p.B) || (p.Diff.Read && (p.Diff.Value != 0 || p.Diff.Low != 0 || p.Diff.High != 0)) {
 			t.Errorf("%s: %+v", p.Diff.Name, p)
 		}
 		read += b2i(p.Diff.Read)
@@ -64,6 +67,29 @@ func TestReadPair(t *testing.T) {
 	}
 	if _, err := ReadPair("G0", graph, sums, sums[1:], ModelNumbers()); err == nil {
 		t.Error("cells of different learners are compared")
+	}
+}
+
+// The standard error of a value is the deviation of its values over the resamples, and its ends
+// the 51st from each end of them; M2 cuts the answers after pauses of at least 7 days apart.
+func TestSE(t *testing.T) {
+	learners := []Sums{{"x": 1, "n": 1}, {"x": 3, "n": 1}, {"x": 5, "n": 1}, {"x": 7, "n": 1}}
+	v := Read("se", nil, learners, []Number{{"mean", ratio("x", "n")}})[0]
+	if !v.Read || len(v.Resampled) != Resamples || v.SE <= 0.5 || v.SE >= 2 {
+		t.Errorf("SE %v of the mean of 1, 3, 5, 7 over %d resamples", v.SE, len(v.Resampled))
+	}
+	vals := make([]float64, Resamples)
+	for i := range vals {
+		vals[i] = float64(Resamples - i)
+	}
+	if low, high := Ends(vals); low != 51 || high != Resamples-50 {
+		t.Errorf("Ends = %v, %v", low, high)
+	}
+	s := Sums{}
+	rec := []*run.Obs{{Items: []run.ItemObs{{PModel: 0.5, Pause: 7 * day}, {PModel: 0.5, Pause: 6 * day}}}}
+	m2(s, rec, [][]bool{{true, false}})
+	if s["M2.after7.n"] != 1 || s["M2.all.n"] != 2 {
+		t.Errorf("after 7 days %v of %v answers", s["M2.after7.n"], s["M2.all.n"])
 	}
 }
 
