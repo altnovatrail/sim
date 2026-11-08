@@ -21,7 +21,7 @@ func results(shift float64, dropCell, dropKey string) *bench.File {
 	}}}
 	for _, cell := range Cells() {
 		pop, graph, _ := strings.Cut(cell, "/")
-		for k := range Learners {
+		for k := range learners {
 			e := float64(0.001*float64(k%7)) + shift
 			s := measure.Sums{"learners": 1,
 				"M1.200.sq": float64((0.3 + e) * (0.3 + e)), "M1.200.n": 1,
@@ -48,6 +48,9 @@ func results(shift float64, dropCell, dropKey string) *bench.File {
 
 func file(t *testing.T) *File {
 	t.Helper()
+	prior := learners
+	learners = 30
+	t.Cleanup(func() { learners = prior })
 	ps, err := published.Pinned()
 	if err != nil {
 		t.Fatal(err)

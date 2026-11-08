@@ -92,6 +92,10 @@ func (f *File) Write(w io.Writer) error {
 // Learners are the learners of each cell of the gate: the first of the working set.
 const Learners = 300
 
+// learners are the learners whole holds each cell to: Learners, but a test of the checks lowers it,
+// since reading the numbers off 300 learners a cell under the race detector takes minutes.
+var learners = Learners
+
 // Populations are the populations of the gate, each on every graph it runs on, in the order of
 // population (docs/architecture.md, section 3.7). A-linked is not among them: it runs on synthetic
 // packages alone (R19), and the gate takes no synthetic module (docs/architecture.md, section 3.3);
@@ -166,8 +170,8 @@ func whole(results *bench.File) []string {
 		count[l.Population+"/"+strings.Join(l.Graph, "+")]++
 	}
 	for _, cell := range Cells() {
-		if count[cell] != Learners {
-			out = append(out, fmt.Sprintf("cell %s has %d learners, not %d", cell, count[cell], Learners))
+		if count[cell] != learners {
+			out = append(out, fmt.Sprintf("cell %s has %d learners, not %d", cell, count[cell], learners))
 		}
 	}
 	return out
