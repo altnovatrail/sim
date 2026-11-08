@@ -15,3 +15,24 @@ updates:
       interval: weekly
     cooldown:
       default-days: 3
+
+  # The Go modules the code is built from, as in every Go repository of NovaTrail (architecture 3.3
+  # .github). go.mod requires none yet (R10); spec's module, learner-model and engine come with the
+  # tasks that import them, and Dependabot does not raise them. spec's module moves with the spec
+  # submodule, by a move to its tag (R64 spec). learner-model and engine come by a task that holds
+  # the tag to the signed release by release-verify (R77 spec), and the commits the bench is built
+  # on are the gate file's, which a pull request of sim moves (R05; docs/architecture.md, section
+  # 3.9). The ecosystem stays all the same, as in every Go repository. Go itself, in the
+  # Dockerfile, and the tools the recipes run by `go run` at an exact version are not among them:
+  # those are raised by hand. Neither is .devcontainer/gopls/, the lock file of gopls: its version
+  # goes up together with GOPLS_VERSION in the Dockerfile, by hand (R11).
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    ignore:
+      - dependency-name: github.com/altnovatrail/spec
+      - dependency-name: github.com/altnovatrail/learner-model
+      - dependency-name: github.com/altnovatrail/engine

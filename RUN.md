@@ -111,7 +111,7 @@
 
 | Статус | ID | Задача | Кто | План | Зависит от |
 |---|---|---|---|---|---|
-| [ ] | T10 | Каркас и общий CI | я + Claude | да | — |
+| [x] | T10 | Каркас и общий CI | я + Claude | да | — |
 | [ ] | T11 | Зёрна, распределения и векторы генератора | Claude, проверяю я | да | T10 |
 | [ ] | T12 | Пакеты: часть для сервера и входы библиотек | Claude, проверяю я | да | T10 |
 | [ ] | T13 | Виртуальный ученик и календарь | Claude, проверяю я | да | T11 |
@@ -191,6 +191,17 @@
 #### T10. Каркас и общий CI
 
 - **Цель:** у репозитория есть модуль Go и CI, на которых пойдёт весь код эпика.
+- **Решено автором (2026-11-08):** четыре ответа при планировании, все по рекомендациям (R10, R11).
+  1. `go.mod` без `require`: модуль `spec` приходит с T11, `learner-model` и `engine` — с T12, с проверкой релиза и строками `.github/coderules.json`. Отвергнуто: нижние границы сразу, как в «Сделать» ниже, — их не импортирует ни одна строка.
+  2. Раскладка — корень `package main` и части `internal/<часть>`. Отвергнуто: `cmd/sim`.
+  3. gopls v0.24.0 в образе из lock-файла, как R13 engine. Отвергнуто: контейнер как у `spec`.
+  4. Шаги вне репозитория — коммиты, pull request, мерж, ruleset, Codecov, pull request Dependabot, Rebuild Container — делаю я; исполнитель правит файлы и гоняет проверки (правило 7).
+- **Решено автором (2026-11-08), после выполнения:** Rebuild Container сделал я, а остальное поручено исполнителю — Codecov, два коммита (развёртывание E2 отдельно от T10), pull request, обязательные проверки ruleset `main` — «Go / …» и «CodeQL / analyze (go)», а `codecov/patch` — когда придёт его первый статус, — и закрытие pull request Dependabot #5–#9. Правило 7 и «Do not commit» из RULES.md, How we work, не действуют только в этом. Мерж в поручение не входит.
+- **Выяснилось при планировании** (2026-11-08):
+  - `ci-lint` — как R12 engine: `gofmt`, `go vet` и сверка версии gopls; staticcheck отвергнут там же;
+  - `coderules` читает поля `code-imports`, `test-imports`, `test-math`, `requires` и `nested-modules`, неизвестное поле — ошибка, а стандартную библиотеку тоже перечисляют;
+  - `targets` гонит тесты на 386 и в js/wasm, так что программа без `os/exec`, а без пакета с тестом нет `coverage/go.out` и «Go / test» падает: в T10 — `main.go` с тестом;
+  - правило 12: в Security — 7 находок Scorecard, все из общего списка R33 spec; кода с прошлой задачи в `main` нет, чинить нечего. В контейнере нет docker, так что образ здесь не собирается.
 - **Сделать:**
   - `go.mod` — `module github.com/altnovatrail/sim`, `go 1.27.3`; нижние границы — `github.com/altnovatrail/spec` `v0.9.9`, тем же тегом, что подмодуль (R64 spec), `learner-model` `v0.1.0` и `engine` `v0.1.0`. Релиз `engine` `release-verify` принял 2026-11-08 (R09), `learner-model` — проверить тем же рецептом;
   - раскладка пакетов: рекомендация — корень `package main`, программа `sim`, и части стенда — пакетами `internal/…` по разделу 3, «Что строить»: `sim` — инструмент, а не библиотека (раздел 1);
@@ -203,11 +214,24 @@
 - **Мой шаг:** Rebuild Container, если меняется Dockerfile; Codecov; ruleset `main` — «Go / …» обязательными; закрыть pull request Dependabot #5–#9 — их `.github` `v0.1.10` перекрывает `v0.1.21`.
 - **Как проверить:** `just ci-lint` и `just ci-test` зелёные в контейнере; pull request проходит «Go / lint», «Go / test», «Go / vuln», «Go / licenses», «Go / targets», «Go / fma-diff», «Go / arm64», «Go / rules» и `codecov/patch`; `/code-review high`.
 - **Разделы:** architecture 1, 3, 3.9; R09; R30, R48, R64, R77 spec; architecture 3.11 spec; repositories 4 spec.
+- **Сделано (2026-11-08):**
+  - модуль — `go.mod` (`github.com/altnovatrail/sim`, `go 1.27.3`, без `require`), `main.go` — программа `sim`, которая пока только говорит, как ею пользоваться, и `main_test.go`;
+  - `justfile` по образцу `engine`: `ci-lint`, `ci-test`, `ci-vuln`, `ci-licenses`, `test-targets`, `fma-diff`, `rules`, `same-bits`;
+  - CI: ссылки на общие workflow — v0.1.21 в `ci.yml`, `codeql.yml` и `scorecard.yml`; job «Go» с `same-bits: true`; CodeQL с `languages: go`; `.github/codecov.yml`, `.github/coderules.json`; `gomod` в `dependabot.yml` с `ignore` для `spec`, `learner-model` и `engine`; `.gitignore`;
+  - контейнер: шаг gopls в Dockerfile, lock-файл `.devcontainer/gopls/` — тот же, что у `engine`, — и настройки расширения Go в `devcontainer.json`;
+  - журнал — R10 и R11, следующий — R12; [docs/architecture.md](docs/architecture.md) — разделы 1, 3, 3.9 и 4; README — значки «Go version» и «Coverage», «Status»; в T11 и T12 — по строке о `require` (ответ 1);
+  - проверено в контейнере: `just ci-lint`; `just ci-test` — покрытие 100 %, `coverage/go.out` есть; `just same-bits` — тесты при v3, v1 с `cpu.all=off`, на 386 и в js/wasm, сборка и `go vet` wasip1, `fma-diff` на шести целях, `rules` — зелёные, а подложенная горутина `rules` роняет; `just ci-licenses` со списком `ALLOWED_LICENSES` из `go.yml` v0.1.21; `just ci-vuln` — «No vulnerabilities found»; `go install -mod=readonly tool` из копии lock-файла собрал gopls, и `gopls version` назвал v0.24.0; `docs-check-repo` — ok;
+  - `/code-review high`, один круг, — 7 находок. Исправлено: раздел 3.9 противоречил себе о сборке правки под API, которого нет в релизах; рецепт `rules` при сбое `github` запускал `/coderules` — теперь он останавливается на настоящей причине; кеш `.github` не знал версии Go — теперь ключ с `go env GOVERSION`; `script` брал отступ с первой строки, даже пустой; комментарий Dockerfile о слое `COPY`; «Сделано» и «Открыто» этой задачи. Не взято: расширение Go всё ещё предлагает поставить инструмент, которого у него нет, без точной версии — настройкой это не выключить, и предложение отклоняется (R11), как у `engine` (R13 engine);
+  - `test-targets` собирает пакет `main` корня для wasip1 и пишет бинарник `sim` в корень — он в `.gitignore`.
+- **Открыто:**
+  - Rebuild Container — сделан мной 2026-11-08: в новом контейнере `gopls version` — `golang.org/x/tools/gopls v0.24.0`. Codecov: `sim` в нём есть, `active: false`, — включит первая загрузка покрытия, как у `engine`. Коммиты, pull request, ruleset `main` и pull request Dependabot — по поручению выше; мерж — мой;
+  - чем читать YAML векторов генератора — T11 (зависимость `go.yaml.in/yaml/v4`, как у `module-kit`, или другая).
 
 #### T11. Зёрна, распределения и векторы генератора
 
 - **Цель:** каждое число стенда берётся из места случайности формата, а нормальное и показательное распределения дают одни биты на любой сборке.
 - **Сделать:**
+  - `require` модуля `github.com/altnovatrail/spec` `v0.9.9` — тем же тегом, что подмодуль (R64 spec), — и его строки в `.github/coderules.json`: `go.mod` каркаса пуст (R10);
   - место случайности — по [тексту формата](spec/format/README.md), раздел 22: старшее слово — FNV-1a 64 от зерна и имён, младшее — само зерно, поток — PCG `math/rand/v2`. Реализации на Go в модуле `spec` нет, а `internal/random` `module-kit` импорту недоступен (R09), так что место строит стенд;
   - тест-векторы генератора — `vectors/random/*.yaml` из `spec.Format`, по типам `formatv0.RandomVector`, и выбор экземпляра шаблона — `vectors/templates/*.yaml` ([текст формата](spec/format/README.md), раздел 23; R59, R60 spec). Это и есть «свой workflow» тест-векторов: тесты Go в `ci-test`, как у `module-kit`;
   - имена мест — эксперимент, единица и назначение, наборы `working` и `held-out-<критерий>-<n>` с их зёрнами (architecture 3.4, 3.8);
@@ -220,6 +244,7 @@
 
 - **Цель:** стенд читает опубликованные пакеты по типам `spec` и переводит их во входы `learner-model` и `engine` так, как перевёл бы `api`.
 - **Сделать:**
+  - `require` `learner-model` `v0.1.0` и `engine` `v0.1.0` — после `release-verify` их релизов (у `engine` принят 2026-11-08, R09), — и их строки в `.github/coderules.json` (R10);
   - чтение `server.json` из архива пакета по `formatv0.CanonicalView`, окно версий формата — по `module_format_version` паспорта (R62, R72, R101, R103 spec);
   - индекс и пакеты `modules` `v0.1.0` — в `testdata/` после `release-verify`, закреплённые дайджестом индекса и `package_digest` пакетов. `package_digest` — sha256 файла `inventory.json` пакета, а не архива (R09);
   - перевод в `learnermodel.NewGraph` — полосы, навыки, описания задач, пункты и ячейки, — в `engine.Candidate` с ловушками и в `engine.Lesson` (architecture 3.3; R28 spec). `options` выбора лежит то внутри `check`, то рядом с ним (R09);

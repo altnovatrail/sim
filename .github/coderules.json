@@ -1,0 +1,6 @@
+{
+  "code-imports": ["fmt", "io", "os"],
+  "test-imports": ["bytes", "os", "strings", "testing"],
+  "requires": [],
+  "nested-modules": [".devcontainer/gopls"]
+}
