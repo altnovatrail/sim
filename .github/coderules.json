@@ -1,20 +1,37 @@
 {
   "code-imports": [
+    "bytes",
+    "cmp",
+    "compress/gzip",
+    "crypto/sha256",
+    "embed",
+    "encoding/hex",
+    "encoding/json",
     "errors",
     "fmt",
     "hash/fnv",
     "io",
+    "maps",
     "math",
     "math/rand/v2",
     "os",
+    "slices",
     "strconv",
     "strings",
-    "github.com/altnovatrail/learner-model/detmath"
+    "sync",
+    "github.com/altnovatrail/engine",
+    "github.com/altnovatrail/learner-model",
+    "github.com/altnovatrail/learner-model/detmath",
+    "github.com/altnovatrail/spec/types/formatv0"
   ],
   "test-imports": [
     "bufio",
     "bytes",
+    "compress/gzip",
+    "crypto/sha256",
+    "encoding/hex",
     "encoding/json",
+    "errors",
     "io/fs",
     "maps",
     "os",
@@ -24,6 +41,7 @@
     "strconv",
     "strings",
     "testing",
+    "github.com/altnovatrail/learner-model",
     "github.com/altnovatrail/spec",
     "github.com/altnovatrail/spec/types/formatv0",
     "go.yaml.in/yaml/v4"
@@ -32,6 +50,7 @@
     "Erfc"
   ],
   "requires": [
+    "github.com/altnovatrail/engine",
     "github.com/altnovatrail/learner-model",
     "github.com/altnovatrail/spec",
     "go.yaml.in/yaml/v4"
