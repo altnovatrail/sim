@@ -108,33 +108,6 @@ func encode(e *learnermodel.Evidence) []byte {
 	return b
 }
 
-// skills gives the skills a choice is on: a lesson's skills, or a task's primary skills, its own
-// and its items'.
-func skills(s run.Step) []string {
-	for _, m := range s.Input.Modules {
-		switch s.Choice.Kind {
-		case engine.ChoiceLesson:
-			for _, l := range m.Lessons {
-				if l.ID == s.Choice.ID {
-					return l.Skills
-				}
-			}
-		case engine.ChoiceTask:
-			for _, c := range m.Pool {
-				if c.Task.ID == s.Choice.ID {
-					out := slices.Clone(c.Task.Primary)
-					for _, it := range c.Task.Items {
-						out = append(out, it.Primary...)
-					}
-					slices.Sort(out)
-					return slices.Compact(out)
-				}
-			}
-		}
-	}
-	return nil
-}
-
 // view is what the input says of one skill, by its full ID.
 type view struct {
 	skill   learnermodel.Skill
@@ -193,7 +166,7 @@ func reasonCode(s run.Step) []string {
 	if c.Reason < engine.ReasonConsolidation || c.Reason > engine.ReasonRotation {
 		return []string{fmt.Sprintf("the code %d is not of the closed list", c.Reason)}
 	}
-	ids := skills(s)
+	ids := s.Skills()
 	if len(ids) == 0 {
 		return []string{"the choice is on no skill of the input"}
 	}
@@ -269,7 +242,7 @@ func authorOrder(s run.Step) []string {
 	if c.Reason != engine.ReasonAuthorOrder {
 		return nil
 	}
-	own := skills(s)
+	own := s.Skills()
 	primaries := func(t learnermodel.Task) []string {
 		out := slices.Clone(t.Primary)
 		for _, it := range t.Items {

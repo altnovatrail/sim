@@ -42,7 +42,7 @@ func TestObserve(t *testing.T) {
 					t.Fatalf("%s: observed %d items of %d, %d answers before of %d", rec.Unit, len(o.Items), len(a.Items), o.Answers, answers)
 				}
 				for k, it := range o.Items {
-					if it.PModel <= 0 || it.PModel >= 1 || it.PTrue < 0 || it.PTrue > 1 || it.PFresh < it.PModel-1e-12 || it.Many != (len(o.Items) > 1) {
+					if it.PModel <= 0 || it.PModel >= 1 || it.PTrue < 0 || it.PTrue > 1 || it.PFresh < it.PModel-1e-12 || it.PGiven <= 0 || it.PGiven > 1 || it.Many != (len(o.Items) > 1) {
 						t.Errorf("%s: item %d observed %+v", rec.Unit, k, it)
 					}
 					if it.PTrue != a.Items[k].Chance {

@@ -196,7 +196,7 @@ func TestBreaches(t *testing.T) {
 			if s.Choice.Reason != engine.ReasonAuthorOrder {
 				return false
 			}
-			for _, id := range skills(s) {
+			for _, id := range s.Skills() {
 				v, _ := viewOf(s.Input, id)
 				for _, p := range v.skill.Prerequisites {
 					if pv, ok := viewOf(s.Input, p); ok && pv.skill.Assessability != learnermodel.AssessabilityVerdict {

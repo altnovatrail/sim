@@ -57,6 +57,8 @@ type Step struct {
 	// and after it; nil for an attempt of a task with a rubric (R22 in docs/decisions.md).
 	Obs  []*Obs
 	Pass *learner.Pass // the pass of a lesson, when the choice is one
+	// Pool is what the truth says of the pool at the choice, before the engine chose (R23).
+	Pool *Pool
 }
 
 // Record is a learner's run.
@@ -193,11 +195,15 @@ func (r *Run) Step() error {
 	if err != nil {
 		return err
 	}
+	pool, err := r.pool(at)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrRun, err)
+	}
 	choice, err := engine.Choose(in)
 	if err != nil {
 		return fmt.Errorf("%w: the engine refuses the input at %d: %w", ErrRun, at, err)
 	}
-	step := Step{Input: in, Choice: choice}
+	step := Step{Input: in, Choice: choice, Pool: pool}
 	switch choice.Kind {
 	case engine.ChoiceNothing:
 		r.cal.EndSession()

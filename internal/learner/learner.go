@@ -34,11 +34,12 @@ type Learner struct {
 
 	answers, retries, attempts, seeds *seed.Stream
 
-	cal        *Calendar        // the learner's one calendar, once made: its bad days and its break
-	sheetItems int              // answers of items on a sheet so far, for S-unreadable
-	solved     map[string]int64 // when the solution of each task last went to the device
-	taught     map[string]bool  // the lessons whose explanations have taught once, for L-explain
-	resume     map[string]int   // the link where the open pass of each lesson was left, for L-abandon
+	cal        *Calendar          // the learner's one calendar, once made: its bad days and its break
+	sheetItems int                // answers of items on a sheet so far, for S-unreadable
+	solved     map[string]int64   // when the solution of each task last went to the device
+	taught     map[string]bool    // the lessons whose explanations have taught once, for L-explain
+	resume     map[string]int     // the link where the open pass of each lesson was left, for L-abandon
+	beta       map[string]float64 // β* of each task once worked out: it does not change in a run
 }
 
 // Module is the learner's truth in one module.
@@ -131,7 +132,7 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 	}
 	params := place(seed.Params)
 	l := &Learner{
-		Unit: unit, a: a, set: set, modules: map[string]*Module{}, skills: map[string]*Skill{}, solved: map[string]int64{}, taught: map[string]bool{}, resume: map[string]int{},
+		Unit: unit, a: a, set: set, modules: map[string]*Module{}, skills: map[string]*Skill{}, solved: map[string]int64{}, taught: map[string]bool{}, resume: map[string]int{}, beta: map[string]float64{},
 		answers: place(seed.Answers), retries: place(seed.Retries), attempts: place(seed.Attempts), seeds: place(seed.Attempt),
 	}
 	sorted := slices.SortedFunc(slices.Values(modules), func(x, y *pack.Module) int { return strings.Compare(x.ID, y.ID) })
@@ -296,11 +297,15 @@ func (l *Learner) Retention(s *Skill, at int64) float64 {
 // 3.3). z is drawn once a task and a run: the place of the task's unit and the purpose miss.
 func (l *Learner) Difficulty(t *pack.Task) float64 {
 	task := t.Candidate.Task
+	if beta, ok := l.beta[task.ID]; ok {
+		return beta
+	}
 	z := missOf(l.set, moduleOf(task.ID, "task"), t.Local)
 	beta := float64(l.a.BandStep*float64(task.Band.Place-1)) + float64(task.Difficulty-3) + float64(l.a.Miss*z)
 	if m := l.modules[moduleOf(task.ID, "task")]; m != nil && m.HardBand == task.Band.Place {
 		beta += l.a.BandBias
 	}
+	l.beta[task.ID] = beta
 	return beta
 }
 
