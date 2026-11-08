@@ -49,6 +49,8 @@ type Attempt struct {
 	Items   []ItemResult
 	Rungs   int // the rungs of the ladder it reached, 0 to 3
 	Closure Closure
+	// Technique tells that the learner took the technique on request before its first answer.
+	Technique bool
 }
 
 // rungs is the number of rungs of the ladder of hints (concepts 10 spec).
@@ -75,6 +77,15 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 		return Attempt{}, fmt.Errorf("%w: %s", ErrNoAnswer, task.ID)
 	}
 	a := Attempt{Task: task.ID, Start: at, Seed: l.seeds.Integer()}
+	if l.a.TechniqueChance > 0 {
+		// Drawn on every attempt, so that the k-th attempt meets the same numbers; a task with a rubric
+		// takes no technique.
+		a.Technique = l.attempts.Fraction() < l.a.TechniqueChance && !t.Rubric
+	}
+	lift := 0.0
+	if a.Technique {
+		lift = l.a.TechniqueLift
+	}
 	if t.Rubric {
 		a.End, a.Closure = at+EssaySeconds, ClosedDone
 		return a, nil
@@ -83,7 +94,7 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 		if len(it.Slots) == 0 {
 			continue
 		}
-		p, err := l.Chance(t, i, at, 0)
+		p, err := l.chance(t, i, at, 0, lift)
 		if err != nil {
 			return Attempt{}, err
 		}
@@ -96,7 +107,7 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 			if a.Items[k].Right {
 				continue
 			}
-			p, err := l.Chance(t, int(a.Items[k].Place-1), at, r)
+			p, err := l.chance(t, int(a.Items[k].Place-1), at, r, lift)
 			if err != nil {
 				return Attempt{}, err
 			}
@@ -117,6 +128,7 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 	}
 	a.End = at + per*int64(len(a.Items))
 	l.practise(t, a)
+	l.learn(t, a)
 	return a, nil
 }
 
@@ -190,4 +202,41 @@ func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64) (Pas
 	}
 	p.End = at
 	return p, nil
+}
+
+// learn moves the truth by the attempt's first answers, one by one, when the population learns or
+// jumps (G2, G2-half, G2-fading; G3, G3-drop), as standalone's child does after its k-th answer
+// (docs/architecture.md, sections 3.2 and 4): the module's level grows by LearnLevel and the
+// offsets of the item's primary skills by LearnSkill more, both slowed by F/(F + k) when LearnFade
+// is F, k counted from 0; every other skill of the module goes back LearnReturn of the way to where
+// it started, unslowed; and the level jumps by JumpBy at its answer of the jump. The answers are
+// the module's own.
+func (l *Learner) learn(t *pack.Task, a Attempt) {
+	m := l.modules[moduleOf(t.Candidate.Task.ID, "task")]
+	for _, res := range a.Items {
+		k := m.Answered
+		m.Answered++
+		if l.a.LearnLevel != 0 || l.a.LearnSkill != 0 || l.a.LearnReturn != 0 {
+			rate := 1.0
+			if l.a.LearnFade > 0 {
+				rate = float64(l.a.LearnFade / float64(l.a.LearnFade+float64(k)))
+			}
+			m.Level += float64(l.a.LearnLevel * rate)
+			primary := t.ItemPrimary(int(res.Place - 1))
+			for _, sk := range m.Pack.Graph.Skills {
+				s := l.skills[sk.ID]
+				if s == nil {
+					continue
+				}
+				if slices.Contains(primary, sk.ID) {
+					s.Offset += float64(l.a.LearnSkill * rate)
+				} else {
+					s.Offset += float64(l.a.LearnReturn * float64(s.Start-s.Offset))
+				}
+			}
+		}
+		if m.JumpAt > 0 && m.Answered == m.JumpAt {
+			m.Level += l.a.JumpBy
+		}
+	}
 }

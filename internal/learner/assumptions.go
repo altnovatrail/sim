@@ -40,6 +40,29 @@ type Assumptions struct {
 	SessionChance float64
 	// SessionAttempts is the number of attempts of a session.
 	SessionAttempts int
+
+	// LevelShift moves the level of every module from the start band's: G1's 2.5 above or below.
+	LevelShift float64
+	// LearnLevel, LearnSkill and LearnReturn are what each first answer of an item with a verdict
+	// teaches (G2): the module's level grows by LearnLevel, the offsets of the item's primary skills
+	// by LearnSkill more, and the offset of every other skill of the module goes back LearnReturn of
+	// the way to where it started. LearnFade, when above 0, slows them as F/(F + k) at the k-th
+	// answer (G2-fading).
+	LearnLevel, LearnSkill, LearnReturn, LearnFade float64
+	// JumpBy moves the level of the module once, at an answer drawn from JumpFrom to JumpTo (G3,
+	// G3-drop).
+	JumpBy           float64
+	JumpFrom, JumpTo int
+	// BandBias makes the tasks of one band of each module, drawn for the learner, truly harder by
+	// that much than the author named, beyond the miss (G4-band).
+	BandBias float64
+	// SkillHalves makes the first half of the skills of a module's graph stronger by that much and
+	// the second half weaker by as much (G5); a negative value turns it round.
+	SkillHalves float64
+	// TechniqueChance is the chance that an attempt takes the technique on request before its first
+	// answer, one fraction of the place attempts each attempt, and TechniqueLift what that adds to
+	// the logit of its items (G8).
+	TechniqueChance, TechniqueLift float64
 }
 
 // Base gives the assumptions of the base population: the model's own, but the author's miss
