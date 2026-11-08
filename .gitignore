@@ -1,0 +1,5 @@
+# What ci-test writes, for .github's shared go.yml to send to Codecov.
+/coverage/
+# What go build writes for the package main at the root, as the wasip1 build of test-targets
+# and "Go / targets" does.
+/sim

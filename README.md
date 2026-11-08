@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/altnovatrail/sim/actions/workflows/ci.yml/badge.svg)](https://github.com/altnovatrail/sim/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/altnovatrail/sim/actions/workflows/codeql.yml/badge.svg)](https://github.com/altnovatrail/sim/actions/workflows/codeql.yml)
+[![Go version](https://img.shields.io/github/go-mod/go-version/altnovatrail/sim)](go.mod)
+[![Coverage](https://codecov.io/gh/altnovatrail/sim/branch/main/graph/badge.svg)](https://codecov.io/gh/altnovatrail/sim)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/altnovatrail/sim/badge)](https://scorecard.dev/viewer/?uri=github.com/altnovatrail/sim)
 [![License](https://img.shields.io/github/license/altnovatrail/sim)](LICENSE)
 
@@ -17,7 +19,7 @@ A component of [NovaTrail](https://github.com/altnovatrail/spec/tree/v0.9.9), a 
 
 ## Status
 
-Detailing is done; the code comes next. The first epic of [RUN.md](RUN.md) decided what the component's card left open: the virtual learners, the criteria with their bands, and how the CI of learner-model, engine and modules takes the gate. spec took its recommendation on that last point and closed its open question with it (R103 spec). There is no simulator here yet: [docs/architecture.md](docs/architecture.md), section 3, is what the next epic builds.
+Detailing is done, and the code epic, E2, is laid out in [RUN.md](RUN.md). The first epic decided what the component's card left open: the virtual learners, the criteria with their bands, and how the CI of learner-model, engine and modules takes the gate. spec took its recommendation on that last point and closed its open question with it (R103 spec). learner-model, engine and modules have each released their first version, so E2 runs through to the simulator's first tag. That tag is the gate in their CI. The Go module and its CI are in place: the shared checks of .github, with the same bits held on every build, CodeQL for Go and the coverage in Codecov. The program `sim` has no commands yet; [docs/architecture.md](docs/architecture.md), section 3, is what the tasks of E2 build.
 
 ## Documents
 
