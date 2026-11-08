@@ -25,7 +25,10 @@ type Obs struct {
 
 // ItemObs is one item of an attempt.
 type ItemObs struct {
-	PTrue  float64 // P* of the first answer
+	PTrue float64 // P* of the first answer
+	// PGiven is P* of the item when it was given, as the truth stood then, without what only the
+	// attempt holds — the technique, the shock, the error and the repeat (E1; R23).
+	PGiven float64
 	PModel float64 // P of the model at the attempt, with retention
 	// PFresh is P of the model by the same estimate with R̄ = 1, c + (P − c)/R̄, by its own formula
 	// c + (1 − c) · R̄ · σ, R̄ the mean R of the item's recorded skills with a verdict in the order of
@@ -46,6 +49,7 @@ type SkillObs struct {
 	Mastered      bool    // the model's mastery
 	Band          int32   // the model's mastery band, or the first band the skill is taught on
 	TrulyMastered bool    // the truth has mastered it on Band (docs/architecture.md, section 3.5)
+	Retention     float64 // R* of the truth
 	PRef          float64 // P of the model on the reference task of Band, with retention
 	PTrueRef      float64 // P* of the truth on it, with R*
 	Last          int64   // the model's last practice of it
@@ -72,7 +76,7 @@ func (r *Run) skillsOf(ro learnermodel.Readout, m *pack.Module, at int64) ([]Ski
 	}
 	var out []SkillObs
 	for _, sr := range ro.Modules[i].Skills {
-		truth, _, ok := r.l.Truth(sr.Skill, at)
+		truth, retention, ok := r.l.Truth(sr.Skill, at)
 		if !ok {
 			continue
 		}
@@ -91,7 +95,7 @@ func (r *Run) skillsOf(ro learnermodel.Readout, m *pack.Module, at int64) ([]Ski
 		}
 		out = append(out, SkillObs{
 			Skill: sr.Skill, Evidence: sr.EvidenceCount, Estimate: sr.Estimate, Truth: truth,
-			Mastered: sr.Mastered, Band: band, TrulyMastered: r.l.TrulyMasteredAt(sr.Skill, band, at),
+			Mastered: sr.Mastered, Band: band, TrulyMastered: r.l.TrulyMasteredAt(sr.Skill, band, at), Retention: retention,
 			PRef: tr.Items[0].Probability, PTrueRef: r.l.ReferenceAt(sr.Skill, band, at), Last: sr.LastPractice,
 		})
 	}
@@ -130,6 +134,9 @@ func (r *Run) observeBefore(m *pack.Module, t *pack.Task, at int64, seen bool, r
 			continue
 		}
 		io := ItemObs{PModel: tr.Items[k].Probability, Pause: -1, Help: seen && !t.Candidate.Task.Template, Many: many > 1}
+		if io.PGiven, err = r.l.Chance(t, k, at, 0); err != nil {
+			return nil, fmt.Errorf("%w: %w", ErrRun, err)
+		}
 		c := guess(it.Slots)
 		rbar, n, last := 0.0, 0, int64(-1)
 		for _, id := range slices.Sorted(slices.Values(t.ItemPrimary(k))) {

@@ -10,4 +10,4 @@ require (
 	go.yaml.in/yaml/v4 v4.0.0
 )
 
-require golang.org/x/text v0.14.0 // indirect
+require golang.org/x/text v0.43.0 // indirect

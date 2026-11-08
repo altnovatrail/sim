@@ -152,6 +152,17 @@ func TestLateAndCatch(t *testing.T) {
 // cell runs n learners of a population on its first graph and gives their sums and the graph.
 func cell(t *testing.T, name string, n int) ([]Sums, []string) {
 	t.Helper()
+	recs, graph := records(t, name, n)
+	var sums []Sums
+	for _, rec := range recs {
+		sums = append(sums, Model(rec))
+	}
+	return sums, graph
+}
+
+// records runs n learners of a population on its first graph and gives their records and the graph.
+func records(t *testing.T, name string, n int) ([]*run.Record, []string) {
+	t.Helper()
 	ms, err := published.Modules()
 	if err != nil {
 		t.Fatal(err)
@@ -172,7 +183,7 @@ func cell(t *testing.T, name string, n int) ([]Sums, []string) {
 			mods = append(mods, syn[id])
 		}
 	}
-	var sums []Sums
+	var recs []*run.Record
 	for k := range n {
 		l, err := learner.New(seed.Working, p.Name, k, mods, p.Assumptions(k))
 		if err != nil {
@@ -186,9 +197,9 @@ func cell(t *testing.T, name string, n int) ([]Sums, []string) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sums = append(sums, Model(rec))
+		recs = append(recs, rec)
 	}
-	return sums, p.Graphs[0]
+	return recs, p.Graphs[0]
 }
 
 // readCell reads the measures of the model off n learners of a population.
