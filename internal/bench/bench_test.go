@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"testing"
 
@@ -205,5 +206,73 @@ func TestWriteFails(t *testing.T) {
 		if err := Compare(Side{File: f}, Side{File: f}, &failing{left: left}); err == nil {
 			t.Errorf("Compare into a writer full after %d bytes: no error", left)
 		}
+	}
+}
+
+// The parts of a run, merged, are the run of the whole to the byte; Merge refuses parts of other
+// runs, a part twice and a part missing; a part out of range is refused.
+func TestParts(t *testing.T) {
+	c := Config{Populations: []string{"G0", "S-predicate"}, Learners: 5, Set: seed.Working, Repeat: true}
+	var whole bytes.Buffer
+	if err := Run(c, &whole); err != nil {
+		t.Fatal(err)
+	}
+	var parts []*File
+	for k := range 3 {
+		p := c
+		p.Part = Part{K: k, N: 3}
+		parts = append(parts, runTo(t, p))
+	}
+	slices.Reverse(parts)
+	merged, err := Merge(parts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if err := Write(merged, &out); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(out.Bytes(), whole.Bytes()) {
+		t.Errorf("the merged parts are not the whole:\n%.300s\nwant\n%.300s", out.String(), whole.String())
+	}
+	for _, l := range merged.Lines {
+		if len(l.Breaches) != 0 {
+			t.Errorf("%s/%d: %v", cellOf(l), l.N, l.Breaches)
+		}
+	}
+	other := runTo(t, Config{Populations: []string{"G0"}, Learners: 2, Set: seed.Working, Rule: run.Ceiling, Part: Part{K: 1, N: 3}})
+	fewer := c
+	fewer.Learners, fewer.Part = 4, Part{K: 2, N: 3}
+	outside := *parts[1]
+	outside.Header.Part = Part{K: 5, N: 3}
+	for name, ps := range map[string][]*File{
+		"none":           nil,
+		"twice":          {parts[0], parts[0], parts[1]},
+		"missing":        {parts[0], parts[1]},
+		"another run":    {parts[0], parts[1], other},
+		"fewer learners": {parts[0], parts[1], runTo(t, fewer)},
+		"a part outside": {parts[0], &outside, parts[2]},
+	} {
+		if _, err := Merge(ps); !errors.Is(err, ErrBench) {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+	twice := c
+	twice.Populations = []string{"G0", "G0"}
+	if err := Run(twice, &out); !errors.Is(err, ErrBench) {
+		t.Errorf("a population twice: %v", err)
+	}
+	for _, p := range []Part{{K: 3, N: 3}, {K: -1, N: 2}, {K: 0, N: -1}, {K: 2, N: 0}} {
+		bad := c
+		bad.Part = p
+		if err := Run(bad, &out); !errors.Is(err, ErrBench) {
+			t.Errorf("part %+v: %v", p, err)
+		}
+	}
+	if err := Write(merged, &failing{left: 10}); err == nil {
+		t.Error("Write into a full writer: no error")
+	}
+	if err := Write(merged, &failing{left: 400}); err == nil {
+		t.Error("Write into a writer full at a line: no error")
 	}
 }

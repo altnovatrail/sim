@@ -48,12 +48,17 @@ func Modules() (map[string]*pack.Module, error) {
 	return read()
 }
 
-func readPin(release, indexDigest string, versions map[formatv0.ModuleID]formatv0.ModuleVersion) (map[string]*pack.Module, error) {
+// index reads the index of a release, held to its digest.
+func index(release, indexDigest string) (*formatv0.ModuleIndex, error) {
 	data, err := files.ReadFile(release + "/module-index.json")
 	if err != nil {
 		return nil, err
 	}
-	idx, err := pack.ReadIndex(data, indexDigest)
+	return pack.ReadIndex(data, indexDigest)
+}
+
+func readPin(release, indexDigest string, versions map[formatv0.ModuleID]formatv0.ModuleVersion) (map[string]*pack.Module, error) {
+	idx, err := index(release, indexDigest)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +85,32 @@ func readPin(release, indexDigest string, versions map[formatv0.ModuleID]formatv
 			return nil, err
 		}
 		out[string(id)] = m
+	}
+	return out, nil
+}
+
+// Package is a pinned package: its module's full ID, its version, and its package digest, as the
+// pinned index names them.
+type Package struct {
+	Module  string `json:"module"`
+	Version string `json:"version"`
+	Digest  string `json:"digest"`
+}
+
+// Pinned gives the pinned packages in the order of their IDs, read from the pinned index, so that a
+// gate file that names the bench's packages is held to the bytes the bench reads.
+func Pinned() ([]Package, error) {
+	idx, err := index(Release, IndexDigest)
+	if err != nil {
+		return nil, err
+	}
+	var out []Package
+	for _, id := range slices.Sorted(maps.Keys(versions)) {
+		e, err := pack.Entry(idx, id, versions[id])
+		if err != nil {
+			return nil, fmt.Errorf("published: %w", err)
+		}
+		out = append(out, Package{Module: string(id), Version: string(versions[id]), Digest: string(e.PackageDigest)})
 	}
 	return out, nil
 }

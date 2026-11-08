@@ -6,16 +6,16 @@ package bench
 
 import (
 	"bufio"
+	"cmp"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"maps"
-	"runtime"
+
 	"runtime/debug"
 	"slices"
 	"strings"
-	"sync"
 
 	"github.com/altnovatrail/sim/internal/invariant"
 	"github.com/altnovatrail/sim/internal/learner"
@@ -40,6 +40,13 @@ type Header struct {
 	Set       seed.Set          `json:"set"`
 	Rule      string            `json:"rule"`
 	Libraries map[string]string `json:"libraries"`
+	// Populations, Learners and Repeat are what the run ran, so that the parts of one run merge in its
+	// order and parts of another run do not; Part is the part of the learners the file holds, the zero
+	// part all of them.
+	Populations []string `json:"populations,omitempty"`
+	Learners    int      `json:"learners,omitempty"`
+	Repeat      bool     `json:"repeat,omitempty"`
+	Part        Part     `json:"part,omitzero"`
 	// Invariants tells that each line records the breaches of I1–I4 on its run: under the engine.
 	Invariants bool `json:"invariants"`
 }
@@ -58,13 +65,36 @@ type Line struct {
 }
 
 // Config is what to run: the populations by name, the learners of each graph, the set and the rule;
-// Commits names a library the build does not, by module path, a full SHA.
+// Commits names a library the build does not, by module path, a full SHA. Part takes a part of the
+// learners, so that a recipe runs the parts as processes of their own and merges their files; Repeat
+// runs each learner twice and holds the two runs to the same bits, I1.
 type Config struct {
 	Populations []string
 	Learners    int
 	Set         seed.Set
 	Rule        run.Rule
 	Commits     map[string]string
+	Part        Part
+	Repeat      bool
+}
+
+// Part is the K-th of N parts of the learners: those whose number n gives K by n mod N. The zero
+// part is the whole. The bench draws a learner from its seeds alone, so a learner is the same in any
+// part (docs/architecture.md, section 3.4), and the parts run as processes, not goroutines, as R09
+// has it (the amendment of 2026-11-08 to R24 in docs/decisions.md).
+type Part struct {
+	K int `json:"k"`
+	N int `json:"n"`
+}
+
+// valid tells whether a part is one: the zero part, or k of n with 0 ≤ k < n.
+func (p Part) valid() bool {
+	return p == Part{} || p.N > 0 && p.K >= 0 && p.K < p.N
+}
+
+// takes tells whether a part takes the n-th learner.
+func (p Part) takes(n int) bool {
+	return p.N <= 1 || n%p.N == p.K
 }
 
 // rules names the rules in a file of results.
@@ -141,9 +171,12 @@ func modules(graph []string) ([]*pack.Module, error) {
 }
 
 // Run runs the cells of a config, every graph of every population, and writes the file of results
-// to w: the header, then one line a learner, in the order of the populations, their graphs and the
-// learners. The learners run in parallel, and the lines come in that order all the same.
+// to w: the header, then one line a learner of its part, in the order of the populations, their
+// graphs and the learners.
 func Run(c Config, w io.Writer) error {
+	if !c.Part.valid() {
+		return fmt.Errorf("%w: no part %d of %d", ErrBench, c.Part.K, c.Part.N)
+	}
 	info, _ := debug.ReadBuildInfo()
 	names, err := Names(info, c.Commits)
 	if err != nil {
@@ -154,16 +187,20 @@ func Run(c Config, w io.Writer) error {
 		return fmt.Errorf("%w: no rule %d", ErrBench, c.Rule)
 	}
 	var pops []population.Population
-	for _, name := range c.Populations {
+	for k, name := range c.Populations {
 		p, ok := population.Named(name)
 		if !ok {
 			return fmt.Errorf("%w: no population %s", ErrBench, name)
+		}
+		if slices.Contains(c.Populations[:k], name) {
+			return fmt.Errorf("%w: population %s comes twice", ErrBench, name)
 		}
 		pops = append(pops, p)
 	}
 	buf := bufio.NewWriter(w)
 	enc := json.NewEncoder(buf)
-	if err := enc.Encode(Header{Set: c.Set, Rule: rule, Libraries: names, Invariants: c.Rule == run.Engine}); err != nil {
+	h := Header{Set: c.Set, Rule: rule, Libraries: names, Invariants: c.Rule == run.Engine, Populations: c.Populations, Learners: c.Learners, Repeat: c.Repeat, Part: c.Part}
+	if err := enc.Encode(h); err != nil {
 		return err
 	}
 	for _, p := range pops {
@@ -172,27 +209,15 @@ func Run(c Config, w io.Writer) error {
 			if err != nil {
 				return err
 			}
-			lines := make([]Line, c.Learners)
-			errs := make([]error, c.Learners)
-			var wg sync.WaitGroup
-			next := make(chan int)
-			for range max(1, runtime.GOMAXPROCS(0)) {
-				wg.Go(func() {
-					for n := range next {
-						lines[n], errs[n] = one(c, p, graph, mods, n)
-					}
-				})
-			}
 			for n := range c.Learners {
-				next <- n
-			}
-			close(next)
-			wg.Wait()
-			for n := range c.Learners {
-				if errs[n] != nil {
-					return errs[n]
+				if !c.Part.takes(n) {
+					continue
 				}
-				if err := enc.Encode(lines[n]); err != nil {
+				line, err := one(c, p, graph, mods, n)
+				if err != nil {
+					return err
+				}
+				if err := enc.Encode(line); err != nil {
 					return err
 				}
 			}
@@ -201,17 +226,22 @@ func Run(c Config, w io.Writer) error {
 	return buf.Flush()
 }
 
-// one runs the n-th learner of a population on a graph.
-func one(c Config, p population.Population, graph []string, mods []*pack.Module, n int) (Line, error) {
+// runOne runs the n-th learner of a population on the modules of a graph.
+func runOne(c Config, p population.Population, mods []*pack.Module, n int) (*run.Record, error) {
 	l, err := learner.New(c.Set, p.Name, n, mods, p.Assumptions(n))
 	if err != nil {
-		return Line{}, err
+		return nil, err
 	}
 	r, err := run.New(l, mods, p.Limit)
 	if err != nil {
-		return Line{}, err
+		return nil, err
 	}
-	rec, err := r.Use(c.Rule).All()
+	return r.Use(c.Rule).All()
+}
+
+// one runs the n-th learner of a population on a graph.
+func one(c Config, p population.Population, graph []string, mods []*pack.Module, n int) (Line, error) {
+	rec, err := runOne(c, p, mods, n)
 	if err != nil {
 		return Line{}, err
 	}
@@ -223,7 +253,72 @@ func one(c Config, p population.Population, graph []string, mods []*pack.Module,
 			line.Breaches = append(line.Breaches, b.String())
 		}
 	}
+	if c.Repeat {
+		again, err := runOne(c, p, mods, n)
+		if err != nil {
+			return Line{}, err
+		}
+		for _, b := range invariant.Same(rec, again) {
+			line.Breaches = append(line.Breaches, b.String())
+		}
+	}
 	return line, nil
+}
+
+// Merge merges the files of the parts of one run into the file of the whole: the same set, rule,
+// libraries, invariants, populations, learners and repetition, every part of N once, and the lines
+// in the order of the run's populations, their graphs and the learners — the order of a run of the
+// whole.
+func Merge(parts []*File) (*File, error) {
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("%w: no part to merge", ErrBench)
+	}
+	first := parts[0].Header
+	n := max(1, first.Part.N)
+	seen := make([]bool, n)
+	out := &File{Header: first}
+	out.Header.Part = Part{}
+	for _, f := range parts {
+		h := f.Header
+		if h.Set != first.Set || h.Rule != first.Rule || h.Invariants != first.Invariants || !maps.Equal(h.Libraries, first.Libraries) ||
+			!slices.Equal(h.Populations, first.Populations) || h.Learners != first.Learners || h.Repeat != first.Repeat || max(1, h.Part.N) != n {
+			return nil, fmt.Errorf("%w: part %d of %d is not of the run of part %d of %d", ErrBench, h.Part.K, h.Part.N, first.Part.K, first.Part.N)
+		}
+		if !h.Part.valid() {
+			return nil, fmt.Errorf("%w: no part %d of %d", ErrBench, h.Part.K, h.Part.N)
+		}
+		if seen[h.Part.K] {
+			return nil, fmt.Errorf("%w: part %d of %d comes twice", ErrBench, h.Part.K, n)
+		}
+		seen[h.Part.K] = true
+		out.Lines = append(out.Lines, f.Lines...)
+	}
+	if i := slices.Index(seen, false); i >= 0 {
+		return nil, fmt.Errorf("%w: part %d of %d is missing", ErrBench, i, n)
+	}
+	order := map[string]int{}
+	for k, cell := range CellsOf(first.Populations) {
+		order[cell] = k
+	}
+	slices.SortStableFunc(out.Lines, func(a, b Line) int {
+		return cmp.Or(cmp.Compare(order[cellOf(a)], order[cellOf(b)]), cmp.Compare(a.N, b.N))
+	})
+	return out, nil
+}
+
+// Write writes a file of results: its header, then a line a learner.
+func Write(f *File, w io.Writer) error {
+	buf := bufio.NewWriter(w)
+	enc := json.NewEncoder(buf)
+	if err := enc.Encode(f.Header); err != nil {
+		return err
+	}
+	for _, l := range f.Lines {
+		if err := enc.Encode(l); err != nil {
+			return err
+		}
+	}
+	return buf.Flush()
 }
 
 // File is a file of results read back.
@@ -264,6 +359,19 @@ func Read(r io.Reader) (*File, error) {
 type Side struct {
 	File   *File
 	Oracle bool
+}
+
+// CellsOf names the cells of populations, by name: each on every graph it runs on, in order; a name
+// that is no population has none.
+func CellsOf(populations []string) []string {
+	var out []string
+	for _, name := range populations {
+		p, _ := population.Named(name)
+		for _, graph := range p.Graphs {
+			out = append(out, p.Name+"/"+strings.Join(graph, "+"))
+		}
+	}
+	return out
 }
 
 // cellOf names the cell of a line: its population and graph.

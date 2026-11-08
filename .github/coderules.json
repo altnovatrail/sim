@@ -11,6 +11,7 @@
     "errors",
     "flag",
     "fmt",
+    "go/version",
     "hash/fnv",
     "io",
     "maps",
