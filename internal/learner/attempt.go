@@ -30,6 +30,7 @@ const (
 	ClosedRight         Closure = iota + 1 // every item right, at the first answer or after a rung
 	ClosedSolutionShown                    // the fourth wrong answer: the solution is shown
 	ClosedDone                             // a task with a rubric, sent once and done
+	ClosedLeft                             // a task with a rubric, left for another (E-leave)
 )
 
 // ItemResult is how one item of an attempt went.
@@ -97,6 +98,9 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 	repeat := l.a.RepeatChance > 0 && seen && !task.Template && at-solvedAt <= int64(l.a.RepeatDays)*secondsPerDay
 	if t.Rubric {
 		a.End, a.Closure = at+EssaySeconds, ClosedDone
+		if l.a.LeaveChance > 0 && l.attempts.Fraction() < l.a.LeaveChance {
+			a.Closure = ClosedLeft
+		}
 		return a, nil
 	}
 	for i, it := range task.Items {
@@ -181,7 +185,11 @@ func (l *Learner) practise(t *pack.Task, a Attempt) {
 		s := l.skills[id]
 		r := l.Retention(s, a.Start)
 		share := float64(float64(right[id]) / float64(all[id]))
-		grow := detmath.Pow(1+float64(l.a.Growth*(1-r)), share)
+		g := l.a.Growth
+		if l.a.TeacherFades && s.Teacher && l.TrulyMastered(id, s.TaughtOn) {
+			g = 0
+		}
+		grow := detmath.Pow(1+float64(g*(1-r)), share)
 		halve := detmath.Pow(0.5, 1-share)
 		s.Stability = max(stabilityFloor, float64(float64(s.Stability*grow)*halve))
 		s.Last, s.Practised = a.Start, true
@@ -195,26 +203,51 @@ func b2i(b bool) int {
 	return 0
 }
 
-// Pass is a learner's pass of a lesson, link by link to its end.
+// Pass is a learner's pass of a lesson, link by link to its end, or to the link where it was left.
 type Pass struct {
-	Lesson   string // the lesson's full ID
-	Start    int64
-	End      int64
-	Attempts []Attempt // the attempts on its tasks, in the author's order
+	Lesson    string // the lesson's full ID
+	Start     int64
+	End       int64
+	Attempts  []Attempt // the attempts on its tasks, in the author's order
+	Abandoned bool      // the pass was left at a link (L-abandon)
 }
 
-// PassLesson has the learner pass a lesson of a module given at a time, link by link to its end
-// (docs/architecture.md, section 3.1): its explanations and worked examples first — two minutes a
-// link, changing nothing of the truth (R15) —, then each of its tasks, answered as any task is,
-// one after the other.
+// PassLesson has the learner pass a lesson of a module given at a time, link by link in the author's
+// order to its end (docs/architecture.md, section 3.1): an explanation or a worked example takes two
+// minutes and changes nothing of the truth (R15) but for L-explain, where the first one reached
+// teaches the lesson's skills once; a task is answered as any task is. L-abandon leaves a pass at a
+// link drawn evenly, and the next pass of the lesson goes on from that link.
 func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64) (Pass, error) {
 	if _, err := l.Module(m.ID); err != nil {
 		return Pass{}, err
 	}
 	p := Pass{Lesson: lesson.Lesson.ID, Start: at}
-	at += int64(lesson.Links-len(lesson.Lesson.Tasks)) * LinkSeconds
-	for _, lt := range lesson.Lesson.Tasks {
-		t, err := m.Task(lt.ID)
+	from := l.resume[lesson.Lesson.ID]
+	stop := len(lesson.Order)
+	if l.a.AbandonChance > 0 {
+		// Two numbers of the place attempts each pass: whether it is left, and at which link of
+		// those still to go.
+		leave := l.attempts.Fraction() < l.a.AbandonChance
+		link := from + int(l.attempts.Below(uint64(max(1, len(lesson.Order)-from))))
+		if leave {
+			stop, p.Abandoned = link, true
+		}
+	}
+	for k := from; k < stop; k++ {
+		i := lesson.Order[k]
+		if i < 0 {
+			if l.a.ExplainLift != 0 && !l.taught[lesson.Lesson.ID] {
+				l.taught[lesson.Lesson.ID] = true
+				for _, id := range lesson.Lesson.Skills {
+					if s := l.skills[id]; s != nil {
+						s.Offset += l.a.ExplainLift
+					}
+				}
+			}
+			at += LinkSeconds
+			continue
+		}
+		t, err := m.Task(lesson.Lesson.Tasks[i].ID)
 		if err != nil {
 			return Pass{}, err
 		}
@@ -224,6 +257,11 @@ func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64) (Pas
 		}
 		p.Attempts = append(p.Attempts, a)
 		at = a.End
+	}
+	if p.Abandoned {
+		l.resume[lesson.Lesson.ID] = stop
+	} else {
+		delete(l.resume, lesson.Lesson.ID)
 	}
 	p.End = at
 	return p, nil

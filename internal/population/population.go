@@ -50,6 +50,12 @@ var (
 	maths    = [][]string{{Olympiad}, {Grade3}}
 	olympiad = [][]string{{Olympiad}}
 	grade3   = [][]string{{Grade3}}
+	essays   = [][]string{{Essays}}
+	// anchored is the graph of A-: a learner of a module whose skill rests on an anchor skill and of
+	// the module that teaches it. No published package has such a skill, so it is the synthetic sheet
+	// with the synthetic workbook, and in the criterion and the gate its checks are "no graph"
+	// (docs/architecture.md, section 3.2; R19).
+	anchored = [][]string{{synthetic.Sheet, synthetic.Workbook}}
 )
 
 // one gives the sides of a population of one side.
@@ -122,8 +128,8 @@ func breaks(a *learner.Assumptions) {
 
 // Own are the populations of NovaTrail's own model and engine: the scale of bands, guessing of a
 // predicate, an adult without a grade, an unreadable answer (S-); forgetting by other laws, on a
-// calendar with a break (F-); pages of a workbook (W-) (docs/architecture.md, section 3.2). The
-// rest, A-, L- and E-, come with T19. S-predicate runs on the synthetic sheet alone: no published
+// calendar with a break (F-); pages of a workbook (W-); the anchor skill (A-); lessons (L-);
+// essays (E-) (docs/architecture.md, section 3.2). S-predicate runs on the synthetic sheet alone: no published
 // package has a predicate, and in the criterion and the gate its checks are "no graph" (R04).
 var Own = []Population{
 	{Name: "S-scale1.5", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.BandStep = 1.5 })},
@@ -150,6 +156,13 @@ var Own = []Population{
 	{Name: "W-repeat", Graphs: maths, Limit: run.Maths, sides: one(func(a *learner.Assumptions) {
 		a.RepeatChance, a.RepeatDays = 0.95, 30
 	})},
+	{Name: "A-linked", Graphs: anchored, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.LevelCorrelation = 0.7 })},
+	{Name: "A-unpractised", Graphs: anchored, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.TeacherBoost = 2 })},
+	{Name: "A-fading", Graphs: anchored, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.TeacherFades = true })},
+	{Name: "L-abandon", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.AbandonChance = 0.2 })},
+	{Name: "L-explain", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.ExplainLift = 0.25 })},
+	{Name: "E-base", Graphs: essays, Limit: run.Essays},
+	{Name: "E-leave", Graphs: essays, Limit: run.Essays, sides: one(func(a *learner.Assumptions) { a.LeaveChance = 1.0 / 3 })},
 }
 
 // All gives the populations the bench has, a copy, so that no caller changes them for another.

@@ -80,6 +80,7 @@ type Run struct {
 
 	state      learnermodel.State
 	runs       []engine.Run
+	runStarts  []int64 // when each run began, for a run left open
 	rubricDone []engine.RubricDone
 	last       engine.Last
 	hasLast    bool
@@ -163,8 +164,12 @@ func (r *Run) rubricsDone() bool {
 	return done >= len(r.rubrics)
 }
 
+// abandonAfter is how long a run of a lesson left open stays open: then it ends "abandoned"
+// (docs/architecture.md, section 3.2, L-abandon).
+const abandonAfter = 30 * 86400
+
 // Step takes one choice at the time the calendar gives, and follows it. A time past the limit's
-// last day ends the run instead.
+// last day ends the run instead. Before the choice, a run left open for 30 days ends abandoned.
 func (r *Run) Step() error {
 	if r.Done() {
 		return nil
@@ -176,6 +181,11 @@ func (r *Run) Step() error {
 		return nil
 	}
 	r.rec.Days = day
+	for i := range r.runs {
+		if r.runs[i].End == engine.RunOpen && at >= r.runStarts[i]+abandonAfter {
+			r.runs[i].End, r.runs[i].EndedAt = engine.RunAbandoned, r.runStarts[i]+abandonAfter
+		}
+	}
 	in, err := r.input(at)
 	if err != nil {
 		return err
@@ -242,7 +252,7 @@ func (r *Run) Step() error {
 			}
 			step.Evidence, step.Instances = append(step.Evidence, e), append(step.Instances, n)
 		}
-		r.runs = append(r.runs, engine.Run{Lesson: lesson.Lesson.ID, Skills: lesson.Lesson.Skills, End: engine.RunPassed, EndedAt: pass.End})
+		r.pass(lesson, pass)
 		step.Attempts, step.Pass = pass.Attempts, &pass
 		r.choices[m.ID]++
 		r.cal.Done(pass.End)
@@ -252,6 +262,23 @@ func (r *Run) Step() error {
 	r.rec.Steps = append(r.rec.Steps, step)
 	r.rec.State = r.state
 	return nil
+}
+
+// pass records a pass of a lesson as a run: an open run of the lesson goes on — passed now, or open
+// still —, and a new pass is a new run, passed or left open (concepts 5 spec).
+func (r *Run) pass(lesson *pack.Lesson, p learner.Pass) {
+	end, endedAt := engine.RunPassed, p.End
+	if p.Abandoned {
+		end, endedAt = engine.RunOpen, 0
+	}
+	for i := range r.runs {
+		if r.runs[i].Lesson == lesson.Lesson.ID && r.runs[i].End == engine.RunOpen {
+			r.runs[i].End, r.runs[i].EndedAt = end, endedAt
+			return
+		}
+	}
+	r.runs = append(r.runs, engine.Run{Lesson: lesson.Lesson.ID, Skills: lesson.Lesson.Skills, End: end, EndedAt: endedAt})
+	r.runStarts = append(r.runStarts, p.Start)
 }
 
 // instance gives the number of the instance of a template an attempt takes, by its seed; -1 for a
@@ -335,10 +362,12 @@ func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine
 		is.Skill, is.Issued, is.LastIssued, is.LastCode, is.LastResult, is.HasLast = res.Skill, true, issued, code, res, true
 		r.issued[res.Skill] = is
 	}
-	r.last = engine.Last{Task: task.ID, Lesson: lesson, InLesson: lesson != "", Results: results}
+	r.last = engine.Last{Task: task.ID, Left: a.Closure == learner.ClosedLeft, Lesson: lesson, InLesson: lesson != "", Results: results}
 	r.hasLast = true
 	if t.Rubric {
-		r.rubricDone = append(r.rubricDone, engine.RubricDone{Task: task.ID, At: a.End})
+		if a.Closure == learner.ClosedDone {
+			r.rubricDone = append(r.rubricDone, engine.RubricDone{Task: task.ID, At: a.End})
+		}
 		return nil, nil
 	}
 	e, err := r.evidence(m, t, a, seen)

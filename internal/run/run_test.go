@@ -366,3 +366,116 @@ func TestRunUnreadable(t *testing.T) {
 		t.Error("no unreadable answer in a run of 200")
 	}
 }
+
+// L-abandon: a pass left at a link is an open run, which a later pass of the lesson goes on with,
+// and which ends abandoned 30 days after it began; E-leave: a task with a rubric left is the last
+// attempt left, and not done.
+func TestRunAbandonAndLeave(t *testing.T) {
+	mods := modules(t, olympiad)
+	a := learner.Base()
+	a.AbandonChance = 0.5
+	opened, abandoned := 0, 0
+	for n := range 6 {
+		l, err := learner.New(seed.Working, "L-abandon", n, mods, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r, err := New(l, mods, Maths)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rec, err := r.All()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, s := range rec.Steps {
+			open := 0
+			for i, run := range s.Input.Runs {
+				switch run.End {
+				case engine.RunOpen:
+					open++
+					if run.EndedAt != 0 {
+						t.Fatalf("an open run with an end: %+v", run)
+					}
+				case engine.RunAbandoned:
+					abandoned++
+					if run.EndedAt != r.runStarts[i]+abandonAfter || run.EndedAt > s.Input.Time {
+						t.Fatalf("a run abandoned at %d, begun at %d, read at %d", run.EndedAt, r.runStarts[i], s.Input.Time)
+					}
+				}
+			}
+			if open > 0 {
+				opened++
+			}
+		}
+	}
+	if opened == 0 {
+		t.Error("no run left open")
+	}
+	ma := modules(t, essays)
+	lv := learner.Base()
+	lv.LeaveChance = 1
+	l, err := learner.New(seed.Working, "E-leave", 0, ma, lv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := New(l, ma, Essays)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec, err := r.All()
+	if err != nil {
+		t.Fatal(err)
+	}
+	left := 0
+	for k, s := range rec.Steps {
+		for _, at := range s.Attempts {
+			if at.Closure == learner.ClosedLeft {
+				left++
+				if k+1 < len(rec.Steps) && !rec.Steps[k+1].Input.Last.Left && rec.Steps[k+1].Input.Last.Task == at.Task {
+					t.Fatalf("%s left, and the next input does not say so", at.Task)
+				}
+			}
+		}
+		for _, d := range s.Input.RubricDone {
+			if d.Task == "" {
+				t.Fatal("a task done with no ID")
+			}
+		}
+	}
+	if left == 0 {
+		t.Error("no task with a rubric left")
+	}
+	if len(rec.Steps) > 0 && len(rec.Steps[len(rec.Steps)-1].Input.RubricDone) != 0 {
+		t.Error("a task left counts as done")
+	}
+	t.Logf("%d steps with a run left open, %d readings of a run abandoned", opened, abandoned)
+}
+
+// A run left open ends abandoned 30 days after it began, with that end, before the next choice
+// reads the runs; one still young stays open.
+func TestRunExpires(t *testing.T) {
+	mods := modules(t, olympiad)
+	l, err := learner.New(seed.Working, "L-abandon", 0, mods, learner.Base())
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := New(l, mods, Maths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lesson := mods[0].Lessons[0]
+	r.runs = []engine.Run{{Lesson: lesson.Lesson.ID, Skills: lesson.Lesson.Skills}, {Lesson: mods[0].Lessons[1].Lesson.ID, Skills: mods[0].Lessons[1].Lesson.Skills}}
+	old := learner.Start - 40*86400
+	r.runStarts = []int64{old, learner.Start}
+	if err := r.Step(); err != nil {
+		t.Fatal(err)
+	}
+	in := r.rec.Steps[0].Input
+	if in.Runs[0].End != engine.RunAbandoned || in.Runs[0].EndedAt != old+abandonAfter {
+		t.Errorf("a run open 40 days: %+v", in.Runs[0])
+	}
+	if in.Runs[1].End != engine.RunOpen {
+		t.Errorf("a run open a day: %+v", in.Runs[1])
+	}
+}

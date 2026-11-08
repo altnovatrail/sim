@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"math"
 	"slices"
 	"strings"
 	"sync"
@@ -36,6 +37,8 @@ type Learner struct {
 	cal        *Calendar        // the learner's one calendar, once made: its bad days and its break
 	sheetItems int              // answers of items on a sheet so far, for S-unreadable
 	solved     map[string]int64 // when the solution of each task last went to the device
+	taught     map[string]bool  // the lessons whose explanations have taught once, for L-explain
+	resume     map[string]int   // the link where the open pass of each lesson was left, for L-abandon
 }
 
 // Module is the learner's truth in one module.
@@ -54,6 +57,8 @@ type Skill struct {
 	Module    *Module
 	Offset    float64 // δ*
 	Start     float64 // δ* as it was drawn, which learning goes back to
+	Teacher   bool    // the skill teaches an anchor skill
+	TaughtOn  int32   // the first band the graph teaches it on
 	Stability float64 // τ*, in days
 	Last      int64   // the time of the last attempt on it, in seconds
 	Practised bool
@@ -82,7 +87,10 @@ func (a Assumptions) validate() error {
 	if a.Adult && a.AdultFrom > a.AdultTo {
 		return fmt.Errorf("%w: an adult %v to %v above the first band", ErrAssumptions, a.AdultFrom, a.AdultTo)
 	}
-	for _, c := range []float64{a.ErrorChance, a.BadDayChance, a.RepeatChance} {
+	if !(a.LevelCorrelation >= -1 && a.LevelCorrelation <= 1) {
+		return fmt.Errorf("%w: a correlation of %v", ErrAssumptions, a.LevelCorrelation)
+	}
+	for _, c := range []float64{a.ErrorChance, a.BadDayChance, a.RepeatChance, a.AbandonChance, a.LeaveChance} {
 		if !(c >= 0 && c <= 1) {
 			return fmt.Errorf("%w: a chance of %v", ErrAssumptions, c)
 		}
@@ -123,7 +131,7 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 	}
 	params := place(seed.Params)
 	l := &Learner{
-		Unit: unit, a: a, set: set, modules: map[string]*Module{}, skills: map[string]*Skill{}, solved: map[string]int64{},
+		Unit: unit, a: a, set: set, modules: map[string]*Module{}, skills: map[string]*Skill{}, solved: map[string]int64{}, taught: map[string]bool{}, resume: map[string]int{},
 		answers: place(seed.Answers), retries: place(seed.Retries), attempts: place(seed.Attempts), seeds: place(seed.Attempt),
 	}
 	sorted := slices.SortedFunc(slices.Values(modules), func(x, y *pack.Module) int { return strings.Compare(x.ID, y.ID) })
@@ -155,6 +163,7 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 		}
 		grade = learnermodel.Grade{Value: g, Known: true}
 	}
+	var first *float64 // the first module's z, which A-linked ties the others to
 	for _, pm := range sorted {
 		m := &Module{Pack: pm, StartBand: 1}
 		if len(gradesOf(pm)) > 0 && !a.Adult {
@@ -165,7 +174,15 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 			}
 			m.StartBand = band.Place
 		}
-		m.Level = float64(a.BandStep*float64(m.StartBand-1)) + float64(a.StartSpread*params.Normal()) + a.LevelShift
+		z := params.Normal()
+		if a.LevelCorrelation != 0 {
+			if first == nil {
+				first = &z
+			} else {
+				z = float64(a.LevelCorrelation**first) + float64(math.Sqrt(1-float64(a.LevelCorrelation*a.LevelCorrelation))*z)
+			}
+		}
+		m.Level = float64(a.BandStep*float64(m.StartBand-1)) + float64(a.StartSpread*z) + a.LevelShift
 		var verdict []string
 		for _, sk := range pm.Graph.Skills {
 			if sk.Assessability == learnermodel.AssessabilityVerdict {
@@ -174,6 +191,10 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 		}
 		for k, id := range verdict {
 			off := float64(a.SkillSpread * params.Normal())
+			teacher := teaches(pm, id)
+			if a.TeacherBoost != 0 && teacher {
+				off += a.TeacherBoost
+			}
 			if a.SkillHalves != 0 {
 				if 2*k < len(verdict) {
 					off += a.SkillHalves
@@ -181,7 +202,7 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 					off -= a.SkillHalves
 				}
 			}
-			l.skills[id] = &Skill{Module: m, Offset: off, Start: off, Stability: stabilityFloor}
+			l.skills[id] = &Skill{Module: m, Offset: off, Start: off, Stability: stabilityFloor, Teacher: teacher, TaughtOn: taughtOn(pm, id)}
 		}
 		l.modules[pm.ID] = m
 	}
@@ -392,4 +413,45 @@ func (l *Learner) Solved() ([]string, []int64) {
 		ats[i] = l.solved[id]
 	}
 	return ids, ats
+}
+
+// teaches tells whether a skill of a module teaches an anchor skill (R50 spec).
+func teaches(m *pack.Module, id string) bool {
+	i := slices.IndexFunc(m.Graph.Skills, func(s learnermodel.Skill) bool { return s.ID == id })
+	return i >= 0 && len(m.Graph.Skills[i].Teaches) > 0
+}
+
+// mastery is the middle of the corridor of success, 0.775: the truth has mastered a skill on a band
+// when P* of the reference task reaches it (docs/architecture.md, section 3.5).
+const mastery = 0.775
+
+// TrulyMastered tells whether the truth has mastered a skill on a band: P* of the reference task —
+// difficulty 3 on that band, no miss, a choice of five options, R* = 1 — is at least 0.775, as
+// "truly mastered" in standalone (docs/architecture.md, section 3.5). It reads no number of the
+// model: not its threshold, not its guess.
+func (l *Learner) TrulyMastered(id string, band int32) bool {
+	return l.Reference(id, band) >= mastery
+}
+
+// Reference gives P* of the reference task of a skill on a band: c + (1 − c) · σ(a · (θ* + δ* −
+// β)), c the guess of a choice of five options, β the band's true difficulty at difficulty 3, with
+// no miss — the author's nor that of a whole band — and R* = 1. A skill the learner has no truth of
+// gives 0.
+func (l *Learner) Reference(id string, band int32) float64 {
+	s := l.skills[id]
+	if s == nil {
+		return 0
+	}
+	beta := float64(l.a.BandStep * float64(band-1))
+	c := l.guess([]learnermodel.Slot{{Check: learnermodel.CheckKindChoice, Options: 5, HasOptions: true}})
+	return c + float64(float64(1-c)*detmath.Sigmoid(float64(l.a.Slope*float64(s.Module.Level+s.Offset-beta))))
+}
+
+// taughtOn gives the band a skill is first taught on in its module's graph, the first if none.
+func taughtOn(m *pack.Module, id string) int32 {
+	i := slices.IndexFunc(m.Graph.Skills, func(s learnermodel.Skill) bool { return s.ID == id })
+	if i < 0 || len(m.Graph.Skills[i].BandsTaught) == 0 {
+		return 1
+	}
+	return m.Graph.Skills[i].BandsTaught[0]
 }

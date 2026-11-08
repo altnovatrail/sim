@@ -172,7 +172,7 @@ func TestSetsApart(t *testing.T) {
 	}
 }
 
-// The populations of S-, F- and W-: each the base population with the fields of its one assumption,
+// The populations of S-, F-, W-, A-, L- and E-: each the base population with the fields of its one assumption,
 // on the graphs and to the limit docs/architecture.md, section 3.2, gives it. F- share the calendar
 // with a break, and each but F-model changes one more thing on it.
 func TestOwn(t *testing.T) {
@@ -199,6 +199,13 @@ func TestOwn(t *testing.T) {
 		{"W-error", []string{"ErrorChance"}, grade3, run.Maths},
 		{"W-badday", []string{"BadDayChance", "BadDayDrop"}, grade3, run.Maths},
 		{"W-repeat", []string{"RepeatChance", "RepeatDays"}, maths, run.Maths},
+		{"A-linked", []string{"LevelCorrelation"}, anchored, run.Maths},
+		{"A-unpractised", []string{"TeacherBoost"}, anchored, run.Maths},
+		{"A-fading", []string{"TeacherFades"}, anchored, run.Maths},
+		{"L-abandon", []string{"AbandonChance"}, olympiad, run.Maths},
+		{"L-explain", []string{"ExplainLift"}, olympiad, run.Maths},
+		{"E-base", nil, essays, run.Essays},
+		{"E-leave", []string{"LeaveChance"}, essays, run.Essays},
 	}
 	if len(Own) != len(want) {
 		t.Fatalf("%d own populations, want %d", len(Own), len(want))
