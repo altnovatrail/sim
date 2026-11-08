@@ -39,12 +39,16 @@ type Module struct {
 	Grade     learnermodel.Grade
 	StartBand int32   // the place of the band the learner starts in
 	Level     float64 // θ*, the module's level; it is not forgotten
+	JumpAt    int     // the answer of the module at which its level jumps, when the population jumps
+	Answered  int     // first answers of items with a verdict in the module so far
+	HardBand  int32   // the place of the band whose tasks are truly harder, when the population says so
 }
 
 // Skill is the learner's truth of one skill with a verdict.
 type Skill struct {
 	Module    *Module
 	Offset    float64 // δ*
+	Start     float64 // δ* as it was drawn, which learning goes back to
 	Stability float64 // τ*, in days
 	Last      int64   // the time of the last attempt on it, in seconds
 	Practised bool
@@ -61,6 +65,12 @@ func (a Assumptions) validate() error {
 	if !(a.SessionChance > 0 && a.SessionChance <= 1) || a.SessionAttempts < 1 {
 		return fmt.Errorf("%w: a session comes with the chance %v, %d attempts long", ErrAssumptions, a.SessionChance, a.SessionAttempts)
 	}
+	if a.JumpBy != 0 && !(a.JumpFrom >= 1 && a.JumpFrom <= a.JumpTo) {
+		return fmt.Errorf("%w: a jump between answers %d and %d", ErrAssumptions, a.JumpFrom, a.JumpTo)
+	}
+	if !(a.TechniqueChance >= 0 && a.TechniqueChance <= 1) || a.LearnFade < 0 {
+		return fmt.Errorf("%w: the technique with the chance %v, a fade of %v", ErrAssumptions, a.TechniqueChance, a.LearnFade)
+	}
 	return nil
 }
 
@@ -69,7 +79,9 @@ func (a Assumptions) validate() error {
 // profile has (R107 spec). Its truth comes from the place params, in a fixed order: the grade,
 // among those every module with grades names, when they are more than one; for each module by ID,
 // the level and the offset of each skill with a verdict in the order of the graph; then, when no
-// module gives a grade, the age category, among those every module names. Its calendar, answers,
+// module gives a grade, the age category, among those every module names; and last what only some
+// populations draw, for each module by ID — the answer of the jump, the band that is harder —, so
+// that a population that draws more moves none of the others (R18). Its calendar, answers,
 // retries, attempts and attempt seeds come from places of their own, so that one never moves
 // another.
 func New(set seed.Set, population string, n int, modules []*pack.Module, a Assumptions) (*Learner, error) {
@@ -128,27 +140,49 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 			}
 			m.StartBand = band.Place
 		}
-		m.Level = float64(a.BandStep*float64(m.StartBand-1)) + float64(a.StartSpread*params.Normal())
+		m.Level = float64(a.BandStep*float64(m.StartBand-1)) + float64(a.StartSpread*params.Normal()) + a.LevelShift
+		var verdict []string
 		for _, sk := range pm.Graph.Skills {
-			if sk.Assessability != learnermodel.AssessabilityVerdict {
-				continue
+			if sk.Assessability == learnermodel.AssessabilityVerdict {
+				verdict = append(verdict, sk.ID)
 			}
-			l.skills[sk.ID] = &Skill{Module: m, Offset: float64(a.SkillSpread * params.Normal()), Stability: stabilityFloor}
+		}
+		for k, id := range verdict {
+			off := float64(a.SkillSpread * params.Normal())
+			if a.SkillHalves != 0 {
+				if 2*k < len(verdict) {
+					off += a.SkillHalves
+				} else {
+					off -= a.SkillHalves
+				}
+			}
+			l.skills[id] = &Skill{Module: m, Offset: off, Start: off, Stability: stabilityFloor}
 		}
 		l.modules[pm.ID] = m
 	}
 	if grade.Known {
 		l.Age = "under_13"
-		return l, nil
+	} else {
+		ages := slices.Clone(sorted[0].Ages)
+		for _, pm := range sorted[1:] {
+			ages = slices.DeleteFunc(ages, func(x string) bool { return !slices.Contains(pm.Ages, x) })
+		}
+		if len(ages) == 0 {
+			return nil, fmt.Errorf("%w: its modules name no age category in common", ErrAssumptions)
+		}
+		l.Age = ages[params.Below(uint64(len(ages)))]
 	}
-	ages := slices.Clone(sorted[0].Ages)
-	for _, pm := range sorted[1:] {
-		ages = slices.DeleteFunc(ages, func(x string) bool { return !slices.Contains(pm.Ages, x) })
+	// What only some populations draw comes after what every learner draws, so that a population
+	// that adds a draw moves none of the others: the answer of the jump, the band that is harder.
+	for _, pm := range sorted {
+		m := l.modules[pm.ID]
+		if a.JumpBy != 0 {
+			m.JumpAt = int(params.Between(int64(a.JumpFrom), int64(a.JumpTo)))
+		}
+		if a.BandBias != 0 && len(pm.Graph.Bands) > 0 {
+			m.HardBand = int32(params.Below(uint64(len(pm.Graph.Bands)))) + 1
+		}
 	}
-	if len(ages) == 0 {
-		return nil, fmt.Errorf("%w: its modules name no age category in common", ErrAssumptions)
-	}
-	l.Age = ages[params.Below(uint64(len(ages)))]
 	return l, nil
 }
 
@@ -203,7 +237,11 @@ func (l *Learner) Retention(s *Skill, at int64) float64 {
 func (l *Learner) Difficulty(t *pack.Task) float64 {
 	task := t.Candidate.Task
 	z := missOf(l.set, moduleOf(task.ID, "task"), t.Local)
-	return float64(l.a.BandStep*float64(task.Band.Place-1)) + float64(task.Difficulty-3) + float64(l.a.Miss*z)
+	beta := float64(l.a.BandStep*float64(task.Band.Place-1)) + float64(task.Difficulty-3) + float64(l.a.Miss*z)
+	if m := l.modules[moduleOf(task.ID, "task")]; m != nil && m.HardBand == task.Band.Place {
+		beta += l.a.BandBias
+	}
+	return beta
 }
 
 // Chance gives P* of an item of a task at a time and a rung of the ladder: c* + (1 − c*) · R̄* ·
@@ -211,6 +249,11 @@ func (l *Learner) Difficulty(t *pack.Task) float64 {
 // and R̄* the means over the item's primary skills with a verdict (docs/architecture.md, section
 // 3.1).
 func (l *Learner) Chance(t *pack.Task, item int, at int64, rung int) (float64, error) {
+	return l.chance(t, item, at, rung, 0)
+}
+
+// chance is Chance with lift more on the logit: the technique taken on request (G8).
+func (l *Learner) chance(t *pack.Task, item int, at int64, rung int, lift float64) (float64, error) {
 	task := t.Candidate.Task
 	m, err := l.Module(moduleOf(task.ID, "task"))
 	if err != nil {
@@ -234,7 +277,7 @@ func (l *Learner) Chance(t *pack.Task, item int, at int64, rung int) (float64, e
 	} else {
 		retention = 1
 	}
-	logit := float64(l.a.Slope*float64(m.Level+offset-l.Difficulty(t))) + float64(l.a.RungLift*float64(rung))
+	logit := float64(l.a.Slope*float64(m.Level+offset-l.Difficulty(t))) + float64(l.a.RungLift*float64(rung)) + lift
 	c := l.guess(it.Slots)
 	return c + float64(float64(float64(1-c)*retention)*detmath.Sigmoid(logit)), nil
 }
