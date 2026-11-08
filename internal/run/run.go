@@ -73,15 +73,17 @@ type Record struct {
 
 // Run is a learner's run in progress: the model's state and what api keeps of the learner.
 type Run struct {
-	l       *learner.Learner
-	cal     *learner.Calendar
-	modules []*pack.Module  // the modules of the engine: the learner's, by ID
-	suited  []engine.Module // their graphs, and the pool and the lessons the age category suits
-	rubrics map[string]bool // the tasks with a rubric of the pools
-	graphs  learnermodel.Graphs
-	grade   learnermodel.Grade
-	limit   Limit
-	ended   bool // the calendar went past the limit's last day
+	l        *learner.Learner
+	cal      *learner.Calendar
+	modules  []*pack.Module  // the modules of the engine: the learner's, by ID
+	suited   []engine.Module // their graphs, and the pool and the lessons the age category suits
+	rubrics  map[string]bool // the tasks with a rubric of the pools
+	graphs   learnermodel.Graphs
+	grade    learnermodel.Grade
+	limit    Limit
+	rule     Rule
+	ended    bool     // the calendar went past the limit's last day
+	verdicts []string // the skills with a verdict of the modules, by full ID, for the ceiling
 
 	state      learnermodel.State
 	runs       []engine.Run
@@ -130,8 +132,19 @@ func New(l *learner.Learner, modules []*pack.Module, limit Limit) (*Run, error) 
 			r.grade = lm.Grade
 		}
 		r.graphs[m.ID] = learnermodel.ModuleGraph{Graph: m.Graph, Current: true}
+		for _, s := range m.Graph.Skills {
+			if s.Assessability == learnermodel.AssessabilityVerdict {
+				r.verdicts = append(r.verdicts, s.ID)
+			}
+		}
 	}
 	return r, nil
+}
+
+// Use sets the rule that chooses in the run; a new run chooses by the engine.
+func (r *Run) Use(rule Rule) *Run {
+	r.rule = rule
+	return r
 }
 
 // All runs the learner to the end of its limit and gives the record; on an error, the record up
@@ -199,7 +212,11 @@ func (r *Run) Step() error {
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrRun, err)
 	}
-	choice, err := engine.Choose(in)
+	choose := engine.Choose
+	if r.rule == Ceiling {
+		choose = func(in engine.Input) (engine.Choice, error) { return r.ceiling(in, pool) }
+	}
+	choice, err := choose(in)
 	if err != nil {
 		return fmt.Errorf("%w: the engine refuses the input at %d: %w", ErrRun, at, err)
 	}

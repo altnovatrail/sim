@@ -7,6 +7,7 @@
 package measure
 
 import (
+	"fmt"
 	"maps"
 	"math"
 	"slices"
@@ -91,51 +92,131 @@ func total(keys []string, learners [][]float64, picks []int) Sums {
 // the resamples that drew a case.
 func Read(cell string, graph []string, learners []Sums, numbers []Number) []Value {
 	noGraph := slices.ContainsFunc(graph, synthetic.IsSynthetic)
-	var keys []string
-	for _, l := range learners {
-		keys = append(keys, slices.Collect(maps.Keys(l))...)
-	}
-	slices.Sort(keys)
-	keys = slices.Compact(keys)
-	rows := make([][]float64, len(learners))
+	keys, r := rows(learners)
 	all := make([]int, len(learners))
-	for i, l := range learners {
-		rows[i] = make([]float64, len(keys))
-		for k, key := range keys {
-			rows[i][k] = l[key]
-		}
+	for i := range all {
 		all[i] = i
 	}
-	whole := total(keys, rows, all)
+	whole := total(keys, r[0], all)
 	vals := make([][]float64, len(numbers))
-	if len(learners) > 0 {
-		s, err := seed.Place(seed.Working.Seed, "bootstrap", cell)
-		if err != nil {
-			panic(err) // a cell's name is the bench's own
-		}
-		picks := make([]int, len(learners))
-		for range Resamples {
-			for i := range picks {
-				picks[i] = int(s.Below(uint64(len(learners))))
-			}
-			t := total(keys, rows, picks)
-			for k, n := range numbers {
-				if v, ok := n.Of(t); ok {
-					vals[k] = append(vals[k], v)
-				}
+	resample(cell, len(learners), func(picks []int) {
+		t := total(keys, r[0], picks)
+		for k, n := range numbers {
+			if v, ok := n.Of(t); ok {
+				vals[k] = append(vals[k], v)
 			}
 		}
-	}
+	})
 	out := make([]Value, len(numbers))
 	for k, n := range numbers {
 		v, ok := n.Of(whole)
-		out[k] = Value{Name: n.Name, Value: v, Read: ok && len(vals[k]) == Resamples, NoGraph: noGraph}
-		if out[k].Read {
-			sorted := slices.Sorted(slices.Values(vals[k]))
-			out[k].Low, out[k].High = sorted[tail], sorted[Resamples-1-tail]
-		}
+		out[k] = interval(Value{Name: n.Name, Value: v, NoGraph: noGraph}, ok, vals[k])
 	}
 	return out
+}
+
+// interval completes a value with the ends of its 95 % interval from its values over the
+// resamples, and reads it only when the whole cell and every resample read it.
+func interval(v Value, ok bool, vals []float64) Value {
+	v.Read = ok && len(vals) == Resamples
+	if v.Read {
+		sorted := slices.Sorted(slices.Values(vals))
+		v.Low, v.High = sorted[tail], sorted[Resamples-1-tail]
+	}
+	return v
+}
+
+// resample calls f with the places of Resamples resamples of n learners, drawn from the place of the
+// working seed with the names bootstrap and the cell's name; none for no learners.
+func resample(cell string, n int, f func(picks []int)) {
+	if n == 0 {
+		return
+	}
+	s, err := seed.Place(seed.Working.Seed, "bootstrap", cell)
+	if err != nil {
+		panic(err) // a cell's name is the bench's own
+	}
+	picks := make([]int, n)
+	for range Resamples {
+		for i := range picks {
+			picks[i] = int(s.Below(uint64(n)))
+		}
+		f(picks)
+	}
+}
+
+// rows gives the sums of each learner as its values under the keys of all of them, sorted.
+func rows(learners ...[]Sums) ([]string, [][][]float64) {
+	var keys []string
+	for _, ls := range learners {
+		for _, l := range ls {
+			keys = append(keys, slices.Collect(maps.Keys(l))...)
+		}
+	}
+	slices.Sort(keys)
+	keys = slices.Compact(keys)
+	out := make([][][]float64, len(learners))
+	for j, ls := range learners {
+		out[j] = make([][]float64, len(ls))
+		for i, l := range ls {
+			out[j][i] = make([]float64, len(keys))
+			for k, key := range keys {
+				out[j][i][k] = l[key]
+			}
+		}
+	}
+	return keys, out
+}
+
+// Pair is a number read off two cells of the same learners — two rules, or a rule and the oracle —
+// and their difference a − b, with its 95 % interval from the same resamples in both
+// (docs/architecture.md, section 3.6).
+type Pair struct {
+	A, B, Diff Value
+}
+
+// ReadPair reads the numbers off two cells of the same learners on a graph, the n-th learner of
+// each the same learner, and the difference of each number, a − b, with its interval from the same
+// resamples of the learners in both: the cells compare by learner.
+func ReadPair(cell string, graph []string, a, b []Sums, numbers []Number) ([]Pair, error) {
+	if len(a) != len(b) {
+		return nil, fmt.Errorf("measure: cell %s has %d learners on one side and %d on the other", cell, len(a), len(b))
+	}
+	noGraph := slices.ContainsFunc(graph, synthetic.IsSynthetic)
+	keys, r := rows(a, b)
+	all := make([]int, len(a))
+	for i := range all {
+		all[i] = i
+	}
+	wa, wb := total(keys, r[0], all), total(keys, r[1], all)
+	xs, ys, diffs := make([][]float64, len(numbers)), make([][]float64, len(numbers)), make([][]float64, len(numbers))
+	resample(cell, len(a), func(picks []int) {
+		ta, tb := total(keys, r[0], picks), total(keys, r[1], picks)
+		for k, n := range numbers {
+			x, okx := n.Of(ta)
+			y, oky := n.Of(tb)
+			if okx {
+				xs[k] = append(xs[k], x)
+			}
+			if oky {
+				ys[k] = append(ys[k], y)
+			}
+			if okx && oky {
+				diffs[k] = append(diffs[k], x-y)
+			}
+		}
+	})
+	out := make([]Pair, len(numbers))
+	for k, n := range numbers {
+		x, okx := n.Of(wa)
+		y, oky := n.Of(wb)
+		out[k] = Pair{
+			A:    interval(Value{Name: n.Name, Value: x, NoGraph: noGraph}, okx, xs[k]),
+			B:    interval(Value{Name: n.Name, Value: y, NoGraph: noGraph}, oky, ys[k]),
+			Diff: interval(Value{Name: n.Name, Value: x - y, NoGraph: noGraph}, okx && oky, diffs[k]),
+		}
+	}
+	return out, nil
 }
 
 func itoa(n int) string { return strconv.Itoa(n) }

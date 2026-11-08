@@ -79,8 +79,44 @@ func rms(xs []float64) (float64, bool) {
 // Model gives the sums of one learner's run for the measures of the model, M1–M10
 // (docs/architecture.md, section 3.5).
 func Model(rec *run.Record) Sums {
-	s := Sums{"learners": 1}
 	obs, rights := attempts(rec)
+	return model(rec, obs, rights, false)
+}
+
+// Oracle gives the sums of the ceiling of the model on one learner's run, the oracle: its estimate
+// is the truth θ* + δ*, its P is P*, it declares "mastered" by true mastery, and it holds an anchor
+// when the truth does (docs/architecture.md, section 3.6). It reads the same answers as the model
+// of the run, so that the two compare by learner (R24 in docs/decisions.md).
+func Oracle(rec *run.Record) Sums {
+	obs, rights := attempts(rec)
+	out := make([]*run.Obs, len(obs))
+	for k, o := range obs {
+		c := *o
+		c.Items = slices.Clone(o.Items)
+		for i := range c.Items {
+			c.Items[i].PModel, c.Items[i].PFresh = c.Items[i].PTrue, c.Items[i].PTrue
+		}
+		c.Before, c.After = oracleSkills(o.Before), oracleSkills(o.After)
+		c.Level = o.TrueLevel
+		out[k] = &c
+	}
+	return model(rec, out, rights, true)
+}
+
+// oracleSkills gives the oracle's snapshot of skills: the truth in place of the model's estimate,
+// mastery and P of the reference task.
+func oracleSkills(skills []run.SkillObs) []run.SkillObs {
+	out := slices.Clone(skills)
+	for i := range out {
+		out[i].Estimate, out[i].Mastered, out[i].PRef = out[i].Truth, out[i].TrulyMastered, out[i].PTrueRef
+	}
+	return out
+}
+
+// model gives the sums of the measures of the model on the observations of a run, the model's or
+// the oracle's.
+func model(rec *run.Record, obs []*run.Obs, rights [][]bool, oracle bool) Sums {
+	s := Sums{"learners": 1}
 	m1(s, obs)
 	m2(s, obs, rights)
 	m3(s, rec, obs)
@@ -89,7 +125,7 @@ func Model(rec *run.Record) Sums {
 	m6(s, obs)
 	m7(s, obs, rights)
 	m8(s, obs)
-	m9(s, rec)
+	m9(s, rec, oracle)
 	m10(s, obs, rights)
 	return s
 }
@@ -291,9 +327,10 @@ func m4(s Sums, obs []*run.Obs) {
 }
 
 // m5: after a pause of a skill of at least 14 days, the answers of the skill until |P − P*| of the
-// reference task of its band stays under 0.05 for five answers in a row, and whether it never does.
+// reference task of its band falls under 0.05 to stay there for five answers in a row — none when it
+// is there from the first answer —, as M3 counts its answers, and whether it never does.
 func m5(s Sums, obs []*run.Obs) {
-	type episode struct{ answers, streak int }
+	type episode struct{ answers, streak, from int }
 	open := map[string]*episode{}
 	for _, o := range obs {
 		for _, a := range o.After {
@@ -306,14 +343,17 @@ func m5(s Sums, obs []*run.Obs) {
 				continue
 			}
 			n := len(o.Items)
-			ep.answers += n
 			if d := a.PRef - a.PTrueRef; d > -catchError && d < catchError {
+				if ep.streak == 0 {
+					ep.from = ep.answers
+				}
 				ep.streak += n
 			} else {
 				ep.streak = 0
 			}
+			ep.answers += n
 			if ep.streak >= catchAnswers {
-				s.add("M5.caught.sum", float64(ep.answers))
+				s.add("M5.caught.sum", float64(ep.from))
 				s.add("M5.caught.n", 1)
 				delete(open, a.Skill)
 			}
@@ -421,7 +461,7 @@ func m8(s Sums, obs []*run.Obs) {
 // m9: at the start of each session, the share of readings "holds" an anchor skill when the truth
 // does not hold it, and of "does not hold" when it does. The truth holds an anchor when a skill that
 // teaches it is truly mastered with its retention at the time (docs/architecture.md, section 3.5).
-func m9(s Sums, rec *run.Record) {
+func m9(s Sums, rec *run.Record, oracle bool) {
 	l := rec.Learner
 	if l == nil {
 		return
@@ -442,7 +482,14 @@ func m9(s Sums, rec *run.Record) {
 					}
 				}
 			}
-			switch a.Status {
+			status := a.Status
+			if oracle {
+				status = learnermodel.AnchorHasNot
+				if holds {
+					status = learnermodel.AnchorHas
+				}
+			}
+			switch status {
 			case learnermodel.AnchorHas:
 				s.add("M9.has", 1)
 				if !holds {

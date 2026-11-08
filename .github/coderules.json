@@ -1,5 +1,6 @@
 {
   "code-imports": [
+    "bufio",
     "bytes",
     "cmp",
     "compress/gzip",
@@ -8,6 +9,7 @@
     "encoding/hex",
     "encoding/json",
     "errors",
+    "flag",
     "fmt",
     "hash/fnv",
     "io",
@@ -15,6 +17,9 @@
     "math",
     "math/rand/v2",
     "os",
+    "path/filepath",
+    "runtime",
+    "runtime/debug",
     "slices",
     "strconv",
     "strings",
@@ -36,7 +41,6 @@
     "maps",
     "os",
     "path",
-    "path/filepath",
     "reflect",
     "slices",
     "strconv",
