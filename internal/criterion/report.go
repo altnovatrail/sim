@@ -49,8 +49,9 @@ func writeVerdict(b *strings.Builder, v Verdict) {
 	if v.Other != nil {
 		fmt.Fprintf(b, "- the other library's score: %s\n", showScore(*v.Other))
 	}
-	if len(v.Score.Left) > 0 {
-		fmt.Fprintf(b, "- left the score, its path not read or not above zero: %s\n", strings.Join(v.Score.Left, "; "))
+	writeLeft(b, "", v.Score)
+	if v.Other != nil {
+		writeLeft(b, "the other library's score: ", *v.Other)
 	}
 	var failed, skipped []string
 	for _, k := range v.Checks {
@@ -69,6 +70,17 @@ func writeVerdict(b *strings.Builder, v Verdict) {
 		fmt.Fprintf(b, "- nothing to hold, the base reads none: %s\n", strings.Join(skipped, "; "))
 	}
 	b.WriteString("\n")
+}
+
+// writeLeft writes the numbers that left a score, and why. The group's score is of the same numbers
+// as the whole one, so only the whole score and, in a pair, the other library's are written.
+func writeLeft(b *strings.Builder, of string, s Score) {
+	if len(s.Left) > 0 {
+		fmt.Fprintf(b, "- %sleft the score, its path not read or not above zero: %s\n", of, strings.Join(s.Left, "; "))
+	}
+	if len(s.Small) > 0 {
+		fmt.Fprintf(b, "- %sleft the score, its path within the author's tolerance: %s\n", of, strings.Join(s.Small, "; "))
+	}
 }
 
 // showScore writes a score with its interval, or says it is not read.

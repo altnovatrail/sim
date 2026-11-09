@@ -80,7 +80,8 @@ type Score struct {
 	Value, Low, High float64
 	Read             bool
 	Resampled        []float64
-	Left             []string
+	Left             []string // left the score: the path not read, or not above zero
+	Small            []string // left the score: the path above zero but within the author's tolerance
 }
 
 // Verdict is how a candidate stands: its checks, whether it holds them all, its score, its group's,
