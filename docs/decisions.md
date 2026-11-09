@@ -289,6 +289,113 @@
   - оставить как есть — оценку групп «Повторения» и «Забывает» решал бы шум;
   - убрать `E3.end` из группы «Повторения» — правка одной меры: `M2` после пауз осталась бы с тем же шумом, а следующая калибровка может дать малый путь другой мере.
 
+— *Поправка 2026-11-09, новое закрепление (T30; R31):* значения базы и потолка, из которых складывается путь целей, прочитаны заново, до первого кандидата, на решающем прогоне базы на новом закреплении: `modules` v0.1.4 с `olympiad-math` 0.1.1, а популяции `A-` — на паре математик. Они закреплены в `internal/criterion/paths.json` (R28; поправка 2026-11-09 к R28). Таблица первой поправки 2026-11-09 больше суд не держит: её значения — графа `olympiad-math` 0.1.0.
+- **Прогоны.**
+  - Стенд — дерево pull request T30 и рецепт `just decisive` (RUN.md, T30). Прогон шёл на дереве до правок по ревью; правки касаются только гейта, и малый прогон движка и потолка — по 3 ученика `G0`, `A-linked`, `F-model` и `E-base` — даёт на обоих деревьях те же байты.
+  - База — `learner-model` v0.1.0 (d2620a1) и `engine` v0.1.0 (c6c5bb9), пакеты `modules` v0.1.4.
+  - Рабочие ученики — зерно 20261107, по 4 000 на ячейку: 41 популяция, 65 ячеек.
+  - Прогон базы шёл 6 ч 43 мин на 20 ядрах контейнера разработки, а не 35 минут, как на 0.1.0. Его файл — 2,1 ГБ, SHA-256 `a36dc5b222696690132c109d389c2b65800fe2329113b390023d4c7039bdd2e4`.
+  - Прогон потолка движка — 1 ч 31 мин, SHA-256 `8a94b5530b85fcf119bb1da4462c88642acbd006eced82a72846abc603c9481e`.
+  - Воспроизводимость сверена дёшево: одна двадцатая прогона потолка — части `k/400` при k = 0, 20, …, 380, на 20 ядрах за 4 минуты — прогнана заново и совпала с файлом строка в строку, 13 000 строк. Полный повтор потолка отменён, чтобы не тратить на него ещё полтора часа.
+  - Файлы в репозитории не лежат: рецепт даёт их заново до байта.
+- **Значения** — в направлении критерия, меньше — лучше, как в первой поправке:
+
+| Ячейка | Мера | База | Потолок | Путь |
+|---|---|---|---|---|
+| `G0/novatrail/olympiad-math` | `E1.corridor` | 0,7347 | 0,0163 | 0,7184 |
+| `G0/novatrail/olympiad-math` | `M1.rms.200` | 0,5151 | 0,0000 | 0,5151 |
+| `G0/novatrail/olympiad-math` | `M4.false.all` | 0,0300 | 0,0000 | 0,0300 |
+| `G0/novatrail/olympiad-math` | `M6.late` | 4,6300 | 0,0000 | 4,6300 |
+| `G0/novatrail/grade-3-math` | `E1.corridor` | 0,8280 | 0,7510 | 0,0770 |
+| `G0/novatrail/grade-3-math` | `M1.rms.200` | 0,2366 | 0,0000 | 0,2366 |
+| `G0/novatrail/grade-3-math` | `M4.false.all` | 0,0178 | 0,0000 | 0,0178 |
+| `G0/novatrail/grade-3-math` | `M6.late` | 15,8116 | 0,0000 | 15,8116 |
+| `G1/novatrail/olympiad-math` | `M7.error.10` | 1,1797 | 0,0000 | 1,1797 |
+| `G1/novatrail/olympiad-math` | `M7.hard` | 0,3523 | 0,3523 | 0,0000 |
+| `G1/novatrail/grade-3-math` | `M7.error.10` | 1,0513 | 0,0000 | 1,0513 |
+| `G1/novatrail/grade-3-math` | `M7.hard` | 0,3708 | 0,3708 | 0,0000 |
+| `G2/novatrail/olympiad-math` | `E1.corridor` | 0,7313 | 0,0125 | 0,7189 |
+| `G2/novatrail/olympiad-math` | `M3.lag` | 0,9971 | 0,0000 | 0,9971 |
+| `G2/novatrail/grade-3-math` | `E1.corridor` | 0,8694 | 0,7001 | 0,1693 |
+| `G2/novatrail/grade-3-math` | `M3.lag` | 2,4176 | 0,0000 | 2,4176 |
+| `G2-half/novatrail/olympiad-math` | `E1.corridor` | 0,7210 | 0,0110 | 0,7100 |
+| `G2-half/novatrail/olympiad-math` | `E4.mastered` | 0,4284 | 0,0000 | 0,4284 |
+| `G2-half/novatrail/olympiad-math` | `M3.lag` | 0,5019 | 0,0000 | 0,5019 |
+| `G2-half/novatrail/grade-3-math` | `E1.corridor` | 0,8113 | 0,6866 | 0,1247 |
+| `G2-half/novatrail/grade-3-math` | `E4.mastered` | 0,3595 | 0,0000 | 0,3595 |
+| `G2-half/novatrail/grade-3-math` | `M3.lag` | 1,0914 | 0,0000 | 1,0914 |
+| `G2-fading/novatrail/olympiad-math` | `E1.corridor` | 0,7189 | 0,0092 | 0,7097 |
+| `G2-fading/novatrail/olympiad-math` | `M3.lag` | 0,3883 | 0,0000 | 0,3883 |
+| `G2-fading/novatrail/grade-3-math` | `E1.corridor` | 0,8152 | 0,6739 | 0,1413 |
+| `G2-fading/novatrail/grade-3-math` | `M3.lag` | 0,7609 | 0,0000 | 0,7609 |
+| `G3/novatrail/olympiad-math` | `M3.settle` | 55,1020 | 0,0000 | 55,1020 |
+| `G3/novatrail/grade-3-math` | `M3.settle` | 41,0204 | 0,0000 | 41,0204 |
+| `G3-drop/novatrail/olympiad-math` | `M3.settle` | 52,0895 | 0,0000 | 52,0895 |
+| `G3-drop/novatrail/grade-3-math` | `M3.settle` | 54,8831 | 0,0000 | 54,8831 |
+| `G0-skills1/novatrail/olympiad-math` | `M4.false.all` | 0,0592 | 0,0000 | 0,0592 |
+| `G0-skills1/novatrail/olympiad-math` | `M6.late` | 4,6722 | 0,0000 | 4,6722 |
+| `G0-skills1/novatrail/grade-3-math` | `M4.false.all` | 0,0330 | 0,0000 | 0,0330 |
+| `G0-skills1/novatrail/grade-3-math` | `M6.late` | 16,0446 | 0,0000 | 16,0446 |
+| `S-adult/novatrail/olympiad-math` | `M7.error.10` | 1,4971 | 0,0000 | 1,4971 |
+| `S-adult/novatrail/olympiad-math` | `M7.hard` | 0,1106 | 0,1106 | 0,0000 |
+| `F-model/novatrail/olympiad-math` | `E3.end` | 0,0446 | 0,0000 | 0,0446 |
+| `F-model/novatrail/olympiad-math` | `E3.late` | 0,4755 | 0,0000 | 0,4755 |
+| `F-model/novatrail/olympiad-math` | `M2.brier.after7` | 0,1663 | 0,1612 | 0,0051 |
+| `F-model/novatrail/olympiad-math` | `M4.false.break` | 0,0542 | 0,0000 | 0,0542 |
+| `F-model/novatrail/olympiad-math` | `M5.caught` | 3,5453 | 0,0000 | 3,5453 |
+| `F-model/novatrail/grade-3-math` | `E3.end` | 0,0002 | 0,0000 | 0,0002 |
+| `F-model/novatrail/grade-3-math` | `E3.late` | 0,7760 | 0,0000 | 0,7760 |
+| `F-model/novatrail/grade-3-math` | `M2.brier.after7` | 0,1559 | 0,1555 | 0,0004 |
+| `F-model/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
+| `F-model/novatrail/grade-3-math` | `M5.caught` | 2,7931 | 0,0000 | 2,7931 |
+| `F-exp/novatrail/olympiad-math` | `E3.end` | 0,0588 | 0,0000 | 0,0588 |
+| `F-exp/novatrail/olympiad-math` | `E3.late` | 0,5361 | 0,0000 | 0,5361 |
+| `F-exp/novatrail/olympiad-math` | `M2.brier.after7` | 0,1569 | 0,1474 | 0,0095 |
+| `F-exp/novatrail/olympiad-math` | `M4.false.break` | 0,0476 | 0,0000 | 0,0476 |
+| `F-exp/novatrail/olympiad-math` | `M5.caught` | 3,4966 | 0,0000 | 3,4966 |
+| `F-exp/novatrail/grade-3-math` | `E3.end` | 0,0002 | 0,0000 | 0,0002 |
+| `F-exp/novatrail/grade-3-math` | `E3.late` | 0,7970 | 0,0000 | 0,7970 |
+| `F-exp/novatrail/grade-3-math` | `M2.brier.after7` | 0,1104 | 0,0906 | 0,0198 |
+| `F-exp/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
+| `F-exp/novatrail/grade-3-math` | `M5.caught` | 3,3137 | 0,0000 | 3,3137 |
+| `F-C1/novatrail/olympiad-math` | `M2.brier.after7` | 0,1606 | 0,1510 | 0,0096 |
+| `F-C1/novatrail/olympiad-math` | `M4.false.break` | 0,0483 | 0,0000 | 0,0483 |
+| `F-C1/novatrail/olympiad-math` | `M5.caught` | 3,5636 | 0,0000 | 3,5636 |
+| `F-C1/novatrail/grade-3-math` | `M2.brier.after7` | 0,1177 | 0,0999 | 0,0178 |
+| `F-C1/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
+| `F-C1/novatrail/grade-3-math` | `M5.caught` | 2,7257 | 0,0000 | 2,7257 |
+| `F-growth5/novatrail/olympiad-math` | `E3.end` | 0,0918 | 0,0000 | 0,0918 |
+| `F-growth5/novatrail/olympiad-math` | `E3.late` | 0,6435 | 0,0000 | 0,6435 |
+| `F-growth5/novatrail/olympiad-math` | `M2.brier.after7` | 0,1943 | 0,1826 | 0,0117 |
+| `F-growth5/novatrail/olympiad-math` | `M4.false.break` | 0,0449 | 0,0000 | 0,0449 |
+| `F-growth5/novatrail/olympiad-math` | `M5.caught` | 3,4742 | 0,0000 | 3,4742 |
+| `F-growth5/novatrail/grade-3-math` | `E3.end` | 0,0003 | 0,0000 | 0,0003 |
+| `F-growth5/novatrail/grade-3-math` | `E3.late` | 0,9354 | 0,0000 | 0,9354 |
+| `F-growth5/novatrail/grade-3-math` | `M2.brier.after7` | 0,1578 | 0,1564 | 0,0015 |
+| `F-growth5/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
+| `F-growth5/novatrail/grade-3-math` | `M5.caught` | 2,8993 | 0,0000 | 2,8993 |
+| `F-break/novatrail/olympiad-math` | `M3.settle` | 172,7969 | 0,0000 | 172,7969 |
+| `F-break/novatrail/grade-3-math` | `M3.settle` | 337,6990 | 0,0000 | 337,6990 |
+| `W-shock/novatrail/grade-3-math` | `M2.brier.pages` | 0,1739 | 0,1419 | 0,0320 |
+| `W-shock/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
+| `W-error/novatrail/grade-3-math` | `M2.brier.pages` | 0,1975 | 0,1196 | 0,0779 |
+| `W-error/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
+| `W-badday/novatrail/grade-3-math` | `M2.brier.pages` | 0,1555 | 0,1488 | 0,0067 |
+| `W-badday/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
+| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0,0039 | 0,0000 | 0,0039 |
+| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0,7703 | 0,0000 | 0,7703 |
+| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0,0634 | 0,0000 | 0,0634 |
+| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0,1968 | 0,0000 | 0,1968 |
+| `L-explain/novatrail/olympiad-math` | `E4.mastered` | 0,5284 | 0,0000 | 0,5284 |
+
+- **Что видно.**
+  - На `olympiad-math` 0.1.1 потолок держит в коридоре почти все выданные пункты — недобор 0,009–0,016, — а база только 26–28 %. Путь коридора `E1` там — около 0,71, а на 0.1.0 был 0,14–0,16. Цели модели на `G2-half` читаются: путь отставания `M3` — 0,5019 и 1,0914 логита, путь коридора `E1` — 0,7100 и 0,1247.
+  - `M4` после перерыва теперь читается на олимпиадной математике; на школьной его по-прежнему нет.
+  - `M9` читается у `A-unpractised` и `A-fading`, на паре математик.
+  - Путь не больше допуска автора — мера выходит из оценки (поправка 2026-11-09 к этой записи, ответ на В7) — у семи мер: `E3.end` на школьной математике у `F-model`, `F-exp` и `F-growth5` (0,0002–0,0003 при допуске 0,01); Brier `M2` после пауз на школьной у `F-model` и `F-growth5` (0,0004 и 0,0015 при 0,002); `M4` на `G0` школьной (0,0178 при 0,02); `M9.hasFalse` у `A-unpractised` (0,0039 при 0,02). `E3.end` на олимпиадной математике — 0,045–0,092, и в оценке он остаётся.
+  - У доли трудных первых пунктов `M7.hard` путь по-прежнему ноль.
+- Новый закрепляющий прогон — только новой поправкой к этой записи.
+
 ## Гейт в CI
 
 **R05. Полосы гейта лежат в `sim`, в файле гейта, который называет и коммиты `learner-model` и `engine`, на которых они записаны; гейт у вызывающего подставляет его код, а другую библиотеку берёт коммитом из файла. Изменение, которое ломает API стенда или двигает числа, сначала записывается в `sim` на коммите своего pull request, затем выходит тег `sim`, и только с ним pull request библиотеки сливается. Релиз `sim` выходит сам, после зелёного CI на `main`. В CI `modules` гейт держит инварианты и пороги на пакете pull request, а не полосы.** Ответы автора 2026-11-07 при планировании T03 (RUN.md); остальное — предложение исполнения. Устройство — [architecture.md](architecture.md), раздел 3.9. То, что закрывает Т-16, — путь `go.work`, гейт на каждом pull request, раннер и время, — вопрос реестра `spec`, и `sim` его не решает, а передаёт строкой В3 таблицы 3 RUN.md, «В реестр spec».
