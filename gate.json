@@ -41,7 +41,7 @@
     "github.com/altnovatrail/sim": "1.27.3"
   },
   "bands": {
-    "reason": "the first record, on learner-model v0.1.0 and engine v0.1.0 (T24)",
+    "reason": "the first record, on learner-model v0.1.0 and engine v0.1.0 (T24), recorded anew with E1.hard and E2.nothing, which the thresholds of the CI of modules are taken from (T25)",
     "numbers": [
       {
         "cell": "G0/novatrail/olympiad-math",
@@ -56,6 +56,13 @@
         "read": true,
         "value": 0.10933333333333334,
         "half": 0.006450000000000004
+      },
+      {
+        "cell": "G0/novatrail/olympiad-math",
+        "number": "E1.hard",
+        "read": true,
+        "value": 0.5265333333333333,
+        "half": 0.02882499999999999
       },
       {
         "cell": "G0/novatrail/olympiad-math",
@@ -86,6 +93,13 @@
         "half": 0
       },
       {
+        "cell": "G0/novatrail/olympiad-math",
+        "number": "E2.nothing",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
         "cell": "G0/novatrail/grade-3-math",
         "number": "M1.rms.200",
         "read": true,
@@ -98,6 +112,13 @@
         "read": true,
         "value": 0.19036120501590367,
         "half": 0.017267817268770982
+      },
+      {
+        "cell": "G0/novatrail/grade-3-math",
+        "number": "E1.hard",
+        "read": true,
+        "value": 0.4837382804043365,
+        "half": 0.025428661254912055
       },
       {
         "cell": "G0/novatrail/grade-3-math",
@@ -128,6 +149,13 @@
         "half": 0
       },
       {
+        "cell": "G0/novatrail/grade-3-math",
+        "number": "E2.nothing",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
         "cell": "G1/novatrail/olympiad-math",
         "number": "M7.error.10",
         "read": true,
@@ -142,6 +170,13 @@
         "half": 0
       },
       {
+        "cell": "G1/novatrail/olympiad-math",
+        "number": "E2.nothing",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
         "cell": "G1/novatrail/grade-3-math",
         "number": "M7.error.10",
         "read": true,
@@ -151,6 +186,13 @@
       {
         "cell": "G1/novatrail/grade-3-math",
         "number": "E2.stuck",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
+        "cell": "G1/novatrail/grade-3-math",
+        "number": "E2.nothing",
         "read": true,
         "value": 0,
         "half": 0
@@ -177,6 +219,13 @@
         "half": 0
       },
       {
+        "cell": "G2/novatrail/olympiad-math",
+        "number": "E2.nothing",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
         "cell": "G2/novatrail/grade-3-math",
         "number": "M3.lag",
         "read": true,
@@ -198,6 +247,13 @@
         "half": 0
       },
       {
+        "cell": "G2/novatrail/grade-3-math",
+        "number": "E2.nothing",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
         "cell": "G2-half/novatrail/olympiad-math",
         "number": "M3.lag",
         "read": true,
@@ -213,7 +269,21 @@
       },
       {
         "cell": "G2-half/novatrail/olympiad-math",
+        "number": "E1.hard",
+        "read": true,
+        "value": 0.4247,
+        "half": 0.030341666666666683
+      },
+      {
+        "cell": "G2-half/novatrail/olympiad-math",
         "number": "E2.stuck",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
+        "cell": "G2-half/novatrail/olympiad-math",
+        "number": "E2.nothing",
         "read": true,
         "value": 0,
         "half": 0
@@ -234,7 +304,21 @@
       },
       {
         "cell": "G2-half/novatrail/grade-3-math",
+        "number": "E1.hard",
+        "read": true,
+        "value": 0.2388042301607128,
+        "half": 0.01710350235967449
+      },
+      {
+        "cell": "G2-half/novatrail/grade-3-math",
         "number": "E2.stuck",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
+        "cell": "G2-half/novatrail/grade-3-math",
+        "number": "E2.nothing",
         "read": true,
         "value": 0,
         "half": 0
@@ -254,6 +338,13 @@
         "half": 0
       },
       {
+        "cell": "G3/novatrail/olympiad-math",
+        "number": "E2.nothing",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
         "cell": "G3/novatrail/grade-3-math",
         "number": "M3.unsettled",
         "read": true,
@@ -263,6 +354,13 @@
       {
         "cell": "G3/novatrail/grade-3-math",
         "number": "E2.stuck",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
+        "cell": "G3/novatrail/grade-3-math",
+        "number": "E2.nothing",
         "read": true,
         "value": 0,
         "half": 0
@@ -303,6 +401,13 @@
         "half": 0
       },
       {
+        "cell": "F-model/novatrail/olympiad-math",
+        "number": "E2.nothing",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
         "cell": "F-model/novatrail/grade-3-math",
         "number": "M2.brier.after7",
         "read": true,
@@ -338,6 +443,13 @@
         "half": 0.045
       },
       {
+        "cell": "F-model/novatrail/grade-3-math",
+        "number": "E2.nothing",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
         "cell": "W-shock/novatrail/grade-3-math",
         "number": "M4.false.pages",
         "read": false,
@@ -347,6 +459,13 @@
       {
         "cell": "W-shock/novatrail/grade-3-math",
         "number": "E2.stuck",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
+        "cell": "W-shock/novatrail/grade-3-math",
+        "number": "E2.nothing",
         "read": true,
         "value": 0,
         "half": 0
@@ -368,6 +487,13 @@
       {
         "cell": "E-base/novatrail/english-essays",
         "number": "E2.stuck",
+        "read": true,
+        "value": 0,
+        "half": 0
+      },
+      {
+        "cell": "E-base/novatrail/english-essays",
+        "number": "E2.nothing",
         "read": true,
         "value": 0,
         "half": 0

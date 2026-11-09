@@ -349,3 +349,106 @@ func TestIndex(t *testing.T) {
 		t.Error("an index that is not JSON: no error")
 	}
 }
+
+// files gives the inventory.json and server.json of the synthetic module as a folder holds them;
+// change edits the inventory before it is written.
+func files(t *testing.T, cv *formatv0.CanonicalView, change func(*formatv0.Inventory)) (inventory, server []byte) {
+	t.Helper()
+	got, err := Untar(func() []byte { a, _ := pkg(t, cv, change); return a }())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return got["inventory.json"], got["server.json"]
+}
+
+// A package as a folder holds it reads with an entry of an index and without one, and keeps the
+// inventory when it cannot be read further.
+func TestReadFiles(t *testing.T) {
+	inventory, server := files(t, view(), nil)
+	e := formatv0.Entry{ModuleFormatVersion: "0.3", PackageDigest: Digest(inventory)}
+	for _, entry := range []*formatv0.Entry{nil, &e} {
+		cv, inv, err := ReadFiles(inventory, server, entry)
+		if err != nil || cv.Manifest.ID != mod || inv.Version != "0.1.0" {
+			t.Fatalf("ReadFiles with the entry %v: %v", entry, err)
+		}
+	}
+	later := func() *formatv0.CanonicalView { v := view(); v.Manifest.ModuleFormatVersion = "0.4"; return v }()
+	laterInventory, laterServer := files(t, later, nil)
+	otherServer := []byte(string(server) + " ")
+	for name, c := range map[string]struct {
+		inventory, server []byte
+		entry             *formatv0.Entry
+		want              error
+		inv               bool
+	}{
+		"another digest":              {inventory, server, &formatv0.Entry{ModuleFormatVersion: "0.3", PackageDigest: Digest([]byte("x"))}, ErrDigest, false},
+		"another format in the entry": {inventory, server, &formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: Digest(inventory)}, ErrIdentity, true},
+		"a format outside the window": {laterInventory, laterServer, nil, ErrFormat, true},
+		"another server part":         {inventory, otherServer, nil, ErrDigest, true},
+		"inventory not JSON":          {[]byte("{"), server, nil, nil, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, inv, err := ReadFiles(c.inventory, c.server, c.entry)
+			if err == nil || (c.want != nil && !errors.Is(err, c.want)) || (inv != nil) != c.inv {
+				t.Errorf("ReadFiles: %v, the inventory %v; want %v", err, inv, c.want)
+			}
+		})
+	}
+	// An archive of another module than its entry names, whose inventory and manifest agree.
+	other := func() *formatv0.CanonicalView { v := view(); v.Manifest.ID = "example/other"; return v }()
+	data, entry := pkg(t, other, nil)
+	if _, err := ReadPackage(data, mod, "0.1.0", entry); !errors.Is(err, ErrIdentity) {
+		t.Errorf("an archive of another module: %v", err)
+	}
+	if !Readable("0.3") || Readable("0.4") {
+		t.Error("the window of the format is not 0.3 alone")
+	}
+}
+
+// The canonical text changes with what the bench reads — a task tagged to another skill, the
+// numbers of an instance — and not with a text for the learner or the version.
+func TestText(t *testing.T) {
+	text := func(change func(*formatv0.CanonicalView)) string {
+		t.Helper()
+		v := view()
+		change(v)
+		m, err := Translate(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		data, err := m.Text()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(data)
+	}
+	base := text(func(*formatv0.CanonicalView) {})
+	if base == "" || !json.Valid([]byte(base)) {
+		t.Fatalf("the text is no JSON: %q", base)
+	}
+	for name, c := range map[string]struct {
+		change func(*formatv0.CanonicalView)
+		same   bool
+	}{
+		"the version": {func(v *formatv0.CanonicalView) { v.Manifest.Version = "0.2.0" }, true},
+		"an explanation of a lesson": {func(v *formatv0.CanonicalView) {
+			v.Lessons["l-child"].Segments[0].Explanation[0] = formatv0.StatementPart{Text: ptr(formatv0.Text("another"))}
+		}, true},
+		"an option's text": {func(v *formatv0.CanonicalView) { v.Tasks["t-beside"].Items[0].AnswerSlots[0].Options[0] = "yes!" }, true},
+		"a task tagged to another skill": {func(v *formatv0.CanonicalView) {
+			task := v.Tasks["t-beside"]
+			task.Skills.Primary = []formatv0.SkillID{"b"}
+			v.Tasks["t-beside"] = task
+		}, false},
+		"the numbers of an instance": {func(v *formatv0.CanonicalView) { v.Instances["t-template"][0] = formatv0.Numbers{"n": 4} }, false},
+		"a difficulty": {func(v *formatv0.CanonicalView) {
+			task := v.Tasks["t-sheet"]
+			task.Difficulty = 5
+			v.Tasks["t-sheet"] = task
+		}, false},
+	} {
+		if got := text(c.change) == base; got != c.same {
+			t.Errorf("%s: the same text %v, want %v", name, got, c.same)
+		}
+	}
+}

@@ -3,11 +3,13 @@ package bench
 import (
 	"bytes"
 	"errors"
+	"maps"
 	"runtime/debug"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/altnovatrail/sim/internal/published"
 	"github.com/altnovatrail/sim/internal/run"
 	"github.com/altnovatrail/sim/internal/seed"
 )
@@ -172,7 +174,7 @@ func TestRefuses(t *testing.T) {
 			t.Errorf("%s: %v", name, err)
 		}
 	}
-	if _, err := modules([]string{"novatrail/none"}); !errors.Is(err, ErrBench) {
+	if _, err := modules([]string{"novatrail/none"}, nil); !errors.Is(err, ErrBench) {
 		t.Errorf("a module that is not there: %v", err)
 	}
 	for name, in := range map[string]string{"empty": "", "no header": "{}\n", "not json": "{\"rule\":\"engine\"}\n{\n"} {
@@ -274,5 +276,66 @@ func TestParts(t *testing.T) {
 	}
 	if err := Write(merged, &failing{left: 400}); err == nil {
 		t.Error("Write into a writer full at a line: no error")
+	}
+}
+
+// A run on a package in place of the pinned one runs only the graphs the package covers, names the
+// package in its header, reads the same as the pinned run when the package is the pinned one, and
+// its parts merge in its order.
+func TestPackages(t *testing.T) {
+	pub, err := published.Modules()
+	if err != nil {
+		t.Fatal(err)
+	}
+	pins, err := published.Pinned()
+	if err != nil {
+		t.Fatal(err)
+	}
+	pin := pins[slices.IndexFunc(pins, func(p published.Package) bool { return p.Module == "novatrail/grade-3-math" })]
+	taken := []Package{{Package: pin, Module: pub[pin.Module]}}
+	c := Config{Populations: []string{"G0", "E-base"}, Learners: 3, Set: seed.Working, Packages: taken}
+	got := runTo(t, c)
+	if !slices.Equal(got.Header.Packages, []published.Package{pin}) {
+		t.Errorf("the header names the packages %v", got.Header.Packages)
+	}
+	if want := []string{"G0/novatrail/grade-3-math"}; !slices.Equal(CellsOn(c.Populations, got.Header.Packages), want) {
+		t.Errorf("the cells on the package are %v", CellsOn(c.Populations, got.Header.Packages))
+	}
+	plain := runTo(t, Config{Populations: []string{"G0"}, Learners: 3, Set: seed.Working})
+	var same []Line
+	for _, l := range plain.Lines {
+		if cellOf(l) == "G0/novatrail/grade-3-math" {
+			same = append(same, l)
+		}
+	}
+	if len(got.Lines) != 3 || !slices.EqualFunc(got.Lines, same, func(a, b Line) bool { return a.N == b.N && maps.Equal(a.Sums, b.Sums) }) {
+		t.Errorf("the run on the pinned package is not the pinned run: %d lines", len(got.Lines))
+	}
+	var parts []*File
+	for k := range 2 {
+		p := c
+		p.Part = Part{K: k, N: 2}
+		parts = append(parts, runTo(t, p))
+	}
+	merged, err := Merge(parts)
+	if err != nil || len(merged.Lines) != 3 {
+		t.Errorf("the parts on the package merge: %v", err)
+	}
+	pinned := c
+	pinned.Packages, pinned.Part = nil, Part{K: 1, N: 2}
+	if _, err := Merge([]*File{parts[0], runTo(t, pinned)}); !errors.Is(err, ErrBench) {
+		t.Errorf("a part on the package merges with a part on the pin: %v", err)
+	}
+	var buf bytes.Buffer
+	for name, ps := range map[string][]Package{
+		"no module read":    {{Package: pin}},
+		"another module":    {{Package: pin, Module: pub["novatrail/olympiad-math"]}},
+		"the package twice": {taken[0], taken[0]},
+	} {
+		bad := c
+		bad.Packages = ps
+		if err := Run(bad, &buf); !errors.Is(err, ErrBench) {
+			t.Errorf("%s: %v", name, err)
+		}
 	}
 }

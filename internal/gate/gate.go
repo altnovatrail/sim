@@ -13,6 +13,7 @@ import (
 	"maps"
 	"math"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/altnovatrail/sim/internal/bench"
@@ -106,12 +107,14 @@ var Populations = []string{"G0", "G1", "G2", "G2-half", "G3", "F-model", "W-shoc
 // and not run.
 var NoGraph = []string{"A-linked"}
 
-// numbers are the numbers of the gate of each population, besides E2.stuck on every one.
+// numbers are the numbers of the gate of each population, besides the two of E2 on every one. The
+// share of items with P* below 0.50, E1.hard, and the choices of nothing, E2.nothing, are what the
+// thresholds of the CI of modules are taken from (R27 in docs/decisions.md).
 var numbers = map[string][]string{
-	"G0":       {"M1.rms.200", "E1.corridor", "M4.false.all", "M6.late", "M6.never"},
+	"G0":       {"M1.rms.200", "E1.corridor", "E1.hard", "M4.false.all", "M6.late", "M6.never"},
 	"G1":       {"M7.error.10"},
 	"G2":       {"M3.lag", "E1.corridor"},
-	"G2-half":  {"M3.lag", "E1.corridor"},
+	"G2-half":  {"M3.lag", "E1.corridor", "E1.hard"},
 	"G3":       {"M3.unsettled"},
 	"A-linked": {"M9.hasFalse", "M9.notFalse"},
 	"F-model":  {"M2.brier.after7", "M5.caught", "M5.never", "E3.late"},
@@ -119,9 +122,10 @@ var numbers = map[string][]string{
 	"E-base":   {"E5.written", "E5.again"},
 }
 
-// Numbers gives the numbers of the gate of a population: its own, then the share of learners stuck.
+// Numbers gives the numbers of the gate of a population: its own, then the share of learners stuck
+// and the share of the choices of nothing while the pool has a task to give.
 func Numbers(population string) []string {
-	return append(slices.Clone(numbers[population]), "E2.stuck")
+	return append(slices.Clone(numbers[population]), "E2.stuck", "E2.nothing")
 }
 
 // Config gives the run of the gate, or a part of it: its learners under the engine, each run twice
@@ -164,6 +168,9 @@ func whole(results *bench.File) []string {
 	h := results.Header
 	if h.Set != seed.Working || h.Rule != "engine" || !h.Invariants || h.Part != (bench.Part{}) {
 		out = append(out, fmt.Sprintf("the run is not the gate's: set %s, rule %s, invariants %v, part %d of %d", h.Set.Experiment, h.Rule, h.Invariants, h.Part.K, h.Part.N))
+	}
+	if len(h.Packages) > 0 {
+		out = append(out, "the run took packages in place of the pinned ones: it is the gate of the CI of modules, held to thresholds, not bands")
 	}
 	count := map[string]int{}
 	for _, l := range results.Lines {
@@ -285,12 +292,12 @@ func Record(f *File, results *bench.File, reason string) (*File, error) {
 	return &out, nil
 }
 
-// show writes a number, or "not read".
+// show writes a number in its shortest form that reads back to the same bits, or "not read".
 func show(x float64, read bool) string {
 	if !read {
 		return "not read"
 	}
-	return fmt.Sprintf("%.17g", x)
+	return strconv.FormatFloat(x, 'g', -1, 64)
 }
 
 // Write writes the report in Markdown: the table of every number against its band, then the

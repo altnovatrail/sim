@@ -25,6 +25,38 @@ Detailing is done, and the code epic, E2, is laid out in [RUN.md](RUN.md). The f
 
 `just gate` builds the bench on the commits of the libraries that [gate.json](gate.json) names, through a `go.work` it writes in a temporary folder, runs the gate and holds its numbers to their bands; `just gate exact` holds them to the recorded numbers to the last bit, as this repository's CI does on amd64 and arm64, and `just gate record "<reason>"` records the bands anew. A caller puts its own code in place of a library with `GATE_LEARNER_MODEL=<folder>` or `GATE_ENGINE=<folder>`.
 
+### Gate in the CI of modules
+
+The CI of modules judges content, not a library, so its gate holds invariants and thresholds rather than bands, and runs only where what the bench reads of a package changed ([docs/architecture.md](docs/architecture.md), section 3.9). Its job checks out sim by the tag and the SHA of its commit and runs, from the root of that checkout:
+
+```
+just gate modules (-index <module-index.json> | -first) [-published <folder>]... [-all] <package folder>...
+```
+
+- `-index` is `module-index.json` of the newest release of modules, which `release-verify` has accepted; `-first` says there is no release yet, and every package is new. Give exactly one of the two.
+- Each `-published` is a published package of that index as a folder, with its `inventory.json` and `server.json`: the packages of every version of the modules, withdrawn ones too, as the CI of modules already unpacks them for `module-kit diff`. sim finds each by the digest of its `inventory.json` and checks it by the chain of digests from the index.
+- Each `<package folder>` is a package that `module-kit build` wrote for the pull request.
+- `-all` runs every package: give it when the pull request moves the tag of sim.
+- Relative paths are taken from the folder `just` was called in.
+
+The recipe first asks `sim gate changed` what each package is, and prints a line a package:
+
+| State | Meaning | Runs |
+|---|---|---|
+| `new` | the module has no published version that is not withdrawn | yes |
+| `changed` | what the bench reads differs from the newest published version that is not withdrawn | yes |
+| `same` | what the bench reads is the same: only texts for the learner, or the version, changed | only with `-all` |
+| `transition` | the newest published version is of another version of the module format | never |
+
+What the bench reads is what it translates the server part into: the bands and the audience of the manifest, the graph and its tiers, the tasks, the lessons and the instances of templates, and none of the texts for the learner. If nothing runs, the recipe says so and exits with 0 before it fetches anything. Otherwise it builds the bench on both libraries at the commits that gate.json names, runs the gate's populations on the graphs of the packages that run, and checks the numbers against the thresholds:
+
+- `E2`: the share of learners stuck, and of the choices of nothing while the pool has a task to give, on every cell. Each is at most its largest value in gate.json plus one percentage point.
+- `E1` on `G0` and `G2-half`. The share of items with P* below 0.50 is at most its largest value in gate.json plus one point. The share in the corridor is at least its smallest value less one point.
+- `M4` on `G0`: at most 20 % false "mastered".
+- `E5` on `E-base`: no task with a rubric given again.
+
+The recipe exits with 0 when the gate is green, 1 when it is red or refuses its input, and 2 on a call it does not know. It writes a table of every number against its threshold to stdout, for the job's summary. Run it in the toolchain stage of sim's devcontainer at the same tag, as this repository's job "Gate" does: `docker build --target toolchain - < .devcontainer/Dockerfile`, then `docker run` with both the checkout of sim and the package folders mounted, so that every path the recipe is given is inside the container.
+
 ## Documents
 
 The documents are in Russian.
