@@ -11,14 +11,14 @@ import (
 	"github.com/altnovatrail/sim/internal/synthetic"
 )
 
-// cellData is what a judgement reads of one cell: the pair of the base and the candidate, and the
-// values of the oracle and of the ceiling of the engine, every number turned by its direction.
+// cellData is what a judgement reads of one cell: the pair of the base and the candidate, every
+// number turned by its direction, and the paths fixed on the cell.
 type cellData struct {
 	cell, population string
 	graph            []string
 	noGraph          bool
 	pair             map[string]measure.Pair // a is the base, b the candidate: Diff is base − candidate
-	oracle, ceiling  map[string]measure.Value
+	path             map[string]Path         // the fixed paths of the cell, by number
 }
 
 // noGraph tells whether a graph has a module with no published package (R19).
@@ -31,38 +31,9 @@ func names() []string {
 	return slices.Sorted(maps.Keys(defs))
 }
 
-// ceilings are the values of the ceiling of the engine and of the oracle of the base on each cell
-// of a judgement, read once for all its candidates.
-type ceilings struct {
-	base  *bench.File
-	cells []cellData // with no pair yet
-}
-
-// readCeilings reads the ceiling of the engine and the oracle of the base, on the same learners.
-func readCeilings(base, ceiling *bench.File) (*ceilings, error) {
-	cs, err := bench.Cells(bench.Side{File: ceiling}, bench.Side{File: base, Oracle: true})
-	if err != nil {
-		return nil, fmt.Errorf("%w: the ceiling against the base: %w", ErrCriterion, err)
-	}
-	ns := names()
-	numbers := directed(ns)
-	out := &ceilings{base: base}
-	for _, c := range cs {
-		d := cellData{cell: c.Cell, population: c.Population, graph: c.Graph, noGraph: noGraph(c.Graph),
-			oracle: map[string]measure.Value{}, ceiling: map[string]measure.Value{}}
-		cv := measure.Read(c.Cell, c.Graph, c.A, numbers)
-		ov := measure.Read(c.Cell, c.Graph, c.B, numbers)
-		for i, name := range ns {
-			d.ceiling[name], d.oracle[name] = cv[i], ov[i]
-		}
-		out.cells = append(out.cells, d)
-	}
-	return out, nil
-}
-
-// read reads the cells of a candidate: the base against it, beside the ceilings.
-func (cl *ceilings) read(candidate *bench.File) ([]cellData, error) {
-	pairs, err := bench.Cells(bench.Side{File: cl.base}, bench.Side{File: candidate})
+// read reads the cells of a candidate against the base, each beside its fixed paths.
+func read(base, candidate *bench.File, paths *Paths) ([]cellData, error) {
+	pairs, err := bench.Cells(bench.Side{File: base}, bench.Side{File: candidate})
 	if err != nil {
 		return nil, fmt.Errorf("the candidate against the base: %w", err)
 	}
@@ -74,8 +45,8 @@ func (cl *ceilings) read(candidate *bench.File) ([]cellData, error) {
 		if err != nil {
 			return nil, err
 		}
-		out[k] = cl.cells[k]
-		out[k].pair = map[string]measure.Pair{}
+		out[k] = cellData{cell: c.Cell, population: c.Population, graph: c.Graph, noGraph: noGraph(c.Graph),
+			pair: map[string]measure.Pair{}, path: paths.on(c.Cell)}
 		for i, name := range ns {
 			out[k].pair[name] = ps[i]
 		}
@@ -85,8 +56,8 @@ func (cl *ceilings) read(candidate *bench.File) ([]cellData, error) {
 
 // judge judges one candidate against the base on its criterion; a pair holds the constraints of
 // both, once each, and is scored by the library whose goal it names, the other's score beside.
-func judge(criterion string, cl *ceilings, c Candidate) (Verdict, error) {
-	cells, err := cl.read(c.File)
+func judge(criterion string, base *bench.File, paths *Paths, c Candidate) (Verdict, error) {
+	cells, err := read(base, c.File, paths)
 	if err != nil {
 		return Verdict{}, fmt.Errorf("%w: candidate %s: %w", ErrCriterion, c.Name, err)
 	}
@@ -209,8 +180,8 @@ func floors(cells []cellData) []Check {
 }
 
 // goals gives the checks of the goal a candidate of the model names (docs/architecture.md, section
-// 3.6): on G2-half, M3 closes at least 0.55 of the path to the oracle (lag) or E1 at least 0.27 of
-// the path to the ceiling (corridor), by the low end of the interval of the share; on G3, at most
+// 3.6): on G2-half, M3 closes at least 0.55 of its fixed path to the oracle (lag) or E1 at least
+// 0.27 of its fixed path to the ceiling (corridor), by the low end of the interval of the share; on G3, at most
 // 25 % of the learners never settle after the jump (settle), by the high end.
 func goals(cells []cellData, goal string) []Check {
 	var out []Check
@@ -260,8 +231,9 @@ func share(d cellData, name string, least float64) Check {
 	return k
 }
 
-// frac is the share of the path of a number on a cell the candidate closes: (base − candidate)/
-// (base − ceiling), the path fixed by the whole cell, on the whole cell and over the resamples.
+// frac is the share of the path of a number on a cell the candidate closes: (base − candidate)/path,
+// the difference paired on the learners of the judgement and the path the fixed one, on the whole
+// cell and over the resamples.
 type frac struct {
 	path      bool // the path is read and above zero; without it the number leaves the score
 	read      bool // the candidate's run reads the number
@@ -269,21 +241,15 @@ type frac struct {
 	resampled []float64
 }
 
-// fraction gives the share of the path of a number on a cell the candidate closes. The ceiling is
-// perfection, zero, for a number whose path goes there, the ceiling of the engine for those of the
-// engine, and the oracle for the model's.
+// fraction gives the share of the path of a number on a cell the candidate closes, by the path
+// fixed on the first decisive run of the base (Paths): the same path at every choice and in every
+// confirmation, whatever the base and the learners of the judgement. A number with no fixed path,
+// one not read, or one of zero or less has no share.
 func fraction(d cellData, name string) frac {
 	p := d.pair[name]
-	ceil, ok := 0.0, true
-	if !defs[name].perfect {
-		c := d.oracle[name]
-		if strings.HasPrefix(name, "E") {
-			c = d.ceiling[name]
-		}
-		ceil, ok = c.Value, c.Read
-	}
-	path := p.A.Value - ceil
-	if !p.A.Read || !ok || path <= 0 {
+	x, ok := d.path[name]
+	path := float64(x.Base - x.Ceiling)
+	if !ok || !x.Read || path <= 0 {
 		return frac{}
 	}
 	f := frac{path: true, read: p.Diff.Read}

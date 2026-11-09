@@ -10,6 +10,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -39,6 +41,9 @@ sim is NovaTrail's learner simulator. Its commands:
   judge    judge candidates against the base by a criterion, as a judgement
            file names them, and write the report
   merge    merge the files of the parts of a run into the file of the whole
+  paths    read the paths of the score off the decisive runs of the base and
+           of the ceiling into the file the criterion holds, and write
+           their table
   gate     the gate: its libraries, a part of its run, its check against
            the gate file, and the recording of its bands
 
@@ -73,6 +78,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = judgeCommand(args[1:], stdout, stderr)
 	case "merge":
 		err = mergeCommand(args[1:], stdout, stderr)
+	case "paths":
+		err = pathsCommand(args[1:], stdout, stderr)
 	case "gate":
 		err = gateCommand(args[1:], stdout, stderr)
 	default:
@@ -267,13 +274,12 @@ func compareCommand(args []string, stdout, stderr io.Writer) error {
 	return bench.Compare(bench.Side{File: files[0], Oracle: *aOracle}, bench.Side{File: files[1], Oracle: *bOracle}, stdout)
 }
 
-// judgement is a judgement file: the criterion, the files of results of the base, of the ceiling of
-// the engine and of each candidate, and of the confirmation when it has run; a path is relative to
-// the judgement file.
+// judgement is a judgement file: the criterion, the files of results of the base and of each
+// candidate, and of the confirmation when it has run; a path is relative to the judgement file. The
+// paths of the score are those the criterion holds fixed, so no ceiling runs beside them (R28).
 type judgement struct {
 	Criterion  string `json:"criterion"`
 	Base       string `json:"base"`
-	Ceiling    string `json:"ceiling"`
 	Candidates []struct {
 		Name      string `json:"name"`
 		File      string `json:"file"`
@@ -286,7 +292,6 @@ type judgement struct {
 	} `json:"candidates"`
 	Confirm *struct {
 		Base      string `json:"base"`
-		Ceiling   string `json:"ceiling"`
 		Candidate string `json:"candidate"`
 	} `json:"confirm"`
 }
@@ -335,9 +340,6 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 	if in.Base, err = read(j.Base); err != nil {
 		return err
 	}
-	if in.Ceiling, err = read(j.Ceiling); err != nil {
-		return err
-	}
 	for _, c := range j.Candidates {
 		f, err := read(c.File)
 		if err != nil {
@@ -351,7 +353,7 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 		for _, x := range []struct {
 			path string
 			to   **bench.File
-		}{{c.Base, &in.Confirm.Base}, {c.Ceiling, &in.Confirm.Ceiling}, {c.Candidate, &in.Confirm.Candidate}} {
+		}{{c.Base, &in.Confirm.Base}, {c.Candidate, &in.Confirm.Candidate}} {
 			if *x.to, err = read(x.path); err != nil {
 				return err
 			}
@@ -362,4 +364,57 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 		return err
 	}
 	return r.Write(stdout)
+}
+
+// pathsCommand is "sim paths": it reads the paths of the score off the decisive runs of the base
+// and of the ceiling of the engine, writes them into the file the criterion holds, and writes the
+// rows of their table, as the amendment to R04 that fixes them holds them (R28).
+func pathsCommand(args []string, stdout, stderr io.Writer) error {
+	fs := flag.NewFlagSet("paths", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	base := fs.String("base", "", "the file of results of the decisive run of the base")
+	ceiling := fs.String("ceiling", "", "the file of results of the decisive run of the ceiling of the engine")
+	out := fs.String("out", "", "the file of the paths, internal/criterion/paths.json of the repository")
+	table := fs.Bool("table", false, "write the rows of the table of the paths to stdout")
+	if err := parse(fs, args); err != nil {
+		return err
+	}
+	if *base == "" || *ceiling == "" || *out == "" || fs.NArg() != 0 {
+		fmt.Fprintln(stderr, "usage: sim paths -base <file> -ceiling <file> -out <file> [-table]")
+		return errUsage
+	}
+	b, bd, err := readDigest(*base)
+	if err != nil {
+		return err
+	}
+	c, cd, err := readDigest(*ceiling)
+	if err != nil {
+		return err
+	}
+	p, err := criterion.RecordPaths(b, c, bd, cd)
+	if err != nil {
+		return err
+	}
+	if err := writeTo(*out, stdout, p.Write); err != nil {
+		return err
+	}
+	if *table {
+		_, err = io.WriteString(stdout, p.Table())
+	}
+	return err
+}
+
+// readDigest reads a file of results and gives its SHA-256 beside it, in hex, read in the same pass.
+func readDigest(path string) (*bench.File, string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, "", err
+	}
+	defer f.Close()
+	h := sha256.New()
+	file, err := bench.Read(io.TeeReader(f, h))
+	if err != nil {
+		return nil, "", fmt.Errorf("%s: %w", path, err)
+	}
+	return file, hex.EncodeToString(h.Sum(nil)), nil
 }

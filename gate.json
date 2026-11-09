@@ -41,7 +41,7 @@
     "github.com/altnovatrail/sim": "1.27.3"
   },
   "bands": {
-    "reason": "the first record, on learner-model v0.1.0 and engine v0.1.0 (T24), recorded anew with E1.hard and E2.nothing, which the thresholds of the CI of modules are taken from (T25)",
+    "reason": "the first file of bands, on learner-model v0.1.0 and engine v0.1.0, the releases of the base, beside the decisive run that fixed the paths (T26)",
     "numbers": [
       {
         "cell": "G0/novatrail/olympiad-math",

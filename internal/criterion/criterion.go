@@ -2,7 +2,8 @@
 // engine, or of a pair of both: the constraints, the score as the share of the path from the base to
 // the ceiling, "better", the choice, the confirmation on held-out learners and the way out
 // (docs/architecture.md, section 3.6; R25 in docs/decisions.md). It reads files of results that
-// sim run wrote, the candidates' beside the base's and the ceiling's on the same learners.
+// sim run wrote, the candidates' beside the base's on the same learners, and holds the paths fixed
+// on the first decisive run of the base (R28).
 package criterion
 
 import (
@@ -47,18 +48,17 @@ type Candidate struct {
 	Library   string
 }
 
-// Confirm are the runs of the confirmation on the held-out learners of the choice: the base, the
-// ceiling of the engine and the chosen candidate.
+// Confirm are the runs of the confirmation on the held-out learners of the choice: the base and the
+// chosen candidate.
 type Confirm struct {
-	Base, Ceiling, Candidate *bench.File
+	Base, Candidate *bench.File
 }
 
-// Input is a judgement: the criterion, the base's run and the ceiling of the engine's on the same
-// learners, the candidates, and the confirmation when it has run.
+// Input is a judgement: the criterion, the base's run, the candidates on the same learners, and the
+// confirmation when it has run.
 type Input struct {
 	Criterion  string
 	Base       *bench.File
-	Ceiling    *bench.File
 	Candidates []Candidate
 	Confirm    *Confirm
 }
@@ -75,7 +75,7 @@ type Check struct {
 }
 
 // Score is a score: its value, its 95 % interval, its values over the resamples, and the numbers
-// that left it — a path of zero or less, or one the base or the ceiling does not read.
+// that left it — a number with no fixed path: none recorded, none read, or one of zero or less.
 type Score struct {
 	Value, Low, High float64
 	Read             bool
@@ -114,20 +114,23 @@ func Judge(in Input) (*Report, error) {
 	if err := in.check(); err != nil {
 		return nil, err
 	}
-	runs := slices.Concat([]*bench.File{in.Base, in.Ceiling}, files(in.Candidates))
-	if in.Confirm != nil {
-		runs = append(runs, in.Confirm.Base, in.Confirm.Ceiling, in.Confirm.Candidate)
-	}
-	r := &Report{Criterion: in.Criterion, Learners: fewest(runs)}
-	r.Decisive = r.Learners >= Decisive
-	cl, err := readCeilings(in.Base, in.Ceiling)
+	paths, err := fixed()
 	if err != nil {
 		return nil, err
 	}
+	if len(paths.Paths) == 0 {
+		return nil, fmt.Errorf("%w: no path is fixed yet: the first decisive run of the base fixes them (sim paths)", ErrCriterion)
+	}
+	runs := slices.Concat([]*bench.File{in.Base}, files(in.Candidates))
+	if in.Confirm != nil {
+		runs = append(runs, in.Confirm.Base, in.Confirm.Candidate)
+	}
+	r := &Report{Criterion: in.Criterion, Learners: fewest(runs)}
+	r.Decisive = r.Learners >= Decisive
 	var scores [][]float64
 	var eligible []int
 	for k, c := range in.Candidates {
-		v, err := judge(in.Criterion, cl, c)
+		v, err := judge(in.Criterion, in.Base, paths, c)
 		if err != nil {
 			return nil, err
 		}
@@ -182,11 +185,7 @@ func Judge(in Input) (*Report, error) {
 	}
 	c := in.Candidates[chosen]
 	c.File = in.Confirm.Candidate
-	held, err := readCeilings(in.Confirm.Base, in.Confirm.Ceiling)
-	if err != nil {
-		return nil, err
-	}
-	v, err := judge(in.Criterion, held, c)
+	v, err := judge(in.Criterion, in.Confirm.Base, paths, c)
 	if err != nil {
 		return nil, err
 	}
@@ -206,11 +205,8 @@ func (in Input) check() error {
 	default:
 		return fmt.Errorf("%w: no criterion %q", ErrCriterion, in.Criterion)
 	}
-	if in.Base == nil || in.Ceiling == nil {
-		return fmt.Errorf("%w: a judgement needs the base's run and the ceiling's", ErrCriterion)
-	}
-	if in.Base.Header.Rule != "engine" || in.Ceiling.Header.Rule != "ceiling" {
-		return fmt.Errorf("%w: the base ran under %q and the ceiling under %q", ErrCriterion, in.Base.Header.Rule, in.Ceiling.Header.Rule)
+	if in.Base == nil || in.Base.Header.Rule != "engine" {
+		return fmt.Errorf("%w: a judgement needs the base's run under the engine's rule", ErrCriterion)
 	}
 	for _, c := range in.Candidates {
 		if c.File == nil || c.File.Header.Rule != "engine" {
@@ -230,11 +226,11 @@ func (in Input) check() error {
 		}
 	}
 	if f := in.Confirm; f != nil {
-		if f.Base == nil || f.Ceiling == nil || f.Candidate == nil {
-			return fmt.Errorf("%w: a confirmation needs the base's run, the ceiling's and the candidate's", ErrCriterion)
+		if f.Base == nil || f.Candidate == nil {
+			return fmt.Errorf("%w: a confirmation needs the base's run and the candidate's", ErrCriterion)
 		}
-		if f.Base.Header.Rule != "engine" || f.Ceiling.Header.Rule != "ceiling" || f.Candidate.Header.Rule != "engine" {
-			return fmt.Errorf("%w: the confirmation's base, ceiling and candidate ran under %q, %q and %q", ErrCriterion, f.Base.Header.Rule, f.Ceiling.Header.Rule, f.Candidate.Header.Rule)
+		if f.Base.Header.Rule != "engine" || f.Candidate.Header.Rule != "engine" {
+			return fmt.Errorf("%w: the confirmation's base and candidate ran under %q and %q", ErrCriterion, f.Base.Header.Rule, f.Candidate.Header.Rule)
 		}
 		if !strings.HasPrefix(f.Base.Header.Set.Experiment, "held-out-") || f.Base.Header.Set == in.Base.Header.Set {
 			return fmt.Errorf("%w: the confirmation ran on %s, not on held-out learners apart from the choice's", ErrCriterion, f.Base.Header.Set.Experiment)
