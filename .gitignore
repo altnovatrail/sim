@@ -3,3 +3,5 @@
 # What go build writes for the package main at the root, as the wasip1 build of test-targets
 # and "Go / targets" does.
 /sim
+# What release-files writes, for the shared release to sign.
+/dist/
