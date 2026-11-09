@@ -6,12 +6,15 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/altnovatrail/sim/internal/bench"
 	"github.com/altnovatrail/sim/internal/gate"
 	"github.com/altnovatrail/sim/internal/measure"
+	"github.com/altnovatrail/sim/internal/pack"
+	"github.com/altnovatrail/sim/internal/published"
 	"github.com/altnovatrail/sim/internal/seed"
 )
 
@@ -218,5 +221,132 @@ func TestGateWhole(t *testing.T) {
 	}
 	if got := run([]string{"gate", "record", "-reason", "a test", "-file", gateFile, "-go", ".", parts[0], parts[1]}, &stdout, &stderr); got != 1 {
 		t.Errorf("a record with the build apart from the file = %d", got)
+	}
+	// A whole run of the gate of modules on the pinned packages, no number read: against the bands of
+	// gate.json, the thresholds are red.
+	pins, err := published.Pinned()
+	if err != nil {
+		t.Fatal(err)
+	}
+	modules := &bench.File{Header: bench.Header{Set: seed.Working, Rule: "engine", Invariants: true, Populations: gate.Populations, Learners: gate.Learners, Repeat: true, Packages: pins,
+		Libraries: map[string]string{
+			"github.com/altnovatrail/engine":        "c6c5bb9bc2c6fc486f629da82ee834bd89fc2b35",
+			"github.com/altnovatrail/learner-model": "d2620a18d865c813ec2556c93fca92a1445e3a74",
+		}}}
+	for _, cell := range bench.CellsOn(gate.Populations, pins) {
+		pop, graph, _ := strings.Cut(cell, "/")
+		for n := range gate.Learners {
+			modules.Lines = append(modules.Lines, bench.Line{Population: pop, Graph: strings.Split(graph, "+"), N: n, Sums: measure.Sums{"learners": 1}})
+		}
+	}
+	var buf2 bytes.Buffer
+	if err := bench.Write(modules, &buf2); err != nil {
+		t.Fatal(err)
+	}
+	whole := filepath.Join(dir, "modules.jsonl")
+	if err := os.WriteFile(whole, buf2.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	stdout.Reset()
+	if got := run([]string{"gate", "thresholds", "-go", filepath.Join(dir, "engine"), "-go", filepath.Join(dir, "learner-model"), "-go", ".", "-file", "gate.json", whole}, &stdout, &stderr); got != 1 || !strings.Contains(stdout.String(), "The gate of modules is red") || !strings.Contains(stdout.String(), "E1.hard is not read") {
+		t.Errorf("sim gate thresholds on a whole run with no number read = %d:\n%.600s%s", got, stdout.String(), stderr.String())
+	}
+}
+
+// folders writes the pinned packages into folders, as the CI of modules unpacks the published ones,
+// each named by its package digest, and gives them by module.
+func folders(t *testing.T, dir string) map[string]string {
+	t.Helper()
+	pins, err := published.Pinned()
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]string{}
+	for _, p := range pins {
+		name := strings.Replace(p.Digest, ":", "-", 1)
+		archive, err := os.ReadFile(filepath.Join("internal", "published", published.Release, name+".tar.gz"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		files, err := pack.Untar(archive)
+		if err != nil {
+			t.Fatal(err)
+		}
+		folder := filepath.Join(dir, name)
+		if err := os.MkdirAll(folder, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		for _, f := range []string{"inventory.json", "server.json"} {
+			if err := os.WriteFile(filepath.Join(folder, f), files[f], 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		out[p.Module] = folder
+	}
+	return out
+}
+
+// "sim gate changed" writes the folders the gate of modules runs on, and what each package is;
+// "sim gate run -package" runs a part on a package; "sim gate thresholds" refuses a part alone and
+// holds a whole run of the gate of modules, here with no number read, red.
+func TestGateModules(t *testing.T) {
+	dir := t.TempDir()
+	pkgs := folders(t, dir)
+	index := filepath.Join("internal", "published", published.Release, "module-index.json")
+	grade3 := pkgs["novatrail/grade-3-math"]
+	var stdout, stderr bytes.Buffer
+	for _, c := range []struct {
+		args   []string
+		stdout string
+		stderr string
+	}{
+		{[]string{"-first", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.1.0: new\n"},
+		{[]string{"-index", index, "-published", grade3, grade3}, "", "novatrail/grade-3-math 0.1.0: same against 0.1.0\n"},
+		{[]string{"-index", index, "-published", grade3, "-all", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.1.0: same against 0.1.0\n"},
+	} {
+		stdout.Reset()
+		stderr.Reset()
+		if got := run(append([]string{"gate", "changed"}, c.args...), &stdout, &stderr); got != 0 || stdout.String() != c.stdout || stderr.String() != c.stderr {
+			t.Errorf("sim gate changed %q = %d:\n%s%s", c.args, got, stdout.String(), stderr.String())
+		}
+	}
+	part := filepath.Join(dir, "part.jsonl")
+	if got := run([]string{"gate", "run", "-part", "0/300", "-package", grade3, "-out", part}, &stdout, &stderr); got != 0 {
+		t.Fatalf("sim gate run -package = %d: %s", got, stderr.String())
+	}
+	f, err := readResults([]string{part})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(f[0].Header.Packages) != 1 || slices.ContainsFunc(f[0].Lines, func(l bench.Line) bool { return l.Graph[0] != "novatrail/grade-3-math" }) {
+		t.Errorf("the part on grade-3-math: %+v", f[0].Header)
+	}
+	notJSON := filepath.Join(dir, "index.json")
+	if err := os.WriteFile(notJSON, []byte("{"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		args   []string
+		status int
+	}{
+		{[]string{"gate", "changed"}, 2},
+		{[]string{"gate", "changed", grade3}, 2},
+		{[]string{"gate", "changed", "-first", "-index", index, grade3}, 2},
+		{[]string{"gate", "changed", "-first", "-published", grade3, grade3}, 2},
+		{[]string{"gate", "changed", "-nope", grade3}, 2},
+		{[]string{"gate", "changed", "-index", filepath.Join(dir, "none.json"), grade3}, 1},
+		{[]string{"gate", "changed", "-index", notJSON, grade3}, 1},
+		{[]string{"gate", "changed", "-index", index, "-published", dir, grade3}, 1},
+		{[]string{"gate", "changed", "-first", dir}, 1},
+		{[]string{"gate", "changed", "-index", index, grade3}, 1},
+		{[]string{"gate", "run", "-package", dir}, 1},
+		{[]string{"gate", "run", "-package", grade3, "-package", grade3}, 1},
+		{[]string{"gate", "thresholds", "-go", ".", part}, 1},
+		{[]string{"gate", "thresholds", "-file", "gate.json"}, 2},
+	} {
+		stderr.Reset()
+		if got := run(c.args, &stdout, &stderr); got != c.status {
+			t.Errorf("sim %q = %d, want %d: %s", c.args, got, c.status, stderr.String())
+		}
 	}
 }

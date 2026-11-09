@@ -25,7 +25,7 @@ func results(shift float64, dropCell, dropKey string) *bench.File {
 			e := float64(0.001*float64(k%7)) + shift
 			s := measure.Sums{"learners": 1,
 				"M1.200.sq": float64((0.3 + e) * (0.3 + e)), "M1.200.n": 1,
-				"E1.corridor": float64(10 + k%3), "E1.items": 100,
+				"E1.corridor": float64(10 + k%3), "E1.items": 100, "E1.hard": float64(40 + k%3),
 				"M4.all.false": float64(k % 5 / 4), "M4.all.declared": 1,
 				"M4.pages.false": 0, "M4.pages.declared": 1,
 				"M6.late.sum": float64(4 + k%3), "M6.late.n": 1, "M6.never": float64(k % 9 / 8), "M6.cases": 1,
@@ -35,7 +35,7 @@ func results(shift float64, dropCell, dropKey string) *bench.File {
 				"M5.caught.sum": float64(3 + k%2), "M5.caught.n": 1, "M5.never": 0, "M5.episodes": 1,
 				"E3.late": float64(k % 2), "E3.reviews": 1,
 				"M9.hasFalse": 0, "M9.has": 1, "M9.notFalse": 0, "M9.not": 1,
-				"E5.written": 4, "E5.again": 0, "E2.stuck": 0,
+				"E5.written": 4, "E5.again": 0, "E2.stuck": 0, "E2.given": 50, "E2.nothing": 0,
 			}
 			if cell == dropCell {
 				delete(s, dropKey)
@@ -193,7 +193,7 @@ func TestReadWrite(t *testing.T) {
 	if _, err := Read(strings.NewReader(`{"bands":{},"extra":1}`)); err == nil {
 		t.Error("an unknown field is read")
 	}
-	if got := Numbers("G1"); !slices.Equal(got, []string{"M7.error.10", "E2.stuck"}) {
+	if got := Numbers("G1"); !slices.Equal(got, []string{"M7.error.10", "E2.stuck", "E2.nothing"}) {
 		t.Errorf("Numbers(G1) = %v", got)
 	}
 	if len(Cells()) != 14 {

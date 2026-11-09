@@ -47,6 +47,10 @@ type Header struct {
 	Learners    int      `json:"learners,omitempty"`
 	Repeat      bool     `json:"repeat,omitempty"`
 	Part        Part     `json:"part,omitzero"`
+	// Packages are the packages the run took in place of the pinned ones, and it ran only the graphs
+	// whose every module is one of them: the gate of the CI of modules, on the packages of a pull
+	// request (docs/architecture.md, section 3.9). None, the pinned packages and every graph.
+	Packages []published.Package `json:"packages,omitempty"`
 	// Invariants tells that each line records the breaches of I1–I4 on its run: under the engine.
 	Invariants bool `json:"invariants"`
 }
@@ -76,6 +80,15 @@ type Config struct {
 	Commits     map[string]string
 	Part        Part
 	Repeat      bool
+	// Packages take the place of the pinned packages of their modules, and only the graphs whose every
+	// module is one of them run.
+	Packages []Package
+}
+
+// Package is a package a run takes in place of the pinned one: what it is, and its module read.
+type Package struct {
+	published.Package
+	Module *pack.Module
 }
 
 // Part is the K-th of N parts of the learners: those whose number n gives K by n mod N. The zero
@@ -146,8 +159,9 @@ func Names(info *debug.BuildInfo, commits map[string]string) (map[string]string,
 	return out, nil
 }
 
-// modules gives the modules of a graph by full ID, published or synthetic.
-func modules(graph []string) ([]*pack.Module, error) {
+// modules gives the modules of a graph by full ID: a package the run takes in place of the pinned
+// one, or else the pinned, published or synthetic.
+func modules(graph []string, packages []Package) ([]*pack.Module, error) {
 	pub, err := published.Modules()
 	if err != nil {
 		return nil, err
@@ -158,8 +172,10 @@ func modules(graph []string) ([]*pack.Module, error) {
 	}
 	var out []*pack.Module
 	for _, id := range graph {
-		m := pub[id]
-		if m == nil {
+		var m *pack.Module
+		if i := slices.IndexFunc(packages, func(p Package) bool { return p.Package.Module == id }); i >= 0 {
+			m = packages[i].Module
+		} else if m = pub[id]; m == nil {
 			m = syn[id]
 		}
 		if m == nil {
@@ -170,9 +186,9 @@ func modules(graph []string) ([]*pack.Module, error) {
 	return out, nil
 }
 
-// Run runs the cells of a config, every graph of every population, and writes the file of results
-// to w: the header, then one line a learner of its part, in the order of the populations, their
-// graphs and the learners.
+// Run runs the cells of a config, every graph of every population — with packages in place of the
+// pinned ones, the graphs they cover —, and writes the file of results to w: the header, then one
+// line a learner of its part, in the order of the populations, their graphs and the learners.
 func Run(c Config, w io.Writer) error {
 	if !c.Part.valid() {
 		return fmt.Errorf("%w: no part %d of %d", ErrBench, c.Part.K, c.Part.N)
@@ -197,15 +213,25 @@ func Run(c Config, w io.Writer) error {
 		}
 		pops = append(pops, p)
 	}
+	var taken []published.Package
+	for k, p := range c.Packages {
+		if p.Module == nil || p.Module.ID != p.Package.Module || slices.ContainsFunc(c.Packages[:k], func(q Package) bool { return q.Package.Module == p.Package.Module }) {
+			return fmt.Errorf("%w: the package of %s is not its module read, or comes twice", ErrBench, p.Package.Module)
+		}
+		taken = append(taken, p.Package)
+	}
 	buf := bufio.NewWriter(w)
 	enc := json.NewEncoder(buf)
-	h := Header{Set: c.Set, Rule: rule, Libraries: names, Invariants: c.Rule == run.Engine, Populations: c.Populations, Learners: c.Learners, Repeat: c.Repeat, Part: c.Part}
+	h := Header{Set: c.Set, Rule: rule, Libraries: names, Invariants: c.Rule == run.Engine, Populations: c.Populations, Learners: c.Learners, Repeat: c.Repeat, Part: c.Part, Packages: taken}
 	if err := enc.Encode(h); err != nil {
 		return err
 	}
 	for _, p := range pops {
 		for _, graph := range p.Graphs {
-			mods, err := modules(graph)
+			if !covers(taken, graph) {
+				continue
+			}
+			mods, err := modules(graph, c.Packages)
 			if err != nil {
 				return err
 			}
@@ -224,6 +250,14 @@ func Run(c Config, w io.Writer) error {
 		}
 	}
 	return buf.Flush()
+}
+
+// covers tells whether a run on packages runs a graph: with none, every graph; with some, a graph
+// whose every module is one of them.
+func covers(packages []published.Package, graph []string) bool {
+	return len(packages) == 0 || !slices.ContainsFunc(graph, func(id string) bool {
+		return !slices.ContainsFunc(packages, func(p published.Package) bool { return p.Module == id })
+	})
 }
 
 // runOne runs the n-th learner of a population on the modules of a graph.
@@ -281,7 +315,7 @@ func Merge(parts []*File) (*File, error) {
 	for _, f := range parts {
 		h := f.Header
 		if h.Set != first.Set || h.Rule != first.Rule || h.Invariants != first.Invariants || !maps.Equal(h.Libraries, first.Libraries) ||
-			!slices.Equal(h.Populations, first.Populations) || h.Learners != first.Learners || h.Repeat != first.Repeat || max(1, h.Part.N) != n {
+			!slices.Equal(h.Populations, first.Populations) || h.Learners != first.Learners || h.Repeat != first.Repeat || !slices.Equal(h.Packages, first.Packages) || max(1, h.Part.N) != n {
 			return nil, fmt.Errorf("%w: part %d of %d is not of the run of part %d of %d", ErrBench, h.Part.K, h.Part.N, first.Part.K, first.Part.N)
 		}
 		if !h.Part.valid() {
@@ -297,7 +331,7 @@ func Merge(parts []*File) (*File, error) {
 		return nil, fmt.Errorf("%w: part %d of %d is missing", ErrBench, i, n)
 	}
 	order := map[string]int{}
-	for k, cell := range CellsOf(first.Populations) {
+	for k, cell := range CellsOn(first.Populations, first.Packages) {
 		order[cell] = k
 	}
 	slices.SortStableFunc(out.Lines, func(a, b Line) int {
@@ -364,10 +398,19 @@ type Side struct {
 // CellsOf names the cells of populations, by name: each on every graph it runs on, in order; a name
 // that is no population has none.
 func CellsOf(populations []string) []string {
+	return CellsOn(populations, nil)
+}
+
+// CellsOn names the cells of populations that a run on packages runs: those on the graphs the
+// packages cover; with none, every graph.
+func CellsOn(populations []string, packages []published.Package) []string {
 	var out []string
 	for _, name := range populations {
 		p, _ := population.Named(name)
 		for _, graph := range p.Graphs {
+			if !covers(packages, graph) {
+				continue
+			}
 			out = append(out, p.Name+"/"+strings.Join(graph, "+"))
 		}
 	}

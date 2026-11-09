@@ -2,6 +2,7 @@ package pack
 
 import (
 	"cmp"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -346,4 +347,28 @@ func (t *Task) ItemPrimary(i int) []string {
 		return it.Primary
 	}
 	return t.Candidate.Task.Primary
+}
+
+// Text gives the canonical text of what the bench reads of the module: the module translated —
+// its graph with the bands and the tiers, its audience, its tasks with their items, slots, traps,
+// canvases and ages and the numbers of each template's instances, its lessons —, as JSON, whose
+// fields keep their order and whose maps are written by their keys. What Translate does not read —
+// the texts for the learner, the version — is not in it, so two packages give the same text when
+// the bench reads the same of them, and Translate is the one list of what the bench reads
+// (docs/architecture.md, section 3.9; R27 in docs/decisions.md).
+func (m *Module) Text() ([]byte, error) {
+	type task struct {
+		Task
+		Numbers []formatv0.Numbers
+	}
+	v := struct {
+		Graph   learnermodel.Graph
+		Ages    []string
+		Tasks   []task
+		Lessons []Lesson
+	}{Graph: m.Graph, Ages: m.Ages, Lessons: m.Lessons}
+	for _, t := range m.Tasks {
+		v.Tasks = append(v.Tasks, task{Task: t, Numbers: t.numbers})
+	}
+	return json.Marshal(v)
 }

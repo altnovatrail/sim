@@ -161,27 +161,57 @@ ci-licenses:
     fi
     go run {{ GO_LICENSES }} check ./... --allowed_licenses="$ALLOWED_LICENSES"
 
-# The gate (docs/architecture.md, sections 3.7 and 3.9; R09, R26 in docs/decisions.md). It builds
-# the bench only on the commits gate.json names: it fetches each library at its commit into a
-# temporary folder — or takes the caller's own code from GATE_LEARNER_MODEL or GATE_ENGINE, a
+# The gate (docs/architecture.md, sections 3.7 and 3.9; R09, R26, R27 in docs/decisions.md). It
+# builds the bench only on the commits gate.json names: it fetches each library at its commit into
+# a temporary folder — or takes the caller's own code from GATE_LEARNER_MODEL or GATE_ENGINE, a
 # folder, in its place —, writes go.work there with the three modules and points GOWORK at it, and
 # builds sim once. The run goes as processes, one part of the learners each, as many as the
 # processors: R09 keeps goroutines out of code. Then sim holds the build to gate.json — the versions
 # the workspace chose, the go lines, the point sim's go.mod names, the packages — and the numbers to
 # their bands, and writes the table. mode is bands, as the callers hold them; exact, the recorded
-# numbers to the last bit, as sim's own CI holds them on amd64 and arm64; or record, which writes the
-# bands into gate.json anew, for the reason given.
-# Run the gate on the commits of gate.json: mode bands, exact or record.
-gate mode="bands" reason="":
+# numbers to the last bit, as sim's own CI holds them on amd64 and arm64; record, which writes the
+# bands into gate.json anew, for the reason given as the one argument; or modules, the gate of the
+# CI of modules, whose arguments are those of `sim gate changed` (README.md): it asks sim what
+# changed of what the bench reads, before it fetches anything, runs the gate on the packages of the
+# changed modules alone, and holds the numbers to thresholds, not bands. Relative paths among those
+# arguments are of the caller's folder.
+# Run the gate on the commits of gate.json: mode bands, exact, record or modules.
+[positional-arguments]
+gate mode="bands" *args:
     #!/usr/bin/env bash
     set -euo pipefail
-    case "{{ mode }}" in bands|exact|record) ;; *) echo "gate: mode {{ mode }}: bands, exact or record" >&2; exit 2 ;; esac
+    mode="$1"
+    shift
+    case "$mode" in
+        bands|exact) [ "$#" -eq 0 ] || { echo "gate: mode $mode takes no argument" >&2; exit 2; } ;;
+        record) [ "$#" -eq 1 ] || { echo "gate: mode record takes the reason, one argument" >&2; exit 2; } ;;
+        modules) [ "$#" -gt 0 ] || { echo "gate: mode modules takes the arguments of sim gate changed" >&2; exit 2; } ;;
+        *) echo "gate: mode $mode: bands, exact, record or modules" >&2; exit 2 ;;
+    esac
     root="$PWD"
     tmp="$(mktemp -d)"
     pids=()
     # A part that fails stops the others before the folder they write into goes.
     trap 'for p in "${pids[@]}"; do kill "$p" 2>/dev/null || true; done; wait; rm -rf "$tmp"' EXIT
     GOWORK=off go build -o "$tmp/plain" .
+    packages=()
+    if [ "$mode" = modules ]; then
+        changed=()
+        for a in "$@"; do
+            case "$a" in
+                -*=/*|-*=) changed+=("$a") ;;
+                -*=*) changed+=("${a%%=*}="{{ quote(invocation_directory()) }}/"${a#*=}") ;;
+                -*|/*) changed+=("$a") ;;
+                *) changed+=({{ quote(invocation_directory()) }}/"$a") ;;
+            esac
+        done
+        run="$("$tmp/plain" gate changed "${changed[@]}")"
+        if [ -z "$run" ]; then
+            echo "gate: nothing the bench reads changed, so the gate of modules has nothing to run"
+            exit 0
+        fi
+        while IFS= read -r folder; do packages+=(-package "$folder"); done <<< "$run"
+    fi
     libraries="$("$tmp/plain" gate libraries gate.json)"
     uses=("$root")
     gomods=(-go "$root")
@@ -226,7 +256,7 @@ gate mode="bands" reason="":
     go build -o "$tmp/sim" .
     n="$(nproc)"
     for k in $(seq 0 $((n - 1))); do
-        "$tmp/sim" gate run -part "$k/$n" "${commits[@]}" -out "$tmp/part-$k.jsonl" &
+        "$tmp/sim" gate run -part "$k/$n" "${commits[@]}" ${packages[@]+"${packages[@]}"} -out "$tmp/part-$k.jsonl" &
         pids+=("$!")
     done
     failed=0
@@ -236,8 +266,9 @@ gate mode="bands" reason="":
         echo "gate: a part of the run failed" >&2
         exit 1
     fi
-    case "{{ mode }}" in
+    case "$mode" in
         bands) "$tmp/sim" gate check -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
         exact) "$tmp/sim" gate check -exact -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
-        record) "$tmp/sim" gate record -reason {{ quote(reason) }} -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
+        record) "$tmp/sim" gate record -reason "$1" -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
+        modules) "$tmp/sim" gate thresholds -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
     esac
