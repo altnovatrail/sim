@@ -134,7 +134,7 @@ func TestEngineOnRuns(t *testing.T) {
 		numbers    []string
 	}{
 		{"G0", 12, []string{"E1.corridor", "E1.ceiling", "E2.nothing", "E3.end", "E4.given", "E4.mastered"}},
-		{"F-model", 40, []string{"E3.retention", "E3.late", "E3.week1"}},
+		{"F-model", 24, []string{"E3.retention", "E3.late", "E3.week1"}},
 		{"E-base", 12, []string{"E5.written", "E5.again", "E4.given"}},
 	} {
 		recs, graph := records(t, c.population, c.n)

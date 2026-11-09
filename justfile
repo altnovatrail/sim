@@ -327,7 +327,14 @@ gate mode="bands" *args:
             echo "gate: nothing the bench reads changed, so the gate of modules has nothing to run"
             exit 0
         fi
-        while IFS= read -r folder; do packages+=(-package "$folder"); done <<< "$run"
+        # A line "along <folder>" is a package that did not change and runs only on the graphs it
+        # shares with one that did (R31 in docs/decisions.md).
+        while IFS= read -r line; do
+            case "$line" in
+                "along "*) packages+=(-along "${line#along }") ;;
+                *) packages+=(-package "$line") ;;
+            esac
+        done <<< "$run"
     fi
     libraries="$("$tmp/plain" gate libraries gate.json)"
     uses=("$root")

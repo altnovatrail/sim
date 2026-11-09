@@ -36,19 +36,33 @@ func (b Breach) String() string {
 	return fmt.Sprintf("%s: %s, step %d, choice %v %s (%v): %s", b.Invariant, b.Unit, b.Step, b.Choice.Kind, b.Choice.ID, b.Choice.Reason, b.Detail)
 }
 
-// Check gives every breach of I1–I4 in a run's record.
+// Check gives every breach of I1–I4 in a run's record: I1 by taking each choice again on the input it
+// keeps.
 func Check(rec *run.Record) []Breach {
+	return check(rec, true)
+}
+
+// CheckRepeated gives every breach of I2–I4 in the record of a run that is repeated, whose I1 Same
+// holds to the same bits: taking each choice again as well would only double the engine's work on
+// every step, the most of a run (R31 in docs/decisions.md).
+func CheckRepeated(rec *run.Record) []Breach {
+	return check(rec, false)
+}
+
+func check(rec *run.Record, again bool) []Breach {
 	var out []Breach
 	for k, s := range rec.Steps {
 		breach := func(inv, format string, args ...any) {
 			out = append(out, Breach{Invariant: inv, Unit: rec.Unit, Step: k, Choice: s.Choice, Detail: fmt.Sprintf(format, args...)})
 		}
-		again, err := engine.Choose(s.Input)
-		switch {
-		case err != nil:
-			breach("I1", "the engine refuses the input it took: %v", err)
-		case again != s.Choice:
-			breach("I1", "the choice taken again is %v %s (%v)", again.Kind, again.ID, again.Reason)
+		if again {
+			c, err := engine.Choose(s.Input)
+			switch {
+			case err != nil:
+				breach("I1", "the engine refuses the input it took: %v", err)
+			case c != s.Choice:
+				breach("I1", "the choice taken again is %v %s (%v)", c.Kind, c.ID, c.Reason)
+			}
 		}
 		for _, d := range reasonCode(s) {
 			breach("I2", "%s", d)

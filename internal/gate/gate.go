@@ -18,6 +18,7 @@ import (
 
 	"github.com/altnovatrail/sim/internal/bench"
 	"github.com/altnovatrail/sim/internal/measure"
+	"github.com/altnovatrail/sim/internal/population"
 	"github.com/altnovatrail/sim/internal/published"
 	"github.com/altnovatrail/sim/internal/run"
 	"github.com/altnovatrail/sim/internal/seed"
@@ -90,22 +91,20 @@ func (f *File) Write(w io.Writer) error {
 	return err
 }
 
-// Learners are the learners of each cell of the gate: the first of the working set.
-const Learners = 300
+// Learners are the learners of each cell of the gate: the first of the working set. They were 300,
+// as standalone's guard had; on olympiad maths 0.1.1 a choice of the engine takes some ten times
+// longer, and 300 would not fit the job's budget of fifteen minutes, which the gate keeps by a
+// change of sim, not of the time (docs/architecture.md, section 3.9; R31 in docs/decisions.md).
+const Learners = 100
 
 // learners are the learners whole holds each cell to: Learners, but a test of the checks lowers it,
-// since reading the numbers off 300 learners a cell under the race detector takes minutes.
+// since reading the numbers off 100 learners a cell under the race detector takes minutes.
 var learners = Learners
 
 // Populations are the populations of the gate, each on every graph it runs on, in the order of
-// population (docs/architecture.md, section 3.7). A-linked is not among them: it runs on synthetic
-// packages alone (R19), and the gate takes no synthetic module (docs/architecture.md, section 3.3);
-// its numbers are no graph, and the report says so.
-var Populations = []string{"G0", "G1", "G2", "G2-half", "G3", "F-model", "W-shock", "E-base"}
-
-// NoGraph are the populations of the gate with no published graph: they are named in the report
-// and not run.
-var NoGraph = []string{"A-linked"}
+// population (docs/architecture.md, section 3.7). A-linked runs on the two published maths together,
+// since olympiad maths 0.1.1 rests skills on school maths (R31 in docs/decisions.md).
+var Populations = []string{"G0", "G1", "G2", "G2-half", "G3", "F-model", "W-shock", "A-linked", "E-base"}
 
 // numbers are the numbers of the gate of each population, besides the two of E2 on every one. The
 // share of items with P* below 0.50, E1.hard, and the choices of nothing, E2.nothing, are what the
@@ -313,9 +312,6 @@ func (r *Report) Write(w io.Writer) error {
 		in, bit := yes(row.InBand), yes(row.Exact)
 		fmt.Fprintf(&b, "| %s | %s | %s | %s | %s | %s | %s |\n", row.Cell, row.Number, rec, half, show(row.Now.Value.Value, row.Now.Read), in, bit)
 	}
-	for _, p := range NoGraph {
-		fmt.Fprintf(&b, "| %s | %s | no graph | | | | |\n", p, strings.Join(Numbers(p), ", "))
-	}
 	mode := "within their bands"
 	if r.Exact {
 		mode = "the recorded ones to the last bit"
@@ -337,4 +333,25 @@ func yes(b bool) string {
 		return "yes"
 	}
 	return "no"
+}
+
+// cell is a population of the gate on one of its graphs.
+type cell struct {
+	population string
+	graph      []string
+}
+
+// cells gives every population of the gate on each of its graphs, in the order of Populations.
+func cells() []cell {
+	var out []cell
+	for _, name := range Populations {
+		p, ok := population.Named(name)
+		if !ok {
+			panic("gate: no population " + name) // Populations are names of the registry
+		}
+		for _, g := range p.Graphs {
+			out = append(out, cell{name, g})
+		}
+	}
+	return out
 }

@@ -194,10 +194,11 @@ func TestAdult(t *testing.T) {
 	for n := range 40 {
 		l := learnerWith(t, "S-adult", n, a, olympiad)
 		m := l.modules[olympiad]
-		// The params of an adult: no grade, the level, the three offsets, then its shift above.
+		// The params of an adult: no grade, the level, an offset of each skill with a verdict, then its
+		// shift above.
 		p, _ := seed.Working.Place(l.Unit, seed.Params)
 		level := p.Normal()
-		for range 3 {
+		for range len(l.skills) {
 			p.Normal()
 		}
 		shift := 2.5 + float64(2.5*p.Fraction())

@@ -301,6 +301,17 @@ func TestPackages(t *testing.T) {
 	if want := []string{"G0/novatrail/grade-3-math"}; !slices.Equal(CellsOn(c.Populations, got.Header.Packages), want) {
 		t.Errorf("the cells on the package are %v", CellsOn(c.Populations, got.Header.Packages))
 	}
+	// A package that came along runs only on the graphs it shares with one that did not: olympiad
+	// maths along with school maths is A-linked on both, and none of its own.
+	olympiad := pins[slices.IndexFunc(pins, func(p published.Package) bool { return p.Module == "novatrail/olympiad-math" })]
+	olympiad.Along = true
+	both := []published.Package{pin, olympiad}
+	if want := []string{"G0/novatrail/grade-3-math", "A-linked/novatrail/olympiad-math+novatrail/grade-3-math"}; !slices.Equal(CellsOn([]string{"G0", "A-linked"}, both), want) {
+		t.Errorf("the cells with a package along are %v", CellsOn([]string{"G0", "A-linked"}, both))
+	}
+	if got := CellsOn([]string{"G0", "A-linked"}, []published.Package{olympiad}); got != nil {
+		t.Errorf("a package along alone runs %v", got)
+	}
 	plain := runTo(t, Config{Populations: []string{"G0"}, Learners: 3, Set: seed.Working})
 	var same []Line
 	for _, l := range plain.Lines {

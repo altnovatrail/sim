@@ -43,7 +43,10 @@ func TestReleasePackages(t *testing.T) {
 		tasks   int
 		lessons int
 	}{
-		{olympiad, []string{"combinatorics-enumeration:1", "counting-gaps:1", "pigeonhole-basic:2"}, 3, 27, 9},
+		{olympiad, []string{"algorithms-weighing-pouring:3", "arithmetic-tricks:1", "combinatorics-enumeration:1", "counting-figures:1",
+			"counting-gaps:1", "fractions-parts:2", "games-strategy:2", "geometry-cubes-paper:1", "geometry-grid:2", "logic-knights-liars:2",
+			"logic-ordering:1", "logic-sets:3", "number-divisibility:3", "parity-alternation:1", "percent-basic:3", "pigeonhole-basic:2",
+			"ratio-sharing:3", "time-calendar:2", "time-clocks:1"}, 3, 772, 41},
 		{grade3, []string{"comparing-fractions:3", "division-with-remainder:2", "fractions-of-a-whole:2", "times-tables:1"}, 1, 12, 4},
 		{essays, []string{"choosing-a-first-sentence:1", "endings:4", "improving-an-essay:4", "paragraphs:3",
 			"reading-model-essays:1", "writing-a-first-sentence:2"}, 2, 8, 6},
@@ -84,8 +87,9 @@ func TestReleasePackages(t *testing.T) {
 	}
 }
 
-// The kinds of check of the release: numbers on the sheet of olympiad maths, numbers, fractions and
-// choices of three options on the workbook of grade 3 — the options in the check —, choices of
+// The kinds of check of the release: numbers, fractions and choices of five options in the check on
+// the sheet of olympiad maths 0.1.1, numbers, fractions and choices of three options on the workbook
+// of grade 3 — the options in the check —, choices of
 // three options beside the check and rubrics in essays (R12 of this log; docs/architecture.md,
 // section 4). No cell of predicate is published.
 func TestReleaseChecks(t *testing.T) {
@@ -105,7 +109,7 @@ func TestReleaseChecks(t *testing.T) {
 		return c
 	}
 	number, fraction, choice := itoa(int32(learnermodel.CheckKindNumber)), itoa(int32(learnermodel.CheckKindFraction)), itoa(int32(learnermodel.CheckKindChoice))
-	if c := count(ms[olympiad]); c[number+"/0"] != 27 || len(c) != 1 {
+	if c := count(ms[olympiad]); c[number+"/0"] != 569 || c[fraction+"/0"] != 7 || c[choice+"/5"] != 196 || len(c) != 3 {
 		t.Errorf("olympiad maths has the checks %v", c)
 	}
 	if c := count(ms[grade3]); c[number+"/0"] != 78 || c[fraction+"/0"] != 17 || c[choice+"/3"] != 17 || len(c) != 3 {
@@ -123,19 +127,27 @@ func TestReleaseChecks(t *testing.T) {
 	}
 }
 
-// The release has no template: no task of it has an instance (docs/architecture.md, section 4).
-// The way an attempt's seed takes an instance is tested on a template of pack's own test.
+// Of the release, only olympiad maths 0.1.1 has templates: 19 tasks, each with its instances, and an
+// attempt's seed takes one of them; a task that is no template has no instance (docs/architecture.md,
+// section 4). How the seed takes an instance is tested on a template of pack's own test.
 func TestReleaseTemplates(t *testing.T) {
 	ms := modules(t)
-	for _, id := range []string{olympiad, grade3, essays} {
-		m := ms[id]
+	for id, want := range map[string]int{olympiad: 19, grade3: 0, essays: 0} {
+		m, n := ms[id], 0
 		for _, task := range m.Tasks {
-			if task.Candidate.Task.Template || task.Instances != 0 {
-				t.Errorf("%s is a template; docs/architecture.md, section 4, says the release has none", task.Candidate.Task.ID)
-			}
-			if _, _, err := m.Instance(task.Candidate.Task.ID, 1); err == nil {
+			k, _, err := m.Instance(task.Candidate.Task.ID, 1)
+			switch {
+			case task.Candidate.Task.Template:
+				n++
+				if task.Instances == 0 || err != nil || k < 0 || k >= task.Instances {
+					t.Errorf("%s: %d instances, the instance %d, %v", task.Candidate.Task.ID, task.Instances, k, err)
+				}
+			case task.Instances != 0 || err == nil:
 				t.Errorf("%s is no template, and still has an instance", task.Candidate.Task.ID)
 			}
+		}
+		if n != want {
+			t.Errorf("%s has %d templates, want %d", id, n, want)
 		}
 	}
 	if _, _, err := ms[olympiad].Instance("no/such/task", 1); !errors.Is(err, pack.ErrNoTask) {
@@ -180,7 +192,7 @@ func itoa[N ~int32](n N) string {
 }
 
 // Pinned names the three packages of the first slice by the pinned index, each with its version and
-// package digest.
+// package digest: olympiad maths 0.1.1, the others 0.1.0.
 func TestPinned(t *testing.T) {
 	ps, err := Pinned()
 	if err != nil {
@@ -190,8 +202,33 @@ func TestPinned(t *testing.T) {
 		t.Fatalf("Pinned = %+v", ps)
 	}
 	for _, p := range ps {
-		if p.Version != "0.1.0" || len(p.Digest) != len("sha256:")+64 {
+		want := "0.1.0"
+		if p.Module == olympiad {
+			want = "0.1.1"
+		}
+		if p.Version != want || len(p.Digest) != len("sha256:")+64 {
 			t.Errorf("%+v", p)
 		}
+	}
+}
+
+// Archive gives each pinned package from the folder of the release its entry names, and refuses a
+// package the pinned index has not.
+func TestArchive(t *testing.T) {
+	ps, err := Pinned()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range ps {
+		data, err := Archive(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if files, err := pack.Untar(data); err != nil || files["inventory.json"] == nil {
+			t.Errorf("%s: %v", p.Module, err)
+		}
+	}
+	if _, err := Archive(Package{Module: olympiad, Version: "9.9.9"}); err == nil {
+		t.Error("a package the index has not: no error")
 	}
 }

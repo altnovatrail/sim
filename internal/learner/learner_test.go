@@ -85,8 +85,8 @@ func TestNew(t *testing.T) {
 		dev := m.Level - float64(2.5*float64(m.StartBand-1))
 		sum += dev
 		sum2 += float64(dev * dev)
-		if len(l.skills) != 3 {
-			t.Fatalf("%d skills with a verdict, want 3", len(l.skills))
+		if len(l.skills) != 19 {
+			t.Fatalf("%d skills with a verdict, want 19", len(l.skills))
 		}
 	}
 	for g := int32(1); g <= 6; g++ {

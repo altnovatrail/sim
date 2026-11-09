@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,6 +17,7 @@ import (
 	"github.com/altnovatrail/sim/internal/pack"
 	"github.com/altnovatrail/sim/internal/published"
 	"github.com/altnovatrail/sim/internal/seed"
+	"github.com/altnovatrail/spec/types/formatv0"
 )
 
 // "sim gate" lists the libraries of the gate file, runs a part of the gate, and checks or records
@@ -264,7 +266,7 @@ func folders(t *testing.T, dir string) map[string]string {
 	out := map[string]string{}
 	for _, p := range pins {
 		name := strings.Replace(p.Digest, ":", "-", 1)
-		archive, err := os.ReadFile(filepath.Join("internal", "published", published.Release, name+".tar.gz"))
+		archive, err := published.Archive(p)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -294,6 +296,26 @@ func TestGateModules(t *testing.T) {
 	pkgs := folders(t, dir)
 	index := filepath.Join("internal", "published", published.Release, "module-index.json")
 	grade3 := pkgs["novatrail/grade-3-math"]
+	olympiad := pkgs["novatrail/olympiad-math"]
+	// An index with no school maths: it is new, and A-linked brings olympiad maths, which did not
+	// change, into the run with it.
+	var idx formatv0.ModuleIndex
+	data, err := os.ReadFile(index)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(data, &idx); err != nil {
+		t.Fatal(err)
+	}
+	delete(idx.Modules, "novatrail/grade-3-math")
+	data, err = json.Marshal(idx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	noGrade3 := filepath.Join(dir, "no-grade-3.json")
+	if err := os.WriteFile(noGrade3, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
 	var stdout, stderr bytes.Buffer
 	for _, c := range []struct {
 		args   []string
@@ -303,6 +325,8 @@ func TestGateModules(t *testing.T) {
 		{[]string{"-first", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.1.0: new\n"},
 		{[]string{"-index", index, "-published", grade3, grade3}, "", "novatrail/grade-3-math 0.1.0: same against 0.1.0\n"},
 		{[]string{"-index", index, "-published", grade3, "-all", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.1.0: same against 0.1.0\n"},
+		{[]string{"-index", noGrade3, "-published", olympiad, grade3, olympiad}, grade3 + "\nalong " + olympiad + "\n",
+			"novatrail/grade-3-math 0.1.0: new\nnovatrail/olympiad-math 0.1.1: same against 0.1.1, run with novatrail/grade-3-math, which shares a graph of the gate with it\n"},
 	} {
 		stdout.Reset()
 		stderr.Reset()

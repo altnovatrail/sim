@@ -52,10 +52,11 @@ var (
 	grade3   = [][]string{{Grade3}}
 	essays   = [][]string{{Essays}}
 	// anchored is the graph of A-: a learner of a module whose skill rests on an anchor skill and of
-	// the module that teaches it. No published package has such a skill, so it is the synthetic sheet
-	// with the synthetic workbook, and in the criterion and the gate its checks are "no graph"
-	// (docs/architecture.md, section 3.2; R19).
-	anchored = [][]string{{synthetic.Sheet, synthetic.Workbook}}
+	// the module that teaches it. Olympiad maths 0.1.1 rests two skills on skills school maths
+	// teaches — fractions-parts on core.fractions-of-a-whole, number-divisibility on
+	// core.division-with-remainder —, so it is the two published maths together
+	// (docs/architecture.md, section 3.2; R31 in docs/decisions.md).
+	anchored = [][]string{{Olympiad, Grade3}}
 )
 
 // one gives the sides of a population of one side.

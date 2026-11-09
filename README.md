@@ -35,7 +35,7 @@ just gate modules (-index <module-index.json> | -first) [-published <folder>]...
 
 - `-index` is `module-index.json` of the newest release of modules, which `release-verify` has accepted; `-first` says there is no release yet, and every package is new. Give exactly one of the two.
 - Each `-published` is a published package of that index as a folder, with its `inventory.json` and `server.json`: the packages of every version of the modules, withdrawn ones too, as the CI of modules already unpacks them for `module-kit diff`. sim finds each by the digest of its `inventory.json` and checks it by the chain of digests from the index.
-- Each `<package folder>` is a package that `module-kit build` wrote for the pull request.
+- Each `<package folder>` is a package that `module-kit build` wrote for the pull request. Give every module the pull request builds, not only the changed ones: a cell on two modules runs on both of them.
 - `-all` runs every package: give it when the pull request moves the tag of sim.
 - Relative paths are taken from the folder `just` was called in.
 
@@ -45,7 +45,7 @@ The recipe first asks `sim gate changed` what each package is, and prints a line
 |---|---|---|
 | `new` | the module has no published version that is not withdrawn | yes |
 | `changed` | what the bench reads differs from the newest published version that is not withdrawn | yes |
-| `same` | what the bench reads is the same: only texts for the learner, or the version, changed | only with `-all` |
+| `same` | what the bench reads is the same: only texts for the learner, or the version, changed | with `-all`, or when a cell of the gate runs it with a changed module: A-linked runs on both maths, so a change to either brings the other along, and its line names the module that brought it |
 | `transition` | the newest published version is of another version of the module format | never |
 
 What the bench reads is what it translates the server part into: the bands and the audience of the manifest, the graph and its tiers, the tasks, the lessons and the instances of templates, and none of the texts for the learner. If nothing runs, the recipe says so and exits with 0 before it fetches anything. Otherwise it builds the bench on both libraries at the commits that gate.json names, runs the gate's populations on the graphs of the packages that run, and checks the numbers against the thresholds:

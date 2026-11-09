@@ -189,15 +189,18 @@ func TestCeiling(t *testing.T) {
 			t.Fatal(err)
 		}
 		base += corridor(engineRec)
-		last := ""
+		// A task with a seen solution is not the next task, but after the pause of 24 hours it may be
+		// (R82 spec): F-model's breaks bring the same task back the day after.
+		last, ended := "", int64(0)
 		for _, s := range rec.Steps {
 			if s.Choice.Kind != engine.ChoiceTask {
 				continue
 			}
-			if s.Choice.ID == last && !slices.ContainsFunc(s.Input.Modules[0].Pool, func(c engine.Candidate) bool { return c.Task.ID == last && c.Task.Template }) {
-				t.Errorf("%s: %s given twice in a row", rec.Unit, last)
+			start := s.Attempts[0].Start
+			if s.Choice.ID == last && start-ended < pause && !slices.ContainsFunc(s.Input.Modules[0].Pool, func(c engine.Candidate) bool { return c.Task.ID == last && c.Task.Template }) {
+				t.Errorf("%s: %s given twice in a row within %d s", rec.Unit, last, start-ended)
 			}
-			last = s.Choice.ID
+			last, ended = s.Choice.ID, s.Attempts[len(s.Attempts)-1].End
 			reviews += b2i(s.Choice.Reason == engine.ReasonRepetition)
 		}
 	}

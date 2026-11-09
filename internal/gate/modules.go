@@ -55,6 +55,9 @@ type Change struct {
 	Against         string
 	Folder          string
 	Read            *bench.Package
+	// With is, for a package that did not change, the module that changed and brings it into the run:
+	// a graph of a population of the gate holds the two together (Runs).
+	With string
 }
 
 // ErrModules is a comparison or a run of the gate of modules the bench refuses.
@@ -288,6 +291,9 @@ type ThresholdReport struct {
 	Rows      []Held
 	Reasons   []string
 	Uncovered []string
+	// Partial are the cells of the gate on a module of the run that did not run, for want of a package
+	// of another module of their graph: each with the modules it wanted.
+	Partial []string
 }
 
 // OK tells whether the gate of modules is green.
@@ -298,7 +304,10 @@ func (r *ThresholdReport) OK() bool { return len(r.Reasons) == 0 }
 // every cell the packages cover and all its learners; no learner breaks an invariant; every number
 // with a threshold is within it, the edges included, and a number the run could not read is not. A
 // package on which no cell of the gate runs — a module the bench has no population on — is named,
-// not red: populations on a new graph are a change of sim.
+// not red: populations on a new graph are a change of sim. So is a cell of the gate on a module of
+// the run that did not run because the run has no package of another module of its graph: the CI of
+// modules gives every module it builds, and so a module it does not give is one it does not build,
+// or a transition of the format.
 func Thresholds(f *File, results *bench.File) (*ThresholdReport, error) {
 	h := results.Header
 	r := &ThresholdReport{Packages: h.Packages}
@@ -330,10 +339,11 @@ func Thresholds(f *File, results *bench.File) (*ThresholdReport, error) {
 		}
 	}
 	for _, p := range h.Packages {
-		if bench.CellsOn(Populations, []published.Package{p}) == nil {
+		if !p.Along && bench.CellsOn(Populations, []published.Package{p}) == nil {
 			r.Uncovered = append(r.Uncovered, p.Module)
 		}
 	}
+	r.Partial = partial(h.Packages)
 	for _, l := range results.Lines {
 		for _, b := range l.Breaches {
 			r.Reasons = append(r.Reasons, "an invariant: "+b)
@@ -386,17 +396,11 @@ func (r *ThresholdReport) Write(w io.Writer) error {
 	for _, row := range r.Rows {
 		fmt.Fprintf(&b, "| %s | %s | %s %s | %s | %s |\n", row.Cell, row.Number, bound(row.Most), show(row.Limit, true), show(row.Now.Value.Value, row.Now.Read), yes(row.OK))
 	}
-	for _, p := range NoGraph {
-		var held []string
-		for _, t := range thresholds {
-			if t.on(p + "/") {
-				held = append(held, t.number)
-			}
-		}
-		fmt.Fprintf(&b, "| %s | %s | no graph | | |\n", p, strings.Join(held, ", "))
-	}
 	for _, m := range r.Uncovered {
 		fmt.Fprintf(&b, "\nNo cell of the gate runs on %s: populations on a new graph are a change of sim.\n", m)
+	}
+	for _, c := range r.Partial {
+		fmt.Fprintf(&b, "\nThe cell %s, does not run.\n", c)
 	}
 	if r.OK() {
 		b.WriteString("\nThe gate of modules is green: every number is within its threshold, and no learner breaks an invariant.\n")
@@ -408,4 +412,60 @@ func (r *ThresholdReport) Write(w io.Writer) error {
 	}
 	_, err := io.WriteString(w, b.String())
 	return err
+}
+
+// Runs gives the packages of a pull request the gate of modules runs on, in their order: the changed
+// and new ones, or with all every one but a transition of the format; and with them each package
+// that did not change but shares a graph of a population of the gate with one that runs, so that
+// the graph runs on the packages of the pull request — A-linked on both maths when either changed
+// (docs/architecture.md, section 3.9). Such a package names in With the module that brings it.
+func Runs(changes []Change, all bool) []Change {
+	runs := func(c Change) bool { return c.State == Changed || c.State == New || all && c.State == Same }
+	with := map[string]string{}
+	for _, k := range cells() {
+		i := slices.IndexFunc(changes, func(c Change) bool { return slices.Contains(k.graph, c.Module) && runs(c) })
+		if i < 0 {
+			continue
+		}
+		for _, c := range changes {
+			if c.State == Same && !runs(c) && slices.Contains(k.graph, c.Module) && with[c.Module] == "" {
+				with[c.Module] = changes[i].Module
+			}
+		}
+	}
+	var out []Change
+	for _, c := range changes {
+		switch {
+		case runs(c):
+			out = append(out, c)
+		case with[c.Module] != "":
+			c.With = with[c.Module]
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// partial gives the cells of the gate on a module of the packages, not one that only came along,
+// whose graph holds a module the packages have none of, each with the modules it wanted.
+func partial(packages []published.Package) []string {
+	has := func(id string) bool {
+		return slices.ContainsFunc(packages, func(p published.Package) bool { return p.Module == id })
+	}
+	var out []string
+	for _, k := range cells() {
+		runs := slices.ContainsFunc(k.graph, func(id string) bool {
+			return slices.ContainsFunc(packages, func(p published.Package) bool { return p.Module == id && !p.Along })
+		})
+		var wanted []string
+		for _, id := range k.graph {
+			if !has(id) {
+				wanted = append(wanted, id)
+			}
+		}
+		if runs && len(wanted) > 0 {
+			out = append(out, fmt.Sprintf("%s/%s, for want of a package of %s", k.population, strings.Join(k.graph, "+"), strings.Join(wanted, ", ")))
+		}
+	}
+	return out
 }

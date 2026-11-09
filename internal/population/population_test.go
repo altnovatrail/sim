@@ -105,7 +105,13 @@ func TestPopulationsRun(t *testing.T) {
 			for _, id := range g {
 				mods = append(mods, ms[id])
 			}
-			for n := range 4 {
+			// Olympiad maths 0.1.1 is 772 tasks, and a learner of it takes a hundred times longer: one of
+			// each population keeps the suite within the budget of the builds same-bits runs it on.
+			learners := 4
+			if slices.Contains(g, Olympiad) {
+				learners = 1
+			}
+			for n := range learners {
 				l, err := learner.New(seed.Working, p.Name, n, mods, p.Assumptions(n))
 				if err != nil {
 					t.Fatal(err)

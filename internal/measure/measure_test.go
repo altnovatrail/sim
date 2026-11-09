@@ -213,7 +213,7 @@ func readCell(t *testing.T, name string, n int) []Value {
 // The measures read off real runs: G0 on olympiad maths; the settling after the jump of G3 and
 // after the break of F-break; the anchor of a learner of both synthetic maths, A-linked.
 func TestModelOnRuns(t *testing.T) {
-	vs := readCell(t, "G0", 20)
+	vs := readCell(t, "G0", 8)
 	for _, name := range []string{"M1.rms.200", "M2.brier.all", "M2.ece.all", "M7.error.10", "M7.streak"} {
 		if v := value(t, vs, name); !v.Read || v.Low > v.Value || v.High < v.Value {
 			t.Errorf("%s: %+v", name, v)
@@ -230,8 +230,8 @@ func TestModelOnRuns(t *testing.T) {
 		}
 	}
 	a := readCell(t, "A-linked", 6)
-	if has, not := value(t, a, "M9.hasFalse"), value(t, a, "M9.notFalse"); !has.Read && !not.Read || !has.NoGraph {
-		t.Error("A-linked reads no anchor, or reads it on a published graph")
+	if has, not := value(t, a, "M9.hasFalse"), value(t, a, "M9.notFalse"); !has.Read && !not.Read || has.NoGraph {
+		t.Error("A-linked reads no anchor, or reads it on no published graph")
 	}
 }
 
