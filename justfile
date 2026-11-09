@@ -16,8 +16,8 @@ default:
     @just --list
 
 # Fails on code gofmt would rewrite, on what go vet reports, and on a gopls lock file that names
-# another version than GOPLS_VERSION in the Dockerfile.
-# Check formatting, go vet and the version of gopls.
+# another version than GOPLS_VERSION in the Dockerfile; then ci-release (R29).
+# Check formatting, go vet, the version of gopls and the release's file.
 ci-lint:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -46,6 +46,7 @@ ci-lint:
             ".devcontainer/Dockerfile has GOPLS_VERSION ${arg:-unset}; raise them together (R11)" >&2
         exit 1
     fi
+    {{ just_executable() }} ci-release
 
 # The coverage goes into coverage/go.out, one Go profile, which the job coverage of .github's shared
 # go.yml sends to Codecov (R48 spec; R10). Go counts statements and leaves the tests themselves out;
@@ -144,6 +145,89 @@ rules:
 # What a task's report names as checked on every target.
 # Run test-targets, fma-diff and rules.
 same-bits: test-targets fma-diff rules
+
+# The release's one file (R29): sim-<version>.tar.gz, a folder of that name with what builds the
+# bench and runs the gate — the Go code but its tests and testdata/, the packages and the paths it
+# embeds, go.mod, go.sum, LICENSE, .gitattributes, gate.json, this justfile and the Dockerfile of
+# its toolchain —, the paths that give a release but the release workflow itself. The tar is
+# written the same by every build: names in order, no times or owners, mode 0644, and gzip with no
+# name or time. .github's shared release runs it in a tree git archive made, with no git to ask, so
+# the files come from the tree. The callers of the gate take sim from git by the tag and the SHA of
+# its commit; this file binds the tag to the signed release (R77 spec).
+# Build the release's file into dist/.
+release-files version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    version={{ quote(version) }}
+    if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+        echo "release-files: the version is v<major>.<minor>.<patch>, as v0.1.0, not ${version}" >&2
+        exit 1
+    fi
+    name="sim-${version}"
+    rm -rf dist
+    mkdir dist
+    (printf '%s\n' LICENSE go.mod go.sum .gitattributes gate.json justfile .devcontainer/Dockerfile internal/criterion/paths.json
+        find internal/published -path 'internal/published/v*' -type f ! -name '*.go' -print
+        find . -name testdata -prune -o -path './.*' -prune -o -path ./spec -prune -o \
+            -type f -name '*.go' ! -name '*_test.go' -print | sed 's|^\./||') |
+        LC_ALL=C sort -u |
+        tar --create --verbatim-files-from --files-from=- --format=posix \
+            --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime \
+            --transform="s,^,${name}/," --mtime=@0 --owner=0 --group=0 --numeric-owner --mode=0644 |
+        gzip -9n > "dist/${name}.tar.gz"
+
+# Builds the release's file twice, a second apart, and fails unless the two are the same bytes;
+# unless the archive holds what git tracks or would at the paths release-files takes, as it is in
+# the tree, and nothing else; and unless the unpacked archive builds. So the file a release signs is
+# what builds and runs the gate at its commit, and anyone can build it again with the same tar and
+# gzip and compare. It refuses to run beside a dist/ of one's own, which release-files would
+# replace. ci-lint runs it, so "Go / lint" holds it (R29).
+# Check that the release's file is the code, and the same bytes on every build.
+ci-release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -e dist ]; then
+        echo "ci-release: dist/ is there already, and release-files would replace it: move it away first" >&2
+        exit 1
+    fi
+    version=v0.0.0-ci
+    name="sim-${version}"
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp" dist' EXIT
+    {{ just_executable() }} release-files "$version"
+    mv dist "$tmp/first"
+    sleep 1
+    {{ just_executable() }} release-files "$version"
+    if [ "$(ls dist)" != "${name}.tar.gz" ] || ! cmp -s "$tmp/first/${name}.tar.gz" "dist/${name}.tar.gz"; then
+        echo "ci-release: two builds of the release's files differ, or dist/ holds another file:" >&2
+        ls -l "$tmp/first" dist >&2
+        exit 1
+    fi
+    mkdir "$tmp/unpacked"
+    tar -xzf "dist/${name}.tar.gz" -C "$tmp/unpacked"
+    got="$(cd "$tmp/unpacked/$name" && find . -type f | sed 's|^\./||' | LC_ALL=C sort)"
+    # The files git tracks or would, as the gofmt step of ci-lint takes them, but those deleted from
+    # the tree: a new file before git add, or one removed before git rm, is the tree's as the release
+    # sees it.
+    want="$(git ls-files --cached --others --exclude-standard -- LICENSE go.mod go.sum .gitattributes gate.json justfile \
+        .devcontainer/Dockerfile internal/criterion/paths.json 'internal/published/v*' '*.go' \
+        ':(exclude)*_test.go' ':(exclude,glob)**/testdata/**' |
+        while IFS= read -r file; do if [ -e "$file" ]; then printf '%s\n' "$file"; fi; done | LC_ALL=C sort -u)"
+    if [ "$got" != "$want" ]; then
+        echo "ci-release: the archive holds" >&2
+        echo "$got" >&2
+        echo "and git tracks" >&2
+        echo "$want" >&2
+        exit 1
+    fi
+    while IFS= read -r file; do
+        if ! cmp -s "$file" "$tmp/unpacked/$name/$file"; then
+            echo "ci-release: ${file} in the archive is not the tree's" >&2
+            exit 1
+        fi
+    done <<< "$want"
+    go -C "$tmp/unpacked/$name" build ./...
+    echo "ci-release: ${name}.tar.gz is what builds and runs the gate, the same bytes on two builds" >&2
 
 # Fail on a known vulnerability in code this module reaches.
 ci-vuln:

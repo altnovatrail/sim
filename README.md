@@ -57,6 +57,17 @@ What the bench reads is what it translates the server part into: the bands and t
 
 The recipe exits with 0 when the gate is green, 1 when it is red or refuses its input, and 2 on a call it does not know. It writes a table of every number against its threshold to stdout, for the job's summary. Run it in the toolchain stage of sim's devcontainer at the same tag, as this repository's job "Gate" does: `docker build --target toolchain - < .devcontainer/Dockerfile`, then `docker run` with both the checkout of sim and the package folders mounted, so that every path the recipe is given is inside the container.
 
+## Taking a release
+
+A release comes out by itself once CI passes on main and something the gate is built from has changed: the next patch of the line `0.1`, from `v0.1.0`. Releases are immutable, and the tags `v*` are under a ruleset, so a tag stays on its commit for good.
+
+A caller of the gate takes sim from git, not as a file:
+
+- write both the tag and the SHA of its commit in its workflow: the tag for the reader, and the SHA for what holds the content, as actions are pinned;
+- check out sim at that SHA, then run `just gate` or `just gate modules` from it, in the toolchain stage of its devcontainer (see [Gate](#gate)).
+
+A release's one file is `sim-<version>.tar.gz`, the archive of what builds the bench and runs the gate, signed without a key. `just -f spec/justfile release-verify sim <tag> <file>` checks it, and `gh release verify <tag> -R altnovatrail/sim` checks the release.
+
 ## Documents
 
 The documents are in Russian.
