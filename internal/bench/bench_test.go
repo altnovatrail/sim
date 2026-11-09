@@ -30,7 +30,7 @@ func runTo(t *testing.T, c Config) *File {
 // A file of results names its set, rule and libraries, and holds a line a learner of every graph of
 // every population, in order; run again, it is the same bytes.
 func TestRun(t *testing.T) {
-	c := Config{Populations: []string{"G0", "S-predicate"}, Learners: 3, Set: seed.Working}
+	c := Config{Populations: []string{"G7", "S-predicate"}, Learners: 3, Set: seed.Working}
 	var a, b bytes.Buffer
 	if err := Run(c, &a); err != nil {
 		t.Fatal(err)
@@ -57,11 +57,11 @@ func TestRun(t *testing.T) {
 			t.Errorf("%s/%d has no sums, or breaches %v", cellOf(l), l.N, l.Breaches)
 		}
 	}
-	want := []string{"G0/novatrail/olympiad-math", "G0/novatrail/grade-3-math", "S-predicate/synthetic/sheet"}
-	if strings.Join(cells, " ") != strings.Join(want, " ") || len(f.Lines) != 9 {
+	want := []string{"G7/novatrail/grade-3-math", "S-predicate/synthetic/sheet"}
+	if strings.Join(cells, " ") != strings.Join(want, " ") || len(f.Lines) != 6 {
 		t.Errorf("cells %v of %d lines", cells, len(f.Lines))
 	}
-	if ceil := runTo(t, Config{Populations: []string{"G0"}, Learners: 1, Set: seed.Working, Rule: run.Ceiling}); ceil.Header.Rule != "ceiling" {
+	if ceil := runTo(t, Config{Populations: []string{"G7"}, Learners: 1, Set: seed.Working, Rule: run.Ceiling}); ceil.Header.Rule != "ceiling" {
 		t.Errorf("the ceiling's rule %q", ceil.Header.Rule)
 	}
 }
@@ -69,7 +69,7 @@ func TestRun(t *testing.T) {
 // Compare reads two files by learner: a file against itself differs by nothing, to the last bit; a
 // graph with a synthetic module says so; files of other learners are refused.
 func TestCompare(t *testing.T) {
-	c := Config{Populations: []string{"G0", "S-predicate"}, Learners: 4, Set: seed.Working}
+	c := Config{Populations: []string{"G7", "S-predicate"}, Learners: 4, Set: seed.Working}
 	f := runTo(t, c)
 	var out bytes.Buffer
 	if err := Compare(Side{File: f}, Side{File: f}, &out); err != nil {
@@ -103,13 +103,13 @@ func TestCompare(t *testing.T) {
 		t.Errorf("the oracle against the engine reads the measures of the model alone: %v", err)
 	}
 	out.Reset()
-	ceil := runTo(t, Config{Populations: []string{"G0", "S-predicate"}, Learners: 4, Set: seed.Working, Rule: run.Ceiling})
+	ceil := runTo(t, Config{Populations: []string{"G7", "S-predicate"}, Learners: 4, Set: seed.Working, Rule: run.Ceiling})
 	if err := Compare(Side{File: ceil}, Side{File: f}, &out); err != nil || strings.Contains(out.String(), "\tE3.") || !strings.Contains(out.String(), "\tE1.corridor\t") {
 		t.Errorf("the ceiling of the engine against the engine reads no E3: %v", err)
 	}
 
-	other := runTo(t, Config{Populations: []string{"G0"}, Learners: 4, Set: seed.Working})
-	short := runTo(t, Config{Populations: []string{"G0", "S-predicate"}, Learners: 3, Set: seed.Working})
+	other := runTo(t, Config{Populations: []string{"G7"}, Learners: 4, Set: seed.Working})
+	short := runTo(t, Config{Populations: []string{"G7", "S-predicate"}, Learners: 3, Set: seed.Working})
 	held, err := seed.HeldOut(seed.CriterionModel, 1)
 	if err != nil {
 		t.Fatal(err)
@@ -168,7 +168,7 @@ func TestRefuses(t *testing.T) {
 	var buf bytes.Buffer
 	for name, c := range map[string]Config{
 		"no population": {Populations: []string{"Z9"}, Learners: 1, Set: seed.Working},
-		"no rule":       {Populations: []string{"G0"}, Learners: 1, Set: seed.Working, Rule: run.Rule(9)},
+		"no rule":       {Populations: []string{"G7"}, Learners: 1, Set: seed.Working, Rule: run.Rule(9)},
 	} {
 		if err := Run(c, &buf); !errors.Is(err, ErrBench) {
 			t.Errorf("%s: %v", name, err)
@@ -197,7 +197,7 @@ func (f *failing) Write(p []byte) (int, error) {
 
 // A writer that fails stops Run and Compare with its error, at the header or at a line.
 func TestWriteFails(t *testing.T) {
-	c := Config{Populations: []string{"G0"}, Learners: 1, Set: seed.Working}
+	c := Config{Populations: []string{"G7"}, Learners: 1, Set: seed.Working}
 	f := runTo(t, c)
 	for _, left := range []int{0, 300} {
 		if err := Run(c, &failing{left: left}); err == nil {
@@ -214,7 +214,8 @@ func TestWriteFails(t *testing.T) {
 // The parts of a run, merged, are the run of the whole to the byte; Merge refuses parts of other
 // runs, a part twice and a part missing; a part out of range is refused.
 func TestParts(t *testing.T) {
-	c := Config{Populations: []string{"G0", "S-predicate"}, Learners: 5, Set: seed.Working, Repeat: true}
+	// Past Rechosen learners a cell, so that a repeated run checks both ways.
+	c := Config{Populations: []string{"G7", "S-predicate"}, Learners: Rechosen + 2, Set: seed.Working, Repeat: true}
 	var whole bytes.Buffer
 	if err := Run(c, &whole); err != nil {
 		t.Fatal(err)
@@ -242,7 +243,7 @@ func TestParts(t *testing.T) {
 			t.Errorf("%s/%d: %v", cellOf(l), l.N, l.Breaches)
 		}
 	}
-	other := runTo(t, Config{Populations: []string{"G0"}, Learners: 2, Set: seed.Working, Rule: run.Ceiling, Part: Part{K: 1, N: 3}})
+	other := runTo(t, Config{Populations: []string{"G7"}, Learners: 2, Set: seed.Working, Rule: run.Ceiling, Part: Part{K: 1, N: 3}})
 	fewer := c
 	fewer.Learners, fewer.Part = 4, Part{K: 2, N: 3}
 	outside := *parts[1]
@@ -260,7 +261,7 @@ func TestParts(t *testing.T) {
 		}
 	}
 	twice := c
-	twice.Populations = []string{"G0", "G0"}
+	twice.Populations = []string{"G7", "G7"}
 	if err := Run(twice, &out); !errors.Is(err, ErrBench) {
 		t.Errorf("a population twice: %v", err)
 	}

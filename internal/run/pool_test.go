@@ -161,8 +161,9 @@ func TestCeiling(t *testing.T) {
 	}
 	var base, ceil float64
 	reviews := 0
+	// On school maths: a learner of olympiad maths 0.1.1, 772 tasks, takes a hundred times longer.
 	for n := range 6 {
-		mods := modules(t, olympiad)
+		mods := modules(t, grade3)
 		l, err := learner.New(seed.Working, "F-model", n, mods, forgetting())
 		if err != nil {
 			t.Fatal(err)

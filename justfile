@@ -57,10 +57,14 @@ ci-lint:
 # "Go / targets", "Go / fma-diff", "Go / arm64" and "Go / rules". "Go / arm64" runs this recipe on
 # arm64 hardware, then the targets. The recipes test-targets, fma-diff and rules below run the same
 # in the container, and same-bits runs all three; CI calls none of them.
-# Run the tests, with the race detector, and write their coverage.
+# No race detector: there is no goroutine in the code, which the rule goroutine keeps out, nor in
+# the tests, and it made a learner of olympiad maths 0.1.1 some ten times slower, past the ten
+# minutes go test gives a package (the amendment of 2026-11-09 to R10 in docs/decisions.md). A test
+# that starts a goroutine brings it back.
+# Run the tests and write their coverage.
 ci-test:
     mkdir -p coverage
-    go test -race -count=1 -covermode=atomic -coverpkg=./... -coverprofile=coverage/go.out ./...
+    go test -count=1 -covermode=count -coverpkg=./... -coverprofile=coverage/go.out ./...
 
 # The checks of the same bits on every build (R09; docs/architecture.md, section 3.9) in the
 # container, as the shared go.yml of .github runs them with same-bits, by its own scripts: .github

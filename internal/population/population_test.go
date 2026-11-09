@@ -105,9 +105,13 @@ func TestPopulationsRun(t *testing.T) {
 			for _, id := range g {
 				mods = append(mods, ms[id])
 			}
-			// Olympiad maths 0.1.1 is 772 tasks, and a learner of it takes a hundred times longer: one of
-			// each population keeps the suite within the budget of the builds same-bits runs it on.
+			// Olympiad maths 0.1.1 is 772 tasks, and a learner of it takes a hundred times longer: one
+			// learner of it, and none of a population that runs on school maths alone as well, keep the
+			// suite within the budget of the builds same-bits runs it on.
 			learners := 4
+			if slices.Equal(g, []string{Olympiad}) && slices.ContainsFunc(p.Graphs, func(h []string) bool { return slices.Equal(h, []string{Grade3}) }) {
+				continue
+			}
 			if slices.Contains(g, Olympiad) {
 				learners = 1
 			}

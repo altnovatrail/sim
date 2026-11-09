@@ -35,7 +35,9 @@ func TestGate(t *testing.T) {
 	}
 	dir := t.TempDir()
 	part := filepath.Join(dir, "part.jsonl")
-	if got := run([]string{"gate", "run", "-part", "0/150", "-out", part}, &stdout, &stderr); got != 0 {
+	// The part 149 of 150 holds no learner of the 100 of a cell: the gate on the learners of olympiad
+	// maths 0.1.1 takes minutes, and what is checked here is a part that is not the whole.
+	if got := run([]string{"gate", "run", "-part", "149/150", "-out", part}, &stdout, &stderr); got != 0 {
 		t.Fatalf("sim gate run = %d: %s", got, stderr.String())
 	}
 	other := filepath.Join(dir, "other.jsonl") // never written
@@ -94,13 +96,13 @@ func TestMerge(t *testing.T) {
 	dir := t.TempDir()
 	var stdout, stderr bytes.Buffer
 	whole := filepath.Join(dir, "whole.jsonl")
-	if got := run([]string{"run", "-populations", "G0", "-learners", "4", "-out", whole}, &stdout, &stderr); got != 0 {
+	if got := run([]string{"run", "-populations", "G7", "-learners", "4", "-out", whole}, &stdout, &stderr); got != 0 {
 		t.Fatalf("sim run = %d: %s", got, stderr.String())
 	}
 	var parts []string
 	for _, p := range []string{"1/2", "0/2"} {
 		path := filepath.Join(dir, strings.ReplaceAll(p, "/", "-")+".jsonl")
-		if got := run([]string{"run", "-populations", "G0", "-learners", "4", "-part", p, "-out", path}, &stdout, &stderr); got != 0 {
+		if got := run([]string{"run", "-populations", "G7", "-learners", "4", "-part", p, "-out", path}, &stdout, &stderr); got != 0 {
 			t.Fatalf("sim run -part %s = %d: %s", p, got, stderr.String())
 		}
 		parts = append(parts, path)

@@ -126,18 +126,20 @@ func TestE4E5(t *testing.T) {
 	}
 }
 
-// The measures of the engine read off real runs: G0 on olympiad maths, F-model, E-base.
+// The measures of the engine read off real runs: G0 on school maths, F-model on olympiad maths,
+// E-base.
 func TestEngineOnRuns(t *testing.T) {
 	for _, c := range []struct {
 		population string
-		n          int
+		graph, n   int
 		numbers    []string
 	}{
-		{"G0", 12, []string{"E1.corridor", "E1.ceiling", "E2.nothing", "E3.end", "E4.given", "E4.mastered"}},
-		{"F-model", 24, []string{"E3.retention", "E3.late", "E3.week1"}},
-		{"E-base", 12, []string{"E5.written", "E5.again", "E4.given"}},
+		{"G0", 1, 12, []string{"E1.corridor", "E1.ceiling", "E2.nothing", "E3.end", "E4.given", "E4.mastered"}},
+		// F-model repeats on olympiad maths, its 19 skills, enough to read every resample.
+		{"F-model", 0, 24, []string{"E3.retention", "E3.late", "E3.week1"}},
+		{"E-base", 0, 12, []string{"E5.written", "E5.again", "E4.given"}},
 	} {
-		recs, graph := records(t, c.population, c.n)
+		recs, graph := recordsOn(t, c.population, c.graph, c.n)
 		var sums []Sums
 		for _, r := range recs {
 			sums = append(sums, Engine(r))

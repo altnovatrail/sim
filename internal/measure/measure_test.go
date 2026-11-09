@@ -161,8 +161,20 @@ func cell(t *testing.T, name string, n int) ([]Sums, []string) {
 	return sums, graph
 }
 
-// records runs n learners of a population on its first graph and gives their records and the graph.
+// records runs n learners of a population on its last graph and gives their records and the graph.
+// The last graph of the maths is school maths: a learner of olympiad maths 0.1.1, 772 tasks, takes a
+// hundred times longer, and most measures read the same on either.
 func records(t *testing.T, name string, n int) ([]*run.Record, []string) {
+	t.Helper()
+	p, ok := population.Named(name)
+	if !ok {
+		t.Fatalf("no population %s", name)
+	}
+	return recordsOn(t, name, len(p.Graphs)-1, n)
+}
+
+// recordsOn runs n learners of a population on its g-th graph and gives their records and the graph.
+func recordsOn(t *testing.T, name string, g, n int) ([]*run.Record, []string) {
 	t.Helper()
 	ms, err := published.Modules()
 	if err != nil {
@@ -177,7 +189,8 @@ func records(t *testing.T, name string, n int) ([]*run.Record, []string) {
 		t.Fatalf("no population %s", name)
 	}
 	var mods []*pack.Module
-	for _, id := range p.Graphs[0] {
+	graph := p.Graphs[g]
+	for _, id := range graph {
 		if m := ms[id]; m != nil {
 			mods = append(mods, m)
 		} else {
@@ -200,7 +213,7 @@ func records(t *testing.T, name string, n int) ([]*run.Record, []string) {
 		}
 		recs = append(recs, rec)
 	}
-	return recs, p.Graphs[0]
+	return recs, graph
 }
 
 // readCell reads the measures of the model off n learners of a population.
@@ -210,7 +223,7 @@ func readCell(t *testing.T, name string, n int) []Value {
 	return Read(name, graph, sums, ModelNumbers())
 }
 
-// The measures read off real runs: G0 on olympiad maths; the settling after the jump of G3 and
+// The measures read off real runs: G0 on school maths; the settling after the jump of G3 and
 // after the break of F-break; the anchor of a learner of both synthetic maths, A-linked.
 func TestModelOnRuns(t *testing.T) {
 	vs := readCell(t, "G0", 8)

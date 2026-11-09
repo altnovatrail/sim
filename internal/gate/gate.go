@@ -98,7 +98,7 @@ func (f *File) Write(w io.Writer) error {
 const Learners = 100
 
 // learners are the learners whole holds each cell to: Learners, but a test of the checks lowers it,
-// since reading the numbers off 100 learners a cell under the race detector takes minutes.
+// since reading the numbers off 100 learners a cell takes minutes in the suite.
 var learners = Learners
 
 // Populations are the populations of the gate, each on every graph it runs on, in the order of
