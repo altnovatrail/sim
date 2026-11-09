@@ -3,12 +3,17 @@ package criterion
 import (
 	"bytes"
 	"errors"
+	"math"
+	"os"
+	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/altnovatrail/sim/internal/bench"
 	"github.com/altnovatrail/sim/internal/measure"
+	"github.com/altnovatrail/sim/internal/published"
 	"github.com/altnovatrail/sim/internal/seed"
 	"github.com/altnovatrail/sim/internal/synthetic"
 )
@@ -64,7 +69,27 @@ var (
 )
 
 func input(criterion string, cands ...Candidate) Input {
-	return Input{Criterion: criterion, Base: file("engine", seed.Working, baseSide, false), Ceiling: file("ceiling", seed.Working, ceilSide, false), Candidates: cands}
+	return Input{Criterion: criterion, Base: file("engine", seed.Working, baseSide, false), Candidates: cands}
+}
+
+// usePaths fixes the paths read off a base and a ceiling for the rest of a test.
+func usePaths(t *testing.T, base, ceiling *bench.File) *Paths {
+	t.Helper()
+	prior, priorDecisive, priorCovered := fixed, decisive, covered
+	decisive, covered = learners, []string{"G0", "G0-skills1", "G2-half", "G3"}
+	p, err := RecordPaths(base, ceiling, "base", "ceiling")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixed = func() (*Paths, error) { return p, nil }
+	t.Cleanup(func() { fixed, decisive, covered = prior, priorDecisive, priorCovered })
+	return p
+}
+
+// usual fixes the paths of the usual base and ceiling.
+func usual(t *testing.T) {
+	t.Helper()
+	usePaths(t, file("engine", seed.Working, baseSide, false), file("ceiling", seed.Working, ceilSide, false))
 }
 
 func verdict(t *testing.T, r *Report, name string) Verdict {
@@ -89,6 +114,7 @@ func failed(v Verdict) []string {
 // A candidate equal to the base holds "no worse" and is not better; one worse beyond the tolerance
 // fails "no worse"; one better holds it, scores above zero and is chosen; the base stays without it.
 func TestNoWorseAndBetter(t *testing.T) {
+	usual(t)
 	r, err := Judge(input(Model,
 		Candidate{Name: "equal", File: file("engine", seed.Working, baseSide, false)},
 		Candidate{Name: "worse", File: file("engine", seed.Working, worseSide, false)},
@@ -125,6 +151,7 @@ func TestPathLeaves(t *testing.T) {
 	s := baseSide
 	s.oracleRMS = 0.9 // the oracle worse than the base: no path for M1
 	in.Base = file("engine", seed.Working, s, false)
+	usePaths(t, in.Base, file("ceiling", seed.Working, ceilSide, false))
 	r, err := Judge(in)
 	if err != nil {
 		t.Fatal(err)
@@ -138,6 +165,7 @@ func TestPathLeaves(t *testing.T) {
 // Of candidates equal to the best, the simplest is chosen: the fewest constants, then no new field,
 // then the nearest to the base.
 func TestChoice(t *testing.T) {
+	usual(t)
 	r, err := Judge(input(Model,
 		Candidate{Name: "b", File: file("engine", seed.Working, betterSide, false), Constants: 2},
 		Candidate{Name: "c", File: file("engine", seed.Working, betterSide, false), Constants: 1, NewField: true},
@@ -155,6 +183,7 @@ func TestChoice(t *testing.T) {
 // The chosen candidate is confirmed on held-out learners when it holds and is better there too;
 // otherwise the base stays.
 func TestConfirm(t *testing.T) {
+	usual(t)
 	held, err := seed.HeldOut(seed.CriterionModel, 1)
 	if err != nil {
 		t.Fatal(err)
@@ -164,7 +193,7 @@ func TestConfirm(t *testing.T) {
 		want string
 	}{{betterSide, "confirmed"}, {baseSide, "not confirmed"}} {
 		in := input(Model, Candidate{Name: "better", File: file("engine", seed.Working, betterSide, false)})
-		in.Confirm = &Confirm{Base: file("engine", held, baseSide, false), Ceiling: file("ceiling", held, ceilSide, false), Candidate: file("engine", held, c.s, false)}
+		in.Confirm = &Confirm{Base: file("engine", held, baseSide, false), Candidate: file("engine", held, c.s, false)}
 		r, err := Judge(in)
 		if err != nil {
 			t.Fatal(err)
@@ -178,6 +207,7 @@ func TestConfirm(t *testing.T) {
 // A breach of an invariant fails the candidate; the goals of the model hold or fail by the share of
 // the path and the share that never settles.
 func TestInvariantsAndGoals(t *testing.T) {
+	usual(t)
 	r, err := Judge(input(Model,
 		Candidate{Name: "breaks", File: file("engine", seed.Working, betterSide, true)},
 		Candidate{Name: "lag", File: file("engine", seed.Working, betterSide, false), Goal: "lag"},
@@ -219,7 +249,7 @@ func TestInvariantsAndGoals(t *testing.T) {
 	}
 	in := input(Model, Candidate{Name: "lag", File: only(file("engine", seed.Working, betterSide, false)), Goal: "lag"},
 		Candidate{Name: "settle", File: only(file("engine", seed.Working, betterSide, false)), Goal: "settle"})
-	in.Base, in.Ceiling = only(in.Base), only(in.Ceiling)
+	in.Base = only(in.Base)
 	r, err = Judge(in)
 	if err != nil {
 		t.Fatal(err)
@@ -235,7 +265,7 @@ func TestInvariantsAndGoals(t *testing.T) {
 		return &g
 	}
 	in = input(Model, Candidate{Name: "floorless", File: noG0(file("engine", seed.Working, betterSide, false))})
-	in.Base, in.Ceiling = noG0(in.Base), noG0(in.Ceiling)
+	in.Base = noG0(in.Base)
 	if r, err = Judge(in); err != nil || verdict(t, r, "floorless").Holds {
 		t.Errorf("runs with no G0 hold the floor: %v", err)
 	}
@@ -244,6 +274,7 @@ func TestInvariantsAndGoals(t *testing.T) {
 // The criterion of the engine scores by its groups; a pair holds the constraints of both and is
 // better by its library's score, the other's interval not wholly below zero.
 func TestEngineAndPair(t *testing.T) {
+	usual(t)
 	r, err := Judge(input(Engine, Candidate{Name: "better", File: file("engine", seed.Working, betterSide, false), Group: "corridor"}))
 	if err != nil {
 		t.Fatal(err)
@@ -277,13 +308,14 @@ func TestEngineAndPair(t *testing.T) {
 
 // What Judge refuses.
 func TestRefuses(t *testing.T) {
+	usual(t)
 	good := file("engine", seed.Working, betterSide, false)
 	held, _ := seed.HeldOut(seed.CriterionModel, 1)
 	other := file("engine", held, betterSide, false)
 	for name, in := range map[string]Input{
 		"no criterion":      input("taste"),
-		"no ceiling":        {Criterion: Model, Base: good},
-		"ceiling as base":   {Criterion: Model, Base: file("ceiling", seed.Working, baseSide, false), Ceiling: file("ceiling", seed.Working, ceilSide, false)},
+		"no base":           {Criterion: Model},
+		"ceiling as base":   {Criterion: Model, Base: file("ceiling", seed.Working, baseSide, false)},
 		"candidate ceiling": input(Model, Candidate{Name: "x", File: file("ceiling", seed.Working, betterSide, false)}),
 		"group":             input(Model, Candidate{Name: "x", File: good, Group: "corridor"}),
 		"goal":              input(Model, Candidate{Name: "x", File: good, Goal: "speed"}),
@@ -301,42 +333,142 @@ func TestRefuses(t *testing.T) {
 	if _, err := Judge(in); !errors.Is(err, ErrCriterion) {
 		t.Errorf("a confirmation without its runs: %v", err)
 	}
-	in.Confirm = &Confirm{Base: good, Ceiling: file("ceiling", seed.Working, ceilSide, false), Candidate: good}
+	in.Confirm = &Confirm{Base: good, Candidate: good}
 	if _, err := Judge(in); !errors.Is(err, ErrCriterion) {
 		t.Errorf("a confirmation on the working learners: %v", err)
 	}
-	in.Confirm = &Confirm{Base: other, Ceiling: other, Candidate: other}
+	in.Confirm = &Confirm{Base: other, Candidate: file("ceiling", held, betterSide, false)}
 	if _, err := Judge(in); !errors.Is(err, ErrCriterion) {
-		t.Errorf("a confirmation with its ceiling under the engine's rule: %v", err)
+		t.Errorf("a confirmation with its candidate under the ceiling's rule: %v", err)
 	}
 	same := input(Model, Candidate{Name: "x", File: other})
-	same.Base, same.Ceiling = file("engine", held, baseSide, false), file("ceiling", held, ceilSide, false)
-	same.Confirm = &Confirm{Base: same.Base, Ceiling: same.Ceiling, Candidate: other}
+	same.Base = file("engine", held, baseSide, false)
+	same.Confirm = &Confirm{Base: same.Base, Candidate: other}
 	if _, err := Judge(same); !errors.Is(err, ErrCriterion) {
 		t.Errorf("a confirmation on the learners of the choice: %v", err)
 	}
-	bad := input(Model, Candidate{Name: "x", File: good})
-	bad.Ceiling = file("ceiling", held, ceilSide, false)
-	if _, err := Judge(bad); !errors.Is(err, ErrCriterion) {
-		t.Errorf("a ceiling of other learners: %v", err)
-	}
 	conf := input(Model, Candidate{Name: "better", File: file("engine", seed.Working, betterSide, false)})
-	conf.Confirm = &Confirm{Base: other, Ceiling: file("ceiling", seed.Working, ceilSide, false), Candidate: other}
-	conf.Confirm.Base = file("engine", held, baseSide, false)
+	conf.Confirm = &Confirm{Base: file("engine", held, baseSide, false), Candidate: file("engine", seed.Working, betterSide, false)}
 	if _, err := Judge(conf); !errors.Is(err, ErrCriterion) {
-		t.Errorf("a confirmation whose ceiling ran on other learners: %v", err)
+		t.Errorf("a confirmation whose candidate ran on other learners: %v", err)
+	}
+	// With no path fixed, or none to read, there is nothing to score by.
+	fixed = func() (*Paths, error) { return &Paths{}, nil }
+	if _, err := Judge(input(Model, Candidate{Name: "x", File: good})); !errors.Is(err, ErrCriterion) || !strings.Contains(err.Error(), "no path is fixed") {
+		t.Errorf("no path fixed: %v", err)
+	}
+	fixed = func() (*Paths, error) { return nil, ErrCriterion }
+	if _, err := Judge(input(Model, Candidate{Name: "x", File: good})); !errors.Is(err, ErrCriterion) {
+		t.Errorf("paths that do not read: %v", err)
+	}
+}
+
+// The paths are read off the base and the ceiling: the base's value and the oracle's for the model's
+// numbers, the ceiling of the engine's for the engine's, zero for those whose path goes to
+// perfection, each turned by its direction; no path on a synthetic graph; and the runs they are
+// read on are decisive runs of the base and the ceiling on the working learners.
+func TestRecordPaths(t *testing.T) {
+	base, ceiling := file("engine", seed.Working, baseSide, false), file("ceiling", seed.Working, ceilSide, false)
+	p := usePaths(t, base, ceiling)
+	if p.Learners != learners || p.Set != seed.Working || p.Base != "base" || p.Ceiling != "ceiling" {
+		t.Errorf("the paths name %d learners, %+v, %s and %s", p.Learners, p.Set, p.Base, p.Ceiling)
+	}
+	at := func(cell, number string) Path {
+		t.Helper()
+		x, ok := p.on(cell)[number]
+		if !ok {
+			t.Fatalf("no path of %s on %s", number, cell)
+		}
+		return x
+	}
+	g0 := "G0/novatrail/olympiad-math"
+	if x := at(g0, "E1.corridor"); !x.Read || math.Abs(x.Base-0.9) > 1e-3 || math.Abs(x.Ceiling-0.5) > 1e-3 {
+		t.Errorf("E1 on G0, the shortfall of the corridor to the ceiling of the engine: %+v", x)
+	}
+	if x := at(g0, "M1.rms.200"); !x.Read || x.Base <= 0.45 || x.Ceiling >= 0.1 {
+		t.Errorf("M1 on G0, to the oracle: %+v", x)
+	}
+	if x := at(g0, "M4.false.all"); x.Read {
+		t.Errorf("M4 read on runs with no sum of it: %+v", x)
+	}
+	if x := at("G2-half/novatrail/olympiad-math", "M3.lag"); !x.Read || x.Ceiling != 0 {
+		t.Errorf("M3 on G2-half, to the oracle with no lag: %+v", x)
+	}
+	if slices.ContainsFunc(p.Paths, func(x Path) bool { return strings.HasPrefix(x.Cell, "A-") }) {
+		t.Error("a path on a synthetic graph")
+	}
+	rows := p.Table()
+	if !strings.Contains(rows, "| `"+g0+"` | `E1.corridor` | 0,8998 | 0,4998 | 0,4000 |\n") || !strings.Contains(rows, "| `"+g0+"` | `M4.false.all` | — | — | — |\n") {
+		t.Errorf("the table:\n%s", rows)
+	}
+	var buf bytes.Buffer
+	if err := p.Write(&buf); err != nil {
+		t.Fatal(err)
+	}
+	back, err := ReadPaths(bytes.NewReader(buf.Bytes()))
+	if err != nil || back.Table() != rows || !reflect.DeepEqual(back, p) {
+		t.Errorf("the paths do not read back as written: %v", err)
+	}
+	if _, err := ReadPaths(strings.NewReader(`{"paths":[],"extra":1}`)); !errors.Is(err, ErrCriterion) {
+		t.Errorf("an unknown field: %v", err)
+	}
+	held, _ := seed.HeldOut(seed.CriterionModel, 1)
+	part := file("engine", seed.Working, baseSide, false)
+	part.Header.Part = bench.Part{K: 0, N: 2}
+	broken := file("engine", seed.Working, baseSide, true)
+	elsewhere := file("ceiling", seed.Working, ceilSide, false)
+	elsewhere.Header.Libraries = map[string]string{"github.com/altnovatrail/engine": "v9.9.9"}
+	short := file("ceiling", seed.Working, ceilSide, false)
+	short.Lines = short.Lines[1:]
+	noG3 := file("engine", seed.Working, baseSide, false)
+	noG3.Lines = slices.DeleteFunc(noG3.Lines, func(l bench.Line) bool { return l.Population == "G3" })
+	substituted := file("engine", seed.Working, baseSide, false)
+	substituted.Header.Packages = []published.Package{{Module: "novatrail/olympiad-math", Version: "0.1.1"}}
+	for name, c := range map[string][2]*bench.File{
+		"the rules swapped":  {ceiling, base},
+		"held-out learners":  {file("engine", held, baseSide, false), file("ceiling", held, ceilSide, false)},
+		"a part":             {part, ceiling},
+		"other libraries":    {base, elsewhere},
+		"a breach":           {broken, ceiling},
+		"a learner short":    {base, short},
+		"a population short": {noG3, ceiling},
+		"packages in place":  {substituted, ceiling},
+	} {
+		if _, err := RecordPaths(c[0], c[1], "", ""); !errors.Is(err, ErrCriterion) {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+	decisive = learners + 1
+	if _, err := RecordPaths(base, ceiling, "", ""); !errors.Is(err, ErrCriterion) || !strings.Contains(err.Error(), "decisive run") {
+		t.Errorf("a rough look: %v", err)
+	}
+}
+
+// The paths the criterion holds read, and the amendment to R04 that fixes them holds the same table.
+func TestPathsFixed(t *testing.T) {
+	p, err := fixed()
+	if err != nil {
+		t.Fatal(err)
+	}
+	decisions, err := os.ReadFile(filepath.Join("..", "..", "docs", "decisions.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(decisions), p.Table()) {
+		t.Error("the table of the paths in the amendment to R04 is not that of paths.json: write it anew with sim paths -table")
 	}
 }
 
 // The report says whether the run decides, names the graphs, the candidates and the outcome.
 func TestReport(t *testing.T) {
+	usual(t)
 	held, _ := seed.HeldOut(seed.CriterionModel, 1)
 	in := input(Model,
 		Candidate{Name: "better", File: file("engine", seed.Working, betterSide, false), Group: "still"},
 		Candidate{Name: "same", File: file("engine", seed.Working, betterSide, false), Constants: 3},
 		Candidate{Name: "worse", File: file("engine", seed.Working, worseSide, false)},
 	)
-	in.Confirm = &Confirm{Base: file("engine", held, baseSide, false), Ceiling: file("ceiling", held, ceilSide, false), Candidate: file("engine", held, betterSide, false)}
+	in.Confirm = &Confirm{Base: file("engine", held, baseSide, false), Candidate: file("engine", held, betterSide, false)}
 	r, err := Judge(in)
 	if err != nil {
 		t.Fatal(err)

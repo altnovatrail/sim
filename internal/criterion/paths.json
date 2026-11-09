@@ -1,0 +1,582 @@
+{
+  "libraries": {
+    "github.com/altnovatrail/engine": "v0.1.0",
+    "github.com/altnovatrail/learner-model": "v0.1.0"
+  },
+  "set": {
+    "Seed": 20261107,
+    "Experiment": "working"
+  },
+  "learners": 4000,
+  "base": "bc6af579c88261c95816e70dd98d3f0d6af6f868095efe22de9a834eacff70d9",
+  "ceiling": "4fc3b92427353d57d7bca64cd12c1b34edf5dfab7e7f1d6af43bf5ce58311968",
+  "paths": [
+    {
+      "cell": "G0/novatrail/olympiad-math",
+      "number": "E1.corridor",
+      "read": true,
+      "base": 0.8960633287334253,
+      "ceiling": 0.75406125
+    },
+    {
+      "cell": "G0/novatrail/olympiad-math",
+      "number": "M1.rms.200",
+      "read": true,
+      "base": 0.39133664155605624,
+      "ceiling": 0
+    },
+    {
+      "cell": "G0/novatrail/olympiad-math",
+      "number": "M4.false.all",
+      "read": true,
+      "base": 0.009380863039399626,
+      "ceiling": 0
+    },
+    {
+      "cell": "G0/novatrail/olympiad-math",
+      "number": "M6.late",
+      "read": true,
+      "base": 4.303428909252143,
+      "ceiling": 0
+    },
+    {
+      "cell": "G0/novatrail/grade-3-math",
+      "number": "E1.corridor",
+      "read": true,
+      "base": 0.8279622558525419,
+      "ceiling": 0.7509809073068806
+    },
+    {
+      "cell": "G0/novatrail/grade-3-math",
+      "number": "M1.rms.200",
+      "read": true,
+      "base": 0.23663348475041165,
+      "ceiling": 0
+    },
+    {
+      "cell": "G0/novatrail/grade-3-math",
+      "number": "M4.false.all",
+      "read": true,
+      "base": 0.017793594306049824,
+      "ceiling": 0
+    },
+    {
+      "cell": "G0/novatrail/grade-3-math",
+      "number": "M6.late",
+      "read": true,
+      "base": 15.81159420289855,
+      "ceiling": 0
+    },
+    {
+      "cell": "G1/novatrail/olympiad-math",
+      "number": "M7.error.10",
+      "read": true,
+      "base": 1.1702321676807794,
+      "ceiling": 0
+    },
+    {
+      "cell": "G1/novatrail/olympiad-math",
+      "number": "M7.hard",
+      "read": true,
+      "base": 0.437575,
+      "ceiling": 0.437575
+    },
+    {
+      "cell": "G1/novatrail/grade-3-math",
+      "number": "M7.error.10",
+      "read": true,
+      "base": 1.0512976764220192,
+      "ceiling": 0
+    },
+    {
+      "cell": "G1/novatrail/grade-3-math",
+      "number": "M7.hard",
+      "read": true,
+      "base": 0.37075,
+      "ceiling": 0.37075
+    },
+    {
+      "cell": "G2/novatrail/olympiad-math",
+      "number": "E1.corridor",
+      "read": true,
+      "base": 0.8811566996290482,
+      "ceiling": 0.7170237500000001
+    },
+    {
+      "cell": "G2/novatrail/olympiad-math",
+      "number": "M3.lag",
+      "read": true,
+      "base": 1.2584457400396947,
+      "ceiling": 0
+    },
+    {
+      "cell": "G2/novatrail/grade-3-math",
+      "number": "E1.corridor",
+      "read": true,
+      "base": 0.8694128965353524,
+      "ceiling": 0.70007451610718
+    },
+    {
+      "cell": "G2/novatrail/grade-3-math",
+      "number": "M3.lag",
+      "read": true,
+      "base": 2.4175680631656906,
+      "ceiling": 0
+    },
+    {
+      "cell": "G2-half/novatrail/olympiad-math",
+      "number": "E1.corridor",
+      "read": true,
+      "base": 0.8852238736942628,
+      "ceiling": 0.72520625
+    },
+    {
+      "cell": "G2-half/novatrail/olympiad-math",
+      "number": "E4.mastered",
+      "read": true,
+      "base": 0.11541666666666661,
+      "ceiling": 0
+    },
+    {
+      "cell": "G2-half/novatrail/olympiad-math",
+      "number": "M3.lag",
+      "read": true,
+      "base": 0.6722231949511205,
+      "ceiling": 0
+    },
+    {
+      "cell": "G2-half/novatrail/grade-3-math",
+      "number": "E1.corridor",
+      "read": true,
+      "base": 0.8112959309509857,
+      "ceiling": 0.686559977933263
+    },
+    {
+      "cell": "G2-half/novatrail/grade-3-math",
+      "number": "E4.mastered",
+      "read": true,
+      "base": 0.35950000000000004,
+      "ceiling": 0
+    },
+    {
+      "cell": "G2-half/novatrail/grade-3-math",
+      "number": "M3.lag",
+      "read": true,
+      "base": 1.0914177572697614,
+      "ceiling": 0
+    },
+    {
+      "cell": "G2-fading/novatrail/olympiad-math",
+      "number": "E1.corridor",
+      "read": true,
+      "base": 0.8847060558788824,
+      "ceiling": 0.72099125
+    },
+    {
+      "cell": "G2-fading/novatrail/olympiad-math",
+      "number": "M3.lag",
+      "read": true,
+      "base": 0.4965806242644481,
+      "ceiling": 0
+    },
+    {
+      "cell": "G2-fading/novatrail/grade-3-math",
+      "number": "E1.corridor",
+      "read": true,
+      "base": 0.8152103434533231,
+      "ceiling": 0.673948774309286
+    },
+    {
+      "cell": "G2-fading/novatrail/grade-3-math",
+      "number": "M3.lag",
+      "read": true,
+      "base": 0.760893047724542,
+      "ceiling": 0
+    },
+    {
+      "cell": "G3/novatrail/olympiad-math",
+      "number": "M3.settle",
+      "read": true,
+      "base": 53.12164179104477,
+      "ceiling": 0
+    },
+    {
+      "cell": "G3/novatrail/grade-3-math",
+      "number": "M3.settle",
+      "read": true,
+      "base": 41.020382695507486,
+      "ceiling": 0
+    },
+    {
+      "cell": "G3-drop/novatrail/olympiad-math",
+      "number": "M3.settle",
+      "read": true,
+      "base": 42.456272084805654,
+      "ceiling": 0
+    },
+    {
+      "cell": "G3-drop/novatrail/grade-3-math",
+      "number": "M3.settle",
+      "read": true,
+      "base": 54.88314059646987,
+      "ceiling": 0
+    },
+    {
+      "cell": "G0-skills1/novatrail/olympiad-math",
+      "number": "M4.false.all",
+      "read": true,
+      "base": 0.019576508190171794,
+      "ceiling": 0
+    },
+    {
+      "cell": "G0-skills1/novatrail/olympiad-math",
+      "number": "M6.late",
+      "read": true,
+      "base": 4.310421286031042,
+      "ceiling": 0
+    },
+    {
+      "cell": "G0-skills1/novatrail/grade-3-math",
+      "number": "M4.false.all",
+      "read": true,
+      "base": 0.03299492385786802,
+      "ceiling": 0
+    },
+    {
+      "cell": "G0-skills1/novatrail/grade-3-math",
+      "number": "M6.late",
+      "read": true,
+      "base": 16.04461942257218,
+      "ceiling": 0
+    },
+    {
+      "cell": "S-adult/novatrail/olympiad-math",
+      "number": "M7.error.10",
+      "read": true,
+      "base": 1.6674372567263276,
+      "ceiling": 0
+    },
+    {
+      "cell": "S-adult/novatrail/olympiad-math",
+      "number": "M7.hard",
+      "read": true,
+      "base": 0.143125,
+      "ceiling": 0.143125
+    },
+    {
+      "cell": "F-model/novatrail/olympiad-math",
+      "number": "E3.end",
+      "read": true,
+      "base": 0.008269852038122694,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-model/novatrail/olympiad-math",
+      "number": "E3.late",
+      "read": true,
+      "base": 0.7374874874874875,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-model/novatrail/olympiad-math",
+      "number": "M2.brier.after7",
+      "read": true,
+      "base": 0.15368978092137014,
+      "ceiling": 0.15022195698420132
+    },
+    {
+      "cell": "F-model/novatrail/olympiad-math",
+      "number": "M4.false.break",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-model/novatrail/olympiad-math",
+      "number": "M5.caught",
+      "read": true,
+      "base": 5.28599203777428,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-model/novatrail/grade-3-math",
+      "number": "E3.end",
+      "read": true,
+      "base": 0.0002027938893496284,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-model/novatrail/grade-3-math",
+      "number": "E3.late",
+      "read": true,
+      "base": 0.7759615384615385,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-model/novatrail/grade-3-math",
+      "number": "M2.brier.after7",
+      "read": true,
+      "base": 0.15586006003378047,
+      "ceiling": 0.15550641359960807
+    },
+    {
+      "cell": "F-model/novatrail/grade-3-math",
+      "number": "M4.false.break",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-model/novatrail/grade-3-math",
+      "number": "M5.caught",
+      "read": true,
+      "base": 2.793119371969522,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-exp/novatrail/olympiad-math",
+      "number": "E3.end",
+      "read": true,
+      "base": 0.010357919009405303,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-exp/novatrail/olympiad-math",
+      "number": "E3.late",
+      "read": true,
+      "base": 0.8706442717473051,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-exp/novatrail/olympiad-math",
+      "number": "M2.brier.after7",
+      "read": true,
+      "base": 0.13047441341248806,
+      "ceiling": 0.11307584180574085
+    },
+    {
+      "cell": "F-exp/novatrail/olympiad-math",
+      "number": "M4.false.break",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-exp/novatrail/olympiad-math",
+      "number": "M5.caught",
+      "read": true,
+      "base": 5.972612879348631,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-exp/novatrail/grade-3-math",
+      "number": "E3.end",
+      "read": true,
+      "base": 0.00018023381014764528,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-exp/novatrail/grade-3-math",
+      "number": "E3.late",
+      "read": true,
+      "base": 0.7969745222929936,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-exp/novatrail/grade-3-math",
+      "number": "M2.brier.after7",
+      "read": true,
+      "base": 0.11044342661268544,
+      "ceiling": 0.0906100776075314
+    },
+    {
+      "cell": "F-exp/novatrail/grade-3-math",
+      "number": "M4.false.break",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-exp/novatrail/grade-3-math",
+      "number": "M5.caught",
+      "read": true,
+      "base": 3.313671696387746,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-C1/novatrail/olympiad-math",
+      "number": "M2.brier.after7",
+      "read": true,
+      "base": 0.1333760959113738,
+      "ceiling": 0.11912783141615174
+    },
+    {
+      "cell": "F-C1/novatrail/olympiad-math",
+      "number": "M4.false.break",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-C1/novatrail/olympiad-math",
+      "number": "M5.caught",
+      "read": true,
+      "base": 6.377133893143859,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-C1/novatrail/grade-3-math",
+      "number": "M2.brier.after7",
+      "read": true,
+      "base": 0.11768956835415384,
+      "ceiling": 0.09989476989207825
+    },
+    {
+      "cell": "F-C1/novatrail/grade-3-math",
+      "number": "M4.false.break",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-C1/novatrail/grade-3-math",
+      "number": "M5.caught",
+      "read": true,
+      "base": 2.7256800368833565,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-growth5/novatrail/olympiad-math",
+      "number": "E3.end",
+      "read": true,
+      "base": 0.011570955949406603,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-growth5/novatrail/olympiad-math",
+      "number": "E3.late",
+      "read": true,
+      "base": 0.8174914257716805,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-growth5/novatrail/olympiad-math",
+      "number": "M2.brier.after7",
+      "read": true,
+      "base": 0.16321148973291189,
+      "ceiling": 0.15527963557534757
+    },
+    {
+      "cell": "F-growth5/novatrail/olympiad-math",
+      "number": "M4.false.break",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-growth5/novatrail/olympiad-math",
+      "number": "M5.caught",
+      "read": true,
+      "base": 5.500959692898273,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-growth5/novatrail/grade-3-math",
+      "number": "E3.end",
+      "read": true,
+      "base": 0.00028348657730348226,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-growth5/novatrail/grade-3-math",
+      "number": "E3.late",
+      "read": true,
+      "base": 0.9353647276084949,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-growth5/novatrail/grade-3-math",
+      "number": "M2.brier.after7",
+      "read": true,
+      "base": 0.15783564318547613,
+      "ceiling": 0.15635477477317525
+    },
+    {
+      "cell": "F-growth5/novatrail/grade-3-math",
+      "number": "M4.false.break",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-growth5/novatrail/grade-3-math",
+      "number": "M5.caught",
+      "read": true,
+      "base": 2.8992623328722913,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-break/novatrail/olympiad-math",
+      "number": "M3.settle",
+      "read": true,
+      "base": 94.84701682814891,
+      "ceiling": 0
+    },
+    {
+      "cell": "F-break/novatrail/grade-3-math",
+      "number": "M3.settle",
+      "read": true,
+      "base": 337.699,
+      "ceiling": 0
+    },
+    {
+      "cell": "W-shock/novatrail/grade-3-math",
+      "number": "M2.brier.pages",
+      "read": true,
+      "base": 0.17387542689279312,
+      "ceiling": 0.14185513872049993
+    },
+    {
+      "cell": "W-shock/novatrail/grade-3-math",
+      "number": "M4.false.pages",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "W-error/novatrail/grade-3-math",
+      "number": "M2.brier.pages",
+      "read": true,
+      "base": 0.1975279684354334,
+      "ceiling": 0.11959695843451391
+    },
+    {
+      "cell": "W-error/novatrail/grade-3-math",
+      "number": "M4.false.pages",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "W-badday/novatrail/grade-3-math",
+      "number": "M2.brier.pages",
+      "read": true,
+      "base": 0.15549472075655113,
+      "ceiling": 0.1488175711874151
+    },
+    {
+      "cell": "W-badday/novatrail/grade-3-math",
+      "number": "M4.false.pages",
+      "read": false,
+      "base": 0,
+      "ceiling": 0
+    },
+    {
+      "cell": "L-explain/novatrail/olympiad-math",
+      "number": "E4.mastered",
+      "read": true,
+      "base": 0.2574166666666666,
+      "ceiling": 0
+    }
+  ]
+}

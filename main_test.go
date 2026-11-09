@@ -2,10 +2,17 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/altnovatrail/sim/internal/bench"
+	"github.com/altnovatrail/sim/internal/criterion"
+	"github.com/altnovatrail/sim/internal/measure"
+	"github.com/altnovatrail/sim/internal/seed"
 )
 
 func TestRun(t *testing.T) {
@@ -137,9 +144,7 @@ func TestJudge(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	for _, c := range [][]string{
 		{"run", "-populations", "G0", "-learners", "3", "-out", filepath.Join(dir, "base.jsonl")},
-		{"run", "-populations", "G0", "-learners", "3", "-rule", "ceiling", "-out", filepath.Join(dir, "ceil.jsonl")},
 		{"run", "-populations", "G0", "-learners", "3", "-set", "held-out-model-1", "-out", filepath.Join(dir, "held.jsonl")},
-		{"run", "-populations", "G0", "-learners", "3", "-set", "held-out-model-1", "-rule", "ceiling", "-out", filepath.Join(dir, "held-ceil.jsonl")},
 	} {
 		if got := run(c, &stdout, &stderr); got != 0 {
 			t.Fatalf("sim %q = %d: %s", c, got, stderr.String())
@@ -152,9 +157,9 @@ func TestJudge(t *testing.T) {
 		}
 		return path
 	}
-	good := write("j.json", `{"criterion":"model","base":"base.jsonl","ceiling":"ceil.jsonl",
+	good := write("j.json", `{"criterion":"model","base":"base.jsonl",
 		"candidates":[{"name":"same","file":"base.jsonl","group":"still","constants":1}],
-		"confirm":{"base":"held.jsonl","ceiling":"held-ceil.jsonl","candidate":"held.jsonl"}}`)
+		"confirm":{"base":"held.jsonl","candidate":"held.jsonl"}}`)
 	stdout.Reset()
 	if got := run([]string{"judge", good}, &stdout, &stderr); got != 0 {
 		t.Fatalf("sim judge = %d: %s", got, stderr.String())
@@ -171,11 +176,11 @@ func TestJudge(t *testing.T) {
 		{[]string{"judge", filepath.Join(dir, "none.json")}, 1},
 		{[]string{"judge", write("unknown.json", `{"criterion":"model","extra":1}`)}, 1},
 		{[]string{"judge", write("nobase.json", `{"criterion":"model","base":"none.jsonl"}`)}, 1},
-		{[]string{"judge", write("noceil.json", `{"criterion":"model","base":"base.jsonl","ceiling":"none.jsonl"}`)}, 1},
-		{[]string{"judge", write("nocand.json", `{"criterion":"model","base":"base.jsonl","ceiling":"ceil.jsonl","candidates":[{"name":"x","file":"none.jsonl"}]}`)}, 1},
-		{[]string{"judge", write("noconf.json", `{"criterion":"model","base":"base.jsonl","ceiling":"ceil.jsonl","confirm":{"base":"none.jsonl"}}`)}, 1},
-		{[]string{"judge", write("bad.json", `{"criterion":"model","base":"j.json","ceiling":"ceil.jsonl"}`)}, 1},
-		{[]string{"judge", write("refused.json", `{"criterion":"taste","base":"base.jsonl","ceiling":"ceil.jsonl"}`)}, 1},
+		{[]string{"judge", write("ceiling.json", `{"criterion":"model","base":"base.jsonl","ceiling":"base.jsonl"}`)}, 1},
+		{[]string{"judge", write("nocand.json", `{"criterion":"model","base":"base.jsonl","candidates":[{"name":"x","file":"none.jsonl"}]}`)}, 1},
+		{[]string{"judge", write("noconf.json", `{"criterion":"model","base":"base.jsonl","confirm":{"base":"none.jsonl"}}`)}, 1},
+		{[]string{"judge", write("bad.json", `{"criterion":"model","base":"j.json"}`)}, 1},
+		{[]string{"judge", write("refused.json", `{"criterion":"taste","base":"base.jsonl"}`)}, 1},
 	} {
 		stderr.Reset()
 		if got := run(c.args, &stdout, &stderr); got != c.status {
@@ -194,5 +199,68 @@ func TestMainExits(t *testing.T) {
 	main()
 	if status != 0 {
 		t.Errorf("main with help exited %d, want 0", status)
+	}
+}
+
+// "sim paths" reads the paths off the decisive runs of the base and of the ceiling — here built by
+// hand, every learner of each population the score needs, on one graph and with no sums, so that every path is not read — writes them to
+// -out and their table to stdout; a rough look, a file it cannot read and flags it does not take
+// are refused.
+func TestPaths(t *testing.T) {
+	dir := t.TempDir()
+	write := func(name, rule string, n int) string {
+		f := &bench.File{Header: bench.Header{Set: seed.Working, Rule: rule, Invariants: rule == "engine"}}
+		for _, pop := range []string{"G0", "G0-skills1", "G1", "G2", "G2-half", "G2-fading", "G3", "G3-drop", "S-adult", "F-model", "F-exp", "F-C1", "F-growth5", "F-break", "W-shock", "W-error", "W-badday", "L-explain"} {
+			for k := range n {
+				f.Lines = append(f.Lines, bench.Line{Population: pop, Graph: []string{"novatrail/olympiad-math"}, N: k, Sums: measure.Sums{"learners": 1}, Oracle: measure.Sums{"learners": 1}})
+			}
+		}
+		var buf bytes.Buffer
+		if err := bench.Write(f, &buf); err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, buf.Bytes(), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	base, ceiling := write("base.jsonl", "engine", criterion.Decisive), write("ceiling.jsonl", "ceiling", criterion.Decisive)
+	out := filepath.Join(dir, "paths.json")
+	var stdout, stderr bytes.Buffer
+	if got := run([]string{"paths", "-base", base, "-ceiling", ceiling, "-out", out, "-table"}, &stdout, &stderr); got != 0 {
+		t.Fatalf("sim paths = %d: %s", got, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "| `G0/novatrail/olympiad-math` | `M1.rms.200` | — | — | — |") {
+		t.Errorf("the table:\n%s", stdout.String())
+	}
+	data, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := criterion.ReadPaths(bytes.NewReader(data))
+	sum := sha256.Sum256(func() []byte { b, _ := os.ReadFile(base); return b }())
+	if err != nil || p.Learners != criterion.Decisive || p.Base != hex.EncodeToString(sum[:]) {
+		t.Errorf("the paths: %v, %d learners, base %s", err, p.Learners, p.Base)
+	}
+	rough := write("rough.jsonl", "engine", 3)
+	for _, c := range []struct {
+		args   []string
+		status int
+	}{
+		{[]string{"paths"}, 2},
+		{[]string{"paths", "-base", base}, 2},
+		{[]string{"paths", "-nope"}, 2},
+		{[]string{"paths", "-base", base, "-ceiling", ceiling, "-out", out, "extra"}, 2},
+		{[]string{"paths", "-base", base, "-ceiling", ceiling, "-table"}, 2},
+		{[]string{"paths", "-base", filepath.Join(dir, "none.jsonl"), "-ceiling", ceiling, "-out", out}, 1},
+		{[]string{"paths", "-base", base, "-ceiling", filepath.Join(dir, "none.jsonl"), "-out", out}, 1},
+		{[]string{"paths", "-base", out, "-ceiling", ceiling, "-out", out}, 1},
+		{[]string{"paths", "-base", rough, "-ceiling", ceiling, "-out", out}, 1},
+	} {
+		stderr.Reset()
+		if got := run(c.args, &stdout, &stderr); got != c.status {
+			t.Errorf("sim %q = %d, want %d: %s", c.args, got, c.status, stderr.String())
+		}
 	}
 }

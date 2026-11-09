@@ -161,6 +161,39 @@ ci-licenses:
     fi
     go run {{ GO_LICENSES }} check ./... --allowed_licenses="$ALLOWED_LICENSES"
 
+# The decisive run of a rule (docs/architecture.md, sections 3.6 and 3.8; R09, R28 in
+# docs/decisions.md): 4,000 working learners of every cell of every population, on the libraries
+# go.mod names — the base while it names their first releases —, as processes, one part of the
+# learners each, as many as the processors, merged into one file of results, whose SHA-256 it
+# prints. The file is no part of the repository: its seeds and the same bits on every build give it
+# again to the byte. rule is engine, for the base and the oracle on its answers, or ceiling, for the
+# ceiling of the engine; a relative out is of the caller's folder.
+# Run the decisive run of a rule into a file of results: rule engine or ceiling.
+decisive rule out:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case {{ quote(rule) }} in engine|ceiling) ;; *) echo "decisive: rule {{ rule }}: engine or ceiling" >&2; exit 2 ;; esac
+    out={{ quote(out) }}
+    case "$out" in /*) ;; *) out={{ quote(invocation_directory()) }}/"$out" ;; esac
+    tmp="$(mktemp -d)"
+    pids=()
+    trap 'for p in "${pids[@]}"; do kill "$p" 2>/dev/null || true; done; wait; rm -rf "$tmp"' EXIT
+    GOWORK=off go build -o "$tmp/sim" .
+    n="$(nproc)"
+    for k in $(seq 0 $((n - 1))); do
+        "$tmp/sim" run -populations all -learners 4000 -set working -rule {{ quote(rule) }} -part "$k/$n" -out "$tmp/part-$k.jsonl" &
+        pids+=("$!")
+    done
+    failed=0
+    for p in "${pids[@]}"; do wait "$p" || failed=1; done
+    pids=()
+    if [ "$failed" != 0 ]; then
+        echo "decisive: a part of the run failed" >&2
+        exit 1
+    fi
+    "$tmp/sim" merge -out "$out" "$tmp"/part-*.jsonl
+    sha256sum "$out"
+
 # The gate (docs/architecture.md, sections 3.7 and 3.9; R09, R26, R27 in docs/decisions.md). It
 # builds the bench only on the commits gate.json names: it fetches each library at its commit into
 # a temporary folder — or takes the caller's own code from GATE_LEARNER_MODEL or GATE_ENGINE, a
