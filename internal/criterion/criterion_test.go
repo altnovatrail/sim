@@ -491,3 +491,60 @@ func TestReport(t *testing.T) {
 		t.Error("an unread score is shown")
 	}
 }
+
+// A number whose fixed path is above zero but within the author's tolerance has no share: at the
+// tolerance or below it leaves the score, read by the candidate or not, and above it the share is
+// read (the amendment of 2026-11-09 to R04). A path to perfection is the base's own shortfall, and a
+// path the tolerance in decimal, off by a few ulps, is within it.
+func TestPathWithinTolerance(t *testing.T) {
+	for _, c := range []struct {
+		number        string
+		base, ceiling float64
+		read          bool
+		path          pathKind
+	}{
+		{"M3.settle", 3, 2.5, true, smallPath},
+		{"M3.settle", 3, 2, true, smallPath},
+		{"M3.settle", 3, 1.5, true, onPath},
+		{"M3.settle", 3, 3, true, noPath},
+		{"M3.settle", 3, 2, false, smallPath},
+		{"E3.end", 0.0083, 0, true, smallPath},
+		{"E3.end", 0.0116, 0, true, onPath},
+		{"E1.corridor", 1 - 0.70, 1 - 0.71, true, smallPath},
+		{"M2.brier.after7", 0.1559, 0.1555, true, smallPath},
+		{"M2.brier.after7", 0.1537, 0.1502, true, onPath},
+	} {
+		d := cellData{
+			pair: map[string]measure.Pair{c.number: {Diff: measure.Value{Read: c.read, Value: 0.5, Resampled: []float64{0.5, 0.25}}}},
+			path: map[string]Path{c.number: {Read: true, Base: c.base, Ceiling: c.ceiling}},
+		}
+		if f := fraction(d, c.number); f.path != c.path {
+			t.Errorf("%s, the path %v: %v, want %v", c.number, c.base-c.ceiling, f.path, c.path)
+		}
+	}
+}
+
+// A path within the author's tolerance leaves the score with its weight, the score names it apart,
+// a goal on it is not met, and the report says why.
+func TestPathSmall(t *testing.T) {
+	ceil := baseSide
+	ceil.corridor += 0.005 // the ceiling no further from the base than the tolerance of E1, 0.01
+	usePaths(t, file("engine", seed.Working, baseSide, false), file("ceiling", seed.Working, ceil, false))
+	r, err := Judge(input(Model, Candidate{Name: "better", File: file("engine", seed.Working, betterSide, false), Goal: "corridor"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	v := verdict(t, r, "better")
+	if !slices.Contains(v.Score.Small, "G0/novatrail/olympiad-math E1.corridor") || slices.Contains(v.Score.Left, "G0/novatrail/olympiad-math E1.corridor") || !v.Score.Read {
+		t.Errorf("small %v, left %v, read %v", v.Score.Small, v.Score.Left, v.Score.Read)
+	}
+	if !slices.ContainsFunc(v.Checks, func(k Check) bool {
+		return k.Kind == "goal" && k.Number == "E1.corridor" && !k.Met && strings.Contains(k.Detail, "tolerance")
+	}) {
+		t.Errorf("the goal on the corridor: fails %v", failed(v))
+	}
+	var b bytes.Buffer
+	if err := r.Write(&b); err != nil || !strings.Contains(b.String(), "its path within the author's tolerance: G0/novatrail/olympiad-math E1.corridor") {
+		t.Errorf("the report: %v\n%s", err, b.String())
+	}
+}

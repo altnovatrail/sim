@@ -221,7 +221,11 @@ func missing(cells []cellData, kind string, populations ...string) []Check {
 func share(d cellData, name string, least float64) Check {
 	k := Check{Kind: "goal", Cell: d.cell, Number: name, NoGraph: d.noGraph}
 	f := fraction(d, name)
-	if !f.path || !f.read {
+	switch {
+	case f.path == smallPath:
+		k.Detail = "the fixed path is within the author's tolerance, so the share is not read"
+		return k
+	case f.path == noPath || !f.read:
 		k.Detail = "the path is not read, or the candidate's run does not read the number"
 		return k
 	}
@@ -231,11 +235,25 @@ func share(d cellData, name string, least float64) Check {
 	return k
 }
 
+// pathKind is how the fixed path of a number on a cell stands in the score.
+type pathKind int
+
+const (
+	noPath    pathKind = iota // not fixed, not read, or not above zero: the number leaves the score
+	smallPath                 // above zero but within the author's tolerance: it leaves the score too
+	onPath                    // above the tolerance: the share is read
+)
+
+// slack is how far above the author's tolerance a path may be and still be within it: the
+// difference of two numbers turned by their direction (1 − v for a shortfall) is off by a few ulps,
+// and a path of 0.010000000000000009 is the tolerance 0.01 written in decimal.
+const slack = 1e-12
+
 // frac is the share of the path of a number on a cell the candidate closes: (base − candidate)/path,
 // the difference paired on the learners of the judgement and the path the fixed one, on the whole
 // cell and over the resamples.
 type frac struct {
-	path      bool // the path is read and above zero; without it the number leaves the score
+	path      pathKind
 	read      bool // the candidate's run reads the number
 	value     float64
 	resampled []float64
@@ -244,15 +262,23 @@ type frac struct {
 // fraction gives the share of the path of a number on a cell the candidate closes, by the path
 // fixed on the first decisive run of the base (Paths): the same path at every choice and in every
 // confirmation, whatever the base and the learners of the judgement. A number with no fixed path,
-// one not read, or one of zero or less has no share.
+// one not read, or one of zero or less has no share. Nor has one whose path is above zero but
+// within the author's tolerance of the number, which the author has called "no change": a ceiling
+// no further from the base than that sets no path — nor, where the path goes to perfection, a base
+// no further from it —, and the noise of the difference would decide the share (the amendment of
+// 2026-11-09 to R04 in docs/decisions.md). Either leaves the score whether the candidate's run
+// reads the number or not, as its share would not count.
 func fraction(d cellData, name string) frac {
 	p := d.pair[name]
 	x, ok := d.path[name]
 	path := float64(x.Base - x.Ceiling)
-	if !ok || !x.Read || path <= 0 {
+	switch {
+	case !ok || !x.Read || path <= 0:
 		return frac{}
+	case path-defs[name].tolerance <= slack:
+		return frac{path: smallPath}
 	}
-	f := frac{path: true, read: p.Diff.Read}
+	f := frac{path: onPath, read: p.Diff.Read}
 	if !f.read {
 		return f
 	}
@@ -266,9 +292,10 @@ func fraction(d cellData, name string) frac {
 
 // score gives the score over groups — all of them, or the one named: the share of the path each
 // number closes, the mean over the numbers and cells of a population, weighted by the populations'
-// weights. A number with no path leaves the score with its weight, and the score names it; a number
-// the candidate's run does not read leaves the score unread. Its interval comes of the resamples of
-// each cell apart, the k-th of every cell added up.
+// weights. A number with no path, or with a path within the author's tolerance, leaves the score
+// with its weight, and the score names it; a number the candidate's run does not read leaves the
+// score unread. Its interval comes of the resamples of each cell apart, the k-th of every cell
+// added up.
 func score(cells []cellData, groups []group, only string) Score {
 	var s Score
 	var total []float64
@@ -287,7 +314,10 @@ func score(cells []cellData, groups []group, only string) Score {
 				for _, name := range g.numbers {
 					f := fraction(d, name)
 					switch {
-					case !f.path:
+					case f.path == smallPath:
+						s.Small = append(s.Small, d.cell+" "+name)
+						continue
+					case f.path == noPath:
 						s.Left = append(s.Left, d.cell+" "+name)
 						continue
 					case !f.read:
