@@ -1,6 +1,7 @@
 package invariant
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -58,7 +59,13 @@ func TestInvariantsHold(t *testing.T) {
 		{"E-base", run.Essays, []string{essays}},
 	}
 	for _, c := range cases {
-		for n := range 25 {
+		// Olympiad maths 0.1.1 is 772 tasks, and a learner of it takes a hundred times longer: fewer of
+		// them keep the suite within the budget of the builds same-bits runs it on.
+		learners := 25
+		if slices.Contains(c.ids, olympiad) {
+			learners = 6
+		}
+		for n := range learners {
 			rec := record(t, c.population, n, c.limit, c.ids...)
 			for _, b := range Check(rec) {
 				t.Error(b)
@@ -102,10 +109,18 @@ func only(t *testing.T, bs []Breach, inv string) {
 // Each invariant catches a breach laid in a record: a choice the input does not give again, a code
 // against its meaning or outside the list, the author's order broken, a solved task at once.
 func TestBreaches(t *testing.T) {
-	rec := record(t, "G0", 1, run.Maths, olympiad)
-	k, s := first(t, rec, func(s run.Step) bool {
+	// The first learner of G0 who gets a task by rotation: on the 19 skills of olympiad maths 0.1.1,
+	// not every one does.
+	rotation := func(s run.Step) bool {
 		return s.Choice.Kind == engine.ChoiceTask && s.Choice.Reason == engine.ReasonRotation
-	})
+	}
+	var rec *run.Record
+	for n := range 10 {
+		if rec = record(t, "G0", n, run.Maths, olympiad); slices.ContainsFunc(rec.Steps, rotation) {
+			break
+		}
+	}
+	k, s := first(t, rec, rotation)
 
 	t.Run("I1 another choice", func(t *testing.T) {
 		bad := *rec
@@ -118,6 +133,10 @@ func TestBreaches(t *testing.T) {
 			}
 		}
 		only(t, i1, "I1")
+		// A run that is repeated takes no choice again: Same holds its I1.
+		if hasBreach(CheckRepeated(&bad), "I1") || len(CheckRepeated(rec)) != 0 {
+			t.Errorf("CheckRepeated gives %v", CheckRepeated(&bad))
+		}
 	})
 	t.Run("I1 an input refused", func(t *testing.T) {
 		bad := run.Record{Unit: rec.Unit, Steps: []run.Step{s}}

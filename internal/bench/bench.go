@@ -252,12 +252,24 @@ func Run(c Config, w io.Writer) error {
 	return buf.Flush()
 }
 
+// Rechosen are the first learners of each cell whose every choice is taken again on the input it
+// keeps, I1, even in a run that is repeated. The repetition holds the bits, but not that the input a
+// choice keeps is the one it was made on — a rule that changed its input in place would change it
+// alike in both runs —, and taking each choice again on all the learners would double the engine's
+// work (R31 in docs/decisions.md).
+const Rechosen = 10
+
 // covers tells whether a run on packages runs a graph: with none, every graph; with some, a graph
-// whose every module is one of them.
+// whose every module is one of them, and one at least not a package that only came along.
 func covers(packages []published.Package, graph []string) bool {
-	return len(packages) == 0 || !slices.ContainsFunc(graph, func(id string) bool {
-		return !slices.ContainsFunc(packages, func(p published.Package) bool { return p.Module == id })
-	})
+	if len(packages) == 0 {
+		return true
+	}
+	of := func(id string) int {
+		return slices.IndexFunc(packages, func(p published.Package) bool { return p.Module == id })
+	}
+	return !slices.ContainsFunc(graph, func(id string) bool { return of(id) < 0 }) &&
+		slices.ContainsFunc(graph, func(id string) bool { return !packages[of(id)].Along })
 }
 
 // runOne runs the n-th learner of a population on the modules of a graph.
@@ -283,7 +295,11 @@ func one(c Config, p population.Population, graph []string, mods []*pack.Module,
 	maps.Copy(sums, measure.Engine(rec)) // the keys of the two are apart, but for learners, 1 in both
 	line := Line{Population: p.Name, Graph: graph, N: n, Sums: sums, Oracle: measure.Oracle(rec)}
 	if c.Rule == run.Engine {
-		for _, b := range invariant.Check(rec) {
+		check := invariant.Check
+		if c.Repeat && n >= Rechosen {
+			check = invariant.CheckRepeated // the repetition holds I1 to the same bits
+		}
+		for _, b := range check(rec) {
 			line.Breaches = append(line.Breaches, b.String())
 		}
 	}

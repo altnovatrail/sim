@@ -91,6 +91,7 @@ func gateRun(args []string, stdout, stderr io.Writer) error {
 	part := partFlag(fs)
 	out := fs.String("out", "", "the file of results of the part; stdout when empty")
 	folders := listFlag(fs, "package", "the folder of a package of a pull request of modules, to run in place of the pinned one; repeatable")
+	along := listFlag(fs, "along", "the folder of a package of the pull request that did not change and came along with one that did, run only on the graphs it shares with it; repeatable")
 	if err := parse(fs, args); err != nil {
 		return err
 	}
@@ -103,6 +104,18 @@ func gateRun(args []string, stdout, stderr io.Writer) error {
 		taken, err := gate.ReadPackages(pkgs)
 		if err != nil {
 			return err
+		}
+		pkgs, err = readFolders(*along)
+		if err != nil {
+			return err
+		}
+		came, err := gate.ReadPackages(pkgs)
+		if err != nil {
+			return err
+		}
+		for _, p := range came {
+			p.Along = true
+			taken = append(taken, p)
 		}
 		c = gate.ModulesConfig(*part, commits, taken)
 	}
@@ -140,8 +153,9 @@ func readFolders(folders []string) ([]gate.Package, error) {
 // gateChanged tells whether what the bench reads of each package of a pull request of modules
 // changed against the newest published version of its module: a line a package on stderr, and on
 // stdout the folders the gate of modules runs on — the changed and new ones, or with -all, when the
-// pull request moves the tag of sim, every one but a transition of the format (docs/architecture.md,
-// section 3.9; R27).
+// pull request moves the tag of sim, every one but a transition of the format —, a line each, and
+// after "along " those that did not change but share a graph of the gate with one of them
+// (gate.Runs; docs/architecture.md, section 3.9; R27, R31).
 func gateChanged(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("gate changed", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -179,16 +193,24 @@ func gateChanged(args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
+	runs := gate.Runs(changes, *all)
 	for _, c := range changes {
 		line := fmt.Sprintf("%s %s: %s", c.Module, c.Version, c.State)
 		if c.Against != "" {
 			line += " against " + c.Against
 		}
+		if i := slices.IndexFunc(runs, func(r gate.Change) bool { return r.Module == c.Module }); i >= 0 && runs[i].With != "" {
+			line += ", run with " + runs[i].With + ", which shares a graph of the gate with it"
+		}
 		fmt.Fprintln(stderr, line)
-		if c.State == gate.Changed || c.State == gate.New || *all && c.State == gate.Same {
-			if _, err := fmt.Fprintln(stdout, c.Folder); err != nil {
-				return err
-			}
+	}
+	for _, c := range runs {
+		line := c.Folder
+		if c.With != "" {
+			line = "along " + line // run only on the graphs it shares with a changed one
+		}
+		if _, err := fmt.Fprintln(stdout, line); err != nil {
+			return err
 		}
 	}
 	return nil

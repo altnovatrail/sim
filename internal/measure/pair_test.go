@@ -10,7 +10,7 @@ import (
 // The oracle is the ceiling of the model where it is one: no error of the estimate, no false
 // mastery, no wait for one, and calibration no worse than the model's; on the same answers.
 func TestOracle(t *testing.T) {
-	recs, graph := records(t, "G0", 20)
+	recs, graph := records(t, "G0", 60)
 	var model, oracle []Sums
 	for _, r := range recs {
 		model, oracle = append(model, Model(r)), append(oracle, Oracle(r))

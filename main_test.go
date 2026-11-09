@@ -66,10 +66,10 @@ func TestCommands(t *testing.T) {
 	dir := t.TempDir()
 	a := filepath.Join(dir, "a.jsonl")
 	var stdout, stderr bytes.Buffer
-	if got := run([]string{"run", "-populations", "G0", "-learners", "2", "-out", a}, &stdout, &stderr); got != 0 {
+	if got := run([]string{"run", "-populations", "G7", "-learners", "2", "-out", a}, &stdout, &stderr); got != 0 {
 		t.Fatalf("sim run = %d: %s", got, stderr.String())
 	}
-	if got := run([]string{"run", "-populations", "G0", "-learners", "1", "-rule", "ceiling", "-set", "held-out-model-1"}, &stdout, &stderr); got != 0 {
+	if got := run([]string{"run", "-populations", "G7", "-learners", "1", "-rule", "ceiling", "-set", "held-out-model-1"}, &stdout, &stderr); got != 0 {
 		t.Fatalf("sim run -rule ceiling = %d: %s", got, stderr.String())
 	}
 	if !strings.Contains(stdout.String(), `"rule":"ceiling"`) || !strings.Contains(stdout.String(), "held-out-model-1") {
@@ -97,7 +97,7 @@ func TestCommands(t *testing.T) {
 		t.Errorf("the oracle against the engine: %.300s", stdout.String())
 	}
 	stdout.Reset()
-	if got := run([]string{"run", "-populations", "G0", "-learners", "1"}, &stdout, &stderr); got != 0 || !strings.Contains(stdout.String(), `"rule":"engine"`) {
+	if got := run([]string{"run", "-populations", "G7", "-learners", "1"}, &stdout, &stderr); got != 0 || !strings.Contains(stdout.String(), `"rule":"engine"`) {
 		t.Errorf("sim run with the default rule = %d", got)
 	}
 	stdout.Reset()
@@ -111,7 +111,7 @@ func TestCommands(t *testing.T) {
 		{[]string{"run", "-nope"}, 2},
 		{[]string{"run", "-h"}, 0},
 		{[]string{"run", "-commit", "nothing"}, 2},
-		{[]string{"run", "-learners", "1", "-populations", "G0", "-commit", "github.com/altnovatrail/engine=" + strings.Repeat("e", 40)}, 1},
+		{[]string{"run", "-learners", "1", "-populations", "G7", "-commit", "github.com/altnovatrail/engine=" + strings.Repeat("e", 40)}, 1},
 		{[]string{"run", "-rule", "oracle"}, 1},
 		{[]string{"run", "-set", "nope"}, 1},
 		{[]string{"run", "-set", "held-out-model-x"}, 1},
@@ -143,8 +143,8 @@ func TestJudge(t *testing.T) {
 	dir := t.TempDir()
 	var stdout, stderr bytes.Buffer
 	for _, c := range [][]string{
-		{"run", "-populations", "G0", "-learners", "3", "-out", filepath.Join(dir, "base.jsonl")},
-		{"run", "-populations", "G0", "-learners", "3", "-set", "held-out-model-1", "-out", filepath.Join(dir, "held.jsonl")},
+		{"run", "-populations", "G7", "-learners", "3", "-out", filepath.Join(dir, "base.jsonl")},
+		{"run", "-populations", "G7", "-learners", "3", "-set", "held-out-model-1", "-out", filepath.Join(dir, "held.jsonl")},
 	} {
 		if got := run(c, &stdout, &stderr); got != 0 {
 			t.Fatalf("sim %q = %d: %s", c, got, stderr.String())

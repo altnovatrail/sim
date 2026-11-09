@@ -110,7 +110,7 @@ func TestCheck(t *testing.T) {
 	b.Value -= float64(3 * b.Half)
 	r, _ = Check(rec, results(0, "", ""), false)
 	out.Reset()
-	if err := r.Write(&out); err != nil || !strings.Contains(out.String(), "The gate is green") || !strings.Contains(out.String(), "no graph") {
+	if err := r.Write(&out); err != nil || !strings.Contains(out.String(), "The gate is green") || strings.Contains(out.String(), "no graph") {
 		t.Errorf("the green report:\n%s", out.String())
 	}
 }
@@ -196,7 +196,7 @@ func TestReadWrite(t *testing.T) {
 	if got := Numbers("G1"); !slices.Equal(got, []string{"M7.error.10", "E2.stuck", "E2.nothing"}) {
 		t.Errorf("Numbers(G1) = %v", got)
 	}
-	if len(Cells()) != 14 {
+	if len(Cells()) != 15 {
 		t.Errorf("%d cells: %v", len(Cells()), Cells())
 	}
 	c := Config(bench.Part{K: 1, N: 4}, nil)

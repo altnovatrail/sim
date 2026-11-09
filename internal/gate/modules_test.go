@@ -20,8 +20,7 @@ import (
 // each named by its package digest, as the CI of modules unpacks them.
 func release(t *testing.T) (*formatv0.ModuleIndex, []Package) {
 	t.Helper()
-	dir := filepath.Join("..", "published", published.Release)
-	data, err := os.ReadFile(filepath.Join(dir, "module-index.json"))
+	data, err := os.ReadFile(filepath.Join("..", "published", published.Release, "module-index.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +35,7 @@ func release(t *testing.T) (*formatv0.ModuleIndex, []Package) {
 	var out []Package
 	for _, p := range pins {
 		name := strings.Replace(p.Digest, ":", "-", 1)
-		archive, err := os.ReadFile(filepath.Join(dir, name+".tar.gz"))
+		archive, err := published.Archive(p)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -107,7 +106,7 @@ func TestChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, c := range same {
-		if c.State != Same || c.Against != "0.1.0" || c.Read == nil || c.Read.Digest != string(pack.Digest(of(t, pub, c.Module).Inventory)) {
+		if c.State != Same || c.Against != c.Version || c.Read == nil || c.Read.Digest != string(pack.Digest(of(t, pub, c.Module).Inventory)) {
 			t.Errorf("a published package against itself: %+v", c)
 		}
 	}
@@ -130,20 +129,20 @@ func TestChanges(t *testing.T) {
 		}
 		st.Skills.Primary = []formatv0.SkillID{other}
 		cv.Tasks[task] = st
-		cv.Manifest.Version = "0.1.1"
-	}, func(inv *formatv0.Inventory) { inv.Version = "0.1.1" })
+		cv.Manifest.Version = "0.1.2"
+	}, func(inv *formatv0.Inventory) { inv.Version = "0.1.2" })
 	text := edited(t, o, "text", func(cv *formatv0.CanonicalView) {
 		st := cv.Tasks[task]
 		st.Statement = []formatv0.StatementPart{{Text: new(formatv0.Text("Another wording of the task."))}}
 		cv.Tasks[task] = st
-		cv.Manifest.Version = "0.1.1"
-	}, func(inv *formatv0.Inventory) { inv.Version = "0.1.1" })
+		cv.Manifest.Version = "0.1.2"
+	}, func(inv *formatv0.Inventory) { inv.Version = "0.1.2" })
 	for _, c := range []struct {
 		p    Package
 		want State
 	}{{retag, Changed}, {text, Same}} {
 		got, err := Changes(idx, pub, []Package{c.p})
-		if err != nil || got[0].State != c.want || got[0].Version != "0.1.1" || got[0].Against != "0.1.0" {
+		if err != nil || got[0].State != c.want || got[0].Version != "0.1.2" || got[0].Against != "0.1.1" {
 			t.Errorf("%s: %+v, %v; want %s", c.p.Folder, got, err, c.want)
 		}
 	}
@@ -180,7 +179,7 @@ func TestChanges(t *testing.T) {
 	reason := formatv0.WithdrawalReason("a test")
 	withdrawn.Modules[olympiad]["0.10.0"] = formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: "sha256:" + formatv0.Digest(strings.Repeat("0", 64)), Release: "v0.2.0", Withdrawn: &reason}
 	withdrawn.Modules[olympiad]["0.0.9"] = formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: "sha256:" + formatv0.Digest(strings.Repeat("0", 64)), Release: "v0.0.1"}
-	if got, err := Changes(&withdrawn, pub, []Package{o}); err != nil || got[0].State != Same || got[0].Against != "0.1.0" {
+	if got, err := Changes(&withdrawn, pub, []Package{o}); err != nil || got[0].State != Same || got[0].Against != "0.1.1" {
 		t.Errorf("against a withdrawn newer version: %+v, %v", got, err)
 	}
 	bare := withdrawn
@@ -263,7 +262,7 @@ func TestThresholds(t *testing.T) {
 		t.Errorf("the rows do not go in the order of the cells: %s first", r.Rows[0].Cell)
 	}
 	var out bytes.Buffer
-	if err := r.Write(&out); err != nil || !strings.Contains(out.String(), "The gate of modules is green") || !strings.Contains(out.String(), "| "+g0+" | E1.hard | at most ") || !strings.Contains(out.String(), "| A-linked | E2.stuck, E2.nothing | no graph |") {
+	if err := r.Write(&out); err != nil || !strings.Contains(out.String(), "The gate of modules is green") || !strings.Contains(out.String(), "| "+g0+" | E1.hard | at most ") || strings.Contains(out.String(), "no graph") {
 		t.Errorf("the green report:\n%s", out.String())
 	}
 	hard := band(rec, g0, "E1.hard").Value
@@ -322,5 +321,61 @@ func TestThresholds(t *testing.T) {
 	}
 	if _, err := Record(rec, modulesRun(t), "a test"); err == nil {
 		t.Error("bands recorded on a run of modules")
+	}
+}
+
+// The gate of modules runs on the changed and new packages, and on a package that did not change
+// when a graph of the gate holds it with one that did: A-linked runs on both maths when either
+// changed. With all, every package but a transition runs, and none is brought.
+func TestRuns(t *testing.T) {
+	const grade3, essays = "novatrail/grade-3-math", "novatrail/english-essays"
+	changes := func(states ...State) []Change {
+		return []Change{{Module: essays, State: states[0]}, {Module: grade3, State: states[1]}, {Module: olympiad, State: states[2]}}
+	}
+	show := func(cs []Change) []string {
+		var out []string
+		for _, c := range cs {
+			out = append(out, c.Module+"<"+c.With)
+		}
+		return out
+	}
+	for _, c := range []struct {
+		in   []Change
+		all  bool
+		want []string
+	}{
+		{changes(Same, Same, Changed), false, []string{grade3 + "<" + olympiad, olympiad + "<"}},
+		{changes(Same, New, Same), false, []string{grade3 + "<", olympiad + "<" + grade3}},
+		{changes(Changed, Same, Same), false, []string{essays + "<"}},
+		{changes(Same, Same, Same), false, nil},
+		{changes(Same, Transition, Changed), false, []string{olympiad + "<"}},
+		{changes(Same, Same, Transition), true, []string{essays + "<", grade3 + "<"}},
+	} {
+		if got := show(Runs(c.in, c.all)); !slices.Equal(got, c.want) {
+			t.Errorf("Runs(%v, %v) = %v, want %v", c.in, c.all, got, c.want)
+		}
+	}
+}
+
+// A cell of the gate on a module of the run whose graph wants a module the run has no package of is
+// named, and so is not a cell on a package that only came along; a package along is no module
+// uncovered.
+func TestPartial(t *testing.T) {
+	g3 := published.Package{Module: "novatrail/grade-3-math"}
+	om := published.Package{Module: olympiad}
+	if got := partial([]published.Package{g3}); !slices.Equal(got, []string{"A-linked/novatrail/olympiad-math+novatrail/grade-3-math, for want of a package of novatrail/olympiad-math"}) {
+		t.Errorf("partial = %v", got)
+	}
+	om.Along = true
+	if got := partial([]published.Package{g3, om}); got != nil {
+		t.Errorf("both maths: partial = %v", got)
+	}
+	if got := partial([]published.Package{om}); got != nil {
+		t.Errorf("a package along alone: partial = %v", got)
+	}
+	var b bytes.Buffer
+	r := &ThresholdReport{Partial: partial([]published.Package{g3})}
+	if err := r.Write(&b); err != nil || !strings.Contains(b.String(), "The cell A-linked/novatrail/olympiad-math+novatrail/grade-3-math, for want of a package of novatrail/olympiad-math, does not run.") {
+		t.Errorf("the report:\n%s", b.String())
 	}
 }

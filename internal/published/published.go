@@ -22,17 +22,17 @@ import (
 // The release of modules the bench is pinned to and the SHA-256 of its module index. The archives
 // lie each in the folder of the release its entry names, as files of that release.
 const (
-	Release     = "v0.1.0"
-	IndexDigest = "ed4d8bb325fdcb3ea54da439e08c58d927f773ba0f097338f7767ad76be8c90e"
+	Release     = "v0.1.4"
+	IndexDigest = "a244c0ba2832ba6360f45bc74d293572b84b491fc823c7b01bdf6004ff9edb2a"
 )
 
-//go:embed v0.1.0
+//go:embed v0.1.0 v0.1.1 v0.1.4
 var files embed.FS
 
 // versions are the modules of the first slice (R41 spec), by full ID, and the version of each the
 // bench reads. They are a pin, as the release is: unexported, so nothing outside changes them.
 var versions = map[formatv0.ModuleID]formatv0.ModuleVersion{
-	"novatrail/olympiad-math":  "0.1.0",
+	"novatrail/olympiad-math":  "0.1.1",
 	"novatrail/english-essays": "0.1.0",
 	"novatrail/grade-3-math":   "0.1.0",
 }
@@ -90,11 +90,14 @@ func readPin(release, indexDigest string, versions map[formatv0.ModuleID]formatv
 }
 
 // Package is a pinned package: its module's full ID, its version, and its package digest, as the
-// pinned index names them.
+// pinned index names them. In a run of the gate of modules, Along marks a package that did not
+// change and came along with one that did, a graph of the gate holding the two together: it runs
+// only on such graphs (docs/architecture.md, section 3.9; R31 in docs/decisions.md).
 type Package struct {
 	Module  string `json:"module"`
 	Version string `json:"version"`
 	Digest  string `json:"digest"`
+	Along   bool   `json:"along,omitempty"`
 }
 
 // Pinned gives the pinned packages in the order of their IDs, read from the pinned index, so that a
@@ -113,4 +116,19 @@ func Pinned() ([]Package, error) {
 		out = append(out, Package{Module: string(id), Version: string(versions[id]), Digest: string(e.PackageDigest)})
 	}
 	return out, nil
+}
+
+// Archive gives the archive of a pinned package as its release has it, from the folder of the
+// release its entry in the pinned index names: what the CI of modules unpacks, for the tests of the
+// gate of modules.
+func Archive(p Package) ([]byte, error) {
+	idx, err := index(Release, IndexDigest)
+	if err != nil {
+		return nil, err
+	}
+	e, err := pack.Entry(idx, formatv0.ModuleID(p.Module), formatv0.ModuleVersion(p.Version))
+	if err != nil {
+		return nil, fmt.Errorf("published: %w", err)
+	}
+	return files.ReadFile(string(e.Release) + "/" + strings.Replace(p.Digest, ":", "-", 1) + ".tar.gz")
 }
