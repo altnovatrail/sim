@@ -376,3 +376,60 @@ func TestGateModules(t *testing.T) {
 		}
 	}
 }
+
+// "sim gate verify" holds the build alone to the gate file: a build of the workspace with the
+// go.mod of every module passes, a build of the module cache or a module missing fails, and so do
+// flags it does not take.
+func TestGateVerify(t *testing.T) {
+	prior := buildInfo
+	t.Cleanup(func() { buildInfo = prior })
+	workspace := &debug.BuildInfo{Deps: []*debug.Module{
+		{Path: "github.com/altnovatrail/engine", Version: "(devel)"},
+		{Path: "github.com/altnovatrail/learner-model", Version: "(devel)"},
+		{Path: "github.com/altnovatrail/spec", Version: "v0.12.0"},
+	}}
+	buildInfo = func() (*debug.BuildInfo, bool) { return workspace, true }
+	dir := t.TempDir()
+	args := []string{"gate", "verify", "-file", "gate.json", "-go", "."}
+	for _, name := range []string{"engine", "learner-model"} {
+		lib := filepath.Join(dir, name)
+		if err := os.MkdirAll(lib, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(lib, "go.mod"), []byte("module github.com/altnovatrail/"+name+"\n\ngo 1.27.3\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		args = append(args, "-go", lib)
+	}
+	var stdout, stderr bytes.Buffer
+	if got := run(args, &stdout, &stderr); got != 0 || !strings.Contains(stdout.String(), "The build holds to the gate file") {
+		t.Fatalf("sim gate verify on the workspace = %d: %s%s", got, stdout.String(), stderr.String())
+	}
+	stdout.Reset()
+	if got := run(args[:len(args)-2], &stdout, &stderr); got != 1 || !strings.Contains(stdout.String(), "the gate was given no go.mod of github.com/altnovatrail/learner-model") {
+		t.Errorf("sim gate verify without a module = %d: %s", got, stdout.String())
+	}
+	workspace = &debug.BuildInfo{Deps: []*debug.Module{
+		{Path: "github.com/altnovatrail/engine", Version: "v0.1.4"},
+		{Path: "github.com/altnovatrail/learner-model", Version: "v0.1.4"},
+		{Path: "github.com/altnovatrail/spec", Version: "v0.11.0"},
+	}}
+	stdout.Reset()
+	if got := run(args, &stdout, &stderr); got != 1 || !strings.Contains(stdout.String(), "github.com/altnovatrail/engine is built at v0.1.4") || !strings.Contains(stdout.String(), "chose github.com/altnovatrail/spec at v0.11.0") {
+		t.Errorf("sim gate verify on the module cache = %d: %s", got, stdout.String())
+	}
+	for _, bad := range [][]string{
+		{"gate", "verify", "-file", "gate.json", "extra"},
+		{"gate", "verify", "-nope"},
+	} {
+		if got := run(bad, &stdout, &stderr); got != 2 {
+			t.Errorf("run(%q) = %d, want 2", bad, got)
+		}
+	}
+	if got := run([]string{"gate", "verify", "-file", filepath.Join(dir, "none.json")}, &stdout, &stderr); got != 1 {
+		t.Errorf("sim gate verify of no gate file = %d, want 1", got)
+	}
+	if got := run([]string{"gate", "verify", "-go", dir}, &stdout, &stderr); got != 1 {
+		t.Errorf("sim gate verify with a folder that has no go.mod = %d, want 1", got)
+	}
+}

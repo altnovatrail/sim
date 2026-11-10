@@ -550,14 +550,17 @@ func TestPathSmall(t *testing.T) {
 	}
 }
 
-// The recipe of the decisive run, just decisive, runs Decisive learners a cell: a decisive run of
-// another size would be refused by sim paths, or read as a rough look.
+// The recipe of the decisive run, just decisive, runs Decisive learners a cell, of the working ones
+// unless it is given another set: a decisive run of another size would be refused by sim paths, or
+// read as a rough look, and a base of other learners would not be the one paths.json names.
 func TestDecisiveRecipe(t *testing.T) {
 	justfile, err := os.ReadFile(filepath.Join("..", "..", "justfile"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := fmt.Sprintf("-learners %d -set working", Decisive); !strings.Contains(string(justfile), want) {
-		t.Errorf("the recipe decisive does not run %q", want)
+	for _, want := range []string{fmt.Sprintf("-learners %d -set ", Decisive), `decisive rule out set="working":`} {
+		if !strings.Contains(string(justfile), want) {
+			t.Errorf("the recipe decisive has no %q", want)
+		}
 	}
 }
