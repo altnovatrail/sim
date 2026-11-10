@@ -42,10 +42,11 @@ func Check(rec *run.Record) []Breach {
 	return check(rec, true)
 }
 
-// CheckRepeated gives every breach of I2–I4 in the record of a run that is repeated, whose I1 Same
-// holds to the same bits: taking each choice again as well would only double the engine's work on
-// every step, the most of a run (R31 in docs/decisions.md).
-func CheckRepeated(rec *run.Record) []Breach {
+// CheckWithoutI1 gives every breach of I2–I4 in a run's record, and takes no choice again: past the
+// first learners of a cell, taking each choice again would double the engine's work on every step,
+// the most of a run. A repeated run holds I1 to the same bits by Same, and the first learners of
+// every cell take it on each choice (R31, R33 in docs/decisions.md).
+func CheckWithoutI1(rec *run.Record) []Breach {
 	return check(rec, false)
 }
 

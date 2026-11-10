@@ -5,3 +5,6 @@
 /sim
 # What release-files writes, for the shared release to sign.
 /dist/
+# The files of results of the decisive runs, kept between judgements: about 0.5 GB a rule, and the
+# same seeds give them again to the byte (R28, R33 in docs/decisions.md).
+runs/

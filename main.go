@@ -19,6 +19,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -110,6 +112,24 @@ func parse(fs *flag.FlagSet, args []string) error {
 	return nil
 }
 
+// gcPercent is the garbage collector's share of the live heap a run lets grow before it collects:
+// four times Go's own. A process of a run then holds about 100 MB, and a run takes about 28 % less
+// processor than at Go's own 100 (R33 in docs/decisions.md).
+const gcPercent = 400
+
+// alone sets the collector of a process of a run to gcPercent, and a process that runs a part to one
+// processor: the parts of a run are processes, as many as the processors, with no goroutine of the
+// bench's own (R09), and another processor for each would only take the others'. A run of the whole is
+// the one process on the machine, and keeps the processors for its collector. Neither changes a bit
+// of what the run writes. It is a variable so that the tests of the commands leave their own process
+// as it was.
+var alone = func(part bench.Part) {
+	if part.N > 1 {
+		runtime.GOMAXPROCS(1)
+	}
+	debug.SetGCPercent(gcPercent)
+}
+
 // runCommand is "sim run".
 func runCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("run", flag.ContinueOnError)
@@ -147,6 +167,7 @@ func runCommand(args []string, stdout, stderr io.Writer) error {
 	if *learners <= 0 {
 		return fmt.Errorf("-learners %d: want at least one", *learners)
 	}
+	alone(*part)
 	return writeTo(*out, stdout, func(w io.Writer) error { return bench.Run(c, w) })
 }
 

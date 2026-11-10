@@ -133,9 +133,10 @@ func TestBreaches(t *testing.T) {
 			}
 		}
 		only(t, i1, "I1")
-		// A run that is repeated takes no choice again: Same holds its I1.
-		if hasBreach(CheckRepeated(&bad), "I1") || len(CheckRepeated(rec)) != 0 {
-			t.Errorf("CheckRepeated gives %v", CheckRepeated(&bad))
+		// CheckWithoutI1 takes no choice again: past the first learners of a cell, a repeated run
+		// holds I1 by Same, and the gate repeats every candidate.
+		if hasBreach(CheckWithoutI1(&bad), "I1") || len(CheckWithoutI1(rec)) != 0 {
+			t.Errorf("CheckWithoutI1 gives %v", CheckWithoutI1(&bad))
 		}
 	})
 	t.Run("I1 an input refused", func(t *testing.T) {

@@ -3,6 +3,7 @@ package criterion
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -546,5 +547,17 @@ func TestPathSmall(t *testing.T) {
 	var b bytes.Buffer
 	if err := r.Write(&b); err != nil || !strings.Contains(b.String(), "its path within the author's tolerance: G0/novatrail/olympiad-math E1.corridor") {
 		t.Errorf("the report: %v\n%s", err, b.String())
+	}
+}
+
+// The recipe of the decisive run, just decisive, runs Decisive learners a cell: a decisive run of
+// another size would be refused by sim paths, or read as a rough look.
+func TestDecisiveRecipe(t *testing.T) {
+	justfile, err := os.ReadFile(filepath.Join("..", "..", "justfile"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := fmt.Sprintf("-learners %d -set working", Decisive); !strings.Contains(string(justfile), want) {
+		t.Errorf("the recipe decisive does not run %q", want)
 	}
 }

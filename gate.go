@@ -119,6 +119,7 @@ func gateRun(args []string, stdout, stderr io.Writer) error {
 		}
 		c = gate.ModulesConfig(*part, commits, taken)
 	}
+	alone(*part)
 	return writeTo(*out, stdout, func(w io.Writer) error { return bench.Run(c, w) })
 }
 
