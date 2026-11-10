@@ -1,0 +1,14 @@
+# The runs of the judgement model-1: the SHA-256 of each file of results, and its header without the populations.
+# The files are no part of the repository: just decisive gives them again to the byte (R28, R34).
+
+b13a9264353936391f84e52c578805d460461354b4ca0017c22763dc9f9d4c92  runs/base.jsonl
+{"set":{"Seed":20261107,"Experiment":"working"},"rule":"engine","libraries":{"github.com/altnovatrail/engine":"v0.1.4","github.com/altnovatrail/learner-model":"v0.1.4"},"learners":1000,"invariants":true}
+
+e19ff45e153280d716c4d85cb3a8944e724ecbb6cd0d879f208e9e2665be0434  runs/model-1-g10.jsonl
+{"set":{"Seed":20261107,"Experiment":"working"},"rule":"engine","libraries":{"github.com/altnovatrail/engine":"ddfed3ac55d8d0dc1e0880b06e7e960cb72b4441","github.com/altnovatrail/learner-model":"7f735b20d55724501e25f8c60c4e66134d681603"},"learners":1000,"invariants":true}
+
+400d9a6de44c01de2684235e417132cd4ed5ecc905f72dba05a64108f85cd66e  runs/model-1-halve035.jsonl
+{"set":{"Seed":20261107,"Experiment":"working"},"rule":"engine","libraries":{"github.com/altnovatrail/engine":"ddfed3ac55d8d0dc1e0880b06e7e960cb72b4441","github.com/altnovatrail/learner-model":"17e0a42f0e10fba4acef8169c5a4088aaf0d74f6"},"learners":1000,"invariants":true}
+
+cdf7755c0b7455cc5682d583dc234da80adbe92c2282f9fc9be80688f3ba4c25  runs/model-1-forget-set.jsonl
+{"set":{"Seed":20261107,"Experiment":"working"},"rule":"engine","libraries":{"github.com/altnovatrail/engine":"ddfed3ac55d8d0dc1e0880b06e7e960cb72b4441","github.com/altnovatrail/learner-model":"75c6a908a83e873f73eab73f040a0b15ab074dc0"},"learners":1000,"invariants":true}
