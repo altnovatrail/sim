@@ -292,7 +292,7 @@ func TestRunRefused(t *testing.T) {
 func TestRunTemplate(t *testing.T) {
 	cv := &formatv0.CanonicalView{
 		Manifest: formatv0.Manifest{
-			ModuleFormatVersion: "0.3", ID: "example/template", Version: "0.1.0",
+			ModuleFormatVersion: "0.4", ID: "example/template", Version: "0.1.0",
 			Audience: formatv0.Audience{AgeCategories: []formatv0.AgeCategory{"under_13"}},
 			Bands:    []formatv0.Band{{ID: "only", Grades: []formatv0.Grade{3}}},
 		},

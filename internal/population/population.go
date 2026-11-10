@@ -52,7 +52,7 @@ var (
 	grade3   = [][]string{{Grade3}}
 	essays   = [][]string{{Essays}}
 	// anchored is the graph of A-: a learner of a module whose skill rests on an anchor skill and of
-	// the module that teaches it. Olympiad maths 0.1.1 rests two skills on skills school maths
+	// the module that teaches it. Olympiad maths, from 0.1.1 on, rests two skills on skills school maths
 	// teaches — fractions-parts on core.fractions-of-a-whole, number-divisibility on
 	// core.division-with-remainder —, so it is the two published maths together
 	// (docs/architecture.md, section 3.2; R31 in docs/decisions.md).

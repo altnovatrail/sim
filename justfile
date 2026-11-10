@@ -35,7 +35,7 @@ ci-lint:
     fi
     go vet ./...
     # gopls comes into the devcontainer image from its lock file, .devcontainer/gopls/, and the
-    # image's build stops when the gopls it built does not name GOPLS_VERSION (R11). CI never
+    # image's build stops when the gopls it built does not name GOPLS_VERSION (R32). CI never
     # builds that stage, so the two are held to each other here: a pull request that raises one
     # alone, or a move to a new tag of spec that drops the step from the Dockerfile, fails here.
     lock="$(sed -n 's/^[[:space:]]*\(require[[:space:]]\{1,\}\)\{0,1\}golang\.org\/x\/tools\/gopls[[:space:]]\{1,\}v\([^[:space:]]\{1,\}\).*$/\2/p' \
@@ -43,7 +43,7 @@ ci-lint:
     arg="$(sed -n 's/^ARG GOPLS_VERSION=\(.*\)$/\1/p' .devcontainer/Dockerfile)"
     if [ -z "$lock" ] || [ "$arg" != "$lock" ]; then
         echo "ci-lint: .devcontainer/gopls/go.mod names gopls ${lock:-at no version} and" \
-            ".devcontainer/Dockerfile has GOPLS_VERSION ${arg:-unset}; raise them together (R11)" >&2
+            ".devcontainer/Dockerfile has GOPLS_VERSION ${arg:-unset}; take both from the go kind of spec's repo-template (R32)" >&2
         exit 1
     fi
     {{ just_executable() }} ci-release
@@ -58,7 +58,7 @@ ci-lint:
 # arm64 hardware, then the targets. The recipes test-targets, fma-diff and rules below run the same
 # in the container, and same-bits runs all three; CI calls none of them.
 # No race detector: there is no goroutine in the code, which the rule goroutine keeps out, nor in
-# the tests, and it made a learner of olympiad maths 0.1.1 some ten times slower, past the ten
+# the tests, and it made a learner of olympiad maths, from 0.1.1 on, some ten times slower, past the ten
 # minutes go test gives a package (the amendment of 2026-11-09 to R10 in docs/decisions.md). A test
 # that starts a goroutine brings it back.
 # Run the tests and write their coverage.

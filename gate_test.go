@@ -28,8 +28,8 @@ func TestGate(t *testing.T) {
 	if got := run([]string{"gate", "libraries", "gate.json"}, &stdout, &stderr); got != 0 {
 		t.Fatalf("sim gate libraries = %d: %s", got, stderr.String())
 	}
-	want := "github.com/altnovatrail/engine altnovatrail/engine c6c5bb9bc2c6fc486f629da82ee834bd89fc2b35 v0.1.0\n" +
-		"github.com/altnovatrail/learner-model altnovatrail/learner-model d2620a18d865c813ec2556c93fca92a1445e3a74 v0.1.0\n"
+	want := "github.com/altnovatrail/engine altnovatrail/engine ddfed3ac55d8d0dc1e0880b06e7e960cb72b4441 v0.1.4\n" +
+		"github.com/altnovatrail/learner-model altnovatrail/learner-model acfc4f2f9cfa7699c9267d44e2ba09c5b8c89870 v0.1.4\n"
 	if stdout.String() != want {
 		t.Errorf("sim gate libraries wrote\n%s", stdout.String())
 	}
@@ -145,7 +145,7 @@ func TestGateWhole(t *testing.T) {
 		return &debug.BuildInfo{Deps: []*debug.Module{
 			{Path: "github.com/altnovatrail/engine", Version: "(devel)"},
 			{Path: "github.com/altnovatrail/learner-model", Version: "(devel)"},
-			{Path: "github.com/altnovatrail/spec", Version: "v0.9.9"},
+			{Path: "github.com/altnovatrail/spec", Version: "v0.12.0"},
 		}}, true
 	}
 	dir := t.TempDir()
@@ -153,8 +153,8 @@ func TestGateWhole(t *testing.T) {
 	for k := range 2 {
 		f := &bench.File{Header: bench.Header{Set: seed.Working, Rule: "engine", Invariants: true, Part: bench.Part{K: k, N: 2},
 			Populations: gate.Populations, Learners: gate.Learners, Repeat: true, Libraries: map[string]string{
-				"github.com/altnovatrail/engine":        "c6c5bb9bc2c6fc486f629da82ee834bd89fc2b35",
-				"github.com/altnovatrail/learner-model": "d2620a18d865c813ec2556c93fca92a1445e3a74",
+				"github.com/altnovatrail/engine":        "ddfed3ac55d8d0dc1e0880b06e7e960cb72b4441",
+				"github.com/altnovatrail/learner-model": "acfc4f2f9cfa7699c9267d44e2ba09c5b8c89870",
 			}}}
 		for _, cell := range gate.Cells() {
 			pop, graph, _ := strings.Cut(cell, "/")
@@ -234,8 +234,8 @@ func TestGateWhole(t *testing.T) {
 	}
 	modules := &bench.File{Header: bench.Header{Set: seed.Working, Rule: "engine", Invariants: true, Populations: gate.Populations, Learners: gate.Learners, Repeat: true, Packages: pins,
 		Libraries: map[string]string{
-			"github.com/altnovatrail/engine":        "c6c5bb9bc2c6fc486f629da82ee834bd89fc2b35",
-			"github.com/altnovatrail/learner-model": "d2620a18d865c813ec2556c93fca92a1445e3a74",
+			"github.com/altnovatrail/engine":        "ddfed3ac55d8d0dc1e0880b06e7e960cb72b4441",
+			"github.com/altnovatrail/learner-model": "acfc4f2f9cfa7699c9267d44e2ba09c5b8c89870",
 		}}}
 	for _, cell := range bench.CellsOn(gate.Populations, pins) {
 		pop, graph, _ := strings.Cut(cell, "/")
@@ -324,11 +324,11 @@ func TestGateModules(t *testing.T) {
 		stdout string
 		stderr string
 	}{
-		{[]string{"-first", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.1.0: new\n"},
-		{[]string{"-index", index, "-published", grade3, grade3}, "", "novatrail/grade-3-math 0.1.0: same against 0.1.0\n"},
-		{[]string{"-index", index, "-published", grade3, "-all", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.1.0: same against 0.1.0\n"},
+		{[]string{"-first", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.2.0: new\n"},
+		{[]string{"-index", index, "-published", grade3, grade3}, "", "novatrail/grade-3-math 0.2.0: same against 0.2.0\n"},
+		{[]string{"-index", index, "-published", grade3, "-all", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.2.0: same against 0.2.0\n"},
 		{[]string{"-index", noGrade3, "-published", olympiad, grade3, olympiad}, grade3 + "\nalong " + olympiad + "\n",
-			"novatrail/grade-3-math 0.1.0: new\nnovatrail/olympiad-math 0.1.1: same against 0.1.1, run with novatrail/grade-3-math, which shares a graph of the gate with it\n"},
+			"novatrail/grade-3-math 0.2.0: new\nnovatrail/olympiad-math 0.2.0: same against 0.2.0, run with novatrail/grade-3-math, which shares a graph of the gate with it\n"},
 	} {
 		stdout.Reset()
 		stderr.Reset()

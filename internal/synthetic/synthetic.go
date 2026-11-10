@@ -41,7 +41,7 @@ func manifest(id string, subject formatv0.Subject, ages []formatv0.AgeCategory, 
 		bands[k].Title = formatv0.Text("Band " + string(bands[k].ID))
 	}
 	return formatv0.Manifest{
-		ModuleFormatVersion: "0.3", ID: formatv0.ModuleID(id), Version: "0.0.1", Title: formatv0.Text("Synthetic " + id),
+		ModuleFormatVersion: "0.4", ID: formatv0.ModuleID(id), Version: "0.0.1", Title: formatv0.Text("Synthetic " + id),
 		Subject: subject, Audience: formatv0.Audience{AgeCategories: ages, Grades: grades}, Bands: bands,
 		Languages: formatv0.Languages{Explanation: "en"}, Authors: []formatv0.Author{{Name: "The sim bench"}}, License: "Apache-2.0",
 	}
@@ -52,6 +52,11 @@ func skill(title string, a formatv0.SkillAssessability, prerequisites ...string)
 }
 
 func statement(s string) []formatv0.StatementPart { return []formatv0.StatementPart{{Text: text(s)}} }
+
+// explanation gives the explanation of a lesson: one paragraph.
+func explanation(s string) []formatv0.ExplanationPart {
+	return []formatv0.ExplanationPart{{Text: text(s)}}
+}
 
 // slotOf gives a slot of a sheet: a choice of n options by its options, a number by its key, a
 // predicate by its predicate on the value.
@@ -115,7 +120,7 @@ func SheetView() *formatv0.CanonicalView {
 		}
 		lesson := formatv0.LessonID(string(skill) + "-grades-3-4")
 		cv.Lessons[lesson] = formatv0.Lesson{ID: lesson, Title: "A lesson", Skills: []formatv0.SkillID{skill}, Segments: []formatv0.Segment{
-			{Explanation: statement("An explanation.")},
+			{Explanation: explanation("An explanation.")},
 			{Task: ptr(formatv0.TaskID(fmt.Sprintf("%s-grades-3-4-d1", skill)))},
 			{Task: ptr(formatv0.TaskID(fmt.Sprintf("%s-grades-3-4-d3", skill)))},
 		}}
@@ -161,7 +166,7 @@ func WorkbookView() *formatv0.CanonicalView {
 		}
 		lesson := formatv0.LessonID(string(skill) + "-lesson")
 		cv.Lessons[lesson] = formatv0.Lesson{ID: lesson, Title: "A lesson", Skills: []formatv0.SkillID{skill}, Segments: []formatv0.Segment{
-			{Explanation: statement("An explanation.")},
+			{Explanation: explanation("An explanation.")},
 			{Task: ptr(formatv0.TaskID(string(skill) + "-page-1"))},
 		}}
 	}
@@ -211,13 +216,13 @@ func EssaysView() *formatv0.CanonicalView {
 			Skills: formatv0.Skills{Primary: []formatv0.SkillID{w.skill}}, Items: []formatv0.Item{{AnswerSlots: []formatv0.AnswerSlot{rubric}}}}
 	}
 	cv.Lessons["reading-lesson"] = formatv0.Lesson{ID: "reading-lesson", Title: "Reading", Skills: []formatv0.SkillID{"reading"}, Segments: []formatv0.Segment{
-		{Explanation: statement("A model essay.")}, {Explanation: statement("Another model essay.")},
+		{Explanation: explanation("A model essay.")}, {Explanation: explanation("Another model essay.")},
 	}}
 	cv.Lessons["writing-lesson"] = formatv0.Lesson{ID: "writing-lesson", Title: "Writing", Skills: []formatv0.SkillID{"writing"}, Segments: []formatv0.Segment{
-		{Explanation: statement("How to begin.")}, {Task: ptr(formatv0.TaskID("a-first-essay"))},
+		{Explanation: explanation("How to begin.")}, {Task: ptr(formatv0.TaskID("a-first-essay"))},
 	}}
 	cv.Lessons["improving-lesson"] = formatv0.Lesson{ID: "improving-lesson", Title: "Improving", Skills: []formatv0.SkillID{"improving"}, Segments: []formatv0.Segment{
-		{Explanation: statement("How to improve.")}, {Task: ptr(formatv0.TaskID("an-essay-improved"))},
+		{Explanation: explanation("How to improve.")}, {Task: ptr(formatv0.TaskID("an-essay-improved"))},
 	}}
 	return cv
 }

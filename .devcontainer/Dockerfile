@@ -153,19 +153,22 @@ RUN arch="$(dpkg --print-architecture)"; \
 
 # gopls is the language server that the Go extension in devcontainer.json starts. It is built
 # with the Go of the toolchain stage, and only here: the checks do not need it. This step and
-# gopls/ beside this file are sim's own, not spec's (R11 in docs/decisions.md).
+# gopls/ beside this file are the go kind's of spec's repo-template, and a move to a tag of spec
+# brings them with the rest of the devcontainer (R102 spec; R32 in docs/decisions.md).
 ARG GOPLS_VERSION=0.24.0
 
 # gopls is built from its lock file, gopls/ in this folder. Its go.mod names gopls as a tool at an
 # exact version, and its go.sum holds the hash of every module the build takes. -mod=readonly
 # builds from that lock and nothing else: a module missing from go.sum, or with another hash, stops
 # the build, as a wrong sum stops an archive (R34 spec). The built gopls must name GOPLS_VERSION
-# exactly, so the lock and the ARG cannot drift apart; ci-lint holds them to each other too, since
-# CI never builds this stage. The COPY leaves the two files of the lock in a layer of their own, a
-# few kilobytes; everything the RUN writes stays in one folder that the same layer removes: go
-# clean takes the module cache, whose files the go command makes read-only, and the build cache,
-# and XDG_CONFIG_HOME keeps the telemetry counters of go and gopls there as well.
-# The checks build the toolchain stage alone, with no context, and never reach this COPY.
+# exactly, so the lock and the ARG cannot drift apart. CI never builds this stage, and before a
+# rebuild only a check that reads both holds them to each other: spec's tests hold the go kind's
+# pair in repo-template, and new-repo-check a new repository's copy once, when the copy is made;
+# after that, a copy is held only by its repository's own check, if it has one. Everything the step
+# writes stays in one folder that the same layer removes: go clean takes the module cache, whose
+# files the go command makes read-only, and the build cache, and XDG_CONFIG_HOME keeps the
+# telemetry counters of go and gopls there as well. The checks build the toolchain stage alone,
+# with no context, and never reach this COPY.
 COPY gopls/go.mod gopls/go.sum /tmp/gopls-build/src/
 RUN echo "gopls ${GOPLS_VERSION}"; \
     build=/tmp/gopls-build; \

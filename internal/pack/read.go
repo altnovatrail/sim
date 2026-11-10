@@ -20,8 +20,8 @@ import (
 )
 
 // formatVersions are the versions of the module format the bench reads: while the format is v0,
-// only the current one, 0.3 since spec v0.9.0 (R44, R101 spec), the window module-kit reads too.
-var formatVersions = []formatv0.ModuleFormatVersion{"0.3"}
+// only the current one, 0.4 since spec v0.10.0 (R44, R111 spec), the window module-kit reads too.
+var formatVersions = []formatv0.ModuleFormatVersion{"0.4"}
 
 // ErrDigest is a file whose SHA-256 is not the one the chain of digests names.
 var ErrDigest = errors.New("pack: a digest does not match")

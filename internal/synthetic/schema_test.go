@@ -29,18 +29,18 @@ func canonicalView(t *testing.T) *jsonschema.Schema {
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
-		if err := c.AddResource("https://altnovatrail.github.io/spec/format/0.3/"+path.Base(name), doc); err != nil {
+		if err := c.AddResource("https://altnovatrail.github.io/spec/format/0.4/"+path.Base(name), doc); err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
 	}
-	s, err := c.Compile("https://altnovatrail.github.io/spec/format/0.3/canonical-view.schema.json")
+	s, err := c.Compile("https://altnovatrail.github.io/spec/format/0.4/canonical-view.schema.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 	return s
 }
 
-// Every synthetic view is a valid canonical view of the format 0.3: the schema spec gives it holds
+// Every synthetic view is a valid canonical view of the format 0.4: the schema spec gives it holds
 // what the Go types cannot — required members, enums, the shared taxonomy (the text of the format,
 // section 25).
 func TestSchema(t *testing.T) {

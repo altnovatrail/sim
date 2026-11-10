@@ -88,7 +88,7 @@ func TestReleasePackages(t *testing.T) {
 }
 
 // The kinds of check of the release: numbers, fractions and choices of five options in the check on
-// the sheet of olympiad maths 0.1.1, numbers, fractions and choices of three options on the workbook
+// the sheet of olympiad maths 0.2.0, numbers, fractions and choices of three options on the workbook
 // of grade 3 — the options in the check —, choices of
 // three options beside the check and rubrics in essays (R12 of this log; docs/architecture.md,
 // section 4). No cell of predicate is published.
@@ -127,7 +127,7 @@ func TestReleaseChecks(t *testing.T) {
 	}
 }
 
-// Of the release, only olympiad maths 0.1.1 has templates: 19 tasks, each with its instances, and an
+// Of the release, only olympiad maths 0.2.0 has templates: 19 tasks, each with its instances, and an
 // attempt's seed takes one of them; a task that is no template has no instance (docs/architecture.md,
 // section 4). How the seed takes an instance is tested on a template of pack's own test.
 func TestReleaseTemplates(t *testing.T) {
@@ -192,7 +192,7 @@ func itoa[N ~int32](n N) string {
 }
 
 // Pinned names the three packages of the first slice by the pinned index, each with its version and
-// package digest: olympiad maths 0.1.1, the others 0.1.0.
+// package digest: 0.2.0 each, the modules in format 0.4.
 func TestPinned(t *testing.T) {
 	ps, err := Pinned()
 	if err != nil {
@@ -202,11 +202,7 @@ func TestPinned(t *testing.T) {
 		t.Fatalf("Pinned = %+v", ps)
 	}
 	for _, p := range ps {
-		want := "0.1.0"
-		if p.Module == olympiad {
-			want = "0.1.1"
-		}
-		if p.Version != want || len(p.Digest) != len("sha256:")+64 {
+		if p.Version != "0.2.0" || len(p.Digest) != len("sha256:")+64 {
 			t.Errorf("%+v", p)
 		}
 	}
