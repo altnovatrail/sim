@@ -92,7 +92,7 @@ func (f *File) Write(w io.Writer) error {
 }
 
 // Learners are the learners of each cell of the gate: the first of the working set. They were 300,
-// as standalone's guard had; on olympiad maths 0.1.1 a choice of the engine takes some ten times
+// as standalone's guard had; on olympiad maths since 0.1.1 a choice of the engine takes some ten times
 // longer, and 300 would not fit the job's budget of fifteen minutes, which the gate keeps by a
 // change of sim, not of the time (docs/architecture.md, section 3.9; R31 in docs/decisions.md).
 const Learners = 100
@@ -103,7 +103,7 @@ var learners = Learners
 
 // Populations are the populations of the gate, each on every graph it runs on, in the order of
 // population (docs/architecture.md, section 3.7). A-linked runs on the two published maths together,
-// since olympiad maths 0.1.1 rests skills on school maths (R31 in docs/decisions.md).
+// since olympiad maths, from 0.1.1 on, rests skills on school maths (R31 in docs/decisions.md).
 var Populations = []string{"G0", "G1", "G2", "G2-half", "G3", "F-model", "W-shock", "A-linked", "E-base"}
 
 // numbers are the numbers of the gate of each population, besides the two of E2 on every one. The

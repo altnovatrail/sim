@@ -129,27 +129,27 @@ func TestChanges(t *testing.T) {
 		}
 		st.Skills.Primary = []formatv0.SkillID{other}
 		cv.Tasks[task] = st
-		cv.Manifest.Version = "0.1.2"
-	}, func(inv *formatv0.Inventory) { inv.Version = "0.1.2" })
+		cv.Manifest.Version = "0.2.1"
+	}, func(inv *formatv0.Inventory) { inv.Version = "0.2.1" })
 	text := edited(t, o, "text", func(cv *formatv0.CanonicalView) {
 		st := cv.Tasks[task]
 		st.Statement = []formatv0.StatementPart{{Text: new(formatv0.Text("Another wording of the task."))}}
 		cv.Tasks[task] = st
-		cv.Manifest.Version = "0.1.2"
-	}, func(inv *formatv0.Inventory) { inv.Version = "0.1.2" })
+		cv.Manifest.Version = "0.2.1"
+	}, func(inv *formatv0.Inventory) { inv.Version = "0.2.1" })
 	for _, c := range []struct {
 		p    Package
 		want State
 	}{{retag, Changed}, {text, Same}} {
 		got, err := Changes(idx, pub, []Package{c.p})
-		if err != nil || got[0].State != c.want || got[0].Version != "0.1.2" || got[0].Against != "0.1.1" {
+		if err != nil || got[0].State != c.want || got[0].Version != "0.2.1" || got[0].Against != "0.2.0" {
 			t.Errorf("%s: %+v, %v; want %s", c.p.Folder, got, err, c.want)
 		}
 	}
 	if got, err := Changes(nil, nil, []Package{retag}); err != nil || got[0].State != New || got[0].Against != "" {
 		t.Errorf("with no release: %+v, %v", got, err)
 	}
-	newer := edited(t, o, "newer", nil, func(inv *formatv0.Inventory) { inv.ModuleFormatVersion = "0.4" })
+	newer := edited(t, o, "newer", nil, func(inv *formatv0.Inventory) { inv.ModuleFormatVersion = "0.5" })
 	if got, err := Changes(idx, pub, []Package{newer}); err != nil || got[0].State != Transition || got[0].Read != nil {
 		t.Errorf("a transition of the format: %+v, %v", got, err)
 	}
@@ -177,9 +177,9 @@ func TestChanges(t *testing.T) {
 		}
 	}
 	reason := formatv0.WithdrawalReason("a test")
-	withdrawn.Modules[olympiad]["0.10.0"] = formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: "sha256:" + formatv0.Digest(strings.Repeat("0", 64)), Release: "v0.2.0", Withdrawn: &reason}
-	withdrawn.Modules[olympiad]["0.0.9"] = formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: "sha256:" + formatv0.Digest(strings.Repeat("0", 64)), Release: "v0.0.1"}
-	if got, err := Changes(&withdrawn, pub, []Package{o}); err != nil || got[0].State != Same || got[0].Against != "0.1.1" {
+	withdrawn.Modules[olympiad]["0.10.0"] = formatv0.Entry{ModuleFormatVersion: "0.5", PackageDigest: "sha256:" + formatv0.Digest(strings.Repeat("0", 64)), Release: "v0.2.0", Withdrawn: &reason}
+	withdrawn.Modules[olympiad]["0.0.9"] = formatv0.Entry{ModuleFormatVersion: "0.5", PackageDigest: "sha256:" + formatv0.Digest(strings.Repeat("0", 64)), Release: "v0.0.1"}
+	if got, err := Changes(&withdrawn, pub, []Package{o}); err != nil || got[0].State != Same || got[0].Against != "0.2.0" {
 		t.Errorf("against a withdrawn newer version: %+v, %v", got, err)
 	}
 	bare := withdrawn
@@ -205,7 +205,7 @@ func TestChanges(t *testing.T) {
 		in := idx
 		if name == "the index names another ID" {
 			moved := withdrawn
-			moved.Modules = map[formatv0.ModuleID]map[formatv0.ModuleVersion]formatv0.Entry{olympiad: {"0.1.0": idx.Modules["novatrail/grade-3-math"]["0.1.0"]}}
+			moved.Modules = map[formatv0.ModuleID]map[formatv0.ModuleVersion]formatv0.Entry{olympiad: {"0.2.0": idx.Modules["novatrail/grade-3-math"]["0.2.0"]}}
 			in = &moved
 		}
 		if _, err := Changes(in, c.pub, c.packages); err == nil {

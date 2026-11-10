@@ -30,7 +30,7 @@ func view() *formatv0.CanonicalView {
 	workbook := formatv0.Canvas{Kind: formatv0.CanvasKindWorkbook}
 	return &formatv0.CanonicalView{
 		Manifest: formatv0.Manifest{
-			ModuleFormatVersion: "0.3", ID: mod, Version: "0.1.0",
+			ModuleFormatVersion: "0.4", ID: mod, Version: "0.1.0",
 			Audience: formatv0.Audience{AgeCategories: []formatv0.AgeCategory{"under_13", "adult"}},
 			Bands:    []formatv0.Band{{ID: "low", Grades: []formatv0.Grade{1, 2}}, {ID: "high", Grades: []formatv0.Grade{3, 4}}},
 		},
@@ -78,7 +78,7 @@ func view() *formatv0.CanonicalView {
 		Instances: map[formatv0.TaskID][]formatv0.Numbers{"t-template": {{"n": 1}, {"n": 2}, {"n": 3}}},
 		Lessons: map[formatv0.LessonID]formatv0.Lesson{
 			"l-child": {ID: "l-child", Skills: []formatv0.SkillID{"b"}, Segments: []formatv0.Segment{
-				{Explanation: []formatv0.StatementPart{{}}}, {Task: ptr(formatv0.TaskID("t-workbook"))},
+				{Explanation: []formatv0.ExplanationPart{{}}}, {Task: ptr(formatv0.TaskID("t-workbook"))},
 			}},
 			"l-adult": {ID: "l-adult", Skills: []formatv0.SkillID{"a"}, AgeCategories: []formatv0.AgeCategory{"adult"},
 				Segments: []formatv0.Segment{{Task: ptr(formatv0.TaskID("t-sheet"))}}},
@@ -256,7 +256,7 @@ func pkg(t *testing.T, cv *formatv0.CanonicalView, change func(*formatv0.Invento
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := formatv0.Entry{ModuleFormatVersion: "0.3", PackageDigest: formatv0.Digest("sha256:" + digest(string(inventory))), Release: "v0.1.0"}
+	e := formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: formatv0.Digest("sha256:" + digest(string(inventory))), Release: "v0.1.0"}
 	return archive(t, [2]string{"inventory.json", string(inventory)}, [2]string{"server.json", string(server)}), e
 }
 
@@ -278,7 +278,7 @@ func TestReadPackage(t *testing.T) {
 		entry formatv0.Entry
 		want  error
 	}{
-		"another inventory":   {good, formatv0.Entry{ModuleFormatVersion: "0.3", PackageDigest: "sha256:" + formatv0.Digest(digest("x"))}, ErrDigest},
+		"another inventory":   {good, formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: "sha256:" + formatv0.Digest(digest("x"))}, ErrDigest},
 		"another server part": {otherServer, otherServerEntry, ErrDigest},
 		"another size":        {otherSize, otherSizeEntry, ErrDigest},
 		"another module":      {otherID, otherIDEntry, ErrIdentity},
@@ -289,7 +289,7 @@ func TestReadPackage(t *testing.T) {
 		"a short block":       {gzipped(t, header("x", "1000\x00")), entry, nil},
 		"a truncated gzip":    {good[:len(good)/2], entry, nil},
 		"inventory not JSON": {archive(t, [2]string{"inventory.json", "{"}, [2]string{"server.json", "{}"}),
-			formatv0.Entry{ModuleFormatVersion: "0.3", PackageDigest: "sha256:" + formatv0.Digest(digest("{"))}, nil},
+			formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: "sha256:" + formatv0.Digest(digest("{"))}, nil},
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := ReadPackage(c.data, mod, "0.1.0", c.entry)
@@ -299,9 +299,9 @@ func TestReadPackage(t *testing.T) {
 		})
 	}
 	notJSON := "{"
-	inv := `{"module_format_version":"0.3","id":"example/synthetic","version":"0.1.0","server_part":{"digest":"sha256:` + digest(notJSON) + `","size":1}}`
+	inv := `{"module_format_version":"0.4","id":"example/synthetic","version":"0.1.0","server_part":{"digest":"sha256:` + digest(notJSON) + `","size":1}}`
 	if _, err := ReadPackage(archive(t, [2]string{"inventory.json", inv}, [2]string{"server.json", notJSON}), mod, "0.1.0",
-		formatv0.Entry{ModuleFormatVersion: "0.3", PackageDigest: formatv0.Digest("sha256:" + digest(inv))}); err == nil {
+		formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: formatv0.Digest("sha256:" + digest(inv))}); err == nil {
 		t.Error("a server part that is not JSON: no error")
 	}
 }
@@ -325,7 +325,7 @@ func gzipped(t *testing.T, data []byte) []byte {
 // An index is read by the places of its members whatever its version; an entry is given only if
 // the bench may read it.
 func TestIndex(t *testing.T) {
-	data := `{"module_format_version":"0.4","modules":{"a/b":{"0.1.0":{"module_format_version":"0.3","package_digest":"sha256:00","release":"v0.1.0","added":"later"},"0.2.0":{"module_format_version":"0.4","package_digest":"sha256:01","release":"v0.2.0"},"0.0.9":{"module_format_version":"0.3","package_digest":"sha256:02","release":"v0.0.9","withdrawn":"wrong_key"}}}}`
+	data := `{"module_format_version":"0.5","modules":{"a/b":{"0.1.0":{"module_format_version":"0.4","package_digest":"sha256:00","release":"v0.1.0","added":"later"},"0.2.0":{"module_format_version":"0.5","package_digest":"sha256:01","release":"v0.2.0"},"0.0.9":{"module_format_version":"0.4","package_digest":"sha256:02","release":"v0.0.9","withdrawn":"wrong_key"}}}}`
 	idx, err := ReadIndex([]byte(data), digest(data))
 	if err != nil {
 		t.Fatalf("ReadIndex of an index of a later version: %v", err)
@@ -365,14 +365,14 @@ func files(t *testing.T, cv *formatv0.CanonicalView, change func(*formatv0.Inven
 // inventory when it cannot be read further.
 func TestReadFiles(t *testing.T) {
 	inventory, server := files(t, view(), nil)
-	e := formatv0.Entry{ModuleFormatVersion: "0.3", PackageDigest: Digest(inventory)}
+	e := formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: Digest(inventory)}
 	for _, entry := range []*formatv0.Entry{nil, &e} {
 		cv, inv, err := ReadFiles(inventory, server, entry)
 		if err != nil || cv.Manifest.ID != mod || inv.Version != "0.1.0" {
 			t.Fatalf("ReadFiles with the entry %v: %v", entry, err)
 		}
 	}
-	later := func() *formatv0.CanonicalView { v := view(); v.Manifest.ModuleFormatVersion = "0.4"; return v }()
+	later := func() *formatv0.CanonicalView { v := view(); v.Manifest.ModuleFormatVersion = "0.5"; return v }()
 	laterInventory, laterServer := files(t, later, nil)
 	otherServer := []byte(string(server) + " ")
 	for name, c := range map[string]struct {
@@ -381,8 +381,8 @@ func TestReadFiles(t *testing.T) {
 		want              error
 		inv               bool
 	}{
-		"another digest":              {inventory, server, &formatv0.Entry{ModuleFormatVersion: "0.3", PackageDigest: Digest([]byte("x"))}, ErrDigest, false},
-		"another format in the entry": {inventory, server, &formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: Digest(inventory)}, ErrIdentity, true},
+		"another digest":              {inventory, server, &formatv0.Entry{ModuleFormatVersion: "0.4", PackageDigest: Digest([]byte("x"))}, ErrDigest, false},
+		"another format in the entry": {inventory, server, &formatv0.Entry{ModuleFormatVersion: "0.5", PackageDigest: Digest(inventory)}, ErrIdentity, true},
 		"a format outside the window": {laterInventory, laterServer, nil, ErrFormat, true},
 		"another server part":         {inventory, otherServer, nil, ErrDigest, true},
 		"inventory not JSON":          {[]byte("{"), server, nil, nil, false},
@@ -400,8 +400,8 @@ func TestReadFiles(t *testing.T) {
 	if _, err := ReadPackage(data, mod, "0.1.0", entry); !errors.Is(err, ErrIdentity) {
 		t.Errorf("an archive of another module: %v", err)
 	}
-	if !Readable("0.3") || Readable("0.4") {
-		t.Error("the window of the format is not 0.3 alone")
+	if !Readable("0.4") || Readable("0.3") || Readable("0.5") {
+		t.Error("the window of the format is not 0.4 alone")
 	}
 }
 
@@ -432,7 +432,7 @@ func TestText(t *testing.T) {
 	}{
 		"the version": {func(v *formatv0.CanonicalView) { v.Manifest.Version = "0.2.0" }, true},
 		"an explanation of a lesson": {func(v *formatv0.CanonicalView) {
-			v.Lessons["l-child"].Segments[0].Explanation[0] = formatv0.StatementPart{Text: ptr(formatv0.Text("another"))}
+			v.Lessons["l-child"].Segments[0].Explanation[0] = formatv0.ExplanationPart{Text: ptr(formatv0.Text("another"))}
 		}, true},
 		"an option's text": {func(v *formatv0.CanonicalView) { v.Tasks["t-beside"].Items[0].AnswerSlots[0].Options[0] = "yes!" }, true},
 		"a task tagged to another skill": {func(v *formatv0.CanonicalView) {

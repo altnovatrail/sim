@@ -248,9 +248,9 @@ func TestVerify(t *testing.T) {
 		}
 	}
 	moved := *f
-	moved.Modules.Release = "v0.2.0"
+	moved.Modules.Release = "v0.3.0"
 	moved.Modules.Packages = moved.Modules.Packages[1:]
-	if got := strings.Join(Verify(&moved, info, "go1.27.3", mods("v0.1.0", pseudo, "1.27.3")), "\n"); !strings.Contains(got, "v0.2.0") || !strings.Contains(got, "the packages") {
+	if got := strings.Join(Verify(&moved, info, "go1.27.3", mods("v0.1.0", pseudo, "1.27.3")), "\n"); !strings.Contains(got, "v0.3.0") || !strings.Contains(got, "the packages") {
 		t.Errorf("other packages: %q", got)
 	}
 }
