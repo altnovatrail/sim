@@ -249,16 +249,95 @@ ci-licenses:
     fi
     go run {{ GO_LICENSES }} check ./... --allowed_licenses="$ALLOWED_LICENSES"
 
-# The decisive run of a rule (docs/architecture.md, sections 3.6 and 3.8; R09, R28, R33 in
-# docs/decisions.md): 1,000 working learners of every cell of every population, on the libraries
-# go.mod names — the base while it names their first releases —, as processes, one part of the
-# learners each, as many as the processors, merged into one file of results, whose SHA-256 it
-# prints. The file is no part of the repository: its seeds and the same bits on every build give it
-# again to the byte, and runs/, which git ignores, keeps it between judgements. rule is engine, for
-# the base and the oracle on its answers, or ceiling, for the ceiling of the engine; a relative out is
-# of the caller's folder: `just decisive engine runs/base.jsonl`.
-# Run the decisive run of a rule into a file of results: rule engine or ceiling.
-decisive rule out:
+# The workspace a build on the libraries of gate.json goes through (docs/architecture.md, section
+# 3.9; R26, R34 in docs/decisions.md), one for the gate and for the decisive run of a candidate. Each
+# library comes from <prefix>_<NAME> — GATE_ENGINE, CANDIDATE_LEARNER_MODEL — when the caller sets
+# it: a commit by its full SHA, fetched from GitHub even when it is on no branch, as the head of a
+# pull request is, or a folder, of the caller's folder from when relative, which with clean=yes must
+# have nothing uncommitted, so that the commit a file of results names is the code that ran. A
+# library the caller does not name comes at the commit gate.json names, which is the commit of its
+# tag. It writes dir/go.work with sim and the two libraries, and a line a library, its fields apart
+# by tabs: its module path, its folder, the commit it is at, and the variable that named it or -.
+# Write the workspace of a build on the libraries of gate.json.
+[private]
+[positional-arguments]
+workspace dir prefix clean from:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    dir="$1"
+    prefix="$2"
+    clean="$3"
+    from="$4"
+    [ -x "$dir/plain" ] || GOWORK=off go build -o "$dir/plain" .
+    libraries="$("$dir/plain" gate libraries gate.json)"
+    uses=("$PWD")
+    lines=()
+    while read -r path repo commit version; do
+        name="${path##*/}"
+        var="${prefix}_$(printf '%s' "$name" | tr 'a-z-' 'A-Z_')"
+        given="${!var:-}"
+        lib="$given"
+        case "$lib" in /*|'') ;; *) lib="$from/$lib" ;; esac
+        if [ -z "$given" ] || [[ "$given" =~ ^[0-9a-f]{40}$ ]]; then
+            lib="$dir/$name"
+            git init -q "$lib"
+            git -C "$lib" fetch -q --depth 1 "https://github.com/$repo" "${given:-$commit}"
+            git -C "$lib" -c advice.detachedHead=false checkout -q FETCH_HEAD
+        fi
+        if [ -z "$given" ] && [ -n "${version:-}" ]; then
+            # The tag gate.json names is on the commit it names: the job "Go" builds go.mod's tag,
+            # and the gate the commit (R26). An annotated tag points at its commit through ^{}.
+            tags="$(git ls-remote "https://github.com/$repo" "refs/tags/$version" "refs/tags/$version^{}")"
+            tagged="$(printf '%s\n' "$tags" | awk -v ref="refs/tags/$version^{}" '$2 == ref { print $1 }')"
+            if [ -z "$tagged" ]; then
+                tagged="$(printf '%s\n' "$tags" | awk '{ print $1 }')"
+            fi
+            if [ "$tagged" != "$commit" ]; then
+                echo "workspace: $path $version is on ${tagged:-no commit}, and gate.json names $commit" >&2
+                exit 1
+            fi
+        fi
+        if [ ! -d "$lib" ]; then
+            echo "workspace: $var is $given: a commit by its full SHA, or a folder" >&2
+            exit 1
+        fi
+        lib="$(cd "$lib" && pwd)"
+        if [ -n "$given" ] && [ "$clean" = yes ] && [ -n "$(git -C "$lib" status --porcelain)" ]; then
+            echo "workspace: $var, $lib, has changes not committed, and a file of results names a commit" >&2
+            exit 1
+        fi
+        head="$(git -C "$lib" rev-parse HEAD)"
+        echo "workspace: $path at $head${given:+, from $var}" >&2
+        uses+=("$lib")
+        named=-
+        [ -z "$given" ] || named="$var"
+        lines+=("$path	$lib	$head	$named")
+    done <<< "$libraries"
+    {
+        echo "go $(sed -n 's/^go //p' go.mod)"
+        echo "use ("
+        for u in "${uses[@]}"; do echo "	$u"; done
+        echo ")"
+    } > "$dir/go.work"
+    printf '%s\n' "${lines[@]}"
+
+# The decisive run of a rule (docs/architecture.md, sections 3.6, 3.8 and 3.9; R09, R28, R33, R34 in
+# docs/decisions.md): 1,000 learners of a set — working, or held-out-<criterion>-<n> for a
+# confirmation — of every cell of every population, as processes, one part of the learners each, as
+# many as the processors, merged into one file of results, whose SHA-256 it prints. Without a
+# candidate it builds the bench on the libraries go.mod names, the base while it names the releases
+# gate.json does, so that the base's file is the one paths.json names to the byte. A candidate is
+# CANDIDATE_LEARNER_MODEL or CANDIDATE_ENGINE, a commit by its full SHA or a folder with nothing
+# uncommitted; a pair is both with CANDIDATE_PAIR=yes, so that a variable left set from another run
+# does not make a pair unseen. The bench is then built through the workspace of the gate, with the
+# other library at the commit of gate.json, the build is held to gate.json as the gate holds it before
+# anything runs, and the file names both libraries by commit. A set is checked before the run. The
+# file is no part of the repository: its seeds and the same bits on every build give it again to the
+# byte, and runs/, which git ignores, keeps it between judgements. rule is engine, for the base or a
+# candidate and the oracle on its answers, or ceiling, for the ceiling of the engine; a relative out
+# or folder is of the caller's folder: `CANDIDATE_ENGINE=<sha> just decisive engine runs/engine-a.jsonl`.
+# Run the decisive run of a rule into a file of results: rule engine or ceiling, set working or held-out-….
+decisive rule out set="working":
     #!/usr/bin/env bash
     set -euo pipefail
     case {{ quote(rule) }} in engine|ceiling) ;; *) echo "decisive: rule {{ rule }}: engine or ceiling" >&2; exit 2 ;; esac
@@ -268,10 +347,38 @@ decisive rule out:
     tmp="$(mktemp -d)"
     pids=()
     trap 'for p in "${pids[@]}"; do kill "$p" 2>/dev/null || true; done; wait; rm -rf "$tmp"' EXIT
-    GOWORK=off go build -o "$tmp/sim" .
+    named=()
+    while IFS='=' read -r var _; do
+        [ "$var" = CANDIDATE_PAIR ] || named+=("$var")
+    done < <(env | grep -E '^CANDIDATE_[A-Z_]+=.' || true)
+    if [ "${#named[@]}" -gt 1 ] && [ "${CANDIDATE_PAIR:-}" != yes ]; then
+        echo "decisive: ${named[*]} name a pair; set CANDIDATE_PAIR=yes to run it" >&2
+        exit 2
+    fi
+    commits=()
+    if [ "${#named[@]}" -gt 0 ]; then
+        libraries="$({{ just_executable() }} -f {{ quote(justfile()) }} workspace "$tmp" CANDIDATE yes {{ quote(invocation_directory()) }})"
+        gomods=(-go "$PWD")
+        taken=0
+        while IFS=$'\t' read -r path dir head from; do
+            gomods+=(-go "$dir")
+            commits+=(-commit "$path=$head")
+            [ "$from" = - ] || taken=$((taken + 1))
+        done <<< "$libraries"
+        if [ "$taken" != "${#named[@]}" ]; then
+            echo "decisive: ${named[*]}: a variable names no library of gate.json" >&2
+            exit 2
+        fi
+        GOWORK="$tmp/go.work" go build -o "$tmp/sim" .
+        "$tmp/sim" gate verify -file gate.json "${gomods[@]}"
+    else
+        echo "decisive: the libraries go.mod names" >&2
+        GOWORK=off go build -o "$tmp/sim" .
+    fi
+    "$tmp/sim" run -populations G7 -learners 1 -set {{ quote(set) }} ${commits[@]+"${commits[@]}"} > /dev/null
     n="$(nproc)"
     for k in $(seq 0 $((n - 1))); do
-        "$tmp/sim" run -populations all -learners 1000 -set working -rule {{ quote(rule) }} -part "$k/$n" -out "$tmp/part-$k.jsonl" &
+        "$tmp/sim" run -populations all -learners 1000 -set {{ quote(set) }} -rule {{ quote(rule) }} ${commits[@]+"${commits[@]}"} -part "$k/$n" -out "$tmp/part-$k.jsonl" &
         pids+=("$!")
     done
     failed=0
@@ -285,10 +392,10 @@ decisive rule out:
     sha256sum "$out"
 
 # The gate (docs/architecture.md, sections 3.7 and 3.9; R09, R26, R27 in docs/decisions.md). It
-# builds the bench only on the commits gate.json names: it fetches each library at its commit into
-# a temporary folder — or takes the caller's own code from GATE_LEARNER_MODEL or GATE_ENGINE, a
-# folder, in its place —, writes go.work there with the three modules and points GOWORK at it, and
-# builds sim once. The run goes as processes, one part of the learners each, as many as the
+# builds the bench only on the commits gate.json names, through the workspace the recipe workspace
+# writes in a temporary folder: each library at its commit, or the caller's own code in its place
+# from GATE_LEARNER_MODEL or GATE_ENGINE, a folder or a commit by its full SHA. It points GOWORK at
+# that workspace and builds sim once. The run goes as processes, one part of the learners each, as many as the
 # processors: R09 keeps goroutines out of code. Then sim holds the build to gate.json — the versions
 # the workspace chose, the go lines, the point sim's go.mod names, the packages — and the numbers to
 # their bands, and writes the table. mode is bands, as the callers hold them; exact, the recorded
@@ -342,46 +449,13 @@ gate mode="bands" *args:
             esac
         done <<< "$run"
     fi
-    libraries="$("$tmp/plain" gate libraries gate.json)"
-    uses=("$root")
+    libraries="$({{ just_executable() }} -f {{ quote(justfile()) }} workspace "$tmp" GATE no {{ quote(invocation_directory()) }})"
     gomods=(-go "$root")
     commits=()
-    while read -r path repo commit version; do
-        name="${path##*/}"
-        var="GATE_$(printf '%s' "$name" | tr 'a-z-' 'A-Z_')"
-        dir="${!var:-}"
-        if [ -z "$dir" ]; then
-            dir="$tmp/$name"
-            git init -q "$dir"
-            git -C "$dir" fetch -q --depth 1 "https://github.com/$repo" "$commit"
-            git -C "$dir" -c advice.detachedHead=false checkout -q FETCH_HEAD
-            # The tag gate.json names is on the commit it names: the job "Go" builds go.mod's tag,
-            # and the gate the commit (R26). An annotated tag points at its commit through ^{}.
-            if [ -n "${version:-}" ]; then
-                tags="$(git ls-remote "https://github.com/$repo" "refs/tags/$version" "refs/tags/$version^{}")"
-                tagged="$(printf '%s\n' "$tags" | awk -v ref="refs/tags/$version^{}" '$2 == ref { print $1 }')"
-                if [ -z "$tagged" ]; then
-                    tagged="$(printf '%s\n' "$tags" | awk '{ print $1 }')"
-                fi
-                if [ "$tagged" != "$commit" ]; then
-                    echo "gate: $path $version is on ${tagged:-no commit}, and gate.json names $commit" >&2
-                    exit 1
-                fi
-            fi
-        fi
-        dir="$(cd "$dir" && pwd)"
-        head="$(git -C "$dir" rev-parse HEAD)"
-        echo "gate: $path at $head${!var:+, from the caller}" >&2
-        uses+=("$dir")
+    while IFS=$'\t' read -r path dir head _; do
         gomods+=(-go "$dir")
         commits+=(-commit "$path=$head")
     done <<< "$libraries"
-    {
-        echo "go $(sed -n 's/^go //p' go.mod)"
-        echo "use ("
-        for u in "${uses[@]}"; do echo "	$u"; done
-        echo ")"
-    } > "$tmp/go.work"
     export GOWORK="$tmp/go.work"
     go build -o "$tmp/sim" .
     n="$(nproc)"

@@ -23,7 +23,7 @@ Detailing is done, and so is the code epic, E2 ([RUN.md](RUN.md)). The first epi
 
 ## Gate
 
-`just gate` builds the bench on the commits of the libraries that [gate.json](gate.json) names, through a `go.work` it writes in a temporary folder, runs the gate and holds its numbers to their bands; `just gate exact` holds them to the recorded numbers to the last bit, as this repository's CI does on amd64 and arm64, and `just gate record "<reason>"` records the bands anew. A caller puts its own code in place of a library with `GATE_LEARNER_MODEL=<folder>` or `GATE_ENGINE=<folder>`.
+`just gate` builds the bench on the commits of the libraries that [gate.json](gate.json) names, through a `go.work` it writes in a temporary folder, runs the gate and holds its numbers to their bands; `just gate exact` holds them to the recorded numbers to the last bit, as this repository's CI does on amd64 and arm64, and `just gate record "<reason>"` records the bands anew. A caller puts its own code in place of a library with `GATE_LEARNER_MODEL` or `GATE_ENGINE`: a folder, or a commit by its full SHA.
 
 ### Gate in the CI of modules
 
@@ -56,6 +56,28 @@ What the bench reads is what it translates the server part into: the bands and t
 - `E5` on `E-base`: no task with a rubric given again.
 
 The recipe exits with 0 when the gate is green, 1 when it is red or refuses its input, and 2 on a call it does not know. It writes a table of every number against its threshold to stdout, for the job's summary. Run it in the toolchain stage of sim's devcontainer at the same tag, as this repository's job "Gate" does: `docker build --target toolchain - < .devcontainer/Dockerfile`, then `docker run` with both the checkout of sim and the package folders mounted, so that every path the recipe is given is inside the container.
+
+## Judging a candidate
+
+A candidate of learner-model or engine is judged by a criterion on decisive runs of 1,000 learners a cell ([docs/architecture.md](docs/architecture.md), sections 3.6 and 3.8; R34 in [docs/decisions.md](docs/decisions.md)). From the root of this repository:
+
+1. **The base.** `just decisive engine runs/base.jsonl` builds the bench on the libraries go.mod names and runs the base on the working learners. Its file is the one [paths.json](internal/criterion/paths.json) names: `sha256sum runs/base.jsonl` gives its `base`. A file kept in `runs/` from an earlier run needs no run again.
+2. **The candidate.** `CANDIDATE_ENGINE=<full SHA> just decisive engine runs/engine-a.jsonl` builds the bench on that commit, through the same workspace as the gate, with the other library at the commit of gate.json. The SHA may be the head of a pull request that is on no branch. A folder works in place of the SHA, if it has nothing uncommitted. `CANDIDATE_LEARNER_MODEL` names a candidate of learner-model, and both together with `CANDIDATE_PAIR=yes` a pair. A relative folder is of the caller's folder. The recipe holds the build to gate.json before it runs, and the file names both libraries by commit.
+3. **The judgement.** A judgement file names the criterion — `model`, `engine` or `pair` — the base's file and each candidate's, with its name, its group and what makes it simple:
+
+   ```json
+   {
+     "criterion": "engine",
+     "base": "runs/base.jsonl",
+     "candidates": [
+       {"name": "A", "file": "runs/engine-a.jsonl", "group": "<group>", "constants": 1}
+     ]
+   }
+   ```
+
+   `sim judge <judgement file>` writes the report: the constraints, the score and the choice.
+4. **The confirmation.** The candidate chosen and the base run once more, on the held-out learners of the choice: `just decisive engine runs/base-held-out.jsonl held-out-engine-1`, and the same with `CANDIDATE_ENGINE`. The judgement file then names them under `"confirm": {"base": …, "candidate": …}`.
+5. **The bands.** A candidate confirmed goes into gate.json and go.mod, and `just gate record "<reason>"` records the bands anew in a pull request to this repository.
 
 ## Taking a release
 

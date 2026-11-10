@@ -39,6 +39,8 @@ func gateCommand(args []string, stdout, stderr io.Writer) error {
 		return gateRun(args[1:], stdout, stderr)
 	case "check", "record", "thresholds":
 		return gateCheck(args[0], args[1:], stdout, stderr)
+	case "verify":
+		return gateVerify(args[1:], stdout, stderr)
 	case "changed":
 		return gateChanged(args[1:], stdout, stderr)
 	}
@@ -51,7 +53,8 @@ const gateUsage = `usage: sim gate libraries <gate file>
        sim gate check [-exact] -file <gate file> -go <module dir>… <part>…
        sim gate record -reason <why> -file <gate file> -go <module dir>… <part>…
        sim gate changed (-index <module-index.json> | -first) [-published <folder>]… [-all] <package folder>…
-       sim gate thresholds -file <gate file> -go <module dir>… <part>…`
+       sim gate thresholds -file <gate file> -go <module dir>… <part>…
+       sim gate verify -file <gate file> -go <module dir>…`
 
 // gateLibraries writes the libraries of the gate file, one a line: the module path, the repository,
 // the commit and the tag of its release, if it has one, for the recipe to fetch and hold the tag to
@@ -242,20 +245,10 @@ func gateCheck(cmd string, args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	var mods []gate.Module
-	for _, d := range dirs {
-		data, err := os.ReadFile(filepath.Join(d, "go.mod"))
-		if err != nil {
-			return err
-		}
-		m, err := gate.ParseGoMod(data)
-		if err != nil {
-			return fmt.Errorf("%s: %w", d, err)
-		}
-		mods = append(mods, m)
+	reasons, err := verify(f, dirs)
+	if err != nil {
+		return err
 	}
-	info, _ := buildInfo()
-	reasons := gate.Verify(f, info, runtime.Version(), mods)
 	parts, err := readResults(fs.Args())
 	if err != nil {
 		return err
@@ -299,6 +292,62 @@ func gateCheck(cmd string, args []string, stdout, stderr io.Writer) error {
 	if !r.OK() {
 		return errRed
 	}
+	return nil
+}
+
+// verify gives every way the build departs from a gate file, the go.mod of each module of the
+// workspace read from its folder (docs/architecture.md, section 3.9).
+func verify(f *gate.File, dirs []string) ([]string, error) {
+	var mods []gate.Module
+	for _, d := range dirs {
+		data, err := os.ReadFile(filepath.Join(d, "go.mod"))
+		if err != nil {
+			return nil, err
+		}
+		m, err := gate.ParseGoMod(data)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", d, err)
+		}
+		mods = append(mods, m)
+	}
+	info, _ := buildInfo()
+	return gate.Verify(f, info, runtime.Version(), mods), nil
+}
+
+// gateVerify holds the build to the gate file alone, before a run that has no bands to hold: the
+// decisive run of a candidate, built through the same workspace as the gate (R34 in
+// docs/decisions.md). It names every way the build departs from the file and fails on any.
+func gateVerify(args []string, stdout, stderr io.Writer) error {
+	fs := flag.NewFlagSet("gate verify", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	file := fs.String("file", "gate.json", "the gate file")
+	var dirs []string
+	fs.Func("go", "the folder of a module of the workspace, whose go.mod the check reads; repeatable", func(v string) error {
+		dirs = append(dirs, v)
+		return nil
+	})
+	if err := parse(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() != 0 {
+		fmt.Fprintln(stderr, gateUsage)
+		return errUsage
+	}
+	f, err := readGate(*file)
+	if err != nil {
+		return err
+	}
+	reasons, err := verify(f, dirs)
+	if err != nil {
+		return err
+	}
+	for _, r := range reasons {
+		fmt.Fprintf(stdout, "- %s\n", r)
+	}
+	if len(reasons) > 0 {
+		return errors.New("the build departs from the gate file, as above")
+	}
+	fmt.Fprintln(stdout, "The build holds to the gate file.")
 	return nil
 }
 
