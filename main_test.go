@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"runtime"
+	"runtime/debug"
 	"strings"
 	"testing"
 
@@ -262,5 +264,42 @@ func TestPaths(t *testing.T) {
 		if got := run(c.args, &stdout, &stderr); got != c.status {
 			t.Errorf("sim %q = %d, want %d: %s", c.args, got, c.status, stderr.String())
 		}
+	}
+}
+
+// TestMain runs the tests of the commands with an alone that leaves their process as it was, so that
+// a test that runs a part does not leave the tests after it on one processor.
+func TestMain(m *testing.M) {
+	tuned = alone
+	alone = func(bench.Part) {}
+	os.Exit(m.Run())
+}
+
+// tuned is the alone of the program, which TestMain takes out of the commands' way.
+var tuned func(bench.Part)
+
+// A process that runs a part goes on one processor, and every process of a run has the collector at
+// gcPercent; a run of the whole keeps its processors. The test gives the process back what it had.
+func TestAlone(t *testing.T) {
+	procs := runtime.GOMAXPROCS(0)
+	gc := debug.SetGCPercent(100)
+	debug.SetGCPercent(gc)
+	t.Cleanup(func() {
+		runtime.GOMAXPROCS(procs)
+		debug.SetGCPercent(gc)
+	})
+	tuned(bench.Part{})
+	if got := runtime.GOMAXPROCS(0); got != procs {
+		t.Errorf("a run of the whole: GOMAXPROCS is %d, want %d", got, procs)
+	}
+	if got := debug.SetGCPercent(gc); got != gcPercent {
+		t.Errorf("a run of the whole: the collector's percent is %d, want %d", got, gcPercent)
+	}
+	tuned(bench.Part{K: 1, N: 4})
+	if got := runtime.GOMAXPROCS(0); got != 1 {
+		t.Errorf("a part: GOMAXPROCS is %d, want 1", got)
+	}
+	if got := debug.SetGCPercent(gc); got != gcPercent {
+		t.Errorf("a part: the collector's percent is %d, want %d", got, gcPercent)
 	}
 }

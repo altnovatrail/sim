@@ -9,6 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/altnovatrail/engine"
+
+	"github.com/altnovatrail/sim/internal/invariant"
+	"github.com/altnovatrail/sim/internal/population"
 	"github.com/altnovatrail/sim/internal/published"
 	"github.com/altnovatrail/sim/internal/run"
 	"github.com/altnovatrail/sim/internal/seed"
@@ -349,5 +353,32 @@ func TestPackages(t *testing.T) {
 		if err := Run(bad, &buf); !errors.Is(err, ErrBench) {
 			t.Errorf("%s: %v", name, err)
 		}
+	}
+}
+
+// Every run with invariants takes each choice again, I1, for the first Rechosen learners of a cell
+// alone: a choice changed in the record is a breach of I1 for the last of them, and none past them.
+func TestRechosen(t *testing.T) {
+	p, _ := population.Named("G7")
+	c := Config{Populations: []string{p.Name}, Learners: 1, Set: seed.Working}
+	mods, err := modules(p.Graphs[0], nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec, err := runOne(c, p, mods, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bad := *rec
+	bad.Steps = slices.Clone(rec.Steps)
+	bad.Steps[0].Choice.Kind = engine.ChoiceNothing
+	i1 := func(bs []invariant.Breach) bool {
+		return slices.ContainsFunc(bs, func(b invariant.Breach) bool { return b.Invariant == "I1" })
+	}
+	if !i1(checkOf(Rechosen - 1)(&bad)) {
+		t.Errorf("learner %d: a choice changed is no breach of I1", Rechosen-1)
+	}
+	if i1(checkOf(Rechosen)(&bad)) || len(checkOf(Rechosen)(rec)) != 0 || len(checkOf(0)(rec)) != 0 {
+		t.Errorf("learner %d takes the choices again, or the run breaks an invariant", Rechosen)
 	}
 }

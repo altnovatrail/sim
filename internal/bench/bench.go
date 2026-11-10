@@ -253,10 +253,11 @@ func Run(c Config, w io.Writer) error {
 }
 
 // Rechosen are the first learners of each cell whose every choice is taken again on the input it
-// keeps, I1, even in a run that is repeated. The repetition holds the bits, but not that the input a
-// choice keeps is the one it was made on — a rule that changed its input in place would change it
-// alike in both runs —, and taking each choice again on all the learners would double the engine's
-// work (R31 in docs/decisions.md).
+// keeps, I1, in every run with invariants: the gate's, repeated, and a decisive one alike. Taking
+// each choice again on all the learners would double the engine's work, the most of a run. A
+// repetition holds the bits of every learner, but not that the input a choice keeps is the one it was
+// made on — a rule that changed its input in place would change it alike in both runs —, and the
+// first learners of every cell catch that (R31, R33 in docs/decisions.md).
 const Rechosen = 10
 
 // covers tells whether a run on packages runs a graph: with none, every graph; with some, a graph
@@ -285,6 +286,15 @@ func runOne(c Config, p population.Population, mods []*pack.Module, n int) (*run
 	return r.Use(c.Rule).All()
 }
 
+// checkOf gives the check of the invariants of the n-th learner of a cell: I1 by taking each choice
+// again only for the first Rechosen.
+func checkOf(n int) func(*run.Record) []invariant.Breach {
+	if n < Rechosen {
+		return invariant.Check
+	}
+	return invariant.CheckWithoutI1
+}
+
 // one runs the n-th learner of a population on a graph.
 func one(c Config, p population.Population, graph []string, mods []*pack.Module, n int) (Line, error) {
 	rec, err := runOne(c, p, mods, n)
@@ -295,11 +305,7 @@ func one(c Config, p population.Population, graph []string, mods []*pack.Module,
 	maps.Copy(sums, measure.Engine(rec)) // the keys of the two are apart, but for learners, 1 in both
 	line := Line{Population: p.Name, Graph: graph, N: n, Sums: sums, Oracle: measure.Oracle(rec)}
 	if c.Rule == run.Engine {
-		check := invariant.Check
-		if c.Repeat && n >= Rechosen {
-			check = invariant.CheckRepeated // the repetition holds I1 to the same bits
-		}
-		for _, b := range check(rec) {
+		for _, b := range checkOf(n)(rec) {
 			line.Breaches = append(line.Breaches, b.String())
 		}
 	}

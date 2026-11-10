@@ -25,9 +25,11 @@ const (
 	Pair   = "pair"
 )
 
-// Decisive is the learners of every cell a decisive run takes; a run of fewer is a rough look and
-// decides nothing (docs/architecture.md, section 3.8).
-const Decisive = 4000
+// Decisive is the learners of every cell a decisive run takes, and the recipe just decisive runs; a
+// run of fewer is a rough look and decides nothing (docs/architecture.md, section 3.8). It was 4,000
+// until a decisive run took hours on olympiad maths 0.1.1, and a run is to take an hour at most (R33
+// in docs/decisions.md).
+const Decisive = 1000
 
 // ErrCriterion is a judgement the criterion refuses.
 var ErrCriterion = errors.New("criterion")
