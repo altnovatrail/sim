@@ -94,11 +94,14 @@ func (f *File) Write(w io.Writer) error {
 // Learners are the learners of each cell of the gate: the first of the working set. They were 300,
 // as standalone's guard had; on olympiad maths since 0.1.1 a choice of the engine takes some ten times
 // longer, and 300 would not fit the job's budget of fifteen minutes, which the gate keeps by a
-// change of sim, not of the time (docs/architecture.md, section 3.9; R31 in docs/decisions.md).
-const Learners = 100
+// change of sim, not of the time (docs/architecture.md, section 3.9; R31 in docs/decisions.md). They
+// were 100 until engine v0.1.6 made the choice faster; 150 are the most that the slowest run of the
+// job on 100, scaled, keeps within twelve minutes at every caller, whose gate keeps no cache of Go
+// (the amendment of 2026-11-11 to R31).
+const Learners = 150
 
 // learners are the learners whole holds each cell to: Learners, but a test of the checks lowers it,
-// since reading the numbers off 100 learners a cell takes minutes in the suite.
+// since reading the numbers off 150 learners a cell takes minutes in the suite.
 var learners = Learners
 
 // Populations are the populations of the gate, each on every graph it runs on, in the order of
