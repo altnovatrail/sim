@@ -57,13 +57,43 @@ type Confirm struct {
 	Base, Candidate *bench.File
 }
 
-// Input is a judgement: the criterion, the base's run, the candidates on the same learners, and the
-// confirmation when it has run.
+// Input is a judgement: the criterion, the base's run, the candidates on the same learners, the
+// confirmation when it has run, and the libraries the base is fixed at.
 type Input struct {
 	Criterion  string
 	Base       *bench.File
 	Candidates []Candidate
 	Confirm    *Confirm
+	// Pins are the libraries of the gate file, by module path: the base runs on them, and a
+	// candidate of one library on the other of them (R40 in docs/decisions.md).
+	Pins map[string]Pin
+}
+
+// Pin is the point a library of the base is fixed at: the full SHA of its commit, and the tag of
+// the release on it, empty while it is in none.
+type Pin struct {
+	Commit, Version string
+}
+
+// names tells whether a file of results names the library at its pin: by the tag, or, while there
+// is none, by the pseudo-version of the commit, as go.mod names it then (docs/architecture.md,
+// section 3.9).
+func (p Pin) names(got string) bool {
+	if p.Version != "" {
+		return got == p.Version
+	}
+	return len(p.Commit) >= 12 && !strings.Contains(got, "@") && strings.HasSuffix(got, "-"+p.Commit[:12])
+}
+
+// String names the point as the gate names it.
+func (p Pin) String() string {
+	switch {
+	case p.Commit == "":
+		return "no commit"
+	case p.Version != "":
+		return p.Version + " (" + p.Commit + ")"
+	}
+	return "the pseudo-version of commit " + p.Commit
 }
 
 // Check is one check of a candidate: a constraint on a cell and a number, or on its run.
@@ -124,6 +154,9 @@ func Judge(in Input) (*Report, error) {
 	}
 	if len(paths.Paths) == 0 {
 		return nil, fmt.Errorf("%w: no path is fixed yet: the first decisive run of the base fixes them (sim paths)", ErrCriterion)
+	}
+	if err := in.libraries(paths); err != nil {
+		return nil, err
 	}
 	runs := slices.Concat([]*bench.File{in.Base}, files(in.Candidates))
 	if in.Confirm != nil {
@@ -238,6 +271,44 @@ func (in Input) check() error {
 		}
 		if !strings.HasPrefix(f.Base.Header.Set.Experiment, "held-out-") || f.Base.Header.Set == in.Base.Header.Set {
 			return fmt.Errorf("%w: the confirmation ran on %s, not on held-out learners apart from the choice's", ErrCriterion, f.Base.Header.Set.Experiment)
+		}
+	}
+	return nil
+}
+
+// libraries refuses runs that are not on the libraries of the base: the base and the confirmation's
+// base on those the paths were read on and the gate file fixes, and a candidate of one library, the
+// chosen one on its held-out learners too, on the other library of the base — by its version, by
+// the commit of the pin, as the recipe of the decisive run builds a candidate, or by the
+// pseudo-version of that commit (R34, R40 in docs/decisions.md). A pair changes both libraries, and
+// has no other to hold.
+func (in Input) libraries(paths *Paths) error {
+	if len(in.Pins) == 0 {
+		return fmt.Errorf("%w: a judgement needs the libraries the base is fixed at, those of the gate file", ErrCriterion)
+	}
+	bases, runs := []*bench.File{in.Base}, slices.Clone(in.Candidates)
+	if in.Confirm != nil {
+		bases = append(bases, in.Confirm.Base)
+		runs = append(runs, Candidate{Name: "chosen, on its held-out learners,", File: in.Confirm.Candidate})
+	}
+	for _, b := range bases {
+		if !maps.Equal(b.Header.Libraries, paths.Libraries) {
+			return fmt.Errorf("%w: the base ran on %v, and the paths were read on %v", ErrCriterion, b.Header.Libraries, paths.Libraries)
+		}
+		for _, path := range bench.Libraries {
+			if pin, got := in.Pins[path], b.Header.Libraries[path]; !pin.names(got) {
+				return fmt.Errorf("%w: the gate file names %s at %v, and the base ran on %q", ErrCriterion, path, pin, got)
+			}
+		}
+	}
+	other := map[string]string{Model: bench.Libraries[1], Engine: bench.Libraries[0]}[in.Criterion]
+	if other == "" {
+		return nil
+	}
+	want, pin := in.Base.Header.Libraries[other], in.Pins[other]
+	for _, c := range runs {
+		if got := c.File.Header.Libraries[other]; got == "" || got != want && got != pin.Commit && !pin.names(got) {
+			return fmt.Errorf("%w: candidate %s ran on %s at %q, and the base on %s, %v: a candidate of one library is judged on the other library of the base", ErrCriterion, c.Name, other, got, want, pin)
 		}
 	}
 	return nil

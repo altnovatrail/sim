@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -168,6 +169,35 @@ func TestJudge(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "# The criterion of the model") || !strings.Contains(stdout.String(), "the base stays") {
 		t.Errorf("the report:\n%s", stdout.String())
+	}
+	// A candidate of the engine built beside another commit of learner-model is no candidate of this
+	// judgement: the judge holds it to the base's learner-model, by the embedded gate file (R40).
+	raw, err := os.ReadFile(filepath.Join(dir, "base.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, rest, _ := bytes.Cut(raw, []byte("\n"))
+	var h bench.Header
+	if err := json.Unmarshal(first, &h); err != nil {
+		t.Fatal(err)
+	}
+	h.Libraries[bench.Libraries[0]] = strings.Repeat("f", 40)
+	first, err = json.Marshal(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write("foreign.jsonl", string(first)+"\n"+string(rest))
+	foreign := write("foreign.json", `{"criterion":"engine","base":"base.jsonl","candidates":[{"name":"beside","file":"foreign.jsonl"}]}`)
+	stderr.Reset()
+	if got := run([]string{"judge", foreign}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "candidate beside ran on "+bench.Libraries[0]) {
+		t.Errorf("sim judge of a candidate beside another learner-model = %d: %s", got, stderr.String())
+	}
+	prior := gateJSON
+	t.Cleanup(func() { gateJSON = prior })
+	gateJSON = []byte(`{"extra":1}`)
+	stderr.Reset()
+	if got := run([]string{"judge", good}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "the embedded gate file") {
+		t.Errorf("sim judge with a gate file that does not read = %d: %s", got, stderr.String())
 	}
 	for _, c := range []struct {
 		args   []string

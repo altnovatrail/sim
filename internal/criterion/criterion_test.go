@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"os"
 	"path/filepath"
@@ -23,6 +24,16 @@ const learners = 60
 
 var olympiad = []string{"novatrail/olympiad-math"}
 
+// The libraries of the base, by module path: the versions its file of results names, and the pins of
+// the gate file they are the tags of.
+var (
+	versions = map[string]string{bench.Libraries[0]: "v1.2.0", bench.Libraries[1]: "v3.4.0"}
+	pinned   = map[string]Pin{
+		bench.Libraries[0]: {Commit: strings.Repeat("a", 40), Version: "v1.2.0"},
+		bench.Libraries[1]: {Commit: strings.Repeat("e", 40), Version: "v3.4.0"},
+	}
+)
+
 // noise gives the k-th learner its own small deviation, the same on every side.
 func noise(k int) float64 { return float64(0.01 * float64((k*7)%11-5)) }
 
@@ -35,7 +46,7 @@ type side struct {
 // file builds a file of results of a rule on a set: learners of each population on the olympiad
 // maths, and of A-fading on the synthetic graph, their sums as a side says.
 func file(rule string, set seed.Set, s side, breach bool) *bench.File {
-	f := &bench.File{Header: bench.Header{Set: set, Rule: rule, Invariants: rule == "engine"}}
+	f := &bench.File{Header: bench.Header{Set: set, Rule: rule, Libraries: maps.Clone(versions), Invariants: rule == "engine"}}
 	for _, p := range []string{"G0", "G0-skills1", "G2-half", "G3", "A-fading"} {
 		graph := olympiad
 		if p == "A-fading" {
@@ -70,7 +81,7 @@ var (
 )
 
 func input(criterion string, cands ...Candidate) Input {
-	return Input{Criterion: criterion, Base: file("engine", seed.Working, baseSide, false), Candidates: cands}
+	return Input{Criterion: criterion, Base: file("engine", seed.Working, baseSide, false), Candidates: cands, Pins: maps.Clone(pinned)}
 }
 
 // usePaths fixes the paths read off a base and a ceiling for the rest of a test.
@@ -361,6 +372,107 @@ func TestRefuses(t *testing.T) {
 	fixed = func() (*Paths, error) { return nil, ErrCriterion }
 	if _, err := Judge(input(Model, Candidate{Name: "x", File: good})); !errors.Is(err, ErrCriterion) {
 		t.Errorf("paths that do not read: %v", err)
+	}
+}
+
+// A candidate of one library runs on the other library of the base, by its version or by the commit
+// of its pin, as the recipe builds it; the base runs on the libraries of the paths and of the gate
+// file, a pseudo-version of the pin's commit while it has no tag; a pair changes both (R40).
+func TestLibraries(t *testing.T) {
+	usual(t)
+	model, engine := bench.Libraries[0], bench.Libraries[1]
+	held, _ := seed.HeldOut(seed.CriterionModel, 1)
+	on := func(set seed.Set, libs map[string]string) *bench.File {
+		f := file("engine", set, betterSide, false)
+		maps.Copy(f.Header.Libraries, libs)
+		return f
+	}
+	foreign := strings.Repeat("f", 40)
+	byCommits := map[string]string{model: pinned[model].Commit, engine: pinned[engine].Commit}
+	for name, c := range map[string]struct {
+		in   func() Input
+		want string // a part of the refusal; empty, the judgement goes on
+	}{
+		"the other library by the commit of its pin": {func() Input {
+			return input(Engine, Candidate{Name: "x", File: on(seed.Working, map[string]string{model: pinned[model].Commit, engine: foreign})})
+		}, ""},
+		"the other library by its version": {func() Input {
+			return input(Model, Candidate{Name: "x", File: on(seed.Working, map[string]string{model: foreign})})
+		}, ""},
+		"a pair on two commits of its own": {func() Input {
+			return input(Pair, Candidate{Name: "x", File: on(seed.Working, map[string]string{model: foreign, engine: foreign}), Library: Model})
+		}, ""},
+		"the other library of another commit": {func() Input {
+			return input(Engine, Candidate{Name: "x", File: on(seed.Working, map[string]string{model: foreign, engine: foreign})})
+		}, "candidate x ran on " + model},
+		"the other library of the model's candidate": {func() Input {
+			return input(Model, Candidate{Name: "y", File: on(seed.Working, map[string]string{model: foreign, engine: foreign})})
+		}, "candidate y ran on " + engine},
+		"the chosen on its held-out learners on another commit": {func() Input {
+			in := input(Model, Candidate{Name: "x", File: on(seed.Working, byCommits)})
+			in.Confirm = &Confirm{Base: file("engine", held, baseSide, false), Candidate: on(held, map[string]string{engine: foreign})}
+			return in
+		}, "held-out learners, ran on " + engine},
+		"a base on other libraries than the paths": {func() Input {
+			in := input(Model)
+			in.Base.Header.Libraries[engine] = "v3.5.0"
+			return in
+		}, "the paths were read on"},
+		"a confirmation's base on other libraries than the paths": {func() Input {
+			in := input(Model, Candidate{Name: "x", File: on(seed.Working, byCommits)})
+			in.Confirm = &Confirm{Base: on(held, map[string]string{model: "v1.3.0"}), Candidate: on(held, byCommits)}
+			return in
+		}, "the paths were read on"},
+		"a base off the tag of the gate file": {func() Input {
+			in := input(Model)
+			in.Pins[model] = Pin{Commit: pinned[model].Commit, Version: "v1.2.1"}
+			return in
+		}, "the gate file names " + model},
+		"a pin with no tag and a base of another commit": {func() Input {
+			in := input(Model)
+			in.Pins[model] = Pin{Commit: pinned[model].Commit}
+			return in
+		}, "the gate file names " + model},
+		"a candidate that names no other library": {func() Input {
+			f := on(seed.Working, byCommits)
+			delete(f.Header.Libraries, model)
+			return input(Engine, Candidate{Name: "x", File: f})
+		}, "candidate x ran on " + model + ` at ""`},
+		"no pin of a library": {func() Input {
+			in := input(Model)
+			delete(in.Pins, model)
+			return in
+		}, "at no commit"},
+		"no pins": {func() Input {
+			in := input(Model)
+			in.Pins = nil
+			return in
+		}, "the libraries the base is fixed at"},
+	} {
+		_, err := Judge(c.in())
+		if c.want == "" && err != nil || c.want != "" && (!errors.Is(err, ErrCriterion) || !strings.Contains(err.Error(), c.want)) {
+			t.Errorf("%s: %v, want %q", name, err, c.want)
+		}
+	}
+	// While the pin has no tag, go.mod names the commit by its pseudo-version, and so does the base.
+	pseudo := "v1.2.1-0.20261111000000-" + pinned[model].Commit[:12]
+	base, ceiling := file("engine", seed.Working, baseSide, false), file("ceiling", seed.Working, ceilSide, false)
+	base.Header.Libraries[model], ceiling.Header.Libraries[model] = pseudo, pseudo
+	usePaths(t, base, ceiling)
+	in := input(Engine, Candidate{Name: "x", File: on(seed.Working, byCommits)})
+	in.Base.Header.Libraries[model] = pseudo
+	in.Pins[model] = Pin{Commit: pinned[model].Commit}
+	if _, err := Judge(in); err != nil {
+		t.Errorf("a base on the pseudo-version of the pin's commit: %v", err)
+	}
+	in.Candidates[0].File.Header.Libraries[model] = pseudo
+	if _, err := Judge(in); err != nil {
+		t.Errorf("a candidate on the pseudo-version of the pin's commit: %v", err)
+	}
+	// A replacement names its module path before the version: it is no pseudo-version of the pin.
+	in.Candidates[0].File.Header.Libraries[model] = "../learner-model@" + pseudo
+	if _, err := Judge(in); err == nil || !strings.Contains(err.Error(), "the pseudo-version of commit "+pinned[model].Commit) {
+		t.Errorf("a candidate on a replacement: %v", err)
 	}
 }
 
