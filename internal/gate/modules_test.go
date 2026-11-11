@@ -129,20 +129,20 @@ func TestChanges(t *testing.T) {
 		}
 		st.Skills.Primary = []formatv0.SkillID{other}
 		cv.Tasks[task] = st
-		cv.Manifest.Version = "0.2.1"
-	}, func(inv *formatv0.Inventory) { inv.Version = "0.2.1" })
+		cv.Manifest.Version = "0.3.1"
+	}, func(inv *formatv0.Inventory) { inv.Version = "0.3.1" })
 	text := edited(t, o, "text", func(cv *formatv0.CanonicalView) {
 		st := cv.Tasks[task]
 		st.Statement = []formatv0.StatementPart{{Text: new(formatv0.Text("Another wording of the task."))}}
 		cv.Tasks[task] = st
-		cv.Manifest.Version = "0.2.1"
-	}, func(inv *formatv0.Inventory) { inv.Version = "0.2.1" })
+		cv.Manifest.Version = "0.3.1"
+	}, func(inv *formatv0.Inventory) { inv.Version = "0.3.1" })
 	for _, c := range []struct {
 		p    Package
 		want State
 	}{{retag, Changed}, {text, Same}} {
 		got, err := Changes(idx, pub, []Package{c.p})
-		if err != nil || got[0].State != c.want || got[0].Version != "0.2.1" || got[0].Against != "0.2.0" {
+		if err != nil || got[0].State != c.want || got[0].Version != "0.3.1" || got[0].Against != "0.3.0" {
 			t.Errorf("%s: %+v, %v; want %s", c.p.Folder, got, err, c.want)
 		}
 	}
@@ -179,7 +179,7 @@ func TestChanges(t *testing.T) {
 	reason := formatv0.WithdrawalReason("a test")
 	withdrawn.Modules[olympiad]["0.10.0"] = formatv0.Entry{ModuleFormatVersion: "0.5", PackageDigest: "sha256:" + formatv0.Digest(strings.Repeat("0", 64)), Release: "v0.2.0", Withdrawn: &reason}
 	withdrawn.Modules[olympiad]["0.0.9"] = formatv0.Entry{ModuleFormatVersion: "0.5", PackageDigest: "sha256:" + formatv0.Digest(strings.Repeat("0", 64)), Release: "v0.0.1"}
-	if got, err := Changes(&withdrawn, pub, []Package{o}); err != nil || got[0].State != Same || got[0].Against != "0.2.0" {
+	if got, err := Changes(&withdrawn, pub, []Package{o}); err != nil || got[0].State != Same || got[0].Against != "0.3.0" {
 		t.Errorf("against a withdrawn newer version: %+v, %v", got, err)
 	}
 	bare := withdrawn

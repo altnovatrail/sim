@@ -117,7 +117,8 @@ func TestRunRepeats(t *testing.T) {
 // the age category suits, the summary of what was handed out before, the last closed attempt, and
 // evidence whose outcome is the attempt's.
 func TestRunInput(t *testing.T) {
-	rec := runOf(t, "G0", 2, Maths, modules(t, olympiad))
+	olympiadMaths := modules(t, olympiad)
+	rec := runOf(t, "G0", 2, Maths, olympiadMaths)
 	choices := int64(0)
 	solutions := map[string]int64{}
 	for k, s := range rec.Steps {
@@ -144,8 +145,14 @@ func TestRunInput(t *testing.T) {
 		}
 		for i, a := range s.Attempts {
 			e := s.Evidence[i]
-			if e == nil || s.Instances[i] != -1 {
-				t.Fatalf("step %d: evidence %v, instance %d", k, e, s.Instances[i])
+			task, err := olympiadMaths[0].Task(a.Task)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// An instance only for a template, one of its own (TestRunTemplate).
+			template := task.Candidate.Task.Template
+			if e == nil || template != (s.Instances[i] >= 0) || s.Instances[i] >= max(task.Instances, 1) {
+				t.Fatalf("step %d: evidence %v, instance %d of %s", k, e, s.Instances[i], a.Task)
 			}
 			want := learnermodel.OutcomeFirstSubmission
 			switch {
@@ -157,8 +164,9 @@ func TestRunInput(t *testing.T) {
 			if e.Outcome.Kind != want || e.PracticeTime != a.End || len(e.Items) != len(a.Items) {
 				t.Fatalf("step %d: evidence %+v of attempt %+v", k, e.Outcome, a)
 			}
-			if _, seen := solutions[a.Task]; e.SolutionSeenBefore != seen {
-				t.Fatalf("step %d: %s seen before %v, the run says %v", k, a.Task, e.SolutionSeenBefore, seen)
+			// A template has no fact of a solution seen: its instances differ.
+			if _, seen := solutions[a.Task]; e.SolutionSeenBefore != (seen && !template) || e.HasSolutionSeenFact == template {
+				t.Fatalf("step %d: %s seen before %v with the fact %v, the run says %v, a template %v", k, a.Task, e.SolutionSeenBefore, e.HasSolutionSeenFact, seen, template)
 			}
 			solutions[a.Task] = a.End
 		}

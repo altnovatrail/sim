@@ -324,11 +324,11 @@ func TestGateModules(t *testing.T) {
 		stdout string
 		stderr string
 	}{
-		{[]string{"-first", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.2.0: new\n"},
-		{[]string{"-index", index, "-published", grade3, grade3}, "", "novatrail/grade-3-math 0.2.0: same against 0.2.0\n"},
-		{[]string{"-index", index, "-published", grade3, "-all", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.2.0: same against 0.2.0\n"},
+		{[]string{"-first", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.3.0: new\n"},
+		{[]string{"-index", index, "-published", grade3, grade3}, "", "novatrail/grade-3-math 0.3.0: same against 0.3.0\n"},
+		{[]string{"-index", index, "-published", grade3, "-all", grade3}, grade3 + "\n", "novatrail/grade-3-math 0.3.0: same against 0.3.0\n"},
 		{[]string{"-index", noGrade3, "-published", olympiad, grade3, olympiad}, grade3 + "\nalong " + olympiad + "\n",
-			"novatrail/grade-3-math 0.2.0: new\nnovatrail/olympiad-math 0.2.0: same against 0.2.0, run with novatrail/grade-3-math, which shares a graph of the gate with it\n"},
+			"novatrail/grade-3-math 0.3.0: new\nnovatrail/olympiad-math 0.3.0: same against 0.3.0, run with novatrail/grade-3-math, which shares a graph of the gate with it\n"},
 	} {
 		stdout.Reset()
 		stderr.Reset()

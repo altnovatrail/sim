@@ -163,11 +163,11 @@ func TestJudge(t *testing.T) {
 		return path
 	}
 	// The judge is held here to the libraries the paths were read on, whichever this tree builds
-	// with: between the move of a library and the decisive run that reads the paths anew they differ,
-	// and the judge refuses every base (R40, R41 in docs/decisions.md). So the runs are named the
-	// paths' libraries, and the embedded gate file names their versions; where that is another
-	// version than the gate file's, it names no commit, since the gate file knows only its own, and a
-	// candidate's other library is held to the base's version alone.
+	// with. Mostly they are the gate file's, and then nothing below changes; but between the move of
+	// a library and the decisive run that reads the paths anew they differ, and the judge refuses
+	// every base (R40, R41 in docs/decisions.md), as it did from T42 to T43. Then the runs are named
+	// the paths' libraries, and the embedded gate file names their versions, with no commit, since
+	// it knows only its own: a candidate's other library is held to the base's version alone.
 	f, err := os.Open(filepath.Join("internal", "criterion", "paths.json"))
 	if err != nil {
 		t.Fatal(err)
