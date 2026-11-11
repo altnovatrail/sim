@@ -58,8 +58,8 @@ func explanation(s string) []formatv0.ExplanationPart {
 	return []formatv0.ExplanationPart{{Text: text(s)}}
 }
 
-// slotOf gives a slot of a sheet: a choice of n options by its options, a number by its key, a
-// predicate by its predicate on the value.
+// slotOf gives a slot of a sheet: a choice of n options by its options, a number and a time by
+// their keys, a predicate by its predicate on the value.
 func slotOf(kind formatv0.CheckKind, options int) formatv0.AnswerSlot {
 	s := formatv0.AnswerSlot{Binding: formatv0.AnswerSlotBindingAnywhere, Check: formatv0.Check{Kind: kind}}
 	switch kind {
@@ -71,6 +71,8 @@ func slotOf(kind formatv0.CheckKind, options int) formatv0.AnswerSlot {
 		s.Check.Key = ptr(string(s.Options[0]))
 	case formatv0.CheckKindPredicate:
 		s.Check.Predicate = ptr("value % 2 == 1 and 10 < value and value < 30")
+	case formatv0.CheckKindTime:
+		s.Check.Key = ptr("7:30")
 	default:
 		s.Check.Key = ptr("15")
 	}
@@ -79,8 +81,9 @@ func slotOf(kind formatv0.CheckKind, options int) formatv0.AnswerSlot {
 
 // SheetView gives the canonical view of the synthetic sheet: four skills with a verdict over three
 // bands of grades 1–6 — one answered by a choice of four options, one by a number, one by a
-// predicate, and one that rests on the anchor skill and on the first —, a task of each skill at
-// difficulties 1, 3 and 5 on each band, and a lesson of each skill on the middle band.
+// predicate, and one by a time that rests on the anchor skill and on the first —, a task of
+// each skill at difficulties 1, 3 and 5 on each band, with a leading question at difficulty 5, and
+// a lesson of each skill on the middle band.
 func SheetView() *formatv0.CanonicalView {
 	bands := []formatv0.Band{
 		{ID: "grades-1-2", Grades: []formatv0.Grade{1, 2}},
@@ -104,18 +107,22 @@ func SheetView() *formatv0.CanonicalView {
 		"choosing":  slotOf(formatv0.CheckKindChoice, 4),
 		"counting":  slotOf(formatv0.CheckKindNumber, 0),
 		"proving":   slotOf(formatv0.CheckKindPredicate, 0),
-		"on-anchor": slotOf(formatv0.CheckKindNumber, 0),
+		"on-anchor": slotOf(formatv0.CheckKindTime, 0),
 	}
 	for _, skill := range []formatv0.SkillID{"choosing", "counting", "proving", "on-anchor"} {
 		for _, band := range bands {
 			for _, d := range []int64{1, 3, 5} {
 				id := formatv0.TaskID(fmt.Sprintf("%s-%s-d%d", skill, band.ID, d))
-				cv.Tasks[id] = formatv0.Task{
+				task := formatv0.Task{
 					ID: id, Canvas: formatv0.Canvas{Kind: formatv0.CanvasKindHandwritingSheet}, Band: band.ID, Difficulty: d,
 					Statement: statement("A synthetic task."), Solution: statement("A synthetic solution."),
 					Skills: formatv0.Skills{Primary: []formatv0.SkillID{skill}},
 					Items:  []formatv0.Item{{AnswerSlots: []formatv0.AnswerSlot{slots[skill]}}},
 				}
+				if d == 5 {
+					task.LeadingQuestion = text("What does the task ask for?")
+				}
+				cv.Tasks[id] = task
 			}
 		}
 		lesson := formatv0.LessonID(string(skill) + "-grades-3-4")

@@ -432,8 +432,9 @@ func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine
 // evidence gives the evidence of an attempt on a task with a verdict (R82 spec; concepts 11 spec):
 // its outcome by its wrong answers, the first and final verdict of each item, whether the task's
 // solution went to the device before — no such fact for a template, whose instances differ —, and
-// the time of its last action, and the technique taken on request (G8). The truth has no traps,
-// and the learner asks for nothing else.
+// the time of its last action, and the technique taken on request (G8) with the leading question
+// the same hint gave, when the task has one. The truth has no traps, and the learner asks for
+// nothing else.
 func (r *Run) evidence(m *pack.Module, t *pack.Task, a learner.Attempt, seen bool) (learnermodel.Evidence, error) {
 	lm, err := r.l.Module(m.ID)
 	if err != nil {
@@ -442,10 +443,11 @@ func (r *Run) evidence(m *pack.Module, t *pack.Task, a learner.Attempt, seen boo
 	task := t.Candidate.Task
 	e := learnermodel.Evidence{
 		Kind: learnermodel.EvidenceKind, Task: task, PracticeTime: a.End,
-		StartBand:           learnermodel.BandRef{Place: lm.StartBand, ID: m.Graph.Bands[lm.StartBand-1].ID},
-		SolutionSeenBefore:  seen && !task.Template,
-		HasSolutionSeenFact: !task.Template,
-		TechniqueOnRequest:  a.Technique,
+		StartBand:                learnermodel.BandRef{Place: lm.StartBand, ID: m.Graph.Bands[lm.StartBand-1].ID},
+		SolutionSeenBefore:       seen && !task.Template,
+		HasSolutionSeenFact:      !task.Template,
+		TechniqueOnRequest:       a.Technique,
+		LeadingQuestionOnRequest: a.LeadingQuestion,
 	}
 	switch {
 	case a.Closure == learner.ClosedSolutionShown:

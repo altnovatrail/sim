@@ -54,6 +54,10 @@ type Attempt struct {
 	Closure Closure
 	// Technique tells that the learner took the technique on request before its first answer.
 	Technique bool
+	// LeadingQuestion tells that the hint asked for gave the task's leading question too: the request
+	// of the technique gives it on a task that has one, with no lift of its own (the text of the
+	// format, section 19; R41 in docs/decisions.md).
+	LeadingQuestion bool
 }
 
 // rungs is the number of rungs of the ladder of hints (concepts 10 spec).
@@ -84,6 +88,7 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 		// Drawn on every attempt, so that the k-th attempt meets the same numbers; a task with a rubric
 		// takes no technique.
 		a.Technique = l.attempts.Fraction() < l.a.TechniqueChance && !t.Rubric
+		a.LeadingQuestion = a.Technique && t.Leading
 	}
 	lift := 0.0
 	if a.Technique {

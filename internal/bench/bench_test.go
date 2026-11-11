@@ -49,7 +49,7 @@ func TestRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if f.Header.Set != seed.Working || f.Header.Rule != "engine" || f.Header.Libraries[Libraries[0]] != "v0.1.4" || f.Header.Libraries[Libraries[1]] != "v0.1.6" {
+	if f.Header.Set != seed.Working || f.Header.Rule != "engine" || f.Header.Libraries[Libraries[0]] != "v0.1.6" || f.Header.Libraries[Libraries[1]] != "v0.1.6" {
 		t.Errorf("the header %+v", f.Header)
 	}
 	var cells []string

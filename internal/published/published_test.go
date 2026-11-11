@@ -46,7 +46,7 @@ func TestReleasePackages(t *testing.T) {
 		{olympiad, []string{"algorithms-weighing-pouring:3", "arithmetic-tricks:1", "combinatorics-enumeration:1", "counting-figures:1",
 			"counting-gaps:1", "fractions-parts:2", "games-strategy:2", "geometry-cubes-paper:1", "geometry-grid:2", "logic-knights-liars:2",
 			"logic-ordering:1", "logic-sets:3", "number-divisibility:3", "parity-alternation:1", "percent-basic:3", "pigeonhole-basic:2",
-			"ratio-sharing:3", "time-calendar:2", "time-clocks:1"}, 3, 772, 41},
+			"ratio-sharing:3", "time-calendar:2", "time-clocks:1"}, 3, 775, 41},
 		{grade3, []string{"comparing-fractions:3", "division-with-remainder:2", "fractions-of-a-whole:2", "times-tables:1"}, 1, 12, 4},
 		{essays, []string{"choosing-a-first-sentence:1", "endings:4", "improving-an-essay:4", "paragraphs:3",
 			"reading-model-essays:1", "writing-a-first-sentence:2"}, 2, 8, 6},
@@ -87,11 +87,11 @@ func TestReleasePackages(t *testing.T) {
 	}
 }
 
-// The kinds of check of the release: numbers, fractions and choices of five options in the check on
-// the sheet of olympiad maths 0.2.0, numbers, fractions and choices of three options on the workbook
-// of grade 3 — the options in the check —, choices of
-// three options beside the check and rubrics in essays (R12 of this log; docs/architecture.md,
-// section 4). No cell of predicate is published.
+// The kinds of check of the release: numbers, fractions, choices of five options in the check and
+// times on the sheet of olympiad maths 0.3.0, numbers, fractions and choices of three options on the
+// workbook of grade 3 — the options in the check —, choices of three options beside the check and
+// rubrics in essays (R12 of this log; docs/architecture.md, section 4). No cell of predicate is
+// published.
 func TestReleaseChecks(t *testing.T) {
 	ms := modules(t)
 	count := func(m *pack.Module) map[string]int {
@@ -109,7 +109,8 @@ func TestReleaseChecks(t *testing.T) {
 		return c
 	}
 	number, fraction, choice := itoa(int32(learnermodel.CheckKindNumber)), itoa(int32(learnermodel.CheckKindFraction)), itoa(int32(learnermodel.CheckKindChoice))
-	if c := count(ms[olympiad]); c[number+"/0"] != 569 || c[fraction+"/0"] != 7 || c[choice+"/5"] != 196 || len(c) != 3 {
+	clock := itoa(int32(learnermodel.CheckKindTime))
+	if c := count(ms[olympiad]); c[number+"/0"] != 572 || c[fraction+"/0"] != 7 || c[choice+"/5"] != 166 || c[clock+"/0"] != 30 || len(c) != 4 {
 		t.Errorf("olympiad maths has the checks %v", c)
 	}
 	if c := count(ms[grade3]); c[number+"/0"] != 78 || c[fraction+"/0"] != 17 || c[choice+"/3"] != 17 || len(c) != 3 {
@@ -127,12 +128,12 @@ func TestReleaseChecks(t *testing.T) {
 	}
 }
 
-// Of the release, only olympiad maths 0.2.0 has templates: 19 tasks, each with its instances, and an
+// Of the release, only olympiad maths 0.3.0 has templates: 22 tasks, each with its instances, and an
 // attempt's seed takes one of them; a task that is no template has no instance (docs/architecture.md,
 // section 4). How the seed takes an instance is tested on a template of pack's own test.
 func TestReleaseTemplates(t *testing.T) {
 	ms := modules(t)
-	for id, want := range map[string]int{olympiad: 19, grade3: 0, essays: 0} {
+	for id, want := range map[string]int{olympiad: 22, grade3: 0, essays: 0} {
 		m, n := ms[id], 0
 		for _, task := range m.Tasks {
 			k, _, err := m.Instance(task.Candidate.Task.ID, 1)
@@ -152,6 +153,53 @@ func TestReleaseTemplates(t *testing.T) {
 	}
 	if _, _, err := ms[olympiad].Instance("no/such/task", 1); !errors.Is(err, pack.ErrNoTask) {
 		t.Errorf("Instance of a missing task: %v", err)
+	}
+}
+
+// What format 0.4 brought into the release and the bench reads: a leading question on 322 tasks
+// of olympiad maths 0.3.0 and on none of the others, and a worked example in every lesson of grade
+// 3, a link with no task between its explanation and its tasks (docs/architecture.md, sections 3.1
+// and 3.3; R41, R42 of this log).
+func TestReleaseFormat04(t *testing.T) {
+	ms := modules(t)
+	for id, want := range map[string]int{olympiad: 322, grade3: 0, essays: 0} {
+		n := 0
+		for _, task := range ms[id].Tasks {
+			if task.Leading {
+				n++
+			}
+		}
+		if n != want {
+			t.Errorf("%s has %d tasks with a leading question, want %d", id, n, want)
+		}
+	}
+	// The translation holds a link with no task as -1, an explanation and a worked example alike, so
+	// the package itself tells which the second link is.
+	idx, err := index(Release, IndexDigest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e, err := pack.Entry(idx, grade3, "0.3.0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ps, err := Pinned()
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive, err := Archive(ps[slices.IndexFunc(ps, func(p Package) bool { return p.Module == grade3 })])
+	if err != nil {
+		t.Fatal(err)
+	}
+	cv, err := pack.ReadPackage(archive, grade3, "0.3.0", e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, l := range ms[grade3].Lessons {
+		segments := cv.Lessons[formatv0.LessonID(strings.TrimPrefix(l.Lesson.ID, grade3+"/lesson/"))].Segments
+		if l.Links != 5 || !slices.Equal(l.Order, []int{-1, -1, 0, 1, 2}) || len(segments) != 5 || segments[0].Explanation == nil || segments[1].WorkedExample == nil {
+			t.Errorf("%s: %d links in the order %v, want an explanation, a worked example and three tasks", l.Lesson.ID, l.Links, l.Order)
+		}
 	}
 }
 
@@ -192,7 +240,7 @@ func itoa[N ~int32](n N) string {
 }
 
 // Pinned names the three packages of the first slice by the pinned index, each with its version and
-// package digest: 0.2.0 each, the modules in format 0.4.
+// package digest: the maths 0.3.0 and essays 0.2.0, the modules in format 0.4.
 func TestPinned(t *testing.T) {
 	ps, err := Pinned()
 	if err != nil {
@@ -202,7 +250,11 @@ func TestPinned(t *testing.T) {
 		t.Fatalf("Pinned = %+v", ps)
 	}
 	for _, p := range ps {
-		if p.Version != "0.2.0" || len(p.Digest) != len("sha256:")+64 {
+		want := "0.3.0"
+		if p.Module == essays {
+			want = "0.2.0"
+		}
+		if p.Version != want || len(p.Digest) != len("sha256:")+64 {
 			t.Errorf("%+v", p)
 		}
 	}

@@ -22,19 +22,19 @@ import (
 // The release of modules the bench is pinned to and the SHA-256 of its module index. The archives
 // lie each in the folder of the release its entry names, as files of that release.
 const (
-	Release     = "v0.2.0"
-	IndexDigest = "a45c1e3d9bdfae094d08c1f0e62f51f0e9432b6c5afbf4193ce98c386c89f71f"
+	Release     = "v0.2.5"
+	IndexDigest = "cebf23cf94456ef313ca00c97ca05db7fccb2575780f8dfd899623ea60aaec6a"
 )
 
-//go:embed v0.2.0
+//go:embed v*
 var files embed.FS
 
 // versions are the modules of the first slice (R41 spec), by full ID, and the version of each the
 // bench reads. They are a pin, as the release is: unexported, so nothing outside changes them.
 var versions = map[formatv0.ModuleID]formatv0.ModuleVersion{
-	"novatrail/olympiad-math":  "0.2.0",
+	"novatrail/olympiad-math":  "0.3.0",
 	"novatrail/english-essays": "0.2.0",
-	"novatrail/grade-3-math":   "0.2.0",
+	"novatrail/grade-3-math":   "0.3.0",
 }
 
 // read reads the pinned packages once: the bytes are fixed, and so is what they give.

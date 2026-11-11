@@ -133,8 +133,8 @@ func TestPopulationsRun(t *testing.T) {
 				}
 				for _, s := range rec.Steps {
 					for i, a := range s.Attempts {
-						if s.Evidence[i] != nil && s.Evidence[i].TechniqueOnRequest != a.Technique {
-							t.Fatalf("%s: the technique of %s is not in its evidence", rec.Unit, a.Task)
+						if e := s.Evidence[i]; e != nil && (e.TechniqueOnRequest != a.Technique || e.LeadingQuestionOnRequest != a.LeadingQuestion) {
+							t.Fatalf("%s: the technique or the leading question of %s is not in its evidence", rec.Unit, a.Task)
 						}
 						if a.Technique {
 							if p.Name != "G8" {
