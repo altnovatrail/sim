@@ -145,7 +145,7 @@ func TestGateWhole(t *testing.T) {
 		return &debug.BuildInfo{Deps: []*debug.Module{
 			{Path: "github.com/altnovatrail/engine", Version: "(devel)"},
 			{Path: "github.com/altnovatrail/learner-model", Version: "(devel)"},
-			{Path: "github.com/altnovatrail/spec", Version: "v0.12.0"},
+			{Path: "github.com/altnovatrail/spec", Version: "v0.15.0"},
 		}}, true
 	}
 	dir := t.TempDir()
@@ -386,7 +386,7 @@ func TestGateVerify(t *testing.T) {
 	workspace := &debug.BuildInfo{Deps: []*debug.Module{
 		{Path: "github.com/altnovatrail/engine", Version: "(devel)"},
 		{Path: "github.com/altnovatrail/learner-model", Version: "(devel)"},
-		{Path: "github.com/altnovatrail/spec", Version: "v0.12.0"},
+		{Path: "github.com/altnovatrail/spec", Version: "v0.15.0"},
 	}}
 	buildInfo = func() (*debug.BuildInfo, bool) { return workspace, true }
 	dir := t.TempDir()
