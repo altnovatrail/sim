@@ -1,6 +1,6 @@
 {
   "criterion": "model",
-  "base": "../../runs/base.jsonl",
+  "base": "../../runs/base-1000.jsonl",
   "candidates": [
     {"name": "g10", "file": "../../runs/model-1-g10.jsonl", "group": "forgets", "constants": 1, "new_field": false},
     {"name": "halve035", "file": "../../runs/model-1-halve035.jsonl", "group": "forgets", "constants": 1, "new_field": false},

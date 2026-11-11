@@ -1,6 +1,6 @@
 {
   "criterion": "engine",
-  "base": "../../runs/base.jsonl",
+  "base": "../../runs/base-1000.jsonl",
   "candidates": [
     {"name": "A", "file": "../../runs/engine-1-a.jsonl", "group": "corridor", "constants": 0, "new_field": false, "distance": 1},
     {"name": "B", "file": "../../runs/engine-1-b.jsonl", "group": "corridor", "constants": 0, "new_field": false, "distance": 2},

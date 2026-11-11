@@ -35,9 +35,9 @@ func TestGate(t *testing.T) {
 	}
 	dir := t.TempDir()
 	part := filepath.Join(dir, "part.jsonl")
-	// The part 149 of 150 holds no learner of the 100 of a cell: the gate on the learners of olympiad
+	// The part Learners of Learners+1 holds no learner of a cell: the gate on the learners of olympiad
 	// maths 0.1.1 takes minutes, and what is checked here is a part that is not the whole.
-	if got := run([]string{"gate", "run", "-part", "149/150", "-out", part}, &stdout, &stderr); got != 0 {
+	if got := run([]string{"gate", "run", "-part", fmt.Sprintf("%d/%d", gate.Learners, gate.Learners+1), "-out", part}, &stdout, &stderr); got != 0 {
 		t.Fatalf("sim gate run = %d: %s", got, stderr.String())
 	}
 	other := filepath.Join(dir, "other.jsonl") // never written
@@ -51,7 +51,7 @@ func TestGate(t *testing.T) {
 	}
 	stderr.Reset()
 	if got := run([]string{"gate", "check", "-file", gateFile, "-go", ".", part}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "is missing") {
-		t.Errorf("sim gate check of one part of 150 = %d: %s", got, stderr.String())
+		t.Errorf("sim gate check of one part = %d: %s", got, stderr.String())
 	}
 	if got := run([]string{"gate", "record", "-reason", "a test", "-file", gateFile, "-go", ".", part}, &stdout, &stderr); got != 1 {
 		t.Errorf("sim gate record of a part = %d", got)
