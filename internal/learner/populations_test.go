@@ -3,6 +3,7 @@ package learner
 import (
 	"errors"
 	"math"
+	"slices"
 	"testing"
 
 	"github.com/altnovatrail/learner-model/detmath"
@@ -144,7 +145,7 @@ func TestSkillHalves(t *testing.T) {
 }
 
 // G8: with the technique taken, every item's chance is the logit lifted by 0.5; the technique comes
-// in about one attempt in five.
+// in about one attempt in five, and with it the leading question of a task that has one.
 func TestTechnique(t *testing.T) {
 	a := Base()
 	a.TechniqueChance, a.TechniqueLift = 0.2, 0.5
@@ -167,6 +168,34 @@ func TestTechnique(t *testing.T) {
 	}
 	if taken < 70 || taken > 130 {
 		t.Errorf("the technique in %d attempts of 500", taken)
+	}
+	// The same hint gives the leading question on a task that has one, with no lift and no number of
+	// its own: the attempt is the one on the task without it, the question beside (R41 in
+	// docs/decisions.md). A learner who asks for nothing gets none.
+	leading, plainTask := *tk, *tk
+	leading.Leading, plainTask.Leading = true, false
+	with, without, base := learnerWith(t, "G8", 1, a, olympiad), learnerWith(t, "G8", 1, a, olympiad), learnerOf(t, "G8", 1, olympiad)
+	asked := 0
+	for k := range 100 {
+		at := Start + int64(k)*secondsPerDay
+		got, err := with.Answer(&leading, at)
+		if err != nil {
+			t.Fatal(err)
+		}
+		plain, err := without.Answer(&plainTask, at)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.LeadingQuestion != got.Technique || plain.LeadingQuestion || got.Technique != plain.Technique || !slices.Equal(got.Items, plain.Items) {
+			t.Fatalf("attempt %d: %+v with a leading question, %+v without", k, got, plain)
+		}
+		if b, err := base.Answer(&leading, at); err != nil || b.LeadingQuestion {
+			t.Fatalf("attempt %d of the base: a leading question %v, %v", k, b.LeadingQuestion, err)
+		}
+		asked += b2i(got.LeadingQuestion)
+	}
+	if asked == 0 {
+		t.Error("G8 never gets the leading question")
 	}
 }
 

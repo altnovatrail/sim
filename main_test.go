@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/altnovatrail/sim/internal/bench"
 	"github.com/altnovatrail/sim/internal/criterion"
+	"github.com/altnovatrail/sim/internal/gate"
 	"github.com/altnovatrail/sim/internal/measure"
 	"github.com/altnovatrail/sim/internal/seed"
 )
@@ -160,6 +162,41 @@ func TestJudge(t *testing.T) {
 		}
 		return path
 	}
+	// The judge is held here to the libraries the paths were read on, whichever this tree builds
+	// with: between the move of a library and the decisive run that reads the paths anew they differ,
+	// and the judge refuses every base (R40, R41 in docs/decisions.md). So the runs are named the
+	// paths' libraries, and the embedded gate file names their versions; where that is another
+	// version than the gate file's, it names no commit, since the gate file knows only its own, and a
+	// candidate's other library is held to the base's version alone.
+	f, err := os.Open(filepath.Join("internal", "criterion", "paths.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := criterion.ReadPaths(f)
+	f.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"base.jsonl", "held.jsonl"} {
+		relabel(t, filepath.Join(dir, name), filepath.Join(dir, name), p.Libraries)
+	}
+	g, err := gate.Read(bytes.NewReader(gateJSON))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for path, version := range p.Libraries {
+		if lib := g.Libraries[path]; lib.Version != version {
+			lib.Version, lib.Commit = version, ""
+			g.Libraries[path] = lib
+		}
+	}
+	var held bytes.Buffer
+	if err := g.Write(&held); err != nil {
+		t.Fatal(err)
+	}
+	embedded := gateJSON
+	t.Cleanup(func() { gateJSON = embedded })
+	gateJSON = held.Bytes()
 	good := write("j.json", `{"criterion":"model","base":"base.jsonl",
 		"candidates":[{"name":"same","file":"base.jsonl","group":"still","constants":1}],
 		"confirm":{"base":"held.jsonl","candidate":"held.jsonl"}}`)
@@ -172,21 +209,8 @@ func TestJudge(t *testing.T) {
 	}
 	// A candidate of the engine built beside another commit of learner-model is no candidate of this
 	// judgement: the judge holds it to the base's learner-model, by the embedded gate file (R40).
-	raw, err := os.ReadFile(filepath.Join(dir, "base.jsonl"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	first, rest, _ := bytes.Cut(raw, []byte("\n"))
-	var h bench.Header
-	if err := json.Unmarshal(first, &h); err != nil {
-		t.Fatal(err)
-	}
-	h.Libraries[bench.Libraries[0]] = strings.Repeat("f", 40)
-	first, err = json.Marshal(h)
-	if err != nil {
-		t.Fatal(err)
-	}
-	write("foreign.jsonl", string(first)+"\n"+string(rest))
+	beside := map[string]string{bench.Libraries[0]: strings.Repeat("f", 40), bench.Libraries[1]: p.Libraries[bench.Libraries[1]]}
+	relabel(t, filepath.Join(dir, "base.jsonl"), filepath.Join(dir, "foreign.jsonl"), beside)
 	foreign := write("foreign.json", `{"criterion":"engine","base":"base.jsonl","candidates":[{"name":"beside","file":"foreign.jsonl"}]}`)
 	stderr.Reset()
 	if got := run([]string{"judge", foreign}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "candidate beside ran on "+bench.Libraries[0]) {
@@ -331,5 +355,27 @@ func TestAlone(t *testing.T) {
 	}
 	if got := debug.SetGCPercent(gc); got != gcPercent {
 		t.Errorf("a part: the collector's percent is %d, want %d", got, gcPercent)
+	}
+}
+
+// relabel writes the file of results from to the file to with the libraries of its header put to
+// libraries, its lines as they are.
+func relabel(t *testing.T, from, to string, libraries map[string]string) {
+	t.Helper()
+	raw, err := os.ReadFile(from)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, rest, _ := bytes.Cut(raw, []byte("\n"))
+	var h bench.Header
+	if err := json.Unmarshal(first, &h); err != nil {
+		t.Fatal(err)
+	}
+	h.Libraries = maps.Clone(libraries)
+	if first, err = json.Marshal(h); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(to, append(append(first, '\n'), rest...), 0o600); err != nil {
+		t.Fatal(err)
 	}
 }

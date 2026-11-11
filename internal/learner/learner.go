@@ -352,7 +352,9 @@ func (l *Learner) chance(t *pack.Task, item int, at int64, rung int, lift float6
 }
 
 // guess gives c* of an item: the product over its cells of the chance of guessing each — a choice
-// of k options ChoiceGuess/k, capped at 1, a predicate PredicateGuess, and 0 for the rest.
+// of k options ChoiceGuess/k, capped at 1, a predicate PredicateGuess, and 0 for the rest: a
+// number, a fraction and a time, as the model guesses them (R19 learner-model; R41 in
+// docs/decisions.md).
 func (l *Learner) guess(slots []learnermodel.Slot) float64 {
 	c := 1.0
 	for _, s := range slots {

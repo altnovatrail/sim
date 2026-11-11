@@ -22,9 +22,10 @@ func ptr[T any](v T) *T { return &v }
 
 // view gives a canonical view of a small synthetic module: two bands, skills with a verdict, with
 // a rubric and retired, a prerequisite from the module and an anchor skill; a task on a sheet with
-// a trap and items of their own skills, a task on a workbook with a choice whose options stand in
-// the check and a predicate, a choice whose options stand beside the check, a task with a rubric,
-// a template with three instances, and lessons. Synthetic, as every example in NovaTrail is.
+// a trap, a leading question and items of their own skills, one checked as a time, a task on a
+// workbook with a choice whose options stand in the check and a predicate, a choice whose options
+// stand beside the check, a task with a rubric, a template with three instances, and lessons.
+// Synthetic, as every example in NovaTrail is.
 func view() *formatv0.CanonicalView {
 	sheet := formatv0.Canvas{Kind: formatv0.CanvasKindHandwritingSheet}
 	workbook := formatv0.Canvas{Kind: formatv0.CanvasKindWorkbook}
@@ -46,10 +47,11 @@ func view() *formatv0.CanonicalView {
 		Tasks: map[formatv0.TaskID]formatv0.Task{
 			"t-sheet": {
 				ID: "t-sheet", Canvas: sheet, Band: "low", Difficulty: 3, Skills: formatv0.Skills{Primary: []formatv0.SkillID{"a"}},
+				LeadingQuestion: ptr(formatv0.Text("What is asked?")),
 				Items: []formatv0.Item{
 					{AnswerSlots: []formatv0.AnswerSlot{{Check: formatv0.Check{Kind: formatv0.CheckKindNumber, TrapValues: []formatv0.TrapValue{{Value: "1", Trap: "off-by-one"}, {Value: "2", Trap: "off-by-one"}}}}}},
 					{Skills: &formatv0.Skills{Primary: []formatv0.SkillID{"b"}, Supporting: []string{"core.x"}},
-						AnswerSlots: []formatv0.AnswerSlot{{Check: formatv0.Check{Kind: formatv0.CheckKindNumber}}}},
+						AnswerSlots: []formatv0.AnswerSlot{{Check: formatv0.Check{Kind: formatv0.CheckKindTime}}}},
 				},
 			},
 			"t-workbook": {
@@ -122,6 +124,11 @@ func TestTranslate(t *testing.T) {
 	if it := st.Items[1]; !it.OwnSkills || !slices.Equal(it.Primary, []string{mod + "/skill/b"}) || !slices.Equal(it.Supporting, []string{"core.x"}) {
 		t.Errorf("t-sheet item 2: %+v", it)
 	}
+	// A time is a check of its own kind, and of a leading question the bench reads that the task has
+	// one (R41 in docs/decisions.md).
+	if s := st.Items[1].Slots; !slices.Equal(s, []learnermodel.Slot{{Check: learnermodel.CheckKindTime}}) || !sheet.Leading {
+		t.Errorf("t-sheet: item 2 slots %v, a leading question %v", s, sheet.Leading)
+	}
 
 	wb, _ := m.Task(mod + "/task/t-workbook")
 	slots := wb.Candidate.Task.Items[0].Slots
@@ -136,6 +143,9 @@ func TestTranslate(t *testing.T) {
 	rubric, _ := m.Task(mod + "/task/t-rubric")
 	if !rubric.Rubric || len(rubric.Candidate.Task.Items[0].Slots) != 0 {
 		t.Errorf("t-rubric: rubric %v, slots %v", rubric.Rubric, rubric.Candidate.Task.Items[0].Slots)
+	}
+	if beside.Leading || rubric.Leading {
+		t.Error("a task with no leading question has one")
 	}
 
 	tpl, _ := m.Task(mod + "/task/t-template")
@@ -445,6 +455,26 @@ func TestText(t *testing.T) {
 			task := v.Tasks["t-sheet"]
 			task.Difficulty = 5
 			v.Tasks["t-sheet"] = task
+		}, false},
+		// The bench reads that a task has a leading question, not its words (R41 in
+		// docs/decisions.md).
+		"the words of a leading question": {func(v *formatv0.CanonicalView) {
+			task := v.Tasks["t-sheet"]
+			task.LeadingQuestion = ptr(formatv0.Text("What is asked, again?"))
+			v.Tasks["t-sheet"] = task
+		}, true},
+		"a leading question taken away": {func(v *formatv0.CanonicalView) {
+			task := v.Tasks["t-sheet"]
+			task.LeadingQuestion = nil
+			v.Tasks["t-sheet"] = task
+		}, false},
+		"a leading question added": {func(v *formatv0.CanonicalView) {
+			task := v.Tasks["t-beside"]
+			task.LeadingQuestion = ptr(formatv0.Text("Which is it?"))
+			v.Tasks["t-beside"] = task
+		}, false},
+		"a number checked as a time": {func(v *formatv0.CanonicalView) {
+			v.Tasks["t-sheet"].Items[0].AnswerSlots[0].Check.Kind = formatv0.CheckKindTime
 		}, false},
 	} {
 		if got := text(c.change) == base; got != c.same {

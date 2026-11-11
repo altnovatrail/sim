@@ -38,6 +38,10 @@ type Task struct {
 	Rubric    bool     // a task with a rubric: no verdict and no evidence (architecture 3.8 spec)
 	Ages      []string // its own age categories; none, the module's
 	Instances int      // the number of instances of a template; 0 for a task
+	// Leading tells that the task has a leading question, which a hint asked for gives before the
+	// first wrong answer (the text of the format, sections 14 and 19). The bench reads that it has
+	// one, not its text.
+	Leading bool
 
 	numbers []formatv0.Numbers // the instances of a template, in the order the format numbers them
 }
@@ -59,8 +63,8 @@ var ErrTranslate = errors.New("pack: the canonical view cannot be translated")
 // the local ID joined by / (the text of the format, section 10) —, anchor skills as they are;
 // bands by place from the manifest; tiers from skill_tiers; a slot's kind of check and a choice's
 // number of options, whether they stand beside the check or in it; a check by a rubric gives no
-// slot with a verdict. The graph is learner-model's own NewGraph, so that sim and api build one
-// graph of one module alike (R28 spec).
+// slot with a verdict; of a leading question, only that the task has one. The graph is
+// learner-model's own NewGraph, so that sim and api build one graph of one module alike (R28 spec).
 func Translate(cv *formatv0.CanonicalView) (*Module, error) {
 	module := string(cv.Manifest.ID)
 	full := func(kind, id string) string {
@@ -179,7 +183,7 @@ func Translate(cv *formatv0.CanonicalView) (*Module, error) {
 		}
 		t := Task{
 			Candidate: engine.Candidate{Task: task, Traps: traps}, Local: string(id), Canvas: st.Canvas.Kind,
-			Rubric: rubric, Instances: len(cv.Instances[id]), numbers: cv.Instances[id],
+			Rubric: rubric, Instances: len(cv.Instances[id]), numbers: cv.Instances[id], Leading: st.LeadingQuestion != nil,
 		}
 		for _, a := range st.AgeCategories {
 			t.Ages = append(t.Ages, string(a))
@@ -232,6 +236,7 @@ var checkKind = map[formatv0.CheckKind]learnermodel.CheckKind{
 	formatv0.CheckKindFraction:  learnermodel.CheckKindFraction,
 	formatv0.CheckKindChoice:    learnermodel.CheckKindChoice,
 	formatv0.CheckKindPredicate: learnermodel.CheckKindPredicate,
+	formatv0.CheckKindTime:      learnermodel.CheckKindTime,
 }
 
 // slot is a place of an answer of an item, whichever way the item holds it: an answer slot of a
@@ -351,9 +356,10 @@ func (t *Task) ItemPrimary(i int) []string {
 
 // Text gives the canonical text of what the bench reads of the module: the module translated —
 // its graph with the bands and the tiers, its audience, its tasks with their items, slots, traps,
-// canvases and ages and the numbers of each template's instances, its lessons —, as JSON, whose
-// fields keep their order and whose maps are written by their keys. What Translate does not read —
-// the texts for the learner, the version — is not in it, so two packages give the same text when
+// canvases and ages, whether each has a leading question and the numbers of each template's
+// instances, its lessons —, as JSON, whose fields keep their order and whose maps are written by
+// their keys. What Translate does not read — the texts for the learner, the leading question's
+// own words among them, the version — is not in it, so two packages give the same text when
 // the bench reads the same of them, and Translate is the one list of what the bench reads
 // (docs/architecture.md, section 3.9; R27 in docs/decisions.md).
 func (m *Module) Text() ([]byte, error) {

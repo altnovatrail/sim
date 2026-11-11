@@ -202,6 +202,8 @@ func TestGuess(t *testing.T) {
 		{[]learnermodel.Slot{{Check: learnermodel.CheckKindChoice, Options: 1, HasOptions: true}}, 1},
 		{[]learnermodel.Slot{{Check: learnermodel.CheckKindPredicate}}, 0.1},
 		{[]learnermodel.Slot{choice, {Check: learnermodel.CheckKindNumber}}, 0},
+		{[]learnermodel.Slot{{Check: learnermodel.CheckKindTime}}, 0},
+		{[]learnermodel.Slot{choice, {Check: learnermodel.CheckKindTime}}, 0},
 	}
 	for _, c := range cases {
 		if got := l.guess(c.slots); math.Abs(got-c.want) > 1e-15 {

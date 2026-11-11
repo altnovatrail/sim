@@ -7,8 +7,8 @@
     },
     "github.com/altnovatrail/learner-model": {
       "repository": "altnovatrail/learner-model",
-      "commit": "acfc4f2f9cfa7699c9267d44e2ba09c5b8c89870",
-      "version": "v0.1.4"
+      "commit": "3a2cd293aaa6ee826350f0c8a0b14cc07c1a6930",
+      "version": "v0.1.5"
     }
   },
   "modules": {
@@ -41,7 +41,7 @@
     "github.com/altnovatrail/sim": "1.27.3"
   },
   "bands": {
-    "reason": "engine v0.1.6, the same choice made faster: the gate takes 150 learners a cell, not 100 (T41; the amendment of 2026-11-11 to R31)",
+    "reason": "learner-model v0.1.5, format 0.4 in the model: every number is the same to the bit as on v0.1.4, and the bands are those of T41 (T42; R41)",
     "numbers": [
       {
         "cell": "G0/novatrail/olympiad-math",

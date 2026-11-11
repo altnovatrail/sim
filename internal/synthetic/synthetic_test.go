@@ -41,14 +41,17 @@ func kinds(m *pack.Module) (map[learnermodel.CheckKind]int, int) {
 }
 
 // The synthetic packages have the shape docs/architecture.md, section 3.3, gives them: a sheet with
-// a choice, numbers and a predicate over three bands of grades 1–6; a workbook of one band of grade
-// 3 with pages of up to ten lines; essays with a rubric and no grades; and a skill of the sheet that
-// rests on the anchor skill a skill of the workbook teaches.
+// a choice, numbers, a predicate and a time, and leading questions, over three bands of grades 1–6;
+// a workbook of one band of grade 3 with pages of up to ten lines; essays with a rubric and no
+// grades; and a skill of the sheet that rests on the anchor skill a skill of the workbook teaches.
 func TestShape(t *testing.T) {
 	ms := modules(t)
 	sheet, workbook, essays := ms[Sheet], ms[Workbook], ms[Essays]
-	if k, _ := kinds(sheet); k[learnermodel.CheckKindChoice] == 0 || k[learnermodel.CheckKindNumber] == 0 || k[learnermodel.CheckKindPredicate] == 0 {
+	if k, _ := kinds(sheet); k[learnermodel.CheckKindChoice] == 0 || k[learnermodel.CheckKindNumber] == 0 || k[learnermodel.CheckKindPredicate] == 0 || k[learnermodel.CheckKindTime] == 0 {
 		t.Errorf("the sheet has the kinds %v", k)
+	}
+	if !slices.ContainsFunc(sheet.Tasks, func(t pack.Task) bool { return t.Leading }) {
+		t.Error("no task of the sheet has a leading question")
 	}
 	if len(sheet.Graph.Bands) != 3 || !slices.Equal(sheet.Graph.Bands[2].Grades, []int32{5, 6}) {
 		t.Errorf("the sheet's bands %v", sheet.Graph.Bands)
@@ -143,5 +146,58 @@ func TestRuns(t *testing.T) {
 	}
 	if anchors[learnermodel.AnchorHas] == 0 || anchors[learnermodel.AnchorHasNot] == 0 {
 		t.Errorf("the anchor is read %v: a learner of both should not hold it, then hold it", anchors)
+	}
+}
+
+// A learner who asks for the technique, as G8 does, gets the leading question with it on the tasks
+// of the sheet that have one: the evidence carries it, of the kind that records it, and only there
+// (R41 in docs/decisions.md).
+func TestLeadingQuestion(t *testing.T) {
+	ms := modules(t)
+	a := learner.Base()
+	a.TechniqueChance, a.TechniqueLift = 0.2, 0.5
+	asked := 0
+	for n := range 4 {
+		l, err := learner.New(seed.Working, "G8", n, []*pack.Module{ms[Sheet]}, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r, err := run.New(l, []*pack.Module{ms[Sheet]}, run.Maths)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rec, err := r.All()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, s := range rec.Steps {
+			for i, at := range s.Attempts {
+				e := s.Evidence[i]
+				if e == nil {
+					continue
+				}
+				task, err := ms[Sheet].Task(at.Task)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if e.LeadingQuestionOnRequest != at.LeadingQuestion || at.LeadingQuestion != (at.Technique && task.Leading) {
+					t.Fatalf("%s: a leading question %v in the evidence, %v in the attempt, the technique %v", at.Task, e.LeadingQuestionOnRequest, at.LeadingQuestion, at.Technique)
+				}
+				if !at.LeadingQuestion {
+					continue
+				}
+				asked++
+				data, err := learnermodel.EncodeEvidence(*e)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if back, err := learnermodel.DecodeEvidence(data); err != nil || back.Kind != learnermodel.EvidenceKind || !back.LeadingQuestionOnRequest {
+					t.Fatalf("%s: the evidence reads back as kind %d with a leading question %v: %v", at.Task, back.Kind, back.LeadingQuestionOnRequest, err)
+				}
+			}
+		}
+	}
+	if asked == 0 {
+		t.Error("no learner got a leading question")
 	}
 }
