@@ -3,7 +3,7 @@ module github.com/altnovatrail/sim
 go 1.27.3
 
 require (
-	github.com/altnovatrail/engine v0.1.4
+	github.com/altnovatrail/engine v0.1.6
 	github.com/altnovatrail/learner-model v0.1.4
 	github.com/altnovatrail/spec v0.12.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3

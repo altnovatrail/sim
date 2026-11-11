@@ -28,7 +28,7 @@ func TestGate(t *testing.T) {
 	if got := run([]string{"gate", "libraries", "gate.json"}, &stdout, &stderr); got != 0 {
 		t.Fatalf("sim gate libraries = %d: %s", got, stderr.String())
 	}
-	want := "github.com/altnovatrail/engine altnovatrail/engine ddfed3ac55d8d0dc1e0880b06e7e960cb72b4441 v0.1.4\n" +
+	want := "github.com/altnovatrail/engine altnovatrail/engine 57e0ab8852e65bb56724d08fc2e9cdb6a839d959 v0.1.6\n" +
 		"github.com/altnovatrail/learner-model altnovatrail/learner-model acfc4f2f9cfa7699c9267d44e2ba09c5b8c89870 v0.1.4\n"
 	if stdout.String() != want {
 		t.Errorf("sim gate libraries wrote\n%s", stdout.String())
@@ -153,7 +153,7 @@ func TestGateWhole(t *testing.T) {
 	for k := range 2 {
 		f := &bench.File{Header: bench.Header{Set: seed.Working, Rule: "engine", Invariants: true, Part: bench.Part{K: k, N: 2},
 			Populations: gate.Populations, Learners: gate.Learners, Repeat: true, Libraries: map[string]string{
-				"github.com/altnovatrail/engine":        "ddfed3ac55d8d0dc1e0880b06e7e960cb72b4441",
+				"github.com/altnovatrail/engine":        "57e0ab8852e65bb56724d08fc2e9cdb6a839d959",
 				"github.com/altnovatrail/learner-model": "acfc4f2f9cfa7699c9267d44e2ba09c5b8c89870",
 			}}}
 		for _, cell := range gate.Cells() {
@@ -234,7 +234,7 @@ func TestGateWhole(t *testing.T) {
 	}
 	modules := &bench.File{Header: bench.Header{Set: seed.Working, Rule: "engine", Invariants: true, Populations: gate.Populations, Learners: gate.Learners, Repeat: true, Packages: pins,
 		Libraries: map[string]string{
-			"github.com/altnovatrail/engine":        "ddfed3ac55d8d0dc1e0880b06e7e960cb72b4441",
+			"github.com/altnovatrail/engine":        "57e0ab8852e65bb56724d08fc2e9cdb6a839d959",
 			"github.com/altnovatrail/learner-model": "acfc4f2f9cfa7699c9267d44e2ba09c5b8c89870",
 		}}}
 	for _, cell := range bench.CellsOn(gate.Populations, pins) {

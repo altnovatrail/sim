@@ -2,8 +2,8 @@
   "libraries": {
     "github.com/altnovatrail/engine": {
       "repository": "altnovatrail/engine",
-      "commit": "ddfed3ac55d8d0dc1e0880b06e7e960cb72b4441",
-      "version": "v0.1.4"
+      "commit": "57e0ab8852e65bb56724d08fc2e9cdb6a839d959",
+      "version": "v0.1.6"
     },
     "github.com/altnovatrail/learner-model": {
       "repository": "altnovatrail/learner-model",
