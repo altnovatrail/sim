@@ -11,21 +11,25 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
+	_ "embed"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/altnovatrail/sim/internal/bench"
 	"github.com/altnovatrail/sim/internal/criterion"
+	"github.com/altnovatrail/sim/internal/gate"
 	"github.com/altnovatrail/sim/internal/population"
 	runpkg "github.com/altnovatrail/sim/internal/run"
 	"github.com/altnovatrail/sim/internal/seed"
@@ -317,6 +321,26 @@ type judgement struct {
 	} `json:"confirm"`
 }
 
+// gateJSON is the gate file the bench is built with: the judge holds the base to its libraries, and
+// a candidate of one library to the other of them, as it holds the score to the paths it embeds
+// (R40 in docs/decisions.md).
+//
+//go:embed gate.json
+var gateJSON []byte
+
+// pins gives the libraries of a gate file as the points the criterion holds the base to.
+func pins(data []byte) (map[string]criterion.Pin, error) {
+	f, err := gate.Read(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]criterion.Pin{}
+	for _, path := range slices.Sorted(maps.Keys(f.Libraries)) {
+		out[path] = criterion.Pin{Commit: f.Libraries[path].Commit, Version: f.Libraries[path].Version}
+	}
+	return out, nil
+}
+
 // judgeCommand is "sim judge".
 func judgeCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("judge", flag.ContinueOnError)
@@ -358,6 +382,9 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 		return file, nil
 	}
 	in := criterion.Input{Criterion: j.Criterion}
+	if in.Pins, err = pins(gateJSON); err != nil {
+		return fmt.Errorf("the embedded gate file: %w", err)
+	}
 	if in.Base, err = read(j.Base); err != nil {
 		return err
 	}

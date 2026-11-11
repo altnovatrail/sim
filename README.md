@@ -75,7 +75,7 @@ A candidate of learner-model or engine is judged by a criterion on decisive runs
    }
    ```
 
-   `sim judge <judgement file>` writes the report: the constraints, the score and the choice.
+   `sim judge <judgement file>` writes the report: the constraints, the score and the choice. It refuses runs that are not of the judgement: a base on other libraries than those the paths were read on, or than the embedded gate.json names, and a candidate of one library on another commit of the other (R40).
 4. **The confirmation.** The candidate chosen and the base run once more, on the held-out learners of the choice: `just decisive engine runs/base-held-out.jsonl held-out-engine-1`, and the same with `CANDIDATE_ENGINE`. The judgement file then names them under `"confirm": {"base": …, "candidate": …}`.
 5. **The bands.** A candidate confirmed goes into gate.json and go.mod, and `just gate record "<reason>"` records the bands anew in a pull request to this repository.
 
