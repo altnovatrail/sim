@@ -7,8 +7,8 @@
     },
     "github.com/altnovatrail/learner-model": {
       "repository": "altnovatrail/learner-model",
-      "commit": "3a2cd293aaa6ee826350f0c8a0b14cc07c1a6930",
-      "version": "v0.1.5"
+      "commit": "7d796e290599eeb15481f0098c9356bf6c31afe9",
+      "version": "v0.1.6"
     }
   },
   "modules": {
@@ -41,7 +41,7 @@
     "github.com/altnovatrail/sim": "1.27.3"
   },
   "bands": {
-    "reason": "modules v0.2.5: olympiad-math and grade-3-math 0.3.0, with time, leading questions and worked examples (T43; R42)",
+    "reason": "learner-model v0.1.6: the faster Readout.Task, with the same bits (T45; R43)",
     "numbers": [
       {
         "cell": "G0/novatrail/olympiad-math",
