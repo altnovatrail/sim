@@ -322,7 +322,7 @@ workspace dir prefix clean from:
     printf '%s\n' "${lines[@]}"
 
 # The decisive run of a rule (docs/architecture.md, sections 3.6, 3.8 and 3.9; R09, R28, R33, R34 in
-# docs/decisions.md): 1,500 learners of a set — working, or held-out-<criterion>-<n> for a
+# docs/decisions.md): 2,000 learners of a set — working, or held-out-<criterion>-<n> for a
 # confirmation — of every cell of every population, as processes, one part of the learners each, as
 # many as the processors, merged into one file of results, whose SHA-256 it prints. Without a
 # candidate it builds the bench on the libraries go.mod names, the base while it names the releases
@@ -378,7 +378,7 @@ decisive rule out set="working":
     "$tmp/sim" run -populations G7 -learners 1 -set {{ quote(set) }} ${commits[@]+"${commits[@]}"} > /dev/null
     n="$(nproc)"
     for k in $(seq 0 $((n - 1))); do
-        "$tmp/sim" run -populations all -learners 1500 -set {{ quote(set) }} -rule {{ quote(rule) }} ${commits[@]+"${commits[@]}"} -part "$k/$n" -out "$tmp/part-$k.jsonl" &
+        "$tmp/sim" run -populations all -learners 2000 -set {{ quote(set) }} -rule {{ quote(rule) }} ${commits[@]+"${commits[@]}"} -part "$k/$n" -out "$tmp/part-$k.jsonl" &
         pids+=("$!")
     done
     failed=0

@@ -29,8 +29,10 @@ const (
 // run of fewer is a rough look and decides nothing (docs/architecture.md, section 3.8). It was 4,000
 // until a decisive run took hours on olympiad maths 0.1.1, and a run is to take an hour at most (R33
 // in docs/decisions.md); then 1,000, until engine v0.1.6 made the choice faster and 1,500 fit in 45
-// minutes (the amendment of 2026-11-11 to R33).
-const Decisive = 1500
+// minutes (the amendment of 2026-11-11 to R33); then 1,500, until learner-model v0.1.6 made its
+// readout faster and 2,000 fit, by a sample on a free machine, in about 38 minutes (the amendment of
+// 2026-11-12 to R33).
+const Decisive = 2000
 
 // ErrCriterion is a judgement the criterion refuses.
 var ErrCriterion = errors.New("criterion")
