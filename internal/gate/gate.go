@@ -95,13 +95,14 @@ func (f *File) Write(w io.Writer) error {
 // as standalone's guard had; on olympiad maths since 0.1.1 a choice of the engine takes some ten times
 // longer, and 300 would not fit the job's budget of fifteen minutes, which the gate keeps by a
 // change of sim, not of the time (docs/architecture.md, section 3.9; R31 in docs/decisions.md). They
-// were 100 until engine v0.1.6 made the choice faster; 150 are the most that the slowest run of the
-// job on 100, scaled, keeps within twelve minutes at every caller, whose gate keeps no cache of Go
-// (the amendment of 2026-11-11 to R31).
-const Learners = 150
+// were 100 until engine v0.1.6 made the choice faster, and 150 until learner-model v0.1.6 made its
+// readout faster; 250 keep the slowest run of the job on 150, scaled, at about ten minutes at every
+// caller, whose gate keeps no cache of Go, within the twelve that 300 would only just meet (the
+// amendments of 2026-11-11 and 2026-11-12 to R31).
+const Learners = 250
 
 // learners are the learners whole holds each cell to: Learners, but a test of the checks lowers it,
-// since reading the numbers off 150 learners a cell takes minutes in the suite.
+// since reading the numbers off 250 learners a cell takes minutes in the suite.
 var learners = Learners
 
 // Populations are the populations of the gate, each on every graph it runs on, in the order of
