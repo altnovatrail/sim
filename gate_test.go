@@ -145,7 +145,7 @@ func TestGateWhole(t *testing.T) {
 		return &debug.BuildInfo{Deps: []*debug.Module{
 			{Path: "github.com/altnovatrail/engine", Version: "(devel)"},
 			{Path: "github.com/altnovatrail/learner-model", Version: "(devel)"},
-			{Path: "github.com/altnovatrail/spec", Version: "v0.15.0"},
+			{Path: "github.com/altnovatrail/spec", Version: specRecorded(t)},
 		}}, true
 	}
 	dir := t.TempDir()
@@ -386,7 +386,7 @@ func TestGateVerify(t *testing.T) {
 	workspace := &debug.BuildInfo{Deps: []*debug.Module{
 		{Path: "github.com/altnovatrail/engine", Version: "(devel)"},
 		{Path: "github.com/altnovatrail/learner-model", Version: "(devel)"},
-		{Path: "github.com/altnovatrail/spec", Version: "v0.15.0"},
+		{Path: "github.com/altnovatrail/spec", Version: specRecorded(t)},
 	}}
 	buildInfo = func() (*debug.BuildInfo, bool) { return workspace, true }
 	dir := t.TempDir()
@@ -432,4 +432,19 @@ func TestGateVerify(t *testing.T) {
 	if got := run([]string{"gate", "verify", "-go", dir}, &stdout, &stderr); got != 1 {
 		t.Errorf("sim gate verify with a folder that has no go.mod = %d, want 1", got)
 	}
+}
+
+// specRecorded is the version of spec's module that the gate file records: a build of the
+// workspace that the tests stand in for chose it, and it moves with each move to a tag of spec.
+func specRecorded(t *testing.T) string {
+	t.Helper()
+	f, err := gate.Read(bytes.NewReader(gateJSON))
+	if err != nil {
+		t.Fatal(err)
+	}
+	v := f.Dependencies["github.com/altnovatrail/spec"]
+	if v == "" {
+		t.Fatal("the gate file records no version of github.com/altnovatrail/spec")
+	}
+	return v
 }
