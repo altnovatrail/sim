@@ -1,15 +1,15 @@
 {
   "libraries": {
     "github.com/altnovatrail/engine": "v0.1.6",
-    "github.com/altnovatrail/learner-model": "v0.1.7-0.20261113040121-a063835087c7"
+    "github.com/altnovatrail/learner-model": "v0.1.8"
   },
   "set": {
     "Seed": 20261107,
     "Experiment": "working"
   },
   "learners": 2000,
-  "base": "3b4e4d28206227dcec01442bb55cd3fe07c563651b694874706045f3b5b299d3",
-  "ceiling": "8b3675601c9d9cd8b31f836231bf5ee955e9e68f2aaa595502306e16ecbd92ec",
+  "base": "7d3cb52e72cf4c55d28dc11a16e8ed2330a9f06e78ccd9ab3ae01027fae7bf16",
+  "ceiling": "00ad8bb7e82fb45542b7c2807f1541ce603663459f3629b24a65832f64043218",
   "paths": [
     {
       "cell": "G0/novatrail/olympiad-math",

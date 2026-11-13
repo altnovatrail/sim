@@ -33,6 +33,7 @@ The recipe `just decisive`: processes by parts of the learners, on all the cores
 - On `learner-model` v0.1.6 — 62 min 24 s for the base at a load average of up to 46, about 25.9 CPU minutes a process, a third less, and about 18.0 for the ceiling (the 2026-11-11 amendment to R04, "the base on `learner-model` v0.1.6"; R43).
 - On 2,000 learners a subsample on a free machine promises about 38 minutes for the base and about 27 for the ceiling, and on a host shared with neighbouring containers the base took 62 min 37 s, about 31.3 CPU minutes a process, and the ceiling 30 min 37 s, about 24.1 (the 2026-11-12 amendment to R33 and to R04).
 - In T47, on 2,000 learners a cell (R46): the candidate `theta` on the working learners took 8 h 10 min by the clock for 687.6 CPU minutes, about 34.4 a process — the host was busy or asleep, from a load average of 1.4 at the start to 44.6 at the end, and the CPU is that of a run of about 40 minutes. On a host that neighbouring containers loaded — a load average of 11 to 42 — the base on `held-out-model-1` took 54 min 11 s, 673.5 CPU minutes, and `theta` on it 38 min 5 s, 641.0. The base on `theta` by `go.mod` took 38 min 15 s, 639.8 CPU minutes, about 32.0 a process, and the ceiling 31 min 18 s, 483.3, about 24.2.
+- In T48, on the release of `theta`, `learner-model` v0.1.8 (R46), on a host that neighbouring containers loaded — a load average of 7 to 28 —: the base took 38 min 27 s by the clock, 638.9 CPU minutes, about 31.9 a process, and the ceiling 30 min 17 s, 482.3, about 24.1.
 - The files of its results — about 0.8–1.0 GB a rule (R28).
 
 ## 2. Claude Code sessions
@@ -78,6 +79,102 @@ What: the paths of the 2026-11-13 amendment to R04, "the base on `theta`" (T47; 
 - The base, SHA-256 `3b4e4d28206227dcec01442bb55cd3fe07c563651b694874706045f3b5b299d3`, is to the byte past its header the decisive run of the candidate `theta`, `runs/model-2-theta.jsonl` (judgements/model-2/runs.txt): the header names the libraries by versions, and the candidate's by commits (R34).
 - The ceiling, SHA-256 `8b3675601c9d9cd8b31f836231bf5ee955e9e68f2aaa595502306e16ecbd92ec`: its lines moved against the ceiling of T46, since the engine's ceiling chooses with the model's readout. One twentieth of it, part 7 of 20, was run anew and matched it line for line, 6,500 lines.
 - Of 85 paths, 34 moved against T46, all of the populations `F-`: `M3.settle` of `F-break` 161.08 → 148.40 on olympiad maths and 336.39 → 293.84 on school maths, `M5.caught` of `F-exp` and `F-growth5` of school maths 3.34 → 2.79 and 2.96 → 2.43, `M4.false.break` of `F-` of olympiad maths lower by 0.004–0.012; the rest by less than 0.1 of their value.
+
+Values in the direction of the criterion, less is better:
+
+| Cell | Measure | Base | Ceiling | Path |
+|---|---|---|---|---|
+| `G0/novatrail/olympiad-math` | `E1.corridor` | 0.7448 | 0.0192 | 0.7256 |
+| `G0/novatrail/olympiad-math` | `M1.rms.200` | 0.5216 | 0.0000 | 0.5216 |
+| `G0/novatrail/olympiad-math` | `M4.false.all` | 0.0289 | 0.0000 | 0.0289 |
+| `G0/novatrail/olympiad-math` | `M6.late` | 4.6559 | 0.0000 | 4.6559 |
+| `G0/novatrail/grade-3-math` | `E1.corridor` | 0.8226 | 0.7471 | 0.0755 |
+| `G0/novatrail/grade-3-math` | `M1.rms.200` | 0.2348 | 0.0000 | 0.2348 |
+| `G0/novatrail/grade-3-math` | `M4.false.all` | 0.0076 | 0.0000 | 0.0076 |
+| `G0/novatrail/grade-3-math` | `M6.late` | 15.8154 | 0.0000 | 15.8154 |
+| `G1/novatrail/olympiad-math` | `M7.error.10` | 1.1852 | 0.0000 | 1.1852 |
+| `G1/novatrail/olympiad-math` | `M7.hard` | 0.3496 | 0.3496 | 0.0000 |
+| `G1/novatrail/grade-3-math` | `M7.error.10` | 1.0436 | 0.0000 | 1.0436 |
+| `G1/novatrail/grade-3-math` | `M7.hard` | 0.3755 | 0.3755 | 0.0000 |
+| `G2/novatrail/olympiad-math` | `E1.corridor` | 0.7402 | 0.0129 | 0.7273 |
+| `G2/novatrail/olympiad-math` | `M3.lag` | 1.0026 | 0.0000 | 1.0026 |
+| `G2/novatrail/grade-3-math` | `E1.corridor` | 0.8701 | 0.7003 | 0.1698 |
+| `G2/novatrail/grade-3-math` | `M3.lag` | 2.4269 | 0.0000 | 2.4269 |
+| `G2-half/novatrail/olympiad-math` | `E1.corridor` | 0.7332 | 0.0132 | 0.7200 |
+| `G2-half/novatrail/olympiad-math` | `E4.mastered` | 0.4269 | 0.0000 | 0.4269 |
+| `G2-half/novatrail/olympiad-math` | `M3.lag` | 0.5182 | 0.0000 | 0.5182 |
+| `G2-half/novatrail/grade-3-math` | `E1.corridor` | 0.8118 | 0.6890 | 0.1228 |
+| `G2-half/novatrail/grade-3-math` | `E4.mastered` | 0.3629 | 0.0000 | 0.3629 |
+| `G2-half/novatrail/grade-3-math` | `M3.lag` | 1.0917 | 0.0000 | 1.0917 |
+| `G2-fading/novatrail/olympiad-math` | `E1.corridor` | 0.7304 | 0.0107 | 0.7198 |
+| `G2-fading/novatrail/olympiad-math` | `M3.lag` | 0.4237 | 0.0000 | 0.4237 |
+| `G2-fading/novatrail/grade-3-math` | `E1.corridor` | 0.8148 | 0.6746 | 0.1401 |
+| `G2-fading/novatrail/grade-3-math` | `M3.lag` | 0.7551 | 0.0000 | 0.7551 |
+| `G3/novatrail/olympiad-math` | `M3.settle` | 57.5000 | 0.0000 | 57.5000 |
+| `G3/novatrail/grade-3-math` | `M3.settle` | 41.2255 | 0.0000 | 41.2255 |
+| `G3-drop/novatrail/olympiad-math` | `M3.settle` | 47.2078 | 0.0000 | 47.2078 |
+| `G3-drop/novatrail/grade-3-math` | `M3.settle` | 54.4096 | 0.0000 | 54.4096 |
+| `G0-skills1/novatrail/olympiad-math` | `M4.false.all` | 0.0554 | 0.0000 | 0.0554 |
+| `G0-skills1/novatrail/olympiad-math` | `M6.late` | 4.7019 | 0.0000 | 4.7019 |
+| `G0-skills1/novatrail/grade-3-math` | `M4.false.all` | 0.0287 | 0.0000 | 0.0287 |
+| `G0-skills1/novatrail/grade-3-math` | `M6.late` | 16.0443 | 0.0000 | 16.0443 |
+| `S-adult/novatrail/olympiad-math` | `M7.error.10` | 1.5051 | 0.0000 | 1.5051 |
+| `S-adult/novatrail/olympiad-math` | `M7.hard` | 0.1110 | 0.1110 | 0.0000 |
+| `F-model/novatrail/olympiad-math` | `E3.end` | 0.0473 | 0.0000 | 0.0473 |
+| `F-model/novatrail/olympiad-math` | `E3.late` | 0.4712 | 0.0000 | 0.4712 |
+| `F-model/novatrail/olympiad-math` | `M2.brier.after7` | 0.1651 | 0.1599 | 0.0051 |
+| `F-model/novatrail/olympiad-math` | `M4.false.break` | 0.0306 | 0.0000 | 0.0306 |
+| `F-model/novatrail/olympiad-math` | `M5.caught` | 3.7208 | 0.0000 | 3.7208 |
+| `F-model/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
+| `F-model/novatrail/grade-3-math` | `E3.late` | 0.6935 | 0.0000 | 0.6935 |
+| `F-model/novatrail/grade-3-math` | `M2.brier.after7` | 0.1547 | 0.1544 | 0.0004 |
+| `F-model/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
+| `F-model/novatrail/grade-3-math` | `M5.caught` | 4.0114 | 0.0000 | 4.0114 |
+| `F-exp/novatrail/olympiad-math` | `E3.end` | 0.0582 | 0.0000 | 0.0582 |
+| `F-exp/novatrail/olympiad-math` | `E3.late` | 0.5369 | 0.0000 | 0.5369 |
+| `F-exp/novatrail/olympiad-math` | `M2.brier.after7` | 0.1567 | 0.1475 | 0.0092 |
+| `F-exp/novatrail/olympiad-math` | `M4.false.break` | 0.0304 | 0.0000 | 0.0304 |
+| `F-exp/novatrail/olympiad-math` | `M5.caught` | 3.7170 | 0.0000 | 3.7170 |
+| `F-exp/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
+| `F-exp/novatrail/grade-3-math` | `E3.late` | 0.7865 | 0.0000 | 0.7865 |
+| `F-exp/novatrail/grade-3-math` | `M2.brier.after7` | 0.1108 | 0.0906 | 0.0202 |
+| `F-exp/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
+| `F-exp/novatrail/grade-3-math` | `M5.caught` | 2.7890 | 0.0000 | 2.7890 |
+| `F-C1/novatrail/olympiad-math` | `M2.brier.after7` | 0.1591 | 0.1499 | 0.0092 |
+| `F-C1/novatrail/olympiad-math` | `M4.false.break` | 0.0263 | 0.0000 | 0.0263 |
+| `F-C1/novatrail/olympiad-math` | `M5.caught` | 3.6518 | 0.0000 | 3.6518 |
+| `F-C1/novatrail/grade-3-math` | `M2.brier.after7` | 0.1199 | 0.1026 | 0.0173 |
+| `F-C1/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
+| `F-C1/novatrail/grade-3-math` | `M5.caught` | 1.6252 | 0.0000 | 1.6252 |
+| `F-growth5/novatrail/olympiad-math` | `E3.end` | 0.0900 | 0.0000 | 0.0900 |
+| `F-growth5/novatrail/olympiad-math` | `E3.late` | 0.6345 | 0.0000 | 0.6345 |
+| `F-growth5/novatrail/olympiad-math` | `M2.brier.after7` | 0.1928 | 0.1813 | 0.0115 |
+| `F-growth5/novatrail/olympiad-math` | `M4.false.break` | 0.0300 | 0.0000 | 0.0300 |
+| `F-growth5/novatrail/olympiad-math` | `M5.caught` | 3.6416 | 0.0000 | 3.6416 |
+| `F-growth5/novatrail/grade-3-math` | `E3.end` | 0.0003 | 0.0000 | 0.0003 |
+| `F-growth5/novatrail/grade-3-math` | `E3.late` | 0.9174 | 0.0000 | 0.9174 |
+| `F-growth5/novatrail/grade-3-math` | `M2.brier.after7` | 0.1581 | 0.1565 | 0.0016 |
+| `F-growth5/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
+| `F-growth5/novatrail/grade-3-math` | `M5.caught` | 2.4267 | 0.0000 | 2.4267 |
+| `F-break/novatrail/olympiad-math` | `M3.settle` | 148.3999 | 0.0000 | 148.3999 |
+| `F-break/novatrail/grade-3-math` | `M3.settle` | 293.8350 | 0.0000 | 293.8350 |
+| `W-shock/novatrail/grade-3-math` | `M2.brier.pages` | 0.1735 | 0.1417 | 0.0317 |
+| `W-shock/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
+| `W-error/novatrail/grade-3-math` | `M2.brier.pages` | 0.1972 | 0.1195 | 0.0777 |
+| `W-error/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
+| `W-badday/novatrail/grade-3-math` | `M2.brier.pages` | 0.1550 | 0.1484 | 0.0066 |
+| `W-badday/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
+| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0036 | 0.0000 | 0.0036 |
+| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.7762 | 0.0000 | 0.7762 |
+| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0795 | 0.0000 | 0.0795 |
+| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.1936 | 0.0000 | 0.1936 |
+| `L-explain/novatrail/olympiad-math` | `E4.mastered` | 0.5218 | 0.0000 | 0.5218 |
+
+### 3.2. The release of `theta`
+
+What: the paths of the 2026-11-13 amendment to R04, "the release of `theta`" (T48; R46). On: `learner-model` v0.1.8 (ab688b2), the release of `theta` with the code of a063835 (sources 3.8), `engine` v0.1.6 (57e0ab8), the packages of `modules` v0.2.5 and 2,000 working learners a cell, seed 20261107. How: `just decisive engine runs/base-v018.jsonl` and `just decisive ceiling runs/ceiling-v018.jsonl` by `go.mod`, then `sim paths -table`.
+- The base, SHA-256 `7d3cb52e72cf4c55d28dc11a16e8ed2330a9f06e78ccd9ab3ae01027fae7bf16`, and the ceiling, SHA-256 `00ad8bb7e82fb45542b7c2807f1541ce603663459f3629b24a65832f64043218`: past the header, which names the library's version, each is byte for byte its run of 3.1.
+- So all 85 paths are those of 3.1 to the last digit.
 
 Values in the direction of the criterion, less is better:
 
