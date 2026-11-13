@@ -416,7 +416,7 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 
 // pathsCommand is "sim paths": it reads the paths of the score off the decisive runs of the base
 // and of the ceiling of the engine, writes them into the file the criterion holds, and writes the
-// rows of their table, as the amendment to R04 that fixes them holds them (R28).
+// rows of their table, as the latest subsection of section 3 of docs/measurements.md holds them (R28).
 func pathsCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("paths", flag.ContinueOnError)
 	fs.SetOutput(stderr)

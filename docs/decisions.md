@@ -1998,6 +1998,8 @@ Where it is written: RUN.md, tables 1, 2 and 4 and «Эпик E5»; [architectur
 
 — *Amendment 2026-11-12:* "one pin per round" has an exception, R45: the version of `spec` in `go.mod` and `gate.json` is raised to v0.16.3 in the middle of the round `model-2`, because the bits are the same; the packages, the libraries, the paths and the bands are as before. The move and the rebuilding of the documents by row 7.10 of COORDINATION.md `spec` are the tasks T50–T53, outside an epic.
 
+— *Amendment 2026-11-13 (R47):* RUN.md, «Почему такой порядок» and table 1, «Решено автором», moved word for word to [docs/plan/E5.md](plan/E5.md), «Из RUN.md», when RUN.md was shortened; what they say is in force.
+
 ## The tag `spec` v0.16.3
 
 **R45. `sim` stands on `spec` v0.16.3 — the latest tag, of the line 0.16 of epic E10 of `spec`. The submodule, `go.mod` and `gate.json` are on it, and Go in the container is 1.27.4; the gate's numbers are the same to the bit, so the paths, the bands and the runs of the base stay. Row 7.10 of COORDINATION.md `spec` — the move, the rebuilding of the documents and the translation of `docs/` into English — `sim` takes before the pilot of `module-kit` and splits into four tasks outside an epic, T50–T53; the way of working by the template v0.16.3 applies already from T50.** The author's instruction 2026-11-12 — «переходи на spec последней версии» — and their answers to two questions of the move (RUN.md, T50).
@@ -2065,7 +2067,7 @@ Where it is written: RUN.md, tables 1, 2 and 4 and «Эпик E5»; [architectur
 - the paths anew — the 2026-11-13 amendments to R04 and R28, measurements 3.1; the bands anew — the 2026-11-13 amendment to R26;
 - the merge releases a tag of `sim` with the bands of `theta`: T45 of `learner-model` raises "Gate" of #62 to it, merges it and releases `v0.1.7`, and T48 moves the base to that release. There is no row «В реестр spec» (R35);
 - the next round of the model is `judgements/model-3/`, with its confirmation on `held-out-model-2`; the judgement `engine-2`, epic E6, goes on the base with `theta` (R44);
-- on the present tree `sim judge` refuses the judgement file of `model-2`: its base is on `learner-model` v0.1.6, and the paths on a063835 (R40). The report is a record on the commit of T47, as for `engine-1` and `model-1`.
+- on the present tree `sim judge` refuses the judgement file of `model-2`: its base is on `learner-model` v0.1.6, and the paths on a063835 (R40). The report is a record on 9acc4af, `main` before T47, where the judgement file gives it again, as for `engine-1` and `model-1` on their own commits; `runs.txt` names it.
 
 Where it is written: RUN.md, T47 ([docs/plan/E5.md](plan/E5.md)); `judgements/model-2/`; [architecture.md](architecture.md), the status and sections 3, 3.6–3.8; [measurements.md](measurements.md), 1.3 and 3.1; README; `go.mod`, `gate.json`, `internal/criterion/paths.json`, the tests.
 
@@ -2085,4 +2087,4 @@ Where it is written: RUN.md, T47 ([docs/plan/E5.md](plan/E5.md)); `judgements/mo
 - delete the history without moving it — the archive of the epic is where it would have gone at the epic's end, and the decisions cite it;
 - renumber the rules — the log and CLAUDE.md cite them by number.
 
-— *Consequence:* the 2026-11-13 amendment to R45. A move to a newer tag of `spec` that brings a new RUN.md of the template reads this entry first. Where it is written: RUN.md; [docs/plan/E5.md](plan/E5.md).
+— *Consequence:* the 2026-11-13 amendments to R44 and R45. A move to a newer tag of `spec` that brings a new RUN.md of the template reads this entry first. Where it is written: RUN.md; [docs/plan/E5.md](plan/E5.md).

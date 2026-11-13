@@ -14,7 +14,7 @@ Its card in spec is architecture 3.9 spec. The card is the summary and this repo
 
 ## Documents
 
-The documents under `docs/` are in English, but for the epic archives `docs/plan/`, which stay in Russian with RUN.md and DEBT.md (R143 spec). `docs/decisions.md` was translated by the tasks T52 and T53 of RUN.md (R45); what it quotes of RUN.md, DEBT.md, the archives and other repositories' Russian texts stays Russian, in «…» (RULES.md, Hard rules). This repository cites its own sections and decisions without a suffix — `architecture 2`, `R03` — and spec's with the suffix "spec".
+The documents under `docs/` are in English, but for the epic archives `docs/plan/`, which stay in Russian with RUN.md and DEBT.md (R143 spec). `docs/decisions.md` was translated by the tasks T52 and T53 ([docs/plan/E5.md](docs/plan/E5.md); R45); what it quotes of RUN.md, DEBT.md, the archives and other repositories' Russian texts stays Russian, in «…» (RULES.md, Hard rules). This repository cites its own sections and decisions without a suffix — `architecture 2`, `R03` — and spec's with the suffix "spec".
 
 - [docs/architecture.md](docs/architecture.md) — the component: what it does and does not do, its data and links (section 1), what the card left to decide and how it was decided (section 2), and what the code builds (section 3).
 - [docs/decisions.md](docs/decisions.md) — this repository's decision log, `R01`…: read it before proposing a change. Other repositories cite its entries as `R03 sim`.

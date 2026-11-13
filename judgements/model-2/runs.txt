@@ -1,5 +1,6 @@
 # The runs of the judgement model-2: the SHA-256 of each file of results, and its header without the populations.
 # The files are no part of the repository: just decisive gives them again to the byte (R28, R34).
+# sim judge gives report.md again on 9acc4af, main before T47: from T47 on, the paths are read on theta, and it refuses this base (R40).
 
 7db81ec7bdf8c02af8826031b671871e23338f812747f2926412cf5547ddc92e  runs/base-v016.jsonl
 {"set":{"Seed":20261107,"Experiment":"working"},"rule":"engine","libraries":{"github.com/altnovatrail/engine":"v0.1.6","github.com/altnovatrail/learner-model":"v0.1.6"},"learners":2000,"invariants":true}

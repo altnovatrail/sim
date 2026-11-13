@@ -92,7 +92,7 @@ A release's one file is `sim-<version>.tar.gz`, the archive of what builds the s
 
 ## Documents
 
-The documents under `docs/` are in English, for the Claude Code session that reads them; the decision log was translated by the tasks T52 and T53 of RUN.md. The work plan, its table of debt and the epic archives stay in Russian.
+The documents under `docs/` are in English, for the Claude Code session that reads them; the decision log was translated by the tasks T52 and T53 ([docs/plan/E5.md](docs/plan/E5.md)). The work plan, its table of debt and the epic archives stay in Russian.
 
 - [docs/architecture.md](docs/architecture.md) — the component: what it does and does not do, its data and links, what was decided, and what the code builds.
 - [docs/decisions.md](docs/decisions.md) — the decision log: what was decided, why, and what was rejected.

@@ -558,7 +558,8 @@ func TestRecordPaths(t *testing.T) {
 }
 
 // The paths the criterion holds read, and the measurement that records them holds the same table:
-// since T47 the table is a section of docs/measurements.md, and the amendment to R04 cites it.
+// since T47 each pin of the paths is a subsection of section 3 of docs/measurements.md, which the
+// amendment to R04 cites, and the latest of them is the embedded file's.
 func TestPathsFixed(t *testing.T) {
 	p, err := fixed()
 	if err != nil {
@@ -568,8 +569,17 @@ func TestPathsFixed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(measurements), p.Table()) {
-		t.Error("the table of the paths in docs/measurements.md is not that of paths.json: write it anew with sim paths -table")
+	_, section, ok := strings.Cut(string(measurements), "\n## 3. ")
+	if !ok {
+		t.Fatal("docs/measurements.md has no section 3, the paths of the targets")
+	}
+	section, _, _ = strings.Cut(section, "\n## ")
+	at := strings.LastIndex(section, "\n### 3.")
+	if at < 0 {
+		t.Fatal("section 3 of docs/measurements.md has no subsection of a pin of the paths")
+	}
+	if latest := section[at:]; !strings.Contains(latest, p.Table()) {
+		t.Error("the table of the latest subsection of section 3 of docs/measurements.md is not that of paths.json: write it anew with sim paths -table")
 	}
 }
 
