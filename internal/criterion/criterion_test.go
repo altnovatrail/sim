@@ -557,18 +557,19 @@ func TestRecordPaths(t *testing.T) {
 	}
 }
 
-// The paths the criterion holds read, and the amendment to R04 that fixes them holds the same table.
+// The paths the criterion holds read, and the measurement that records them holds the same table:
+// since T47 the table is a section of docs/measurements.md, and the amendment to R04 cites it.
 func TestPathsFixed(t *testing.T) {
 	p, err := fixed()
 	if err != nil {
 		t.Fatal(err)
 	}
-	decisions, err := os.ReadFile(filepath.Join("..", "..", "docs", "decisions.md"))
+	measurements, err := os.ReadFile(filepath.Join("..", "..", "docs", "measurements.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(decisions), p.Table()) {
-		t.Error("the table of the paths in the amendment to R04 is not that of paths.json: write it anew with sim paths -table")
+	if !strings.Contains(string(measurements), p.Table()) {
+		t.Error("the table of the paths in docs/measurements.md is not that of paths.json: write it anew with sim paths -table")
 	}
 }
 

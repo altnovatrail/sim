@@ -7,8 +7,8 @@
     },
     "github.com/altnovatrail/learner-model": {
       "repository": "altnovatrail/learner-model",
-      "commit": "7d796e290599eeb15481f0098c9356bf6c31afe9",
-      "version": "v0.1.6"
+      "commit": "a063835087c7df7f2eecd1912c44afda7d96bfe8",
+      "version": ""
     }
   },
   "modules": {
@@ -41,7 +41,7 @@
     "github.com/altnovatrail/sim": "1.27.3"
   },
   "bands": {
-    "reason": "T46: the gate takes 250 learners a cell, not 150, after learner-model v0.1.6 made its readout faster (the amendment of 2026-11-12 to R31)",
+    "reason": "T47: the judgement model-2 chose theta, learner-model a063835, and the held-out learners confirmed it (judgements/model-2/report.md; R46)",
     "numbers": [
       {
         "cell": "G0/novatrail/olympiad-math",
@@ -369,36 +369,36 @@
         "cell": "F-model/novatrail/olympiad-math",
         "number": "M2.brier.after7",
         "read": true,
-        "value": 0.1625338298530892,
-        "half": 0.004258255288614718
+        "value": 0.16246558015557958,
+        "half": 0.004410054875057107
       },
       {
         "cell": "F-model/novatrail/olympiad-math",
         "number": "M5.caught",
         "read": true,
-        "value": 3.532551319648094,
-        "half": 0.4180053367018899
+        "value": 3.76,
+        "half": 0.4531471753494525
       },
       {
         "cell": "F-model/novatrail/olympiad-math",
         "number": "M5.never",
         "read": true,
-        "value": 0.2876540630875287,
-        "half": 0.014665782618936224
+        "value": 0.29210909848011657,
+        "half": 0.013992010501162555
       },
       {
         "cell": "F-model/novatrail/olympiad-math",
         "number": "E3.late",
         "read": true,
-        "value": 0.4981694230526449,
-        "half": 0.03959773478851611
+        "value": 0.5069659442724458,
+        "half": 0.03932358317722717
       },
       {
         "cell": "F-model/novatrail/olympiad-math",
         "number": "E2.stuck",
         "read": true,
-        "value": 0.24,
-        "half": 0.05199999999999999
+        "value": 0.208,
+        "half": 0.052000000000000005
       },
       {
         "cell": "F-model/novatrail/olympiad-math",
@@ -411,15 +411,15 @@
         "cell": "F-model/novatrail/grade-3-math",
         "number": "M2.brier.after7",
         "read": true,
-        "value": 0.1597360565490318,
-        "half": 0.008888345698624747
+        "value": 0.15942668650460995,
+        "half": 0.008868771080766238
       },
       {
         "cell": "F-model/novatrail/grade-3-math",
         "number": "M5.caught",
         "read": true,
-        "value": 4.364620938628159,
-        "half": 4.5592339780053095
+        "value": 4.35740072202166,
+        "half": 4.6153243070042675
       },
       {
         "cell": "F-model/novatrail/grade-3-math",
@@ -432,8 +432,8 @@
         "cell": "F-model/novatrail/grade-3-math",
         "number": "E3.late",
         "read": true,
-        "value": 0.7142857142857143,
-        "half": 0.15909090909090912
+        "value": 0.7047619047619048,
+        "half": 0.15500000000000003
       },
       {
         "cell": "F-model/novatrail/grade-3-math",

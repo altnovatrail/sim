@@ -1,0 +1,8 @@
+{
+  "criterion": "model",
+  "base": "../../runs/base-v016.jsonl",
+  "candidates": [
+    {"name": "theta", "file": "../../runs/model-2-theta.jsonl", "group": "jumps", "constants": 2, "new_field": false}
+  ],
+  "confirm": {"base": "../../runs/base-held-out-model-1.jsonl", "candidate": "../../runs/model-2-theta-held-out-model-1.jsonl"}
+}
