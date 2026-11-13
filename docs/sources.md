@@ -149,6 +149,13 @@ Read 2026-11-11 for T44: the release [altnovatrail/learner-model](https://github
 
 Read 2026-11-11 for T45 (R43): the release [altnovatrail/learner-model](https://github.com/altnovatrail/learner-model) `v0.1.6` — the archive `learner-model-proto-v0.1.6.tar.gz` (`gh release download`); `just -f spec/justfile release-verify learner-model v0.1.6 learner-model-proto-v0.1.6.tar.gz` accepted it — "learner-model v0.1.6, signed by the shared release.yml of .github v0.1.21". The module's `go.mod` at the tag holds only `go 1.27.3`, with no requirements.
 
+### 3.8. Releases v0.1.7 and v0.1.8, T48
+
+Read 2026-11-13 for T48 (R46): the releases [altnovatrail/learner-model](https://github.com/altnovatrail/learner-model) (`gh release view`, `git ls-remote`).
+- `v0.1.7` of 05:48 UTC, its tag on the commit `f85b84ee1d0a03f46e2b77ebff9778741fd1a2d9` — "Merge pull request #64 from altnovatrail/spec-v0.16.3 / Move to spec v0.16.3, with Go 1.27.4 (T47, R33)". Its pull requests touch no Go file: against v0.1.6 the release differs only in `.claude/settings.json`, `.devcontainer/`, `.github/workflows/ci.yml`, CLAUDE.md, README.md, RUN.md, `docs/` and `spec`, so its code is that of v0.1.6.
+- `v0.1.8` of 18:08 UTC, immutable, its tag on the commit `ab688b243f4ae511eec0a5e18e166f64b8148240` — "Merge pull request #62 from altnovatrail/t44-theta"; the notes — "theta: let a module's level forget after a pause of 14 days (R04, T44, T45)". The merge's second parent, 1a4c478, — "Take theta to the gate of sim v0.1.13 and record its judgement (T45) … the code is that of a063835. The merge releases v0.1.8." The commit a063835 is an ancestor of the tag, and between them only `.claude/settings.json`, `.devcontainer/`, `.github/workflows/ci.yml`, CLAUDE.md, README.md, RUN.md, `docs/` and `spec` changed — no Go file and no `go.mod`; against v0.1.7 the release brings the code of `theta`, `model.go` and `step.go` with their tests; the module's `go.mod` at the tag holds only `go 1.27.3`, with no requirements.
+- `just -f spec/justfile release-verify learner-model v0.1.8 learner-model-proto-v0.1.8.tar.gz` accepted it — "learner-model v0.1.8, signed by the shared release.yml of .github v0.1.21".
+
 ## 4. `engine`
 
 ### 4.1. Commit 08bc48a, T02 and T03

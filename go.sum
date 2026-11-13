@@ -1,7 +1,7 @@
 github.com/altnovatrail/engine v0.1.6 h1:rcYD/ZAYFHltvLWEkv9L9AICnee4V4XpqVecRxBof4k=
 github.com/altnovatrail/engine v0.1.6/go.mod h1:o5Foq6+10V1ivAwePpuaJC0B1VQ1q8tqkEdw/Q5ywt4=
-github.com/altnovatrail/learner-model v0.1.7-0.20261113040121-a063835087c7 h1:awC9+liEETV+zsnnC83kv09cA1Dcyf2x/Zb1vMVc4mU=
-github.com/altnovatrail/learner-model v0.1.7-0.20261113040121-a063835087c7/go.mod h1:RXiblPvAomqm/gZw1jRhGO7Ns8dI7m1uk5g9zmUkxEU=
+github.com/altnovatrail/learner-model v0.1.8 h1:g96BYFvY3jVtqQzVYxis+wO1DoQ2rMtDVypwqLqISrI=
+github.com/altnovatrail/learner-model v0.1.8/go.mod h1:RXiblPvAomqm/gZw1jRhGO7Ns8dI7m1uk5g9zmUkxEU=
 github.com/altnovatrail/spec v0.16.3 h1:XioF0Q9HktWuZiOX79fut6WBWCB/wyFja5SMUEgZpNQ=
 github.com/altnovatrail/spec v0.16.3/go.mod h1:/JG4n8d9/3wY4DZg8V7PLoB1Y48uPjAyIBqoH/rwxXE=
 github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxKI=
