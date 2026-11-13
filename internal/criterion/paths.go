@@ -187,8 +187,8 @@ func RecordPaths(base, ceiling *bench.File, baseDigest, ceilingDigest string) (*
 	return p, nil
 }
 
-// Table gives the rows of the table of the paths in Markdown, as the amendment to R04 that fixes
-// them holds them: the cell, the number, the base, the ceiling and the path, to four decimals with
+// Table gives the rows of the table of the paths in Markdown, as the latest subsection of section 3
+// of docs/measurements.md holds them: the cell, the number, the base, the ceiling and the path, to four decimals with
 // a decimal point, as the documents in English write numbers; a path not read is a dash.
 func (p *Paths) Table() string {
 	show := func(x float64) string {
