@@ -33,3 +33,35 @@ The recipe `just decisive`: processes by parts of the learners, on all the cores
 - On `learner-model` v0.1.6 — 62 min 24 s for the base at a load average of up to 46, about 25.9 CPU minutes a process, a third less, and about 18.0 for the ceiling (the 2026-11-11 amendment to R04, "the base on `learner-model` v0.1.6"; R43).
 - On 2,000 learners a subsample on a free machine promises about 38 minutes for the base and about 27 for the ceiling, and on a host shared with neighbouring containers the base took 62 min 37 s, about 31.3 CPU minutes a process, and the ceiling 30 min 37 s, about 24.1 (the 2026-11-12 amendment to R33 and to R04).
 - The files of its results — about 0.8–1.0 GB a rule (R28).
+
+## 2. Claude Code sessions
+
+How `sim` keeps what row 7.10 of `spec`'s COORDINATION.md saved, by the pattern of measurements 1.9 spec (R145 spec; T50–T53 of RUN.md, R45): budgets of size in `docs-check` on every pull request, and a measurement of the sessions at each epic's archive.
+
+### 2.1. Budgets
+
+`docs-check` measures in bytes, in KB of 1,024 (measurements 1.9 spec). The limits are the block `repository` of `spec/tools/docs-check/budgets.json`, with what [docs-budgets.json](../docs-budgets.json) at the root names in its place. What is measured, the largest of each in `sim` on 2026-11-13, after T53, KB:
+
+| What | Limit | The largest |
+|---|---|---|
+| CLAUDE.md / RUN.md / DEBT.md | 12 / 96 / 128 | 7.4 / 38.9 / 4.1 |
+| a rule of `.claude/rules/` | 6 | 1.9, `gate` |
+| an entry of the decision log, with its amendments | 90, raised from 40 | 78.6, R04; the next is R31, 13.1, and the median 4.6 |
+| the own text under a heading of a document | 24 | 22.0, architecture 3.9 |
+| a row of a table of RUN.md / DEBT.md | 4 / 4 | 1.4, В13 / 1.0, Д3 |
+
+- The one raised limit is the entry's: R04 holds the bands and the paths of the criteria, and every new pin adds an amendment with the table of its paths. In Russian it was 92.6 KB; T52 translated it to 78.6. 90 is the largest plus about 15%, as measurements 1.9 spec sets limits. Raising it again is an edit of `docs-budgets.json`, and the third raise since the last analysis is a threshold of R145 spec.
+- Before T53 the check, with `docs-budgets.json` at `{}`, found only R04 over its limit: the second half of the log, still Russian, was within 40 KB an entry.
+- Architecture 3.9 is 22.0 of 24 KB: the next growth of that section moves a part of it into a section of its own rather than raising the limit.
+
+### 2.2. The measurement of sessions
+
+`just -f spec/justfile tokens-report --since … --until … --row` prints one row of the table below. It runs at the archive of each epic, for the epic's window (RUN.md, «Как устроен план: эпики»), and once a month from `spec` (measurements 1.9 spec).
+
+| Project | Window, UTC | Sessions | Calls, main / subagents | Context of a call, k, main / subagents | Compactions | Cost at API prices |
+|---|---|---|---|---|---|---|
+| `-workspaces-sim` — before, the row of measurements 1.9 spec | 2026-10-13T00:00 … 2026-11-12T14:27 | 10 | 3,275 / 1,195 | 325.5 / 79.5 | 6 | $397.59 |
+| `-workspaces-sim` — T50–T53, row 7.10 of COORDINATION.md `spec` | 2026-11-12T20:41 … 2026-11-13T05:18 | 7 | 564 / 454 | 180.3 / 105.0 | 2 | $60.56 |
+
+- The context of a main call fell from 325.5 to 180.3 thousand, −45%; by session it was 178.0 in T50, 153.4 in T51, 128.8 in T52 and 109.5 in T53, while the documents a session reads became English, one task at a time. A subagent's rose from 79.5 to 105.0: here the subagents were translators and blind readers, each of which reads the glossary, concepts 15 spec, and the rules of translation. Three of the seven sessions, of one, one and five calls, ran no task.
+- The windows differ in work: E2–E5 with code, runs and judgements against the move to a tag and the translation of `docs/`. The comparison by sessions after the task is T124 spec.

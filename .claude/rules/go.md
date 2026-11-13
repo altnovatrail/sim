@@ -10,7 +10,7 @@ paths:
 
 # The Go code of sim
 
-sim is one Go module, `github.com/altnovatrail/sim`: the root is `package main`, the program `sim`, and the parts of the bench are packages under `internal/` (R10; [docs/architecture.md](../../docs/architecture.md), section 3). `go.mod` requires spec's Go module at the tag of the `spec/` submodule (R64 spec) and the two libraries at the versions the base stands on, which `gate.json` names too ([gate](gate.md)).
+sim is one Go module, `github.com/altnovatrail/sim`: the root is `package main`, the program `sim`, and the parts of the simulator are packages under `internal/` (R10; [docs/architecture.md](../../docs/architecture.md), section 3). `go.mod` requires spec's Go module at the tag of the `spec/` submodule (R64 spec) and the two libraries at the versions the base stands on, which `gate.json` names too ([gate](gate.md)).
 
 A task that touches Go code ends with these green:
 

@@ -1051,976 +1051,976 @@ The thresholds of `E2`, `M4` and `E5` are in force. The largest value of `E2` in
 
 — *Consequence:* RUN.md, table 1, «Решено автором (2026-11-08), после T10»; T11–T23.
 
-## Пакеты
+## Packages
 
-**R14. Опубликованные пакеты стенд несёт в себе — индекс и архивы релиза `modules`, встроенные `go:embed` в пакет `internal/published`, с дайджестом индекса в коде, — и читает их сам, пакетом `internal/pack`, через цепочку дайджестов, по типам канонического вида, а переводит во входы `learner-model` и `engine` так, как перевёл бы `api`.** Решено исполнителем по поручению автора 2026-11-08 при планировании T12 (RUN.md, T12; R13).
-- **Чтение** — по типам `formatv0.ModuleIndex`, `formatv0.Entry` и `formatv0.Inventory`: индекс — по закреплённому SHA-256 и по местам его членов, какой бы версии формата он ни был; запись версии формата вне окна — пока это только 0.3 (R44, R101 spec) — стенд пропускает, а не отвергает индекс ([текст формата](../spec/format/README.md), раздел 2); версия, которую индекс помечает `withdrawn`, — отказ: `api` попытку на ней не начинает (R63 spec); пакет — SHA-256 `inventory.json` равен `package_digest` записи, дайджест и размер `server.json` — части для сервера в `inventory.json`, а инвентарь и паспорт называют тот модуль, ту версию и ту версию формата, что запись ([текст формата](../spec/format/README.md), разделы 25 и 26). Архив лежит в папке того релиза, который называет его запись. Пакеты читаются один раз за процесс: байты закреплены, и то, что они дают, — тоже. Архив читает своё чтение tar: `archive/tar` тянет `os/user`, чей cgo правила кода не проверяют на каждой цели.
-- **Перевод:** полные ID — модуль, вид и локальный ID через «/» ([текст формата](../spec/format/README.md), раздел 10), навыки-опоры `core.` — как есть; полосы — местом в паспорте; ярусы — из `skill_tiers`; граф — `learnermodel.NewGraph` (R28 spec); ячейка — вид проверки и, у выбора, число вариантов, где бы они ни стояли — рядом с проверкой или в ней; проверка по рубрике ячейки не даёт, а задача с ней — «с рубрикой»; рубрика рядом с вердиктом в одной задаче — ошибка; ловушки пункта — из `trap_values`, полными ID; происхождение ключа — «от автора», у шаблона — «проверено решателем», тегов — «от автора» (concepts 9.4 spec). Сверх входов библиотек модуль стенда держит холст задачи, её возрастные категории и число экземпляров, а у урока — число звеньев: их читает правда ученика ([architecture.md](architecture.md), раздел 3.1).
-- **Возрастной фильтр** — как у `api` (R107 spec): задача и урок подходят по своим категориям или, без них, по категориям модуля; урок — только если подходит и каждая его задача (architecture 3.7 api; тест `engine`).
-- **Экземпляр шаблона** — `below(count)` места зерна попытки, где имя задачи — её локальный ID, а числа — из `Instances` канонического вида в том же порядке (R12; R60 spec).
+**R14. The simulator carries the published packages in itself — the index and the archives of the release of `modules`, embedded by `go:embed` in the package `internal/published`, with the digest of the index in the code, — and reads them itself, with the package `internal/pack`, through the chain of digests, by the types of the canonical view, and translates them into the inputs of `learner-model` and `engine` as `api` would translate them.** Decided by the executor on the author's instruction 2026-11-08 in the planning of T12 (RUN.md, T12; R13).
+- **Reading** — by the types `formatv0.ModuleIndex`, `formatv0.Entry` and `formatv0.Inventory`: the index — by the pinned SHA-256 and by the places of its members, whatever format version it is of; an entry of a format version outside the window — for now that is only 0.3 (R44, R101 spec) — the simulator skips, rather than rejecting the index ([format text](../spec/format/README.md), section 2); a version that the index marks `withdrawn` is a refusal: `api` does not start an attempt on it (R63 spec); the package — the SHA-256 of `inventory.json` equals the entry's `package_digest`, the digest and the size of `server.json`, the server part, are those in `inventory.json`, and the inventory and the module manifest name the same module, version and format version as the entry ([format text](../spec/format/README.md), sections 25 and 26). An archive lies in the folder of the release that its entry names. The packages are read once per process: the bytes are pinned, and so is what they give. The archive is read by a tar reader of the simulator's own: `archive/tar` pulls in `os/user`, whose cgo the rules of code do not check on every target.
+- **Translation:** the full IDs — the module, the kind and the local ID joined by "/" ([format text](../spec/format/README.md), section 10), the anchor skills `core.` — as they are; the bands — by their place in the module manifest; the tiers — from `skill_tiers`; the graph — `learnermodel.NewGraph` (R28 spec); an answer slot — the check kind and, for a choice, the number of options, wherever they stand — beside the check or in it; a check by a rubric gives no answer slot, and a task with it is "with a rubric"; a rubric beside a verdict in one task is an error; an item's traps — from `trap_values`, as full IDs; the provenance of a key — "from the author", of a template — "checked by the solver", of tags — "from the author" (concepts 9.4 spec). Beyond the inputs of the libraries the simulator's module holds a task's canvas, its age categories and the number of its instances, and a lesson's number of segments: the learner's truth reads them ([architecture.md](architecture.md), section 3.1).
+- **The age filter** — as in `api` (R107 spec): a task and a lesson suit by their own categories or, without them, by the module's categories; a lesson — only if each of its tasks suits too (architecture 3.7 api; a test of `engine`).
+- **A template's instance** — `below(count)` of the place of the attempt's seed, where the task's name is its local ID, and the numbers are from `Instances` of the canonical view in the same order (R12; R60 spec).
 
-— *Почему:* прогону (T14), гейту (T24) и тестам нужны одни и те же байты, и без сети: встроенный релиз даёт их в самом `sim`, а цепочка дайджестов от закреплённого индекса держит их так же, как держала бы скачанные (RULES.md, Hard rules; R77 spec). Перевод `engine` живёт в его тесте, и расхождение с переводом `sim` его векторы не ловят (T21 engine), поэтому `sim` повторяет его правила и держит те же факты релиза своим тестом.
+— *Why:* the run (T14), the gate (T24) and the tests need the same bytes, and without the network: the embedded release gives them in `sim` itself, and the chain of digests from the pinned index holds them as it would hold downloaded ones (RULES.md, Hard rules; R77 spec). The translation of `engine` lives in its test, and its vectors do not catch a divergence from the translation of `sim` (T21 engine), so `sim` repeats its rules and holds the same facts of the release by a test of its own.
 
-— *Отвергнуто:* пакеты в `testdata/` — их читал бы только тест; скачивать их по тегу в каждом прогоне; `module-kit` (R62 spec; R06); `archive/tar`.
+— *Rejected:* the packages in `testdata/` — only a test would read them; downloading them by tag in every run; `module-kit` (R62 spec; R06); `archive/tar`.
 
-— *Следствие:* новое закрепление пакетов — новая папка в `internal/published` после `release-verify`, новый дайджест индекса и новые полосы (раздел 3.7 [architecture.md](architecture.md)); как гейт у вызывающих берёт пакеты — T24. — RUN.md, T12; `internal/pack/`, `internal/published/`; [architecture.md](architecture.md), разделы 3.3 и 4.
+— *Consequence:* a new pin of the packages is a new folder in `internal/published` after `release-verify`, a new digest of the index and new bands ([architecture.md](architecture.md), section 3.7); how the gate at the callers takes the packages — T24. — RUN.md, T12; `internal/pack/`, `internal/published/`; [architecture.md](architecture.md), sections 3.3 and 4.
 
-— *Поправка 2026-11-09:* закреплён релиз `modules` v0.1.4 — индекс SHA-256 `a244c0ba…edb2a`. Из него `olympiad-math` 0.1.1, чей архив лежит в папке `v0.1.1/`, где его называет запись индекса, а `grade-3-math` и `english-essays` — 0.1.0, из папки `v0.1.0/`. Индекс и архив `olympiad-math` 0.1.0 из встроенных файлов убраны. Почему — R31.
+— *Amendment 2026-11-09:* the release `modules` v0.1.4 is pinned — the index SHA-256 `a244c0ba…edb2a`. From it, `olympiad-math` 0.1.1, whose archive lies in the folder `v0.1.1/`, where the index's entry names it, and `grade-3-math` and `english-essays` — 0.1.0, from the folder `v0.1.0/`. The index and the archive of `olympiad-math` 0.1.0 are removed from the embedded files. Why — R31.
 
-— *Поправка 2026-11-10:* закреплён релиз `modules` v0.2.0 — индекс SHA-256 `a45c1e3d…f71f` и все три модуля версии 0.2.0 в формате 0.4, из папки `v0.2.0/`. Папки `v0.1.0/`, `v0.1.1/` и `v0.1.4/` убраны: пакетов 0.3 стенд больше не читает. Почему — R32.
+— *Amendment 2026-11-10:* the release `modules` v0.2.0 is pinned — the index SHA-256 `a45c1e3d…f71f` and all three modules of version 0.2.0 in format 0.4, from the folder `v0.2.0/`. The folders `v0.1.0/`, `v0.1.1/` and `v0.1.4/` are removed: the simulator no longer reads packages of 0.3. Why — R32.
 
-— *Поправка 2026-11-11:* перевод берёт вид проверки `time` — `CheckKindTime` `learner-model` v0.1.5 — и у задачи то, есть ли наводящий вопрос `leading_question`, а не его слова; их читает правда ученика `G8`. Почему — R41.
+— *Amendment 2026-11-11:* the translation takes the check kind `time` — `CheckKindTime` of `learner-model` v0.1.5 — and, for a task, whether it has a leading question `leading_question`, not its words; the learner's truth of `G8` reads them. Why — R41.
 
-— *Поправка 2026-11-11 (T43):* закреплён релиз `modules` v0.2.5 — индекс SHA-256 `cebf23cf…aec6a`, тот же байт в байт, что у v0.2.1. Из него `olympiad-math` и `grade-3-math` 0.3.0, чьи архивы лежат в папке `v0.2.1/`, где их называют записи индекса, и `english-essays` 0.2.0 из папки `v0.2.0/`. Индекс v0.2.0 и архивы математик 0.2.0 из встроенных файлов убраны. Почему — R42.
+— *Amendment 2026-11-11 (T43):* the release `modules` v0.2.5 is pinned — the index SHA-256 `cebf23cf…aec6a`, byte for byte the same as v0.2.1's. From it, `olympiad-math` and `grade-3-math` 0.3.0, whose archives lie in the folder `v0.2.1/`, where the index's entries name them, and `english-essays` 0.2.0 from the folder `v0.2.0/`. The index of v0.2.0 and the archives of the maths 0.2.0 are removed from the embedded files. Why — R42.
 
-## Виртуальный ученик в коде
+## The virtual learner in code
 
-**R15. Правда виртуального ученика — пакет `internal/learner`: популяция — набор допущений `Assumptions`, где базовая популяция — `Base()`, а каждая другая меняет одно поле. Правду ученик тянет из места `params` в закреплённом порядке, первые ответы — по одной `fraction` места `answers` на пункт, ответы после ступеней — из `retries`. То, чего раздел 3.1 не назвал, решено допущениями стенда: день 0 — 2026-09-07, звено урока без задачи — две минуты, ответы после ступени времени не берут.** Решено исполнителем по поручению автора 2026-11-08 при планировании T13 (RUN.md, T13; R13).
-- **Порядок `params`:** класс у ученика один, как у профиля, — поровну среди классов, которые называет каждый его модуль с классами, когда их больше одного (у ученика обеих математик это 3); затем для каждого модуля в порядке ID уровень модуля — сдвиг полосы старта плюс `StartSpread` · N(0, 1) — и поправка каждого навыка с вердиктом в порядке графа — `SkillSpread` · N(0, 1); затем, если класса нет, возрастная категория — поровну среди категорий, которые называет каждый его модуль. С классом категория — `under_13` ([architecture.md](architecture.md), раздел 3.1). Модули без общего класса или категории и допущения, с которыми календарь не идёт, — ошибка.
-- **P*** — c* + (1 − c*) · R̄* · σ(a · (θ* + δ̄* − β*) + 0,5 · ступень), c* — произведение по ячейкам пункта: выбор из k вариантов — `ChoiceGuess`/k, не больше 1, `predicate` — `PredicateGuess`, остальные — 0; δ̄* и R̄* — средние по основным навыкам пункта с вердиктом — своим навыкам пункта или, без них, навыкам задачи; β* = шаг полосы · (p − 1) + (d − 3) + `Miss` · z, z — нормальное число места `task/<модуль>/<задача>` с назначением `miss`, одно на задачу и набор. R* — (1 + F · Δt / τ*)^(−C), Δt и τ* в сутках; до первой попытки навыка — 1.
-- **Попытка:** первые ответы — по пункту в порядке пунктов; после неверного — до трёх ступеней лестницы, на каждой — ответ каждого ещё неверного пункта; четвёртый неверный ответ пункта — показ решения. Задача с рубрикой — одна отправка и «готово», 15 минут. Время — две минуты на пункт листа и минута на строку рабочей тетради. Зерно попытки — следующее целое места `attempt`. Стабильность каждого основного навыка пунктов меняется раз за попытку, по доле верных первых вердиктов, а последняя практика — начало попытки.
-- **Календарь:** день — занятие, когда его `fraction` места `calendar` ниже `SessionChance`; занятие — `SessionAttempts` попыток подряд с 15:00 UTC, следующая выдаётся, когда закрылась прошлая.
-- **Урок** — по звеньям до конца: звенья без задачи — по две минуты, до задач урока, а задачи — одна за другой, как любые. Промах задачи — один на задачу и набор у всех учеников, и тянется он один раз.
+**R15. The virtual learner's truth is the package `internal/learner`: a population is a set of assumptions `Assumptions`, where the base population is `Base()`, and each other one changes one field. The learner draws its truth from the place `params` in a pinned order, the first answers — one `fraction` of the place `answers` per item, the answers after rungs — from `retries`. What section 3.1 did not name is decided by the simulator's assumptions: day 0 is 2026-09-07, a lesson segment without a task takes two minutes, the answers after a rung take no time.** Decided by the executor on the author's instruction 2026-11-08 in the planning of T13 (RUN.md, T13; R13).
+- **The order of `params`:** a learner has one grade, as a profile does, — evenly among the grades that each of its modules with grades names, when there is more than one (for a learner of both maths it is 3); then for each module in the order of IDs the module level — the shift of the starting band plus `StartSpread` · N(0, 1) — and the offset of each skill with a verdict in the order of the graph — `SkillSpread` · N(0, 1); then, if there is no grade, the age category — evenly among the categories that each of its modules names. With a grade the category is `under_13` ([architecture.md](architecture.md), section 3.1). Modules without a common grade or category, and assumptions with which the calendar does not go, are an error.
+- **P*** — c* + (1 − c*) · R̄* · σ(a · (θ* + δ̄* − β*) + 0.5 · rung), c* is the product over the item's answer slots: a choice of k options — `ChoiceGuess`/k, no more than 1, `predicate` — `PredicateGuess`, the others — 0; δ̄* and R̄* are the means over the item's primary skills with a verdict — the item's own skills or, without them, the task's skills; β* = band step · (p − 1) + (d − 3) + `Miss` · z, z is a normal number of the place `task/<module>/<task>` with the purpose `miss`, one per task and set. R* — (1 + F · Δt / τ*)^(−C), Δt and τ* in days; before the skill's first attempt — 1.
+- **The attempt:** the first answers — item by item in the order of the items; after a wrong one — up to three rungs of the ladder, on each an answer to each item still wrong; at the fourth wrong answer of an item the solution is shown. A task with a rubric is one submission and "done", 15 minutes. The time is two minutes per item of a sheet and a minute per line of a workbook. The attempt's seed is the next integer of the place `attempt`. The stability of each primary skill of the items changes once per attempt, by the share of correct first verdicts, and the last practice is the start of the attempt.
+- **The calendar:** a day is a session when its `fraction` of the place `calendar` is below `SessionChance`; a session is `SessionAttempts` attempts in a row from 15:00 UTC, and the next one is issued when the previous one has closed.
+- **A lesson** — segment by segment to the end: the segments without a task — two minutes each, before the lesson's tasks, and the tasks — one after another, like any. A task's miss is one per task and set for all the learners, and it is drawn once.
 
-— *Почему:* раздел 3.1 описывает правду формулами, а популяции раздела 3.2 меняют по одному допущению; набор допущений держит каждое из них одним полем, и тест показывает, что популяция отличается от базовой ровно им. Закреплённый порядок `params` и отдельные места для ответов и повторов держат «k-й первый ответ берёт одни и те же числа при любом правиле» (раздел 3.4). День начала, время звена урока и повторов раздел 3.1 не назвал; это допущения стенда, как скорости популяций: от них зависят паузы, но не то, что стенд сравнивает, — база, кандидат и потолок идут на одних учениках и одном календаре.
+— *Why:* section 3.1 describes the truth by formulas, and the populations of section 3.2 change one assumption each; the set of assumptions holds each of them as one field, and a test shows that a population differs from the base one by exactly that field. The pinned order of `params` and the separate places for answers and repeats hold "the k-th first answer takes the same numbers under any rule" (section 3.4). The start day, the time of a lesson segment and of repeats section 3.1 did not name; these are the simulator's assumptions, like the speeds of the populations: the pauses depend on them, but not what the simulator compares — the base, the candidate and the ceiling go on the same learners and the same calendar.
 
-— *Отвергнуто:* популяции кодом поверх ученика; правда на коде `learner-model` (R03); время ответа после ступени — повторы тогда сдвигали бы календарь, а с ним R* следующих задач, и правило с другой лестницей меняло бы паузы.
+— *Rejected:* populations as code over the learner; the truth on the code of `learner-model` (R03); a time for an answer after a rung — the repeats would then shift the calendar, and with it the R* of the next tasks, and a rule with another ladder would change the pauses.
 
-— *Следствие:* T14 даёт ученику задачи выбора движка и строит из попыток свидетельства; T16–T19 — популяции полями `Assumptions`. — RUN.md, T13; `internal/learner/`; [architecture.md](architecture.md), раздел 3.1.
+— *Consequence:* T14 gives the learner the tasks of the engine's choice and builds evidence from the attempts; T16–T19 — the populations as fields of `Assumptions`. — RUN.md, T13; `internal/learner/`; [architecture.md](architecture.md), section 3.1.
 
-— *Поправка 2026-11-08:* звенья урока идут в порядке автора, а не «сначала объяснения»: модуль держит порядок звеньев (`pack.Lesson.Order`), и прохождение по звеньям проходит его так. — R21.
+— *Amendment 2026-11-08:* a lesson's segments go in the author's order, not "explanations first": the module holds the order of the segments (`pack.Lesson.Order`), and the run segment by segment goes through them in it. — R21.
 
-## Прогон
+## The run
 
-**R16. Прогон ученика — пакет `internal/run`: на каждом времени календаря стенд строит вход движка, как `api`, берёт выбор, отвечает правдой ученика и отдаёт модели свидетельство; каждый шаг записан с входом, выбором, попытками и свидетельствами. Пределы прогона — 200 первых ответов в математике, но не дольше года, 180 дней у популяций забывания, у сочинений — до конца задач с рубрикой, но не дольше 60 дней; «нечего дать» кончает занятие.** Решено исполнителем по поручению автора 2026-11-08 при планировании T14 (RUN.md, T14; R13).
-- **Вход движка:** `Read` на время выбора по модулям ученика и с его классом; пул и уроки — по возрастной категории ([architecture.md](architecture.md), раздел 3.3; R14); прохождения уроков — «пройден» с временем конца; закрытые «Готово» попытки; последняя закрытая попытка — задача, урок, если она звено прохождения, и результат на каждом основном навыке фактами; сводка выдач — у навыка время последней выдачи задачей или уроком, который ему учит, код выбора и результат его последней закрытой попытки, у модуля число выборов, урок одним, у задачи время, когда её решение ушло на устройство (R104, R107 spec). Решение уходит на устройство, когда попытка закрыта верным ответом или показом решения (R82 spec). Сводку стенд отдаёт в порядке ID.
-- **Свидетельство** — только у задачи с вердиктом: исход — «с первой отправки», «после подсказки» со ступенью или «решение показано»; у каждого пункта первый и последний вердикт и неверные ответы до верного; «решение уходило на устройство раньше» — кроме шаблона, у которого этого факта нет; время последнего действия — конец попытки; стартовая полоса — полоса старта ученика. Ловушек правда не знает, приёма и просьб у ученика нет (раздел 3.1).
-- **Шаг:** выбор задачи — попытка; выбор урока — прохождение по звеньям, свидетельство каждой его задачи и прохождение «пройден», а каждый навык урока и каждый основной навык его задач выдан во время выбора урока; выбор — одно место занятия, урок с задачами тоже; «нечего дать» кончает занятие, и следующий выбор — в следующий день с занятием. Шаг держит рядом с каждой попыткой её свидетельство — у попытки с рубрикой его нет — и номер экземпляра шаблона, выбранный по зерну попытки (R12); «дни» прогона — день последнего выбора; состояние модели запись держит после каждого шага.
-- **Пределы** — у каждого есть дни, иначе прогон мог бы не кончиться: математика — 200 первых ответов пунктов с вердиктом, как 200 ответов standalone, и не дольше 365 дней, чтобы правило, которое ничего не даёт, всё равно кончило прогон; популяции забывания — 180 дней; сочинения — пока не закрыты «Готово» все задачи с рубрикой, подходящие категории ученика, и не дольше 60 дней ([architecture.md](architecture.md), раздел 3.1).
+**R16. A learner's run is the package `internal/run`: at each time of the calendar the simulator builds the engine's input, as `api` does, takes the choice, answers with the learner's truth and gives the model the evidence; each step is recorded with the input, the choice, the attempts and the evidence. The limits of a run — 200 first answers in maths, but no longer than a year, 180 days for the populations of forgetting, for the essays — until the end of the tasks with a rubric, but no longer than 60 days; "nothing to give" ends the session.** Decided by the executor on the author's instruction 2026-11-08 in the planning of T14 (RUN.md, T14; R13).
+- **The engine's input:** `Read` at the time of the choice over the learner's modules and with its grade; the pool and the lessons — by the age category ([architecture.md](architecture.md), section 3.3; R14); the lesson runs — "passed" with the time of the end; the attempts closed "Done"; the last closed attempt — the task, the lesson if the attempt is a segment of a run, and the result on each primary skill as facts; the summary of issues — for a skill, the time of its last issue by a task or by a lesson that teaches it, the code of the choice and the result of its last closed attempt, for a module the number of choices, a lesson as one, for a task the time when its solution went to the device (R104, R107 spec). The solution goes to the device when the attempt is closed by a correct answer or by the solution shown (R82 spec). The simulator gives the summary in the order of IDs.
+- **Evidence** — only for a task with a verdict: the outcome — "from the first submission", "after a hint" with the rung, or "solution shown"; for each item the first and the last verdict and the wrong answers before the correct one; "the solution went to the device earlier" — except for a template, which has no such fact; the time of the last action — the end of the attempt; the starting band — the learner's starting band. The truth knows no traps, and the learner has no technique and no requests (section 3.1).
+- **The step:** a choice of a task is an attempt; a choice of a lesson is the run segment by segment, the evidence of each of its tasks and the run "passed", and each skill of the lesson and each primary skill of its tasks is issued at the time of the lesson's choice; a choice is one place of the session, a lesson with tasks too; "nothing to give" ends the session, and the next choice is on the next day with a session. The step holds beside each attempt its evidence — an attempt with a rubric has none — and the number of the template's instance, chosen by the attempt's seed (R12); the "days" of a run are the day of the last choice; the record holds the model's state after each step.
+- **The limits** — each has days, otherwise a run might not end: maths — 200 first answers of items with a verdict, like the 200 answers of standalone, and no longer than 365 days, so that a rule that gives nothing still ends the run; the populations of forgetting — 180 days; the essays — until all the tasks with a rubric that suit the learner's category are closed "Done", and no longer than 60 days ([architecture.md](architecture.md), section 3.1).
 
-— *Почему:* стенд даёт движку вход, как его дал бы `api` (раздел 1 [architecture.md](architecture.md)): иначе он мерил бы движок на входе, которого в работе платформы нет. Запись шага с входом нужна инвариантам — `I1` повторяет выбор по входу, `I2` читает признаки пробной серии и сводку (раздел 3.5), — а попытки и свидетельства — мерам. Год у математики — предел, которого правило, дающее задачи, не достигает: `G0` набирает 200 ответов за 6–31 день.
+— *Why:* the simulator gives the engine its input as `api` would give it ([architecture.md](architecture.md), section 1): otherwise it would measure the engine on an input that does not exist in the platform's work. The record of a step with its input is needed by the invariants — `I1` repeats the choice by the input, `I2` reads the flags of the trial series and the summary (section 3.5), — and the attempts and the evidence by the measures. A year in maths is a limit that a rule that gives tasks does not reach: `G0` gathers 200 answers in 6–31 days.
 
-— *Отвергнуто:* урок — столько мест занятия, сколько в нём задач: число выборов в сводке считает урок одним, и занятие считает так же; «нечего дать» — выбор снова через минуту: выбор по тому же входу дал бы то же, а время в занятии без попытки ничего не значит.
+— *Rejected:* a lesson as as many places of the session as it has tasks: the number of choices in the summary counts a lesson as one, and the session counts it the same way; "nothing to give" — a choice again a minute later: a choice on the same input would give the same, and time in a session without an attempt means nothing.
 
-— *Следствие:* T15 читает инварианты по записи шагов, T20 и T21 — меры. — RUN.md, T14; `internal/run/`; [architecture.md](architecture.md), раздел 3.
+— *Consequence:* T15 reads the invariants from the record of the steps, T20 and T21 — the measures. — RUN.md, T14; `internal/run/`; [architecture.md](architecture.md), section 3.
 
-## Инварианты
+## Invariants
 
-**R17. Инварианты `I1`–`I4` — пакет `internal/invariant`: `Check` даёт каждое нарушение в записи прогона с инвариантом, учеником, шагом и выбором, а `Same` — нарушение `I1` между двумя прогонами на одних зёрнах. Допуск — ноль.** Решено исполнителем по поручению автора 2026-11-08 при планировании T15 (RUN.md, T15; R13).
-- **`I1`:** выбор по входу, который хранит шаг, — тот же выбор; два прогона на одних зёрнах дают те же выборы, те же байты каждого свидетельства (`EncodeEvidence`) и те же байты состояния модели в конце (`EncodeState`).
-- **`I2`:** у выбора задачи или урока — один код из `ReasonCode`, у «нечего дать» — никакого, и код верен своему смыслу по фактам, которые знает стенд, — поправка 2026-11-08 к R04.
-- **`I3`:** навык «порядка автора» идёт, когда его пререквизиты с рубрикой или без оценки сделаны — урок, который им учит, пройден, или задача на них закрыта «Готово».
-- **`I4`:** задача, не шаблон, той же, что последняя закрытая попытка вне урока, и её решение ушло на устройство, — не следующей задачей (R82, R107 spec).
+**R17. The invariants `I1`–`I4` are the package `internal/invariant`: `Check` gives each violation in the record of a run with the invariant, the learner, the step and the choice, and `Same` — a violation of `I1` between two runs on the same seeds. The tolerance is zero.** Decided by the executor on the author's instruction 2026-11-08 in the planning of T15 (RUN.md, T15; R13).
+- **`I1`:** the choice by the input that the step stores is the same choice; two runs on the same seeds give the same choices, the same bytes of each piece of evidence (`EncodeEvidence`) and the same bytes of the model's state at the end (`EncodeState`).
+- **`I2`:** a choice of a task or a lesson has one code from `ReasonCode`, "nothing to give" has none, and the code is true to its meaning by the facts that the simulator knows — the 2026-11-08 amendment to R04.
+- **`I3`:** a skill of "the author's order" goes when its prerequisites with a rubric or without assessment are done — a lesson that teaches them is passed, or a task on them is closed "Done".
+- **`I4`:** a task, not a template, that is the task of the last closed attempt outside a lesson, and whose solution went to the device, — not as the next task (R82, R107 spec).
 
-— *Почему:* инварианты — не статистика, одного нарушения хватает (R04), поэтому они читают каждый шаг, а не числа ячейки. Вход шага, записанный прогоном (R16), даёт `I1` повторить выбор без прогона заново.
+— *Why:* the invariants are not statistics, one violation is enough (R04), so they read each step, not the numbers of a cell. The step's input, recorded by the run (R16), lets `I1` repeat the choice without running anew.
 
-— *Отвергнуто:* пересчитывать досягаемость и порядок очереди в стенде — поправка 2026-11-08 к R04.
+— *Rejected:* recomputing the reachability and the order of the queue in the simulator — the 2026-11-08 amendment to R04.
 
-— *Следствие:* гейт (T24) держит инварианты на каждом ученике, а `I1` — ещё и повтором прогона. — RUN.md, T15; `internal/invariant/`; [architecture.md](architecture.md), раздел 3.5.
+— *Consequence:* the gate (T24) holds the invariants on each learner, and `I1` also by a repeat of the run. — RUN.md, T15; `internal/invariant/`; [architecture.md](architecture.md), section 3.5.
 
-— *Поправка 2026-11-09:* у прогона с повтором — у гейта — `invariant.CheckRepeated` проверяет `I2`–`I4`, а выбор на каждом шаге заново не берёт: `I1` держит до бита повтор (`Same`), а отказ движка от своего входа ловит сам прогон. Но первые 10 учеников каждой ячейки (`bench.Rechosen`) идут через `Check` и при повторе: повтор не видит правило, которое меняет свой вход на месте одинаково в обоих прогонах. Без повтора, в решающем прогоне, `Check` по-прежнему берёт каждый выбор заново. Почему — R31.
+— *Amendment 2026-11-09:* for a run with a repeat — the gate's — `invariant.CheckRepeated` checks `I2`–`I4` and does not take the choice anew at each step: `I1` is held to the bit by the repeat (`Same`), and the engine's refusal of its own input is caught by the run itself. But the first 10 learners of each cell (`bench.Rechosen`) go through `Check` with a repeat too: a repeat does not see a rule that changes its input in place in the same way in both runs. Without a repeat, in a decisive run, `Check` still takes each choice anew. Why — R31.
 
-— *Поправка 2026-11-10:* выбор на каждом шаге заново берут только первые 10 учеников каждой ячейки (`bench.Rechosen`) — в каждом прогоне под правилом движка, и в решающем тоже, а не только при повторе. Остальные идут через `invariant.CheckWithoutI1` — так переименована `CheckRepeated`: повтора у решающего прогона нет, и имя говорит, что проверка не берёт выбор заново. В решающем прогоне выбор заново стоил около 40 % процессора. Почему — R33.
+— *Amendment 2026-11-10:* the choice anew at each step is taken only for the first 10 learners of each cell (`bench.Rechosen`) — in every run under the engine's rule, the decisive one too, not only with a repeat. The others go through `invariant.CheckWithoutI1` — the new name of `CheckRepeated`: a decisive run has no repeat, and the name says that the check does not take the choice anew. In a decisive run the choice anew cost about 40 % of the CPU. Why — R33.
 
-## Популяции в коде
+## Populations in code
 
-**R18. Популяции — пакет `internal/population`: у каждой имя, графы, предел прогона и отличие от базовой популяции полями `learner.Assumptions`; две стороны одного допущения — по чётности номера ученика. Девятнадцать популяций standalone — `Standalone`, в порядке таблицы раздела 3.2, а `G7` идёт на школьной математике 3 класса (поправка 2026-11-08 к R03).** Решено исполнителем по поручению автора 2026-11-08 при планировании T16 (RUN.md, T16; R13).
-- **Поля допущений:** `LevelShift` — уровень на 2,5 ниже или выше полосы старта (`G1`); `LearnLevel`, `LearnSkill`, `LearnReturn` — рост уровня, поправок основных навыков ответа и возврат остальных на долю пути к начальной на каждом первом ответе пункта с вердиктом, `LearnFade` — замедление роста F/(F + k), k с нуля, а возврат остальных навыков не замедляется, как у standalone (`G2`, `G2-half`, `G2-fading`); ответы — свои у каждого модуля; `JumpBy`, `JumpFrom`, `JumpTo` — скачок уровня на ответе от 50-го до 150-го (`G3`, `G3-drop`); `BandBias` — задачи одной полосы, вытянутой ученику, труднее на 0,75 (`G4-band`); `SkillHalves` — первая половина навыков графа сильнее, вторая слабее, или наоборот (`G5`); `TechniqueChance`, `TechniqueLift` — приём по просьбе до первого ответа в пятой доле попыток с вердиктом и +0,5 к логиту её пунктов (`G8`); окно скачка, доля приёма и угасание проверяются в `New`; остальные популяции меняют уже бывшие поля — `Slope`, `ChoiceGuess`, `Miss`, `StartSpread`, `SkillSpread`.
-- **Порядок чисел:** то, что тянут только некоторые популяции, — ответ скачка и трудная полоса, — идёт в `params` после того, что тянет каждый ученик, возрастную категорию тоже; приём по просьбе — по одной `fraction` места `attempts` на попытку; рост и скачок — по первым ответам пунктов, после попытки. Свидетельство попытки с приёмом несёт `TechniqueOnRequest`.
+**R18. The populations are the package `internal/population`: each has a name, graphs, a run limit and its difference from the base population as fields of `learner.Assumptions`; the two sides of one assumption — by the parity of the learner's number. The nineteen populations of standalone are `Standalone`, in the order of the table of section 3.2, and `G7` goes on grade 3 maths (the 2026-11-08 amendment to R03).** Decided by the executor on the author's instruction 2026-11-08 in the planning of T16 (RUN.md, T16; R13).
+- **The fields of the assumptions:** `LevelShift` — the level 2.5 below or above the starting band (`G1`); `LearnLevel`, `LearnSkill`, `LearnReturn` — the growth of the level and of the offsets of the answer's primary skills, and the return of the others by a share of the way to the initial one, at each first answer of an item with a verdict, `LearnFade` — the slowing of the growth F/(F + k), k from zero, and the return of the other skills does not slow down, as in standalone (`G2`, `G2-half`, `G2-fading`); the answers are each module's own; `JumpBy`, `JumpFrom`, `JumpTo` — a jump of the level at an answer from the 50th to the 150th (`G3`, `G3-drop`); `BandBias` — the tasks of one band, drawn for the learner, are 0.75 harder (`G4-band`); `SkillHalves` — the first half of the graph's skills is stronger, the second weaker, or the other way round (`G5`); `TechniqueChance`, `TechniqueLift` — a technique on request before the first answer in a fifth of the attempts with a verdict and +0.5 to the logit of its items (`G8`); the window of the jump, the share of the technique and the fading are checked in `New`; the other populations change fields that were already there — `Slope`, `ChoiceGuess`, `Miss`, `StartSpread`, `SkillSpread`.
+- **The order of the numbers:** what only some populations draw — the answer of the jump and the hard band — goes in `params` after what every learner draws, the age category too; the technique on request — by one `fraction` of the place `attempts` per attempt; the growth and the jump — by the first answers of items, after the attempt. The evidence of an attempt with a technique carries `TechniqueOnRequest`.
 
-— *Почему:* таблица раздела 3.2 задаёт каждую популяцию одним допущением, и тест держит, что популяция отличается от базовой ровно полями этого допущения. Чётность номера даёт половину учеников на сторону без лишнего числа, которое сдвинуло бы правду. Приём по просьбе у NovaTrail — факт свидетельства, и модель читает его как помощь (R06 learner-model), поэтому стенд отдаёт его в свидетельстве, а не только поднимает логит.
+— *Why:* the table of section 3.2 sets each population by one assumption, and a test holds that a population differs from the base one by exactly the fields of this assumption. The parity of the number gives half of the learners to each side without an extra number, which would shift the truth. A technique on request is in NovaTrail a fact of the evidence, and the model reads it as help (R06 learner-model), so the simulator gives it in the evidence, and does not only raise the logit.
 
-— *Отвергнуто:* сторона из `params`; популяции кодом поверх ученика (R15); граф `G7` «нет графа».
+— *Rejected:* the side from `params`; populations as code over the learner (R15); the graph of `G7` "no graph".
 
-— *Следствие:* T18 и T19 добавляют новые популяции тем же путём. — RUN.md, T16; `internal/population/`, `internal/learner/`, `internal/run/`; [architecture.md](architecture.md), раздел 3.2.
+— *Consequence:* T18 and T19 add the new populations the same way. — RUN.md, T16; `internal/population/`, `internal/learner/`, `internal/run/`; [architecture.md](architecture.md), section 3.2.
 
-— *Поправка 2026-11-11:* приём по просьбе `G8` на задаче с наводящим вопросом даёт и его — подсказка по просьбе до первой ошибки даёт и приёмы, и вопрос ([текст формата](../spec/format/README.md), раздел 19), — и свидетельство несёт `LeadingQuestionOnRequest`. Подъём тот же, +0,5, и нового числа из места `attempts` нет. Почему — R41.
+— *Amendment 2026-11-11:* the technique on request of `G8` on a task with a leading question gives the question too — a hint on request before the first error gives both the techniques and the question ([format text](../spec/format/README.md), section 19), — and the evidence carries `LeadingQuestionOnRequest`. The lift is the same, +0.5, and there is no new number from the place `attempts`. Why — R41.
 
-## Синтетические пакеты
+## Synthetic packages
 
-**R19. Синтетические пакеты — пакет `internal/synthetic`: три канонических вида в форме модулей первого среза, собранные кодом Go, валидные по схеме канонического вида формата и переведённые тем же `pack.Translate`, с ID `synthetic/sheet`, `synthetic/workbook` и `synthetic/essays`, которые критерий и гейт отвергают, и навыком-опорой общей таксономии `core.multiplication-table`, который учит рабочая тетрадь и на который опирается навык листа.** Решено исполнителем по поручению автора 2026-11-08 при планировании T17 (RUN.md, T17; R13).
-- **Лист** — четыре навыка с вердиктом на трёх полосах классов 1–6: выбор из четырёх вариантов, число, `predicate`, навык на первом и на навыке-опоре; задачи сложности 1, 3 и 5 на каждой полосе; уроки.
-- **Рабочая тетрадь** — одна полоса 3 класса, цепочка трёх навыков, первый учит навыку-опоре; страницы из шести–десяти строк чисел и выбора из трёх вариантов; уроки.
-- **Сочинения** — без классов, все четыре возрастные категории: навык выбора, навык без оценки, которому учит урок чтения, два навыка с рубрикой цепочкой на нём; задача только для взрослых; уроки.
+**R19. The synthetic packages are the package `internal/synthetic`: three canonical views in the form of the modules of the first slice, assembled by Go code, valid by the format's schema of the canonical view and translated by the same `pack.Translate`, with the IDs `synthetic/sheet`, `synthetic/workbook` and `synthetic/essays`, which the criterion and the gate reject, and the anchor skill of the shared taxonomy `core.multiplication-table`, which the workbook teaches and on which a skill of the sheet rests.** Decided by the executor on the author's instruction 2026-11-08 in the planning of T17 (RUN.md, T17; R13).
+- **The sheet** — four skills with a verdict on three bands of grades 1–6: a choice of four options, a number, `predicate`, a skill on the first one and on the anchor skill; tasks of difficulty 1, 3 and 5 on each band; lessons.
+- **The workbook** — one band of grade 3, a chain of three skills, the first teaches the anchor skill; pages of six to ten lines of numbers and of a choice of three options; lessons.
+- **The essays** — without grades, all four age categories: a skill of choice, a skill without assessment, which a reading lesson teaches, two skills with a rubric in a chain on it; a task only for adults; lessons.
 
-— *Почему:* синтетика — для кода и тестов стенда, а не для суда (R03, R04): ей нужно дать то, чего нет в опубликованных пакетах, — навык на навыке-опоре другого модуля и ячейку `predicate` ([architecture.md](architecture.md), раздел 4), — и форму трёх модулей, чтобы код стенда шёл на ней тем же путём. Типы `formatv0` не держат обязательных полей и перечислений, поэтому виды держит схема канонического вида из модуля `spec` — тест через `github.com/santhosh-tekuri/jsonschema/v6` v6.0.3, как у `module-kit`, только в тестах; лицензия — Apache-2.0 (`LICENSE` модуля, прочитано 2026-11-08). Навык-опора — из общей таксономии: формат знает только её навыки, а синтетика с опубликованными пакетами не встречается. Свои ID и `IsSynthetic` дают критерию и гейту отвергнуть синтетику.
+— *Why:* the synthetics are for the code and the tests of the simulator, not for a judgement (R03, R04): they must give what the published packages lack — a skill on an anchor skill of another module and an answer slot `predicate` ([architecture.md](architecture.md), section 4), — and the form of the three modules, so that the simulator's code goes on them the same way. The types `formatv0` hold no required fields or enumerations, so the views are held by the schema of the canonical view from the module `spec` — a test through `github.com/santhosh-tekuri/jsonschema/v6` v6.0.3, as in `module-kit`, only in tests; the license is Apache-2.0 (the module's `LICENSE`, read 2026-11-08). The anchor skill is from the shared taxonomy: the format knows only its skills, and the synthetics do not meet the published packages. Their own IDs and `IsSynthetic` let the criterion and the gate reject the synthetics.
 
-— *Отвергнуто:* файлы `server.json` в `testdata/` — их держали бы руками; синтетика с ID опубликованных модулей — её легко было бы спутать с ними.
+— *Rejected:* files `server.json` in `testdata/` — they would be kept by hand; synthetics with the IDs of the published modules — they would be easy to confuse with them.
 
-— *Следствие:* `S-predicate` (T18) и `A-` популяции (T19) идут на синтетике, а на опубликованных графах их проверки — «нет графа», и `M9` `A-linked` в гейте тоже (раздел 3.7 [architecture.md](architecture.md)); критерий и гейт (T22–T24) отвергают модуль, для которого `IsSynthetic`. — RUN.md, T17; `internal/synthetic/`; [architecture.md](architecture.md), раздел 3.3.
+— *Consequence:* `S-predicate` (T18) and the `A-` populations (T19) go on the synthetics, and on the published graphs their checks are "no graph", and `M9` of `A-linked` in the gate too ([architecture.md](architecture.md), section 3.7); the criterion and the gate (T22–T24) reject a module for which `IsSynthetic` holds. — RUN.md, T17; `internal/synthetic/`; [architecture.md](architecture.md), section 3.3.
 
-— *Поправка 2026-11-09:* на синтетике остаётся только `S-predicate`: ячеек `predicate` нет и в `olympiad-math` 0.1.1. Популяции `A-` идут на опубликованной паре математик, а синтетические пакеты держат их в тестах кода (R31).
+— *Amendment 2026-11-09:* only `S-predicate` stays on the synthetics: there are no answer slots `predicate` in `olympiad-math` 0.1.1 either. The populations `A-` go on the published pair of maths, and the synthetic packages hold them in the tests of the code (R31).
 
-— *Поправка 2026-11-11:* навык листа на навыке-опоре отвечается временем — `time`, ключ `7:30`, — а не числом, и у задач листа сложности 5 есть наводящий вопрос. Угадывание у числа и у времени — 0, у правды и у модели, так что числа синтетики не сдвинулись; новый навык сдвинул бы выбор движка у ученика обеих синтетик, и тест якоря перестал бы видеть освоенную опору. Почему — R41.
+— *Amendment 2026-11-11:* the sheet's skill on the anchor skill is answered by a time — `time`, the key `7:30`, — not by a number, and the sheet's tasks of difficulty 5 have a leading question. The guessing for a number and for a time is 0, in the truth and in the model, so the numbers of the synthetics did not shift; a new skill would have shifted the engine's choice for a learner of both synthetics, and the anchor test would no longer see a mastered anchor skill. Why — R41.
 
-## Популяции S-, F-, W-
+## Populations S-, F-, W-
 
-**R20. Пятнадцать популяций `S-`, `F-` и `W-` — `population.Own`, каждая полями своего допущения в `learner.Assumptions`; перерыв и плохой день тянутся из места `calendar`, сдвиг и ошибка попытки — из `attempts`, а «не прочитать» — счёт ответов на листе.** Решено исполнителем по поручению автора 2026-11-08 при планировании T18 (RUN.md, T18; R13).
-- **Поля:** `Adult`, `AdultFrom`, `AdultTo` — взрослый без класса, первая полоса и уровень на 2,5–5 выше, поровну, категория `adult`; `UnreadableEvery` — каждый двадцатый ответ пункта на листе сначала «не прочитать», и ученик пишет его заново; `BreakStartFrom`, `BreakStartTo`, `BreakMin`, `BreakMax`, `BreakEndBy` — перерыв в 14–60 дней с начала от 30-го до 60-го дня, конец к 120-му, а `BreakDrop` — падение уровня каждого модуля после него — правда читает его по времени, как плохой день, а не меняет уровень; `ExponentialLaw`, `LawBase` — R* = 0,9^(Δt/τ*); `AttemptShock` — сдвиг N(0, 1) к логиту всех пунктов попытки; `ErrorChance` — доля попыток, где каждый пункт с основным навыком задачи — «пока нет» на первом ответе; `BadDayChance`, `BadDayDrop` — доля плохих дней с занятием и падение уровня в них; `RepeatChance`, `RepeatDays` — P* = 0,95 на повторе задачи, не шаблона, чьё решение уходило на устройство за 30 дней.
-- **Числа:** перерыв — первым из `calendar`, начало, затем длина; плохой день — `fraction` из `calendar` после решения о занятии; сдвиг, затем ошибка — из `attempts`, после приёма `G8`; уровень взрослого — последним в `params`. «Не прочитать» числа не берёт: счёт идёт по каждому ответу пункта на листе — первому и после ступеней; первый вердикт даёт ответ, написанный заново, по своей `fraction` `answers`, а свидетельство несёт причину `UnverdictedUnreadableOther`; ответ после ступени, написанный заново, ничего не меняет. Календарь у ученика один, и «решение уходило на устройство» — тоже один источник: ученик, а прогон берёт из него и свидетельство, и сводку. Допущения, с которыми перерыв не уложится, закон не определён, доли вне [0, 1] или взрослый попадает в модуль без категории `adult`, `New` отвергает.
-- **Графы и пределы** — раздел 3.2: `S-scale`, `S-adult` и `S-unreadable` — олимпиадная математика; `S-predicate` — синтетический лист (R19); `F-` — обе математики, 180 дней; `W-shock`, `W-error`, `W-badday` — школьная математика 3 класса; `W-repeat` — обе математики.
+**R20. The fifteen populations `S-`, `F-` and `W-` are `population.Own`, each by the fields of its assumption in `learner.Assumptions`; the break and the bad day are drawn from the place `calendar`, the shift and the error of an attempt from `attempts`, and "unreadable" is a count of the answers on the sheet.** Decided by the executor on the author's instruction 2026-11-08 in the planning of T18 (RUN.md, T18; R13).
+- **The fields:** `Adult`, `AdultFrom`, `AdultTo` — an adult without a grade, the first band and the level 2.5–5 higher, evenly, the category `adult`; `UnreadableEvery` — every twentieth answer of an item on the sheet is first "unreadable", and the learner writes it again; `BreakStartFrom`, `BreakStartTo`, `BreakMin`, `BreakMax`, `BreakEndBy` — a break of 14–60 days beginning from the 30th to the 60th day, ending by the 120th, and `BreakDrop` — the fall of each module's level after it — the truth reads it by the time, like the bad day, and does not change the level; `ExponentialLaw`, `LawBase` — R* = 0.9^(Δt/τ*); `AttemptShock` — a shift N(0, 1) to the logit of all the items of an attempt; `ErrorChance` — the share of attempts where each item with the primary skill of the task is "not yet" on the first answer; `BadDayChance`, `BadDayDrop` — the share of bad days with a session and the fall of the level on them; `RepeatChance`, `RepeatDays` — P* = 0.95 on a repeat of a task, not a template, whose solution went to the device within 30 days.
+- **The numbers:** the break — first from `calendar`, the start, then the length; the bad day — a `fraction` from `calendar` after the decision on the session; the shift, then the error — from `attempts`, after the technique of `G8`; the adult's level — last in `params`. "Unreadable" takes no numbers: the count goes over each answer of an item on the sheet — the first one and those after the rungs; the first verdict is given by the answer written again, by its own `fraction` of `answers`, and the evidence carries the reason `UnverdictedUnreadableOther`; an answer after a rung written again changes nothing. A learner has one calendar, and "the solution went to the device" is one source too: the learner, and the run takes from it both the evidence and the summary. Assumptions with which the break does not fit, the law is not defined, the shares are outside [0, 1] or an adult lands in a module without the category `adult`, `New` rejects.
+- **Graphs and limits** — section 3.2: `S-scale`, `S-adult` and `S-unreadable` — olympiad maths; `S-predicate` — the synthetic sheet (R19); `F-` — both maths, 180 days; `W-shock`, `W-error`, `W-badday` — grade 3 maths; `W-repeat` — both maths.
 
-— *Почему:* раздел 3.4 тянет дни, занятия, перерывы и плохой день из `calendar`, а то, что держит попытка, — из `attempts`, «k-я попытка берёт одни и те же числа в одном порядке»; закреплённый порядок тянет одно и то же при любом правиле. «Не прочитать» — не ошибка и не первый вердикт (R04 spec; R06 learner-model), поэтому оно ничего не меняет в правде и не берёт числа, а модели приходит причиной.
+— *Why:* section 3.4 draws the days, the sessions, the breaks and the bad day from `calendar`, and what an attempt holds from `attempts`, "the k-th attempt takes the same numbers in the same order"; the pinned order draws the same under any rule. "Unreadable" is not an error and not a first verdict (R04 spec; R06 learner-model), so it changes nothing in the truth and takes no numbers, and it reaches the model as a reason.
 
-— *Отвергнуто:* «каждый десятый день» и «каждая пятая попытка» счётом — раздел 3.4 называет поток; «не прочитать» долей из потока — раздел 3.2 говорит «каждый двадцатый».
+— *Rejected:* "every tenth day" and "every fifth attempt" by a count — section 3.4 names a stream; "unreadable" as a share from a stream — section 3.2 says "every twentieth".
 
-— *Следствие:* T19 добавляет `A-`, `L-` и `E-` тем же путём. В R18 «`New`» реестра — теперь `Own`. — RUN.md, T18; `internal/learner/`, `internal/population/`, `internal/run/`; [architecture.md](architecture.md), раздел 3.2.
+— *Consequence:* T19 adds `A-`, `L-` and `E-` the same way. In R18 the register's "`New`" is now `Own`. — RUN.md, T18; `internal/learner/`, `internal/population/`, `internal/run/`; [architecture.md](architecture.md), section 3.2.
 
-## Популяции A-, L-, E-
+## Populations A-, L-, E-
 
-**R21. Семь популяций `A-`, `L-` и `E-` — в `population.Own`, полями своих допущений; `A-` идут на синтетических листе и тетради вместе; доли и звено тянутся из `attempts`; настоящее освоение — `learner.TrulyMastered`; прохождение, брошенное на звене, открыто, пока его не продолжат или 30 дней не кончат его «брошен».** Решено исполнителем по поручению автора 2026-11-08 при планировании T19 (RUN.md, T19; R13).
-- **Поля:** `LevelCorrelation` — z каждого следующего модуля ρ·z₁ + √(1 − ρ²)·z, ρ = 0,7 (`A-linked`); `TeacherBoost` — навыки, которые учат навыку-опоре, сильнее на 2,0 (`A-unpractised`); `TeacherFades` — g = 0 у такого навыка, как только правда освоила его на первой полосе, где ему учат (`A-fading`); `AbandonChance` — пятая доля прохождений брошена на звене, вытянутом поровну среди тех, что ещё впереди (`L-abandon`); `ExplainLift` — первое объяснение или пример, до которого дошло прохождение урока, поднимает поправки его навыков на 0,25, один раз (`L-explain`); `LeaveChance` — треть попыток задач с рубрикой закрыта «ушёл» после тех же 15 минут (`E-leave`).
-- **Настоящее освоение** — P* эталонной задачи, сложности 3 на полосе, без промаха — ни автора, ни целой полосы, — выбор из пяти вариантов с угадыванием популяции, R* = 1, не ниже 0,775 ([architecture.md](architecture.md), раздел 3.5): `Reference` и `TrulyMastered` ученика. Числа модели правда не читает. Навык-учитель и первая полоса, где ему учат, — у навыка правды с `New`.
-- **Звенья урока** идут в порядке автора: модуль держит порядок звеньев урока (`pack.Lesson.Order`), и прохождение проходит его так, а не «сначала объяснения», как говорил R15.
-- **Прохождения в прогоне:** брошенное — открытое, без времени конца; следующее прохождение того же урока продолжает его со звена, где бросили, — «пройден» или снова открытое; открытое кончается «брошен» через 30 дней от начала, и время конца — эти 30 дней. Движок отдаёт открытое прохождение снова на следующем же выборе (ветвь 1, architecture 3.3 engine), так что до 30 дней оно доходит, только если движок его не отдаёт; стенд даёт ему вход честно, а конец «брошен» держит тест. Время начала держит прогон: в `Run` движка его нет. Попытка с рубрикой «ушёл» — последняя попытка «ушёл» и не «Готово».
+**R21. The seven populations `A-`, `L-` and `E-` are in `population.Own`, by the fields of their assumptions; `A-` go on the synthetic sheet and workbook together; the shares and the segment are drawn from `attempts`; true mastery is `learner.TrulyMastered`; a run abandoned at a segment is open until it is continued or 30 days end it "abandoned".** Decided by the executor on the author's instruction 2026-11-08 in the planning of T19 (RUN.md, T19; R13).
+- **The fields:** `LevelCorrelation` — the z of each next module is ρ·z₁ + √(1 − ρ²)·z, ρ = 0.7 (`A-linked`); `TeacherBoost` — the skills that teach the anchor skill are 2.0 stronger (`A-unpractised`); `TeacherFades` — g = 0 for such a skill as soon as the truth has mastered it at the first band where it is taught (`A-fading`); `AbandonChance` — a fifth of the runs is abandoned at a segment drawn evenly among those still ahead (`L-abandon`); `ExplainLift` — the first explanation or example that the lesson run reaches raises the offsets of its skills by 0.25, once (`L-explain`); `LeaveChance` — a third of the attempts of tasks with a rubric is closed "left" after the same 15 minutes (`E-leave`).
+- **True mastery** — the P* of the reference task, of difficulty 3 at the band, without a miss — neither the author's nor a whole band's, — a choice of five options with the population's guessing, R* = 1, no lower than 0.775 ([architecture.md](architecture.md), section 3.5): the learner's `Reference` and `TrulyMastered`. The truth does not read the model's numbers. The teaching skill and the first band where it is taught are held by the truth's skill, from `New`.
+- **A lesson's segments** go in the author's order: the module holds the order of a lesson's segments (`pack.Lesson.Order`), and the run goes through them in it, not "explanations first", as R15 said.
+- **Lesson runs in the run:** an abandoned one is open, without a time of the end; the next run of the same lesson continues it from the segment where it was abandoned — "passed" or open again; an open one ends "abandoned" 30 days after its start, and the time of the end is those 30 days. The engine gives an open run again at the very next choice (branch 1, architecture 3.3 engine), so it reaches 30 days only if the engine does not give it; the simulator gives the engine its input honestly, and a test holds the end "abandoned". The run holds the time of the start: the engine's `Run` has none. An attempt with a rubric "left" is a last attempt "left" and not "Done".
 
-— *Почему:* раздел 3.2 ведёт `A-` туда, где навык-опора — пререквизит навыка другого модуля, а в опубликованных пакетах такого нет (R19); раздел 3.4 тянет звено `L-abandon` и уход `E-leave` из `attempts`. Настоящее освоение нужно и `A-fading`, и мерам T20, поэтому оно — метод ученика, а не код меры.
+— *Why:* section 3.2 leads `A-` to where an anchor skill is a prerequisite of a skill of another module, and the published packages have no such thing (R19); section 3.4 draws the segment of `L-abandon` and the leaving of `E-leave` from `attempts`. True mastery is needed both by `A-fading` and by the measures of T20, so it is a method of the learner, not code of a measure.
 
-— *Отвергнуто:* `A-` на опубликованных математиках — навыка на навыке-опоре там нет, и `M9` читать нечем; «каждое пятое прохождение» и «каждая третья задача» счётом — раздел 3.4 называет поток.
+— *Rejected:* `A-` on the published maths — there is no skill on an anchor skill there, and `M9` has nothing to be read by; "every fifth run" and "every third task" by a count — section 3.4 names a stream.
 
-— *Следствие:* все сорок одна популяция раздела 3.2 — в реестре, и T20 читает меры на них. — RUN.md, T19; `internal/learner/`, `internal/run/`, `internal/population/`; [architecture.md](architecture.md), раздел 3.2.
+— *Consequence:* all forty-one populations of section 3.2 are in the register, and T20 reads the measures on them. — RUN.md, T19; `internal/learner/`, `internal/run/`, `internal/population/`; [architecture.md](architecture.md), section 3.2.
 
-— *Поправка 2026-11-09:* популяции `A-` идут на паре опубликованных математик — `olympiad-math` 0.1.1 и `grade-3-math` 0.1.0, — а не на синтетических листе и тетради: два олимпиадных навыка опираются на навыки, которым учит школьная математика. Почему — R31.
+— *Amendment 2026-11-09:* the populations `A-` go on the pair of published maths — `olympiad-math` 0.1.1 and `grade-3-math` 0.1.0, — not on the synthetic sheet and workbook: two olympiad skills rest on skills that school maths teaches. Why — R31.
 
-## Меры модели
+## The model's measures
 
-**R22. Меры модели `M1`–`M10` — пакет `internal/measure`: прогон ученика даёт суммы, число ячейки читается по суммам всех её учеников, а 95 % интервал — из 2 000 повторных выборок учеников из места `bootstrap` с именем ячейки; что мера читает о попытке, прогон записывает наблюдением `run.Obs`.** Решено исполнителем по поручению автора 2026-11-08 при планировании T20 (RUN.md, T20; R13).
-- **Суммы и числа.** Прогон ученика даёт именованные суммы — квадраты, счёты, доли по корзинам; число ячейки — отношение сумм всех её учеников, а не среднее чисел учеников, так что ученик с большим числом ответов весит больше. Интервал — 51-е снизу и 51-е сверху значения числа по 2 000 повторным выборкам учеников, по 2,5 % с каждой стороны; выборки тянутся из места рабочего зерна с именами `bootstrap` и имени ячейки — популяции и графа, без правила, — так что база, кандидат и потолок на тех же учениках берут те же выборки, и пару можно читать по ученику ([architecture.md](architecture.md), раздел 3.6). Число, которое не читается хоть на одной выборке, — непрочитанное: его интервал стоял бы только на выборках, где случай попался; на графе с синтетическим модулем числа помечены «нет графа» (R19).
-- **Наблюдение попытки.** Перед каждой попыткой с вердиктом прогон читает модель на время её начала: P каждого пункта с удержанием и без — P без удержания c + (P − c)/R̄, где R̄ и c модель считает по своей формуле (раздел 4 [architecture.md](architecture.md)), — паузу с последней практики основных навыков пункта и навыки модуля; после попытки — P* первого ответа, помощь и навыки модуля снова. Навык в наблюдении — θ + δ модели и θ* + δ* правды, «освоено» модели и правды на полосе освоения модели или на первой полосе, где ему учат, и P и P* эталонной задачи этой полосы. В уроке каждая задача закрывается, как только ученик её ответил, — прохождение зовёт прогон вокруг каждой задачи (`learner.Each`), — так что модель и правда читаются до и после неё такими, какие они тогда, с задачами урока до неё и без задач после. Попытка с рубрикой не наблюдается.
-- **Правда мер** — та, что отвечает: θ* после перерыва `F-break` ниже на падение, и с ним читаются θ* + δ*, настоящее освоение, P* эталонной задачи и владение навыком-опорой. Плохой день `W-badday` в правду мер не входит: он снижает ответы этого дня, а не то, что ученик знает.
-- **Счёт.** «Ответ» — первый ответ пункта с вердиктом; «ответы навыка» — пункты попыток, по которым модель взяла свидетельство навыка. Пауза навыка не меньше 14 суток — попытка, ответившая навык, у которого была практика 14 суток назад и раньше; с неё открываются окно перерыва `M4` на 7 суток и догонка `M5`. Помощь `M2` — приём по просьбе и повтор задачи с виденным решением: ступени лестницы идут после первого вердикта и его не меняют. «Освоено» `M6`, объявленное той же попыткой, что дала настоящее освоение, ждало ноль ответов. Скачок `M3` — `JumpAt` модуля у `G3`, `G3-drop` и первая попытка после конца перерыва у `F-break`, а не у других `F-`, где перерыв правду не роняет; прогон, кончившийся до скачка, скачка не имеет. Ответы до «держится» `M3` — до первого ответа серии из десяти, так что ошибка, которая держится с первой попытки после скачка, даёт ноль. `M7` — корень среднего квадрата θ − θ* модуля: мера со знаком идёт в критерий модулем (раздел 3.6). `M9` читается на первом выборе каждого дня. «Сколько объявлено» `M4` — на ученика.
+**R22. The model's measures `M1`–`M10` are the package `internal/measure`: a learner's run gives sums, a cell's number is read by the sums of all its learners, and the 95 % interval from 2,000 resamples of the learners from the place `bootstrap` with the cell's name; what a measure reads about an attempt the run records as an observation `run.Obs`.** Decided by the executor on the author's instruction 2026-11-08 in the planning of T20 (RUN.md, T20; R13).
+- **Sums and numbers.** A learner's run gives named sums — squares, counts, shares by bins; a cell's number is the ratio of the sums of all its learners, not the mean of the learners' numbers, so a learner with more answers weighs more. The interval is the 51st value from below and the 51st from above of the number over 2,000 resamples of the learners, 2.5 % on each side; the resamples are drawn from the place of the working seed with the names `bootstrap` and the cell's name — the population and the graph, without the rule, — so the base, the candidate and the ceiling on the same learners take the same resamples, and a pair can be read by learner ([architecture.md](architecture.md), section 3.6). A number that cannot be read on even one resample is unread: its interval would stand only on the resamples where the case came up; on a graph with a synthetic module the numbers are marked "no graph" (R19).
+- **The observation of an attempt.** Before each attempt with a verdict the run reads the model at the time of its start: the P of each item with retention and without — P without retention is c + (P − c)/R̄, where the model computes R̄ and c by its own formula ([architecture.md](architecture.md), section 4), — the pause since the last practice of the item's primary skills and the module's skills; after the attempt — the P* of the first answer, the help and the module's skills again. A skill in the observation is the model's θ + δ and the truth's θ* + δ*, the "mastered" of the model and of the truth at the model's mastery band or at the first band where the skill is taught, and the P and P* of the reference task of this band. In a lesson each task is closed as soon as the learner has answered it — the lesson run calls the run around each task (`learner.Each`), — so the model and the truth are read before and after it as they are then, with the lesson's tasks before it and without the tasks after. An attempt with a rubric is not observed.
+- **The truth of the measures** is the one that answers: θ* after the break of `F-break` is lower by the fall, and with it are read θ* + δ*, true mastery, the P* of the reference task and command of the anchor skill. The bad day of `W-badday` does not enter the truth of the measures: it lowers the answers of that day, not what the learner knows.
+- **The count.** "An answer" is the first answer of an item with a verdict; "the skill's answers" are the items of attempts from which the model took evidence of the skill. A pause of a skill of no less than 14 days is an attempt that answered a skill whose practice was 14 days ago or earlier; with it the window of the break of `M4`, of 7 days, and the catching up of `M5` open. Help in `M2` is a technique on request and a repeat of a task with a seen solution: the rungs of the ladder come after the first verdict and do not change it. A "mastered" of `M6` declared by the same attempt that gave true mastery waited zero answers. The jump of `M3` is the module's `JumpAt` for `G3` and `G3-drop`, and the first attempt after the end of the break for `F-break`, and not for the other `F-`, where the break does not drop the truth; a run that ended before the jump has no jump. The answers until "holds" in `M3` are counted until the first answer of a series of ten, so an error that holds from the first attempt after the jump gives zero. `M7` is the root of the mean square of the module's θ − θ*: a signed measure goes into the criterion by its absolute value (section 3.6). `M9` is read at the first choice of each day. "How many declared" in `M4` — per learner.
 
-— *Почему:* числа ячейки из сумм складываются по ученикам, и повторная выборка учеников — это выборка их сумм, так что интервал считается без второго прогона. Модель сама читает P без удержания только внутри шага, а наружу не отдаёт, и стенд повторяет её формулу по тому, что `Read` отдаёт, — удержанию навыков и признаку пробной серии.
+— *Why:* the numbers of a cell from sums add up over the learners, and a resample of the learners is a resample of their sums, so the interval is computed without a second run. The model itself reads P without retention only inside a step and does not give it out, and the simulator repeats its formula by what `Read` gives — the retention of the skills and the flag of the trial series.
 
-— *Отвергнуто:* число ячейки как среднее чисел учеников — ученик с тремя ответами весил бы как ученик с двумястами; выборки по имени правила — пара базы и кандидата брала бы разные выборки; интервал по выборкам, где число читается, — он был бы уже и смещён; правда без падения после перерыва — модель, которая верно идёт за падением, показывала бы ошибку; «ответы навыка» как все пункты попыток модуля — навык, которого не отвечали, копил бы ответы.
+— *Rejected:* a cell's number as the mean of the learners' numbers — a learner with three answers would weigh as much as a learner with two hundred; resamples by the name of the rule — the pair of the base and the candidate would take different resamples; the interval over the resamples where the number is read — it would be narrower and biased; the truth without the fall after a break — a model that correctly follows the fall would show an error; "the skill's answers" as all the items of the module's attempts — a skill that was not answered would accumulate answers.
 
-— *Следствие:* T21 добавляет `E1`–`E5` тем же путём, а T23 читает разность пары на тех же выборках. — RUN.md, T20; `internal/measure/`, `internal/run/`; [architecture.md](architecture.md), раздел 3.5.
+— *Consequence:* T21 adds `E1`–`E5` the same way, and T23 reads the difference of a pair on the same resamples. — RUN.md, T20; `internal/measure/`, `internal/run/`; [architecture.md](architecture.md), section 3.5.
 
-*Поправка 2026-11-08, при T22 (R24):* ответы до «держится» `M5` считаются так же, как у `M3`, — до первого ответа серии из пяти, так что ошибка, которая держится с первого ответа после паузы, даёт ноль. Выяснилось на оракуле: он догоняет сразу, а мера давала ему пять. Разность пары ячеек на тех же выборках читает уже T22 (`measure.ReadPair`), а не T23.
+*Amendment 2026-11-08, in T22 (R24):* the answers until "holds" in `M5` are counted the same way as in `M3` — until the first answer of a series of five, so an error that holds from the first answer after a pause gives zero. Found on the oracle: it catches up at once, and the measure gave it five. The difference of a pair of cells on the same resamples is read already by T22 (`measure.ReadPair`), not by T23.
 
-## Меры движка
+## The engine's measures
 
-**R23. Меры движка `E1`–`E5` — в пакете `internal/measure`, тем же путём, что меры модели (R22); что правда говорит о пуле на выборе — потолок пула, есть ли что дать, досягаемые навыки, — прогон записывает до выбора движка, `run.Pool`; досягаемость навыка читается по правде.** Решено исполнителем по поручению автора 2026-11-08 при планировании T21 (RUN.md, T21; R13).
-- **Пул на выборе.** До вызова движка прогон читает каждую задачу пула, которую правило могло дать: без рубрики, с пунктом с вердиктом, не задачу с решением, ушедшим на устройство меньше 24 часов назад, — а если таких нет, второй проход, где они есть, кроме задачи последней попытки (R82 spec; R03 engine и его поправка 2026-11-07), — и все её основные навыки с вердиктом досягаемы. Потолок — наибольшая доля пунктов с P* в коридоре 0,70–0,85 у одной такой задачи; «пул даёт» — такая задача есть; досягаемые навыки — основные навыки с вердиктом таких задач.
-- **Досягаемость по правде.** Навык досягаем, когда правда держит его пререквизиты: навык с вердиктом правда освоила на первой полосе, где ему учат; навык без вердикта или модуля, которого ученик не учит, держится — читать его нечем; навык-опору правда держит, как в `M9`, — навык, который ему учит, освоен с R* на время, — а если ему не учит ни один модуль ученика, он держится.
-- **P\* выдачи** — шанс правды на время выдачи пункта, без того, что держит только попытка: приёма, сдвига, ошибки и повтора (`ItemObs.PGiven`).
-- **Счёт.** `E1` — доли выданных пунктов по P* выдачи, потолок — среднее по выборам задачи или урока. Навыки выбора — навыки урока или основные навыки задачи, как их считают `learner-model` и `engine`: свои навыки пунктов, а навыки задачи — когда пункт их берёт. `E2` «зацикливание» — 50 выборов подряд, каждый на навыке, без смены его «освоено» модели, и на каждом есть досягаемый навык, на котором выбор не стоит; «нечего дать» — среди выборов, где пул даёт. `E3` — повторение — выбор с кодом «повторение», навык — навык выбора, у которого модель читает «освоено» и срок повторения пришёл, R* и «опоздание» — по наблюдению попытки (R* правды добавлен в `run.SkillObs`); доля повторений — по неделям календаря от первой до 53-й; R* в конце прогона — на время последнего выбора или закрытия его последней попытки — у навыков, освоенных правдой на первой полосе, где им учат. `E4` — доля досягаемых хоть раз навыков, которые выдавались, и доля навыков с вердиктом, освоенных правдой к концу. `E5` — на ученика: написанные задачи с рубрикой, каждая один раз, и попытки задачи, уже закрытой «Готово», — задачей или в уроке.
+**R23. The engine's measures `E1`–`E5` are in the package `internal/measure`, the same way as the model's measures (R22); what the truth says about the pool at a choice — the pool's ceiling, whether there is anything to give, the reachable skills — the run records before the engine's choice, `run.Pool`; a skill's reachability is read by the truth.** Decided by the executor on the author's instruction 2026-11-08 in the planning of T21 (RUN.md, T21; R13).
+- **The pool at a choice.** Before calling the engine the run reads each task of the pool that the rule could give: without a rubric, with an item with a verdict, not a task whose solution went to the device less than 24 hours ago, — and if there are none, a second pass, where they are included, except the task of the last attempt (R82 spec; R03 engine and its 2026-11-07 amendment), — and all of whose primary skills with a verdict are reachable. The ceiling is the largest share of items with P* in the corridor 0.70–0.85 in one such task; "the pool gives" — such a task exists; the reachable skills are the primary skills with a verdict of such tasks.
+- **Reachability by the truth.** A skill is reachable when the truth holds its prerequisites: a skill with a verdict the truth has mastered at the first band where it is taught; a skill without a verdict or of a module that the learner does not study holds — there is nothing to read it by; an anchor skill the truth holds as in `M9` — a skill that teaches it is mastered with R* at the time, — and if no module of the learner teaches it, it holds.
+- **P\* of the issue** — the truth's chance at the time of an item's issue, without what only the attempt holds: the technique, the shift, the error and the repeat (`ItemObs.PGiven`).
+- **The count.** `E1` — the shares of the issued items by the P* of the issue, the ceiling — the mean over the choices of a task or a lesson. The skills of a choice are the lesson's skills or the task's primary skills, as `learner-model` and `engine` count them: the items' own skills, and the task's skills when an item takes them. `E2` "being stuck" — 50 choices in a row, each on the skill, without a change of its "mastered" of the model, and at each there is a reachable skill on which the choice does not stand; "nothing to give" — among the choices where the pool gives. `E3` — a repetition is a choice with the code "repetition", the skill is the skill of the choice, for which the model reads "mastered" and whose review date has come, R* and "lateness" — by the observation of the attempt (the truth's R* is added to `run.SkillObs`); the share of repetitions — by weeks of the calendar from the first to the 53rd; R* at the end of the run — at the time of the last choice or of the close of its last attempt — for the skills mastered by the truth at the first band where they are taught. `E4` — the share of the skills reachable at least once that were issued, and the share of the skills with a verdict mastered by the truth by the end. `E5` — per learner: the tasks with a rubric written, each once, and the attempts of a task already closed "Done" — as a task or in a lesson.
 
-— *Почему:* досягаемость — чем движок судится, и читать её по модели значило бы судить правило его же глазами; правда — то, что стенд знает. Потолок и досягаемость требуют правды на время выбора, а правда к концу прогона уже другая, поэтому их пишет прогон, а не мера.
+— *Why:* reachability is what the engine is judged by, and reading it by the model would mean judging the rule through its own eyes; the truth is what the simulator knows. The ceiling and reachability require the truth at the time of the choice, and by the end of the run the truth is already different, so the run writes them, not the measure.
 
-— *Отвергнуто:* досягаемость, как её читает `engine`, — по P модели не ниже 0,70 (`skills.go` `engine` v0.1.0): это правило движка, кандидат может его менять; P* выдачи с шумом попытки — его не предвидит ни одно правило; потолок только по выборам задачи — урок тоже выдача.
+— *Rejected:* reachability as `engine` reads it — by the model's P no lower than 0.70 (`skills.go` of `engine` v0.1.0): this is a rule of the engine, a candidate may change it; the P* of the issue with the noise of the attempt — no rule foresees it; the ceiling only by the choices of a task — a lesson is an issue too.
 
-— *Следствие:* T22 строит потолок движка на том же пуле — по P* задачи с наибольшей долей в коридоре. — RUN.md, T21; `internal/measure/`, `internal/run/`; [architecture.md](architecture.md), раздел 3.5.
+— *Consequence:* T22 builds the engine's ceiling on the same pool — by the P* of the task with the largest share in the corridor. — RUN.md, T21; `internal/measure/`, `internal/run/`; [architecture.md](architecture.md), section 3.5.
 
-## Потолки и две версии рядом
+## The ceilings and two versions side by side
 
-**R24. Оракул модели читается на ответах того же прогона, что модель; потолок движка — своё правило прогона на том же пуле, а где пул не даёт задачи с P\*, выбирает `engine`; каждая сборка `sim` пишет файл результатов — JSON Lines, строка на ученика, — а сравнение читает два файла парами по ученику; библиотеки файл называет версией из сборки, а собранную из рабочей области — коммитом, который передаёт вызывающий.** Решено исполнителем по поручению автора 2026-11-08 при планировании T22 (RUN.md, T22; R13).
-- **Оракул модели** — те же наблюдения, где оценка — правда θ* + δ*, P — P* ответа, P без удержания — тоже P*, «освоено» — настоящее освоение, P эталонной задачи — P*, уровень — θ*, а навык-опору он держит, когда держит правда (`measure.Oracle`). Модель не подменяется для движка: `Readout` `learner-model` держит состояние внутри и сам считает P задач, так что движку оракула не дать; а на тех же ответах оракул и модель сравниваются по ученику.
-- **Потолок движка** — правило `run.Ceiling` вместо `engine.Choose`, на пуле `run.Pool` (R23): задача с наибольшей долей пунктов с P* в коридоре, при равенстве — с средней P* ближе к 0,775, затем по ID, с паузой 24 часа и вторым проходом правила; повторение — когда у навыка, освоенного правдой, P* эталонной задачи первой полосы, где ему учат, падает ниже 0,775 от забывания, — лучшая задача на нём, с кодом «повторение». Где пул не даёт задачи с вердиктом — задачи с рубрикой, уроки, «нечего дать», — выбирает `engine`: потолок — потолок P*, а где P* нет, остаётся правило. Инвариант `I2` к потолку не относится: его коды — не ветви `engine`.
-- **Файл результатов** — JSON Lines: первая строка — набор учеников, правило (`engine` или `ceiling`) и версия или коммит каждой библиотеки; дальше строка на ученика — популяция, граф, номер, суммы мер модели и движка и суммы оракула на тех же ответах. Числа float64 JSON пишет кратчайшей записью, которая читается назад теми же битами, так что пара сравнивается до последнего бита. Команды — `sim run` (популяции, ученики на граф, набор `working` или `held-out-<критерий>-<n>`, правило, `-commit`) и `sim compare` (две стороны, каждая — суммы правила или оракула): для каждой ячейки и числа — a, b и разность a − b с 95 % интервалом из тех же выборок в обеих (`measure.ReadPair`); сторона оракула читает только меры модели — мер движка у оракула нет, — а у потолка движка не читается `E3`. Файл `-out` пишется рядом и встаёт на место, только когда прогон кончился, так что неудачный прогон прежнего файла не трогает. Ученики идут параллельно, а строки — в порядке популяций, графов и учеников, так что файл одной конфигурации — одни байты.
-- **Имя библиотеки** — из сведений о сборке (`runtime/debug`): версия, по которой сборка её взяла, — тег или псевдоверсия, где есть коммит, — или версия её замены, с путём замены, когда это другой модуль. Библиотеку, собранную из рабочей области `go.work`, сборка версией не называет, и её коммит передаёт вызывающий, `-commit <путь модуля>=<полный SHA>`, — рецепт гейта знает его из файла гейта ([architecture.md](architecture.md), раздел 3.9); без него `sim` файла не пишет. Коммит — 40 шестнадцатеричных знаков и только для одной из двух библиотек; коммит библиотеки, чью версию сборка знает, отвергается — в файле было бы два имени одной сборки.
+**R24. The model's oracle is read on the answers of the same run as the model; the engine's ceiling is a rule of the run's own on the same pool, and where the pool gives no task with P\*, `engine` chooses; each build of `sim` writes a file of results — JSON Lines, a line per learner, — and the comparison reads two files in pairs by learner; the file names a library by the version from the build, and one built from the workspace by the commit that the caller passes.** Decided by the executor on the author's instruction 2026-11-08 in the planning of T22 (RUN.md, T22; R13).
+- **The model's oracle** — the same observations, where the estimate is the truth θ* + δ*, P is the P* of the answer, P without retention is P* too, "mastered" is true mastery, the P of the reference task is P*, the level is θ*, and it holds the anchor skill when the truth holds it (`measure.Oracle`). The model is not replaced for the engine: the `Readout` of `learner-model` holds the state inside and computes the P of tasks itself, so the oracle cannot be given to the engine; and on the same answers the oracle and the model are compared by learner.
+- **The engine's ceiling** — the rule `run.Ceiling` instead of `engine.Choose`, on the pool `run.Pool` (R23): the task with the largest share of items with P* in the corridor, at a tie — the one with the mean P* closer to 0.775, then by ID, with the pause of 24 hours and the rule's second pass; a repetition — when for a skill mastered by the truth the P* of the reference task of the first band where it is taught falls below 0.775 from forgetting, — the best task on it, with the code "repetition". Where the pool gives no task with a verdict — tasks with a rubric, lessons, "nothing to give", — `engine` chooses: the ceiling is the ceiling of P*, and where there is no P*, the rule stays. The invariant `I2` does not apply to the ceiling: its codes are not branches of `engine`.
+- **The file of results** — JSON Lines: the first line is the set of learners, the rule (`engine` or `ceiling`) and the version or the commit of each library; then a line per learner — the population, the graph, the number, the sums of the measures of the model and of the engine and the sums of the oracle on the same answers. JSON writes float64 numbers in the shortest form that reads back to the same bits, so a pair is compared to the last bit. The commands are `sim run` (the populations, the learners per graph, the set `working` or `held-out-<criterion>-<n>`, the rule, `-commit`) and `sim compare` (two sides, each the sums of a rule or of the oracle): for each cell and number — a, b and the difference a − b with a 95 % interval from the same resamples in both (`measure.ReadPair`); the oracle's side reads only the model's measures — the oracle has no measures of the engine, — and for the engine's ceiling `E3` is not read. The file `-out` is written beside and takes its place only when the run has ended, so a failed run does not touch the previous file. The learners go in parallel, and the lines in the order of the populations, the graphs and the learners, so the file of one configuration is the same bytes.
+- **The name of a library** — from the build information (`runtime/debug`): the version by which the build took it — a tag or a pseudo-version, where there is a commit, — or the version of its replacement, with the path of the replacement, when it is another module. A library built from the workspace `go.work` the build does not name by a version, and its commit is passed by the caller, `-commit <module path>=<full SHA>`, — the gate's recipe knows it from the gate file ([architecture.md](architecture.md), section 3.9); without it `sim` writes no file. The commit is 40 hexadecimal characters and only for one of the two libraries; a commit of a library whose version the build knows is rejected — the file would have two names of one build.
 
-— *Почему:* одна сборка Go не держит двух версий одной библиотеки ([architecture.md](architecture.md), раздел 3.6), так что пара — два файла; JSON Lines читается построчно, и ученик — одна строка. Коммит в файле — то, по чему гейт сверяет, на чём записаны числа.
+— *Why:* one Go build does not hold two versions of one library ([architecture.md](architecture.md), section 3.6), so a pair is two files; JSON Lines is read line by line, and a learner is one line. The commit in the file is what the gate checks the numbers' recording against.
 
-— *Отвергнуто:* оракул как отдельный прогон, где движок читает правду, — модели для движка не подменить, а прогон с другими выборами сравнивал бы модель и траекторию сразу; потолок движка для задач с рубрикой и уроков — у них нет P*; CSV — у учеников разные наборы сумм; имя библиотеки через `-ldflags -X` — его передавал бы каждый вызывающий даже там, где сборка версию знает.
+— *Rejected:* the oracle as a separate run where the engine reads the truth — the model cannot be replaced for the engine, and a run with other choices would compare the model and the trajectory at once; the engine's ceiling for tasks with a rubric and for lessons — they have no P*; CSV — the learners have different sets of sums; the name of a library through `-ldflags -X` — every caller would pass it even where the build knows the version.
 
-— *Следствие:* T23 судит кандидатов по `ReadPair` базы, кандидата и потолков; T24 пишет `go.work` и передаёт `-commit`. Значения `E3` у потолка движка не читаются — `E3` идёт к совершенству ([architecture.md](architecture.md), раздел 3.6). — RUN.md, T22; `internal/bench/`, `internal/measure/`, `internal/run/`, `main.go`; [architecture.md](architecture.md), раздел 3.6.
+— *Consequence:* T23 judges the candidates by `ReadPair` of the base, the candidate and the ceilings; T24 writes `go.work` and passes `-commit`. The values of `E3` for the engine's ceiling are not read — `E3` goes to perfection ([architecture.md](architecture.md), section 3.6). — RUN.md, T22; `internal/bench/`, `internal/measure/`, `internal/run/`, `main.go`; [architecture.md](architecture.md), section 3.6.
 
-*Поправка 2026-11-08, при T24 (R26), по решению автора:* «ученики идут параллельно» было ошибкой T22. `bench.Run` раздавал учеников по горутинам через `sync.WaitGroup.Go`, а R09 горутины в коде отверг: прогон делится на процессы по ученикам, и делит его рецепт. Правило `goroutine` ловит оператор `go` и `WaitGroup.Go` не поймало. Горутины убраны. Прогон берёт часть учеников (`bench.Part`, `sim run -part k/n`), рецепт запускает части процессами, а `sim merge` сводит их файлы в файл целого прогона, до байта тот же.
+*Amendment 2026-11-08, in T24 (R26), by the author's decision:* "the learners go in parallel" was an error of T22. `bench.Run` handed the learners out to goroutines through `sync.WaitGroup.Go`, and R09 rejected goroutines in the code: a run is split into processes by learners, and the recipe splits it. The rule `goroutine` catches the statement `go` and did not catch `WaitGroup.Go`. The goroutines are removed. A run takes a part of the learners (`bench.Part`, `sim run -part k/n`), the recipe launches the parts as processes, and `sim merge` joins their files into the file of the whole run, the same to the byte.
 
-## Критерии и отчёт
+## The criteria and the report
 
-**R25. Критерии — пакет `internal/criterion` и команда `sim judge`: файл суда называет критерий, прогоны базы, потолка движка, кандидатов и подтверждения; проверка стоит там, где число читает база; путь `E1` в критерии модели идёт к потолку движка; оценка складывает k-е выборки ячеек.** Решено исполнителем по поручению автора 2026-11-08 при планировании T23 (RUN.md, T23; R13).
-- **Файл суда** — JSON: критерий (`model`, `engine` или `pair`); файлы результатов базы (правило `engine`) и потолка движка (правило `ceiling`) на одних учениках; кандидаты — имя, файл, своя группа оценки, цель модели (`lag`, `corridor`, `settle`), число изменённых констант, новое поле, удалённость от базы в порядке автора, а в паре — библиотека, чья цель; подтверждение — три прогона на отложенных учениках. Оракул модели — суммы оракула в файле базы (R24). Отчёт — Markdown, вывод инструмента, поэтому по-английски (R14 spec).
-- **Направление и допуски.** Меры со знаком — модулем (`M3.lag`, `M8.shift`); доли, где больше — лучше, — недобором до единицы (`E1`, `E3` R*, `E4`); счёт написанных задач `E5` — со сменой знака. Допуски — автора ([architecture.md](architecture.md), раздел 3.6); мерам, которых его список не называет, — допуск ближайшей по роду: доли `M5` и `M7` — 1 пункт, как доли `M3`; сдвиг `M8` — 0,01 логита, как `M1`; Brier `M10` — 0,002, как `M2`; доля трудных первых пунктов `M7` — 1 пункт. Разрешение стенда — 4,3 стандартной ошибки разности, а стандартная ошибка — отклонение её значений по 2 000 выборкам.
-- **Проверки.** «Не хуже» — худший конец интервала разности «кандидат минус база» не больше допуска. Пол — худший конец интервала кандидата: `M4` не больше 0,20, `M6` не больше 1,5 значения базы. Цели — `lag` и `corridor` по нижнему концу интервала доли пути, `settle` по верхнему концу доли не догнавших. Проверка и пол стоят там, где число читает база: где не читает и она, держать нечего, и отчёт называет такие ячейки, а не проваливает кандидата. Число, которое база читает, а прогон кандидата нет, — проверка не выполнена. Инварианты `I1`–`I4` прогон пишет в строку ученика под правилом `engine` (`bench.Line.Breaches`), а заголовок файла говорит, что они записаны; файл без этой пометки инвариантов не держит. `I1` между двумя прогонами — гейта (T24). Пол и цель, чьей популяции в прогонах нет, не выполнены: проверка, которую не мерили, не держится. В паре проверка, общая обоим критериям, стоит один раз. Цель модели у кандидата движка отвергается: числа цели у движка нет.
-- **Оценка.** Доля пути меры на ячейке — (база − кандидат)/(база − потолок) в её направлении, путь — по целой ячейке. Потолок — совершенство (ноль) у мер, где путь идёт к совершенству; потолок движка у мер `E`, в критерии модели тоже — оракул через движок не прогнать (R24), а потолок движка — потолок коридора всякой пары модели и движка; оракул у прочих мер модели. Мера без пути — путь не больше нуля, или база или потолок её не читают, — выходит из оценки, и отчёт её называет; мера, которую не читает прогон кандидата, оставляет оценку непрочитанной. Значение популяции — среднее по её ячейкам и мерам, так что графы популяции делят её вес поровну. Интервал — из 2 000 выборок: k-е выборки всех ячеек складываются с весами, и у каждой ячейки свои выборки — свои места.
-- **Выбор и выход.** «Лучше» — нижний конец интервала оценки выше нуля, и своей группы тоже. Равные лучшему — те, чья разность оценок с ним по тем же выборкам держит ноль. Простейший — наименьшее число констант, затем без нового поля, затем ближайший к базе, затем по имени. Подтверждение — тот же суд на прогонах отложенных учеников: база и кандидат под `engine`, потолок под `ceiling`, набор отложенный и не тот, на котором выбирали; без него выбор ждёт подтверждения. Решающим отчёт зовёт прогон, только если и подтверждение решающее. Пара — ограничения обоих критериев, «лучше» по оценке своей библиотеки, а верхний конец интервала оценки другой не ниже нуля. Решающий прогон — когда в каждой ячейке каждого прогона не меньше 4 000 учеников.
-- **Разрез `M2` после пауз от 7 суток** (`M2.brier.after7`) добавлен для группы «Забывает»: раздел 3.6 называет его, а разрезы `M2` делили паузы на промежутки.
+**R25. The criteria are the package `internal/criterion` and the command `sim judge`: the judgement file names the criterion, the runs of the base, of the engine's ceiling, of the candidates and of the confirmation; a check stands where the base reads the number; the path of `E1` in the model's criterion goes to the engine's ceiling; the score adds up the k-th resamples of the cells.** Decided by the executor on the author's instruction 2026-11-08 in the planning of T23 (RUN.md, T23; R13).
+- **The judgement file** — JSON: the criterion (`model`, `engine` or `pair`); the files of results of the base (the rule `engine`) and of the engine's ceiling (the rule `ceiling`) on the same learners; the candidates — the name, the file, its own score group, the model's target (`lag`, `corridor`, `settle`), the number of changed constants, a new field, the distance from the base in the author's order, and in a pair — the library whose target it is; the confirmation — three runs on held-out learners. The model's oracle is the sums of the oracle in the file of the base (R24). The report is Markdown, a tool's output, so it is in English (R14 spec).
+- **Direction and tolerances.** Signed measures — by their absolute value (`M3.lag`, `M8.shift`); shares where more is better — by their shortfall to one (`E1`, `E3` R*, `E4`); the count of written tasks `E5` — with the sign changed. The tolerances are the author's ([architecture.md](architecture.md), section 3.6); for the measures that the author's list does not name — the tolerance of the nearest in kind: the shares of `M5` and `M7` — 1 point, like the shares of `M3`; the shift of `M8` — 0.01 logit, like `M1`; the Brier of `M10` — 0.002, like `M2`; the share of hard first items of `M7` — 1 point. The simulator's resolution is 4.3 standard errors of the difference, and the standard error is the deviation of its values over 2,000 resamples.
+- **Checks.** "No worse" — the worse end of the interval of the difference "candidate minus base" is no greater than the tolerance. The floor — the worse end of the candidate's interval: `M4` no greater than 0.20, `M6` no greater than 1.5 times the base's value. The targets — `lag` and `corridor` by the lower end of the interval of the share of the path, `settle` by the upper end of the share of those not caught up. A check and a floor stand where the base reads the number: where even the base does not read it, there is nothing to hold, and the report names such cells rather than failing the candidate. A number that the base reads and the candidate's run does not is a check not met. The invariants `I1`–`I4` the run writes into the learner's line under the rule `engine` (`bench.Line.Breaches`), and the file's header says that they are recorded; a file without this mark does not hold the invariants. `I1` between two runs is the gate's (T24). A floor and a target whose population is not in the runs are not met: a check that was not measured does not hold. In a pair a check common to both criteria stands once. A model's target for a candidate of the engine is rejected: the engine has no number for a target.
+- **The score.** A measure's share of the path on a cell is (base − candidate)/(base − ceiling) in its direction, the path — by the whole cell. The ceiling is perfection (zero) for the measures where the path goes to perfection; the engine's ceiling for the measures `E`, in the model's criterion too — the oracle cannot be run through the engine (R24), and the engine's ceiling is the ceiling of the corridor of any pair of a model and an engine; the oracle for the other measures of the model. A measure without a path — the path is no greater than zero, or the base or the ceiling does not read it, — leaves the score, and the report names it; a measure that the candidate's run does not read leaves the score unread. A population's value is the mean over its cells and measures, so the graphs of a population share its weight equally. The interval is from 2,000 resamples: the k-th resamples of all the cells are added with weights, and each cell has its own resamples — its own places.
+- **The choice and the exit.** "Better" — the lower end of the interval of the score is above zero, and of its own group too. Equal to the best — those whose difference of scores with it on the same resamples holds zero. The simplest — the fewest constants, then without a new field, then the nearest to the base, then by name. The confirmation is the same judgement on the runs of held-out learners: the base and the candidate under `engine`, the ceiling under `ceiling`, the set held-out and not the one on which the choice was made; without it the choice waits for confirmation. The report calls a run decisive only if the confirmation is decisive too. A pair — the constraints of both criteria, "better" by the score of its own library, and the upper end of the interval of the other's score no lower than zero. A decisive run — when each cell of each run has no fewer than 4,000 learners.
+- **The slice of `M2` after pauses from 7 days** (`M2.brier.after7`) is added for the group "Forgets": section 3.6 names it, and the slices of `M2` divided the pauses into intervals.
 
-— *Почему:* проверка, которую не читает и база, говорит о графе, а не о кандидате: на школьной математике у 40 учеников «освоено» объявляется так редко, что не каждая выборка его видит, и любой кандидат проваливался бы. Сложение k-х выборок даёт интервал суммы, потому что выборки ячеек независимы.
+— *Why:* a check that even the base does not read speaks of the graph, not of the candidate: on school maths for 40 learners "mastered" is declared so rarely that not every resample sees it, and any candidate would fail. Adding the k-th resamples gives the interval of the sum, because the resamples of the cells are independent.
 
-— *Отвергнуто:* проверка, которая проваливается, когда не читает и база, — она проваливает и базу против самой себя; путь `E1` к оракулу — оракул движка не ведёт; вес популяции на каждый её граф целиком — популяция с двумя графами весила бы вдвое.
+— *Rejected:* a check that fails when even the base does not read it — it fails the base against itself too; the path of `E1` to the oracle — the oracle does not lead the engine; a population's weight on each of its graphs in full — a population with two graphs would weigh twice as much.
 
-— *Следствие:* значения базы и потолка, из которых складывается путь, суд пока читает из своих прогонов: закрепить их поправкой к R04 можно только после первого решающего прогона базы ([architecture.md](architecture.md), раздел 3.6), а он — за T24. — RUN.md, T23; `internal/criterion/`, `internal/bench/`, `internal/measure/`, `main.go`; [architecture.md](architecture.md), раздел 3.6.
+— *Consequence:* the values of the base and of the ceiling of which the path is made up the judgement for now reads from its own runs: they can be pinned by an amendment to R04 only after the first decisive run of the base ([architecture.md](architecture.md), section 3.6), and that run is for T24. — RUN.md, T23; `internal/criterion/`, `internal/bench/`, `internal/measure/`, `main.go`; [architecture.md](architecture.md), section 3.6.
 
-— *Поправка 2026-11-09:* суд больше не читает путь из своих прогонов. Он берёт путь из файла путей, который закрепил первый решающий прогон базы (R28; поправка 2026-11-09 к R04), — при каждом выборе и в каждом подтверждении. Поэтому файл суда не называет прогона потолка, ни у выбора, ни у подтверждения, а `Input` и `Confirm` его не несут. Доля кандидата — по-прежнему его парная разность с базой суда, на учениках суда, но делённая на закреплённый путь. Решающий прогон шёл в T26, а не в T24, как говорило «Следствие». — RUN.md, T26; `internal/criterion/`, `main.go`; [architecture.md](architecture.md), раздел 3.6.
+— *Amendment 2026-11-09:* the judgement no longer reads the path from its own runs. It takes the path from the file of paths that the first decisive run of the base pinned (R28; the 2026-11-09 amendment to R04), — at each choice and in each confirmation. So the judgement file does not name a run of the ceiling, neither for the choice nor for the confirmation, and `Input` and `Confirm` do not carry it. A candidate's share is still its paired difference with the judgement's base, on the judgement's learners, but divided by the pinned path. The decisive run went in T26, not in T24, as "Consequence" said. — RUN.md, T26; `internal/criterion/`, `main.go`; [architecture.md](architecture.md), section 3.6.
 
-— *Поправка 2026-11-11 (T40; R40):* суд отказывает прогон не из своего суда. База и база подтверждения — на библиотеках, на которых прочитаны пути, а база — на версиях встроенного `gate.json`. Вторая библиотека кандидата одной библиотеки — версия базы или коммит её закрепления.
+— *Amendment 2026-11-11 (T40; R40):* a judgement refuses a run that is not of its own judgement. The base and the base of the confirmation are on the libraries on which the paths were read, and the base is on the versions of the embedded `gate.json`. The second library of a candidate of one library is the base's version or the commit of its pin.
 
-## Гейт
+## The gate
 
-**R26. Гейт — файл `gate.json` в корне `sim`, рецепт `just gate`, команда `sim gate` и job «Gate» на amd64 и arm64. go.mod называет библиотеки той же точкой, что и файл. До T26 гейт держит полосы своего прогона на базе. `I1` — повтор каждого ученика гейта.** Решено автором 2026-11-08 при планировании T24 (RUN.md, T24) — горутины, go.mod, полосы до T26 и `I1`, — а вид файла и сверки — исполнителем.
-- **Файл гейта** — JSON:
-  - `libraries` — по пути модуля: репозиторий, полный SHA коммита и тег релиза на нём, пустой, пока релиза нет;
-  - `modules` — релиз, дайджест индекса и пакеты (модуль, версия, дайджест пакета);
-  - `dependencies` — выбранные версии общих зависимостей, сейчас модуль Go `spec`;
-  - `go` — строка `go` каждого из трёх модулей;
-  - `bands` — причина записи и полоса каждого числа: ячейка, число, прочитано ли, значение и полуширина.
+**R26. The gate is the file `gate.json` at the root of `sim`, the recipe `just gate`, the command `sim gate` and the job "Gate" on amd64 and arm64. go.mod names the libraries by the same point as the file. Until T26 the gate holds the bands of its own run on the base. `I1` is a repeat of each learner of the gate.** Decided by the author 2026-11-08 in the planning of T24 (RUN.md, T24) — the goroutines, go.mod, the bands until T26 and `I1`, — and the form of the file and of the checks by the executor.
+- **The gate file** — JSON:
+  - `libraries` — by module path: the repository, the full SHA of the commit and the tag of the release on it, empty while there is no release;
+  - `modules` — the release, the digest of the index and the packages (module, version, package digest);
+  - `dependencies` — the chosen versions of the shared dependencies, now the Go module `spec`;
+  - `go` — the line `go` of each of the three modules;
+  - `bands` — the reason of the recording and the band of each number: the cell, the number, whether it was read, the value and the half-width.
 
-  Полосы лежат в том же файле, как велит [architecture.md](architecture.md), раздел 3.9. Число, которое запись не прочла, записывается «не прочитано», и гейт держит именно это: прочитанное позже — вне полосы. Раздел 3.7 зовёт непрочитанное «вне полосы» для числа, которое при записи читалось.
-- **Рецепт `just gate [bands|exact|record]`:**
-  - берёт каждую библиотеку коммитом из файла во временную папку (`git fetch` по SHA), а вызывающий подставляет свой код папкой — `GATE_LEARNER_MODEL` или `GATE_ENGINE`;
-  - сверяет тег из файла с коммитом из файла (`git ls-remote`): job «Go» собирает тег `go.mod`, а гейт — коммит;
-  - пишет `go.work` с `use` трёх модулей, ставит `GOWORK` и собирает `sim` один раз;
-  - гонит гейт процессами, по части учеников на ядро (`sim gate run -part k/n`), с коммитами, которые видит в папках;
-  - затем `sim gate check` или `sim gate record` сводит части. Часть, которая упала, останавливает остальные. Причина записи идёт в команду в кавычках оболочки.
-- **Файл результатов** называет и популяции, учеников на граф и повтор прогона, так что `sim merge` сводит части одного прогона в его порядке и отвергает части другого. Запись полос отвергает прогон не на коммитах файла: полосы кода вызывающего — не запись.
-- **Сверки** — каждое расхождение даёт красный гейт с причиной:
-  - библиотеки собраны из рабочей области;
-  - выбранная версия `spec` (`debug.ReadBuildInfo`) равна записанной;
-  - строки `go` трёх модулей равны записанным и не новее Go, которым собран гейт;
-  - go.mod `sim` требует каждую библиотеку тегом из файла, а пока релиза нет — псевдоверсией его коммита;
-  - пакеты, которые встраивает стенд, — те, что называет файл;
-  - ни один ученик не нарушил `I1`–`I4`;
-  - каждое число в полосе. Свой CI `sim` держит числа записанными до бита (`exact`), вызывающие — полосами.
-- **Ячейки и числа** — по разделу 3.7, в коде (`internal/gate`): первые 300 рабочих учеников каждой ячейки популяций гейта, числа без направления. Полуширина — половина 95 % интервала из тех же 2 000 выборок. `A-linked` идёт только на синтетических пакетах (R19), а гейт синтетического модуля не берёт ([architecture.md](architecture.md), раздел 3.3). Поэтому `A-linked` гейт не гоняет, а его отчёт называет её числа «нет графа». Прогон с синтетическим модулем — красный.
-- **Полосы до T26** записаны прогоном гейта на `learner-model` v0.1.0 и `engine` v0.1.0, с причиной «первая запись на базе». T26 записывает их заново со своей причиной.
-- **`I1`** — каждый ученик гейта прогоняется дважды (`bench.Config.Repeat`), и `invariant.Same` сверяет два прогона до бита. Если замер на раннере не уложится в бюджет, повтор урезается поправкой к этой записи.
+  The bands lie in the same file, as [architecture.md](architecture.md), section 3.9, says. A number that the recording did not read is recorded as "not read", and the gate holds exactly that: read later, it is outside the band. Section 3.7 calls an unread number "outside the band" for a number that was read at the recording.
+- **The recipe `just gate [bands|exact|record]`:**
+  - takes each library by the commit from the file into a temporary folder (`git fetch` by SHA), and the caller substitutes its code by a folder — `GATE_LEARNER_MODEL` or `GATE_ENGINE`;
+  - checks the tag from the file against the commit from the file (`git ls-remote`): the job "Go" builds the tag of `go.mod`, and the gate builds the commit;
+  - writes `go.work` with `use` of the three modules, sets `GOWORK` and builds `sim` once;
+  - runs the gate as processes, a part of the learners per core (`sim gate run -part k/n`), with the commits that it sees in the folders;
+  - then `sim gate check` or `sim gate record` joins the parts. A part that failed stops the others. The reason of the recording goes into the command in the shell's quotes.
+- **The file of results** also names the populations, the learners per graph and the repeat of the run, so `sim merge` joins the parts of one run in its order and rejects the parts of another. Recording the bands rejects a run not on the commits of the file: bands of the caller's code are not a recording.
+- **Checks** — each divergence gives a red gate with a reason:
+  - the libraries are built from the workspace;
+  - the chosen version of `spec` (`debug.ReadBuildInfo`) equals the recorded one;
+  - the lines `go` of the three modules equal the recorded ones and are no newer than the Go that the gate is built with;
+  - the go.mod of `sim` requires each library by the tag from the file, and while there is no release — by the pseudo-version of its commit;
+  - the packages that the simulator embeds are those that the file names;
+  - no learner violated `I1`–`I4`;
+  - each number is in its band. `sim`'s own CI holds the numbers as recorded to the bit (`exact`), the callers by the bands.
+- **Cells and numbers** — by section 3.7, in code (`internal/gate`): the first 300 working learners of each cell of the gate's populations, numbers without a direction. The half-width is half the 95 % interval from the same 2,000 resamples. `A-linked` goes only on the synthetic packages (R19), and the gate does not take a synthetic module ([architecture.md](architecture.md), section 3.3). So the gate does not run `A-linked`, and its report calls its numbers "no graph". A run with a synthetic module is red.
+- **The bands until T26** are recorded by a run of the gate on `learner-model` v0.1.0 and `engine` v0.1.0, with the reason "the first record", on the base. T26 records them anew with its own reason.
+- **`I1`** — each learner of the gate is run twice (`bench.Config.Repeat`), and `invariant.Same` checks the two runs against each other to the bit. If a measurement on the runner does not fit into the budget, the repeat is cut by an amendment to this entry.
 
-— *Почему:*
-- Процессы держат R09 и делят прогон на ядра без горутин.
-- go.mod на той же точке, что и файл, — единственный способ собрать job «Go» общего `go.yml` на коммите, которого ещё нет в релизе. Прокси Go отдаёт коммит по SHA, и job «Go» собирает ровно тот код, на котором записаны полосы.
-- Полосы своего прогона дают гейту что держать уже в T24, а не только с T26.
+— *Why:*
+- The processes keep R09 and split a run over the cores without goroutines.
+- go.mod at the same point as the file is the only way to build the job "Go" of the shared `go.yml` on a commit that is not in a release yet. The Go proxy serves a commit by SHA, and the job "Go" builds exactly the code on which the bands are recorded.
+- The bands of its own run give the gate something to hold already in T24, not only from T26.
 
-— *Отвергнуто:*
-- полосы в отдельном файле — раздел 3.9 кладёт их в файл гейта;
-- горутины с поправкой к R09 — автор оставил R09;
-- go.mod только нижней границей — job «Go» был бы красным на шагах 1–4 порядка релизов;
-- повтор части учеников сразу — замер ещё не сказал, что полный повтор не укладывается;
-- `jq` в рецепте — его нет в стадии `toolchain`, а `sim gate libraries` читает файл тем же кодом, что и гейт.
+— *Rejected:*
+- the bands in a separate file — section 3.9 puts them into the gate file;
+- goroutines with an amendment to R09 — the author kept R09;
+- go.mod only as a lower bound — the job "Go" would be red on steps 1–4 of the order of releases;
+- a repeat of a part of the learners at once — the measurement has not said yet that a full repeat does not fit;
+- `jq` in the recipe — it is not in the stage `toolchain`, and `sim gate libraries` reads the file with the same code as the gate.
 
-— *Следствие:* вызывающие берут тот же рецепт с `GATE_*` — это задачи их репозиториев. Порог CI `modules` — T25. Решающий прогон делится на части тем же `-part` и сводится `sim merge` — T26. — RUN.md, T24; `gate.json`, `internal/gate/`, `internal/bench/`, `internal/published/`, `gate.go`, `main.go`, `justfile`, `.github/workflows/ci.yml`; [architecture.md](architecture.md), разделы 3.7 и 3.9.
+— *Consequence:* the callers take the same recipe with `GATE_*` — these are tasks of their repositories. The threshold of the CI of `modules` — T25. The decisive run is split into parts by the same `-part` and joined by `sim merge` — T26. — RUN.md, T24; `gate.json`, `internal/gate/`, `internal/bench/`, `internal/published/`, `gate.go`, `main.go`, `justfile`, `.github/workflows/ci.yml`; [architecture.md](architecture.md), sections 3.7 and 3.9.
 
-— *Поправка 2026-11-09:* в гейте 100 учеников на ячейку, а не 300, и при повторе прогона для `I1` выбор на каждом шаге заново берётся только у первых 10 учеников ячейки. На `olympiad-math` 0.1.1 выбор движка идёт в десятки раз дольше, и гейт на 300 учениках не укладывался в `timeout-minutes: 15`. Гейт урезан правкой `sim`, а не временем, как и велит раздел 3.9 [architecture.md](architecture.md). `A-linked` больше не «нет графа»: он идёт на паре опубликованных математик. Почему — R31.
+— *Amendment 2026-11-09:* the gate has 100 learners a cell, not 300, and on the repeat of the run for `I1` the choice anew at each step is taken only for the first 10 learners of a cell. On `olympiad-math` 0.1.1 the engine's choice takes tens of times longer, and the gate on 300 learners did not fit into `timeout-minutes: 15`. The gate is cut by an edit of `sim`, not by time, as [architecture.md](architecture.md), section 3.9, says. `A-linked` is no longer "no graph": it goes on the pair of published maths. Why — R31.
 
-— *Поправка 2026-11-10:* файл гейта называет библиотеки v0.1.4 — `engine` на ddfed3a, `learner-model` на acfc4f2, — пакеты `modules` v0.2.0 и `spec` v0.12.0. `just gate exact` сошёлся на них до бита, так что полосы прежние. Почему — R32.
+— *Amendment 2026-11-10:* the gate file names the libraries v0.1.4 — `engine` at ddfed3a, `learner-model` at acfc4f2, — the packages of `modules` v0.2.0 and `spec` v0.12.0. `just gate exact` matched on them to the bit, so the bands are the former ones. Why — R32.
 
-— *Поправка 2026-11-10:* рабочее пространство гейта пишет скрытый рецепт `workspace`, один для гейта и для решающего прогона кандидата (R34). Гейт берёт из `GATE_LEARNER_MODEL` и `GATE_ENGINE` не только папку, но и коммит по полному SHA. Проверка тега, сам гейт и его числа прежние: `just gate exact` на новом рецепте сходится до бита.
+— *Amendment 2026-11-10:* the gate's workspace is written by the hidden recipe `workspace`, one for the gate and for the decisive run of a candidate (R34). The gate takes from `GATE_LEARNER_MODEL` and `GATE_ENGINE` not only the folder but also the commit by full SHA. The check of the tag, the gate itself and its numbers are as before: `just gate exact` on the new recipe matches to the bit.
 
-— *Поправка 2026-11-11 (T41):* файл гейта называет `engine` v0.1.6 на 57e0ab8; `learner-model` — по-прежнему v0.1.4 на acfc4f2, пакеты — `modules` v0.2.0, `spec` — v0.12.0. На 100 учениках `just gate exact` сошёлся на нём до бита, затем гейт вырос до 150 учеников, и полосы записаны заново `just gate record` с причиной (поправка 2026-11-11 к R31).
+— *Amendment 2026-11-11 (T41):* the gate file names `engine` v0.1.6 at 57e0ab8; `learner-model` — still v0.1.4 at acfc4f2, the packages — `modules` v0.2.0, `spec` — v0.12.0. On 100 learners `just gate exact` matched on it to the bit, then the gate grew to 150 learners, and the bands were recorded anew by `just gate record` with a reason (the 2026-11-11 amendment to R31).
 
-— *Поправка 2026-11-11 (T43):* полосы записаны заново на `modules` v0.2.5 — `just gate record` с причиной T43, на 150 учениках, а `just gate exact` зелёный. Все 69 чисел прочитаны там же, где прежде; 39 не изменились ни в одном бите — 26 школьных, 6 олимпиадных, 3 пары математик и все 4 сочинений. Сдвинулись 23 олимпиадных, 6 школьных — у `G0`, `G2`, `G2-half` и `F-model`, в третьем–четвёртом знаке: на время уроков легло звено разобранного примера — и `M9.notFalse` у `A-linked`. Сильнее всех сдвинулась доля трудных первых пунктов `E1.hard` на олимпиадной — на 1,9 прежней полуширины у `G0` (0,320 → 0,374) и на 1,5 у `G2-half`, а `E2.stuck` стало ненулевым у `G0`, `G1` и `G2` олимпиадной (до 0,067): 30 выборов из пяти стали временем, и угадывания у них больше нет. Почему — R42.
+— *Amendment 2026-11-11 (T43):* the bands are recorded anew on `modules` v0.2.5 — `just gate record` with the reason T43, on 150 learners, and `just gate exact` is green. All 69 numbers are read where they were read before; 39 did not change in a single bit — 26 of school maths, 6 of olympiad maths, 3 of the pair of maths and all 4 of the essays. 23 numbers of olympiad maths shifted, 6 of school maths — of `G0`, `G2`, `G2-half` and `F-model`, in the third to fourth digit: a segment of a worked example was added to the time of the lessons — and `M9.notFalse` of `A-linked`. The share of hard first items `E1.hard` on olympiad maths shifted most of all — by 1.9 of the former half-width for `G0` (0.320 → 0.374) and by 1.5 for `G2-half`, and `E2.stuck` became non-zero for `G0`, `G1` and `G2` of olympiad maths (up to 0.067): 30 choices of one of five became checks of time, and they no longer have guessing. Why — R42.
 
-— *Поправка 2026-11-11 (T45):* файл гейта называет `learner-model` v0.1.6 на 7d796e2. `just gate exact` сошёлся на нём до бита, все 69 чисел, — и полосы записаны заново `just gate record` только ради причины, как в T42: числа и полуширины — те же. Почему — R43.
+— *Amendment 2026-11-11 (T45):* the gate file names `learner-model` v0.1.6 at 7d796e2. `just gate exact` matched on it to the bit, all 69 numbers, — and the bands were recorded anew by `just gate record` only for the sake of the reason, as in T42: the numbers and the half-widths are the same. Why — R43.
 
-— *Поправка 2026-11-12 (T46):* гейт идёт на 250 учениках на ячейку, а не на 150, и полосы записаны заново `just gate record` с причиной T46 на тех же библиотеках и пакетах; `just gate exact` зелёный — 1 мин 52 с по часам и 29,6 минуты процессора в контейнере, при load average около 40–60 от соседних контейнеров. Из 69 чисел 25 — с нулевой полосой — те же. Три числа, которые на 150 учениках запись не прочла, теперь прочитаны: ложные «освоено» `M4.false.all` и опоздание `M6.late` у `G0` школьной и доля опоздавших повторений `E3.late` у `F-model` школьной; непрочитанными остались два — `M4.false.pages` у `W-shock` и `M9.hasFalse` у `A-linked`. Из 42 чисел с ненулевой полосой три — те, что прочитаны впервые, — прежней полуширины не имеют; у 38 из остальных 39 новое значение отстоит от прежнего меньше чем на одну прежнюю полуширину — больше всех `E5.written` у `E-base`, на 0,60, — а полуширина — в среднем 0,79 прежней, около √(150/250) ≈ 0,77. Тридцать девятое — доля пауз, после которых модель так и не догоняет забывание, `M5.never` у `F-model` школьной: на 150 оно было 0 с нулевой полосой, а стало 0,0036 ± 0,0055: среди 250 учеников нашлась пауза, после которой модель не догнала забывание, а среди первых 150 такой не было. Это редкое событие, и прежний ноль был ноль выборки, а не меры. Почему гейт вырос — поправка 2026-11-12 к R31.
+— *Amendment 2026-11-12 (T46):* the gate goes on 250 learners a cell, not on 150, and the bands are recorded anew by `just gate record` with the reason T46 on the same libraries and packages; `just gate exact` is green — 1 min 52 s by the clock and 29.6 CPU minutes in the container, at a load average of about 40–60 from neighbouring containers. Of the 69 numbers, 25 — with a zero band — are the same. Three numbers that the recording did not read on 150 learners are now read: false "mastered" `M4.false.all` and the lateness `M6.late` of `G0` of school maths, and the share of late repetitions `E3.late` of `F-model` of school maths; two stayed unread — `M4.false.pages` of `W-shock` and `M9.hasFalse` of `A-linked`. Of the 42 numbers with a non-zero band, three — those read for the first time — have no former half-width; for 38 of the other 39 the new value is less than one former half-width away from the former one — most of all `E5.written` of `E-base`, by 0.60, — and the half-width is on average 0.79 of the former one, about √(150/250) ≈ 0.77. The thirty-ninth is the share of pauses after which the model never catches up with forgetting, `M5.never` of `F-model` of school maths: on 150 it was 0 with a zero band, and it became 0.0036 ± 0.0055: among 250 learners there was a pause after which the model did not catch up with forgetting, and among the first 150 there was none. This is a rare event, and the former zero was a zero of the sample, not of the measure. Why the gate grew — the 2026-11-12 amendment to R31.
 
-**R27. Гейт CI `modules` — режим `just gate modules` и две команды: `sim gate changed` решает, изменилось ли то, что стенд читает, по каноническому тексту переведённого модуля, а `sim gate thresholds` держит инварианты и пороги. Числа гейта пополнены `E1.hard` и `E2.nothing`, от которых берутся пороги.** Решено исполнителем при T25 (RUN.md, T25), кроме порогов `E1`: их решил автор — поправка 2026-11-09 к R05.
-- **Что сравнивается.** Канонический текст — JSON переведённого модуля, `pack.Module.Text`: полосы и аудитория манифеста, граф и ярусы, задачи с пунктами, слотами, ловушками, канвой и возрастом, числа экземпляров шаблонов, уроки. Это ровно то, что берёт `pack.Translate`, так что список того, что стенд читает, — одно место в коде, как велит [architecture.md](architecture.md), раздел 3.9. Тексты для ученика и версия модуля в текст не входят.
-- **С чем сравнивается** — с новейшей опубликованной версией модуля, которая не снята: снятую `api` не выдаёт (R63 spec). Состояния:
-  - `new` — опубликованной версии нет, или релиза нет вовсе (`-first`); модуль изменился весь;
-  - `changed` и `same` — тексты разные или одинаковые;
-  - `transition` — у опубликованной версии другая версия формата; стенд модуль не гонит, даже с `-all` (поправка 2026-11-07 к R103 spec);
-  - пакет версии формата, которую стенд не читает, без перехода — отказ: нужен новый тег `sim`;
-  - сломанный пакет — часть для сервера не та, что в описи, или манифест не тот, — отказ, и в переходе тоже: опись держит `server_part` во всех версиях формата ([текст формата](../spec/format/README.md), раздел 2).
-- **Проверка пакетов.** Опубликованный — по цепочке дайджестов от индекса, который принял `release-verify`: `inventory.json` равен дайджесту пакета в записи, `server.json` — описи. Пакет pull request записи не имеет: `server.json` — против описи, манифест — против описи. Файлы читает `main`, а `pack` получает байты (`pack.ReadFiles`).
-- **Что гоняется** — ячейки гейта, у которых каждый модуль графа есть среди пакетов, которые идут (`bench.Config.Packages`). Заголовок файла результатов называет эти пакеты: модуль, версию и дайджест. `A-linked` по-прежнему «нет графа». Модуль, на котором не идёт ни одна популяция гейта, отчёт называет, но гейт от этого не краснеет: популяции на новом графе — правка `sim`.
-- **Пороги** — точечные значения: ученики гейта всегда те же. Края включительно, непрочитанное число — красное. Значения для порогов `E1` и `E2` берутся из полос `gate.json` того же тега:
-  - `E2.stuck` и `E2.nothing` — наибольшее по всем ячейкам плюс 1 пункт;
-  - `E1.hard` и `E1.corridor` — по ячейкам `G0` и `G2-half`, по поправке 2026-11-09 к R05;
-  - `M4.false.all` на `G0` — не больше 0,20, `E5.again` на `E-base` — ноль.
-- **Сверка прогона.** Библиотеки — коммиты файла. Есть все ячейки пакетов, со всеми учениками и повтором для `I1`. Сверки сборки — те же, что у `sim gate check`. `sim gate check` и `sim gate record` прогон на подменённых пакетах отвергают.
-- **Числа гейта** пополнены: `E2.nothing` — на всех популяциях, `E1.hard` — на `G0` и `G2-half`. `gate.json` записан заново с причиной T25. 47 прежних полос не изменились ни в одном бите, добавилось 18.
-- **Рецепт** — `just gate modules <аргументы sim gate changed>`. Сначала `sim gate changed`: если гнать нечего, рецепт выходит с 0, не трогая сеть. Иначе — та же сборка через `go.work` из файла, части `sim gate run -package …` и `sim gate thresholds`. Относительные пути — от папки вызывающего. Форма вызова для job `modules` — README, «Gate in the CI of modules».
+**R27. The gate of the CI of `modules` is the mode `just gate modules` and two commands: `sim gate changed` decides whether what the simulator reads has changed, by the canonical text of the translated module, and `sim gate thresholds` holds the invariants and the thresholds. The gate's numbers are extended by `E1.hard` and `E2.nothing`, from which the thresholds are taken.** Decided by the executor in T25 (RUN.md, T25), except for the thresholds of `E1`: the author decided them — the 2026-11-09 amendment to R05.
+- **What is compared.** The canonical text is the JSON of the translated module, `pack.Module.Text`: the bands and the audience of the module manifest, the graph and the tiers, the tasks with their items, answer slots, traps, canvas and age, the numbers of the instances of templates, the lessons. This is exactly what `pack.Translate` takes, so the list of what the simulator reads is one place in the code, as [architecture.md](architecture.md), section 3.9, says. The texts for the learner and the module's version do not enter the text.
+- **What it is compared with** — the newest published version of the module that is not withdrawn: `api` does not serve a withdrawn one (R63 spec). The states:
+  - `new` — there is no published version, or no release at all (`-first`); the whole module has changed;
+  - `changed` and `same` — the texts differ or are the same;
+  - `transition` — the published version has another format version; the simulator does not run the module, even with `-all` (the 2026-11-07 amendment to R103 spec);
+  - a package of a format version that the simulator does not read, without a transition — a refusal: a new tag of `sim` is needed;
+  - a broken package — the server part is not the one in the inventory, or the module manifest is not the right one, — a refusal, in a transition too: the inventory holds `server_part` in all format versions ([format text](../spec/format/README.md), section 2).
+- **The check of the packages.** A published one — by the chain of digests from the index that `release-verify` accepted: `inventory.json` equals the package digest in the entry, `server.json` — the inventory. A package of a pull request has no entry: `server.json` — against the inventory, the module manifest — against the inventory. `main` reads the files, and `pack` gets the bytes (`pack.ReadFiles`).
+- **What is run** — the cells of the gate each module of whose graph is among the packages that run (`bench.Config.Packages`). The header of the file of results names these packages: module, version and digest. `A-linked` is still "no graph". A module on which not one population of the gate runs the report names, but the gate does not turn red from it: populations on a new graph are an edit of `sim`.
+- **The thresholds** are point values: the gate's learners are always the same. The edges are inclusive, an unread number is red. The values for the thresholds of `E1` and `E2` are taken from the bands of `gate.json` of the same tag:
+  - `E2.stuck` and `E2.nothing` — the largest over all the cells plus 1 point;
+  - `E1.hard` and `E1.corridor` — by the cells of `G0` and `G2-half`, by the 2026-11-09 amendment to R05;
+  - `M4.false.all` on `G0` — no greater than 0.20, `E5.again` on `E-base` — zero.
+- **The check of the run.** The libraries are the commits of the file. All the cells of the packages are there, with all the learners and the repeat for `I1`. The checks of the build are the same as in `sim gate check`. `sim gate check` and `sim gate record` reject a run on substituted packages.
+- **The gate's numbers** are extended: `E2.nothing` — on all populations, `E1.hard` — on `G0` and `G2-half`. `gate.json` is recorded anew with the reason T25. The 47 former bands did not change in a single bit, 18 were added.
+- **The recipe** — `just gate modules <arguments of sim gate changed>`. First `sim gate changed`: if there is nothing to run, the recipe exits with 0 without touching the network. Otherwise — the same build through `go.work` from the file, the parts `sim gate run -package …` and `sim gate thresholds`. Relative paths are from the caller's folder. The form of the call for the job of `modules` — README, "Gate in the CI of modules".
 
-— *Почему:*
-- Текст из `Translate` не может разойтись с тем, что стенд на самом деле читает: поле, которое `Translate` начнёт читать, само войдёт в сравнение.
-- Аргументы — как у `module-kit diff` (R11 modules): CI `modules` уже держит индекс, принятый `release-verify`, и опубликованные пакеты папками.
-- Точка, а не интервал: у гейта нет случайности между прогонами, а интервал сдвинул бы порог на шум, которого нет.
+— *Why:*
+- The text from `Translate` cannot diverge from what the simulator really reads: a field that `Translate` begins to read enters the comparison by itself.
+- The arguments are as in `module-kit diff` (R11 modules): the CI of `modules` already holds the index accepted by `release-verify` and the published packages as folders.
+- A point, not an interval: the gate has no randomness between runs, and an interval would shift the threshold by noise that does not exist.
 
-— *Отвергнуто:*
-- проекция канонического вида по списку полей — второй список рядом с `Translate`, который разойдётся с ним;
-- сравнение со снятой версией — её не выдают, и сравнение с ней сказало бы «same», когда ученики получают другое;
-- гейт по новым модулям красным, пока на них нет популяции, — `modules` не мог бы добавить модуль, пока `sim` его не закрепит, а закрепляет он только выпущенное.
+— *Rejected:*
+- a projection of the canonical view by a list of fields — a second list beside `Translate`, which will diverge from it;
+- a comparison with a withdrawn version — it is not served, and a comparison with it would say "same" when the learners get something else;
+- the gate red on new modules until there is a population on them — `modules` could not add a module until `sim` pins it, and it pins only what is released.
 
-— *Следствие:* job гейта в CI `modules` подключит сессия `modules` по README — Д5 в таблице 4 RUN.md `modules`, после первого тега `sim` (T27). — RUN.md, T25; `internal/gate/modules.go`, `internal/gate/gate.go`, `internal/pack/`, `internal/bench/`, `gate.go`, `justfile`, `gate.json`, README; [architecture.md](architecture.md), разделы 3.7 и 3.9.
+— *Consequence:* the gate's job in the CI of `modules` will be connected by the session of `modules` by the README — Д5 in table 4 of RUN.md `modules`, after the first tag of `sim` (T27). — RUN.md, T25; `internal/gate/modules.go`, `internal/gate/gate.go`, `internal/pack/`, `internal/bench/`, `gate.go`, `justfile`, `gate.json`, README; [architecture.md](architecture.md), sections 3.7 and 3.9.
 
-— *Поправка 2026-11-09:* `sim gate changed` отдаёт вместе с изменёнными модулями и неизменённый, когда граф популяции гейта держит его вместе с изменённым: так `A-linked` идёт на обеих математиках из pull request, если изменилась хотя бы одна (раздел 3.9 [architecture.md](architecture.md)). На stdout его папка идёт строкой `along <папка>`, рецепт отдаёт её `sim gate run -along`, и такой пакет идёт только в ячейках, которые он делит с изменённым (`published.Package.Along`), а не во всех своих. Строка такого модуля на stderr называет модуль, который его привёл. Ячейку гейта, которой не хватило пакета второго модуля её графа, отчёт называет, не краснея. В коде — `gate.Runs` и `partial`. Почему — R31.
+— *Amendment 2026-11-09:* `sim gate changed` gives, together with the changed modules, an unchanged one too, when the graph of a population of the gate holds it together with a changed one: so `A-linked` goes on both maths from the pull request if at least one of them has changed ([architecture.md](architecture.md), section 3.9). On stdout its folder goes as the line `along <folder>`, the recipe passes it to `sim gate run -along`, and such a package goes only in the cells that it shares with the changed one (`published.Package.Along`), not in all of its own. The line of such a module on stderr names the module that brought it. A cell of the gate that lacked the package of the second module of its graph the report names without turning red. In code — `gate.Runs` and `partial`. Why — R31.
 
-— *Поправка 2026-11-11:* перевод читает, есть ли у задачи наводящий вопрос, и `time` — видом проверки, так что канонический текст держит и то, и другое: `sim gate changed` видит добавленный или снятый вопрос и проверку `number`, ставшую `time`, но не правку слов вопроса — их стенд не читает. Почему — R41.
+— *Amendment 2026-11-11:* the translation reads whether a task has a leading question, and `time` as a check kind, so the canonical text holds both: `sim gate changed` sees an added or removed question and a check `number` that became `time`, but not an edit of the words of the question — the simulator does not read them. Why — R41.
 
-**R28. Пути целей закреплены файлом `internal/criterion/paths.json`, встроенным в стенд: его пишет `sim paths` из решающих прогонов базы и потолка движка, и суд берёт путь из него. Решающий прогон гонит рецепт `just decisive` на машине разработки, а файлы его результатов в репозитории не лежат. Первый файл полос записан на коммитах релизов базы.** Решено автором 2026-11-09 при планировании T26 (RUN.md, T26) — файл путей, файлы прогона, где гонять и полная таблица в поправке к R04, — остальное исполнителем.
-- **Файл путей** — JSON:
-  - `libraries`, `set`, `learners` — на чём прочитаны пути;
-  - `base` и `ceiling` — SHA-256 файлов результатов двух прогонов;
-  - `paths` — ячейка, мера, прочитан ли путь, значение базы и значение потолка, оба в направлении критерия, так что путь — база минус потолок.
+**R28. The paths of the targets are pinned by the file `internal/criterion/paths.json`, embedded in the simulator: `sim paths` writes it from the decisive runs of the base and of the engine's ceiling, and a judgement takes the path from it. The decisive run is run by the recipe `just decisive` on the development machine, and the files of its results do not lie in the repository. The first file of bands is recorded on the commits of the releases of the base.** Decided by the author 2026-11-09 in the planning of T26 (RUN.md, T26) — the file of paths, the files of the run, where to run it and the full table in the amendment to R04, — the rest by the executor.
+- **The file of paths** — JSON:
+  - `libraries`, `set`, `learners` — what the paths were read on;
+  - `base` and `ceiling` — the SHA-256 of the files of results of the two runs;
+  - `paths` — the cell, the measure, whether the path was read, the value of the base and the value of the ceiling, both in the criterion's direction, so the path is the base minus the ceiling.
 
-  Пары — каждая мера групп оценки обоих критериев на каждой ячейке опубликованного графа, где у популяции есть вес. Путь `E1` у двух критериев общий. Потолок — ноль у мер «до совершенства», потолок движка у мер `E…`, оракул базы у мер `M…`, как и раньше считал суд.
-- **`sim paths -base <файл> -ceiling <файл> [-out …] [-table]`** пишет файл путей и печатает строки таблицы для поправки к R04. Отказ, если:
-  - прогоны не под правилами `engine` и `ceiling`;
-  - набор не рабочий;
-  - дана часть прогона;
-  - прогон шёл на пакетах вместо закреплённых;
-  - в базе нет какой-то популяции групп оценки;
-  - у прогонов разные библиотеки или ученики;
-  - в базе есть нарушение инварианта;
-  - в ячейке меньше 4 000 учеников.
-- **Суд** берёт путь из встроенного файла: доля кандидата — его парная разность с базой суда, делённая на закреплённый путь. Меры, которой нет в файле, которую он не прочёл или у которой путь не больше нуля, в оценке нет, и отчёт её называет. Без закреплённых путей суд отказывает. Прогон потолка суду больше не нужен — поправка 2026-11-09 к R25.
-- **Тест** держит таблицу поправки 2026-11-09 к R04 равной `Table()` встроенного файла: значение в журнале и значение, которым судит код, — одно.
-- **Рецепт `just decisive engine|ceiling <файл>`** собирает стенд по `go.mod`, где обе библиотеки — v0.1.0. Он гонит `sim run -populations all -learners 4000 -set working` процессами по частям учеников на всех ядрах (R09), затем `sim merge` и SHA-256 файла.
-- **Первый файл полос** — `just gate record` с причиной T26, на тех же коммитах v0.1.0: числа те же до бита, что записали T24 и T25, меняется причина.
+  The pairs are each measure of the score groups of both criteria on each cell of a published graph where the population has a weight. The path of `E1` is common to the two criteria. The ceiling is zero for the measures "to perfection", the engine's ceiling for the measures `E…`, the base's oracle for the measures `M…`, as the judgement computed it before.
+- **`sim paths -base <file> -ceiling <file> [-out …] [-table]`** writes the file of paths and prints the rows of the table for the amendment to R04. A refusal if:
+  - the runs are not under the rules `engine` and `ceiling`;
+  - the set is not the working one;
+  - a part of a run is given;
+  - the run went on packages instead of the pinned ones;
+  - the base lacks some population of the score groups;
+  - the runs have different libraries or learners;
+  - the base has a violation of an invariant;
+  - a cell has fewer than 4,000 learners.
+- **The judgement** takes the path from the embedded file: a candidate's share is its paired difference with the judgement's base, divided by the pinned path. A measure that is not in the file, that the file did not read or whose path is no greater than zero is not in the score, and the report names it. Without pinned paths the judgement refuses. The judgement no longer needs a run of the ceiling — the 2026-11-09 amendment to R25.
+- **A test** holds the table of the 2026-11-09 amendment to R04 equal to `Table()` of the embedded file: the value in the log and the value the code judges by are one.
+- **The recipe `just decisive engine|ceiling <file>`** builds the simulator by `go.mod`, where both libraries are v0.1.0. It runs `sim run -populations all -learners 4000 -set working` as processes by parts of the learners on all the cores (R09), then `sim merge` and the SHA-256 of the file.
+- **The first file of bands** — `just gate record` with the reason T26, on the same commits v0.1.0: the numbers are the same to the bit as T24 and T25 recorded, the reason changes.
 
-— *Почему:*
-- Путь, который суд читает из своих прогонов, после первого выбора шёл бы от новой базы, а в подтверждении — от отложенных учеников, а раздел 3.6 судит «при закреплённом пути».
-- Файл в коде, а не только в журнале: суд не может разойтись с записью, а тест держит запись равной файлу.
-- Файлы прогона — около 2 ГБ на правило. Зёрна и одни биты дают их заново, а SHA-256 в файле путей говорит, тот ли это прогон.
+— *Why:*
+- A path that the judgement reads from its own runs would go after the first choice from the new base, and in the confirmation from the held-out learners, while section 3.6 judges "at a pinned path".
+- The file is in the code, not only in the log: the judgement cannot diverge from the record, and a test holds the record equal to the file.
+- The files of a run are about 2 GB per rule. The seeds and the same bits give them anew, and the SHA-256 in the file of paths says whether it is that run.
 
-— *Отвергнуто:*
-- путь из прогонов суда, как было, — он плыл бы;
-- хранить файлы прогона артефактом или файлом релиза — место, срок и проверка подписи ради того, что воспроизводится;
-- прогон на раннере GitHub — 4 ядра, около 2,5 часа, артефакт в гигабайты.
+— *Rejected:*
+- the path from the judgement's runs, as it was — it would drift;
+- keeping the files of a run as an artifact or a release file — space, retention and a signature check for the sake of what is reproduced;
+- a run on a GitHub runner — 4 cores, about 2.5 hours, an artifact of gigabytes.
 
-— *Следствие:* первый кандидат судится по закреплённым путям. Новый закрепляющий прогон — только поправкой к R04, как и новый отложенный набор. — RUN.md, T26; `internal/criterion/`, `main.go`, `justfile`, `gate.json`; [architecture.md](architecture.md), разделы 3.6–3.8.
+— *Consequence:* the first candidate is judged by the pinned paths. A new pinning run — only by an amendment to R04, like a new held-out set. — RUN.md, T26; `internal/criterion/`, `main.go`, `justfile`, `gate.json`; [architecture.md](architecture.md), sections 3.6–3.8.
 
-— *Поправка 2026-11-09:* пути закреплены заново, до первого кандидата: изменился граф — `sim` закрепил `olympiad-math` 0.1.1, а популяции `A-` пошли на опубликованной паре математик. Это не новый выбор, а та же калибровка на графах, которые получат ученики. Прогоны и новая таблица путей — поправка 2026-11-09 к R04, «новое закрепление»; почему — R31.
+— *Amendment 2026-11-09:* the paths are pinned anew, before the first candidate: the graph changed — `sim` pinned `olympiad-math` 0.1.1, and the populations `A-` went on the published pair of maths. This is not a new choice but the same calibration on the graphs that the learners will get. The runs and the new table of paths — the 2026-11-09 amendment to R04, "a new pin"; why — R31.
 
-— *Поправка 2026-11-10:* решающий прогон — 1 000 учеников на ячейку (R33), так что `sim paths` отказывает ячейке, в которой меньше 1 000 учеников, а не 4 000. Рецепт `just decisive` гонит `-learners 1000` и создаёт папку файла, если её нет. Файлы прогона — около 0,5 ГБ на правило. Между судами они лежат в `runs/` рабочей копии: `git` её не видит, а Rebuild Container её не стирает, как стёр файлы T30 в `/tmp`. Пути закреплены заново — поправка 2026-11-10 к R04, «прогоны не дольше часа». Воспроизводимость сверена полным повтором потолка: на 1 000 учениках это дёшево.
+— *Amendment 2026-11-10:* a decisive run is 1,000 learners a cell (R33), so `sim paths` refuses a cell with fewer than 1,000 learners, not 4,000. The recipe `just decisive` runs `-learners 1000` and creates the folder of the file if there is none. The files of a run are about 0.5 GB per rule. Between judgements they lie in `runs/` of the working copy: `git` does not see it, and Rebuild Container does not erase it, as it erased the files of T30 in `/tmp`. The paths are pinned anew — the 2026-11-10 amendment to R04, "runs no longer than an hour". Reproducibility is checked by a full repeat of the ceiling: on 1,000 learners this is cheap.
 
-— *Поправка 2026-11-10, прогон кандидата (T31; R34):* рецепт `just decisive engine|ceiling <файл> [набор]` берёт набор учеников — `working` или `held-out-<критерий>-<n>` — и кандидата: `CANDIDATE_LEARNER_MODEL`, `CANDIDATE_ENGINE` или оба. Без кандидата он собирает стенд по `go.mod`, как прежде, так что файл базы — тот, чей SHA-256 называет `paths.json`.
+— *Amendment 2026-11-10, a candidate's run (T31; R34):* the recipe `just decisive engine|ceiling <file> [set]` takes a set of learners — `working` or `held-out-<criterion>-<n>` — and a candidate: `CANDIDATE_LEARNER_MODEL`, `CANDIDATE_ENGINE` or both. Without a candidate it builds the simulator by `go.mod`, as before, so the file of the base is the one whose SHA-256 `paths.json` names.
 
-— *Поправка 2026-11-11 (T41; поправка 2026-11-11 к R33):* решающий прогон — 1 500 учеников на ячейку, так что `sim paths` отказывает ячейке, в которой меньше 1 500 учеников, а суд называет такой прогон грубым взглядом. Рецепт `just decisive` гонит `-learners 1500`. Файлы прогона — около 0,6–0,8 ГБ на правило. Пути закреплены заново — поправка 2026-11-11 к R04. Воспроизводимость сверена полным повтором потолка. Прежние файлы на 1 000 учеников лежат в `runs/` как `base-1000.jsonl` и `ceiling-1000.jsonl`, и файлы судов `engine-1` и `model-1` называют базу так.
+— *Amendment 2026-11-11 (T41; the 2026-11-11 amendment to R33):* a decisive run is 1,500 learners a cell, so `sim paths` refuses a cell with fewer than 1,500 learners, and a judgement calls such a run a rough look. The recipe `just decisive` runs `-learners 1500`. The files of a run are about 0.6–0.8 GB per rule. The paths are pinned anew — the 2026-11-11 amendment to R04. Reproducibility is checked by a full repeat of the ceiling. The former files on 1,000 learners lie in `runs/` as `base-1000.jsonl` and `ceiling-1000.jsonl`, and the judgement files of `engine-1` and `model-1` name the base so.
 
-— *Поправка 2026-11-11 (T43):* пути закреплены заново после смены пакетов и библиотеки, а не после кандидата: закрепление `modules` v0.2.5 меняет граф и задачи, а база с T42 — на `learner-model` v0.1.5. `paths.json` называет `learner-model` v0.1.5 и `engine` v0.1.6, таблица — поправка 2026-11-11 к R04, «пакеты с `time` и наводящими вопросами». Воспроизводимость сверена полным повтором потолка. Почему — R42.
+— *Amendment 2026-11-11 (T43):* the paths are pinned anew after a change of the packages and of a library, not after a candidate: the pin of `modules` v0.2.5 changes the graph and the tasks, and the base since T42 is on `learner-model` v0.1.5. `paths.json` names `learner-model` v0.1.5 and `engine` v0.1.6, the table — the 2026-11-11 amendment to R04, "packages with `time` and leading questions". Reproducibility is checked by a full repeat of the ceiling. Why — R42.
 
-— *Поправка 2026-11-11 (T45):* пути закреплены заново после смены библиотеки, хотя числа не сдвинулись: суд держит базу на библиотеках путей (R40), а база — на `learner-model` v0.1.6. `paths.json` называет `learner-model` v0.1.6 и `engine` v0.1.6 и новые SHA-256 прогонов, а значения — те же, что у T43, так что таблица поправки 2026-11-11 к R04, «пакеты с `time` и наводящими вопросами», по-прежнему таблица путей. Почему — R43.
+— *Amendment 2026-11-11 (T45):* the paths are pinned anew after a change of the library, though the numbers did not shift: a judgement holds the base to the libraries of the paths (R40), and the base is on `learner-model` v0.1.6. `paths.json` names `learner-model` v0.1.6 and `engine` v0.1.6 and the new SHA-256 of the runs, and the values are the same as T43's, so the table of the 2026-11-11 amendment to R04, "packages with `time` and leading questions", is still the table of paths. Why — R43.
 
-— *Поправка 2026-11-12 (T46; поправка 2026-11-12 к R33):* решающий прогон — 2 000 учеников на ячейку, так что `sim paths` отказывает ячейке, в которой меньше 2 000 учеников, а суд называет такой прогон грубым взглядом. Рецепт `just decisive` гонит `-learners 2000`. Файлы прогона — около 0,8–1,0 ГБ на правило. Пути закреплены заново — поправка 2026-11-12 к R04. Воспроизводимость сверена полным повтором потолка. Прежние файлы на 1 500 учеников лежат в `runs/` как `base-1500.jsonl` и `ceiling-1500.jsonl`; ни один суд на них не ссылается.
+— *Amendment 2026-11-12 (T46; the 2026-11-12 amendment to R33):* a decisive run is 2,000 learners a cell, so `sim paths` refuses a cell with fewer than 2,000 learners, and a judgement calls such a run a rough look. The recipe `just decisive` runs `-learners 2000`. The files of a run are about 0.8–1.0 GB per rule. The paths are pinned anew — the 2026-11-12 amendment to R04. Reproducibility is checked by a full repeat of the ceiling. The former files on 1,500 learners lie in `runs/` as `base-1500.jsonl` and `ceiling-1500.jsonl`; no judgement refers to them.
 
-**R29. Релиз `sim` — общий `release.yml` `.github` v0.1.21 по линии `0.1`, начиная с `v0.1.0`, когда коммит `main` с зелёным CI меняет то, из чего собран гейт. Единственный файл релиза — архив `sim-<версия>.tar.gz` с тем, что собирает стенд и гоняет гейт, подписанный без ключа. Неизменяемые релизы и ruleset тегов `v*` включены до первого релиза.** Решено автором 2026-11-09 при планировании T27 (RUN.md, T27): общий релиз с архивом (поправка 2026-11-09 к R05), настройки GitHub — исполнителем через `gh api`, мерж, который выпускает тег, — автором. Остальное — исполнитель.
-- **`paths`** — то, что даёт релиз:
-  - код Go без тестов и `testdata/`;
-  - встроенные пакеты `internal/published/v*` и пути `internal/criterion/paths.json`;
+**R29. The release of `sim` is the shared `release.yml` of `.github` v0.1.21 on the line `0.1`, starting with `v0.1.0`, when a commit of `main` with green CI changes what the gate is built from. The only release file is the archive `sim-<version>.tar.gz` with what builds the simulator and runs the gate, signed without a key. Immutable releases and a ruleset of the tags `v*` are turned on before the first release.** Decided by the author 2026-11-09 in the planning of T27 (RUN.md, T27): the shared release with an archive (the 2026-11-09 amendment to R05), the GitHub settings — by the executor through `gh api`, the merge that releases the tag — by the author. The rest — the executor.
+- **`paths`** — what the release gives:
+  - the Go code without tests and `testdata/`;
+  - the embedded packages `internal/published/v*` and the paths `internal/criterion/paths.json`;
   - `go.mod`, `go.sum`, `LICENSE`, `.gitattributes`;
-  - файл гейта `gate.json`, `justfile` и `.devcontainer/Dockerfile`, на которых гейт гонится;
-  - сам `release.yml`.
+  - the gate file `gate.json`, `justfile` and `.devcontainer/Dockerfile`, on which the gate runs;
+  - `release.yml` itself.
 
-  Тесты, документы и прочие workflow релиза не дают.
-- **Архив** — рецепт `release-files <версия>`: папка `sim-<версия>` с теми же путями, кроме `release.yml`. Tar пишется одинаково на любой сборке: имена по порядку, без времён и владельцев, режим 0644, `gzip -9n`. Список берётся из дерева, `find`: общий релиз гонит рецепт в дереве `git archive`, без git.
-- **`ci-release`** держит архив, как R15 engine:
-  - две сборки подряд — те же байты;
-  - в архиве ровно то, что git отслеживает по этим путям, и в том же виде;
-  - распакованный архив собирается.
+  Tests, documents and the other workflows the release does not give.
+- **The archive** — the recipe `release-files <version>`: the folder `sim-<version>` with the same paths, except `release.yml`. The tar is written the same way on any build: the names in order, without times and owners, mode 0644, `gzip -9n`. The list is taken from the tree, `find`: the shared release runs the recipe in the tree of `git archive`, without git.
+- **`ci-release`** holds the archive, as R15 engine does:
+  - two builds in a row — the same bytes;
+  - the archive has exactly what git tracks at these paths, and in the same form;
+  - the unpacked archive builds.
 
-  Его зовёт `ci-lint`, так что архив держит «Go / lint».
-- **Настройки GitHub** (2026-11-09, `gh api`):
-  - неизменяемые релизы включены;
-  - ruleset `v-tags` (id 26826001) запрещает update, deletion и non_fast_forward тегов `refs/tags/v*`, без обходов, — такой же, как у `engine`.
+  It is called by `ci-lint`, so the archive is held by "Go / lint".
+- **GitHub settings** (2026-11-09, `gh api`):
+  - immutable releases are turned on;
+  - the ruleset `v-tags` (id 26826001) forbids update, deletion and non_fast_forward of the tags `refs/tags/v*`, without bypasses, — the same as `engine`'s.
 
-— *Почему:*
-- Общий релиз — один код релиза на все репозитории с кодом, и Dependabot поднимает его вместе с остальными workflow `.github`.
-- Архив — это и есть то, на чём записаны числа гейта, кроме библиотек, которые называет `gate.json`. Подпись привязывает его к тегу (R77 spec).
-- Изменение документов или тестов не даёт вызывающим нового тега.
+— *Why:*
+- A shared release is one release code for all the repositories with code, and Dependabot raises it together with the other workflows of `.github`.
+- The archive is exactly what the gate's numbers are recorded on, except the libraries that `gate.json` names. The signature binds it to the tag (R77 spec).
+- A change of documents or tests gives the callers no new tag.
 
-— *Отвергнуто:*
-- свой workflow без файлов, как у `spec`, — свой код релиза, который держит один `sim`;
-- архив только кода Go, как у `engine`, — гейт гонится и на `gate.json`, `justfile` и стадии `toolchain`, а без них архив не держит того, что числа записаны на этом теге.
+— *Rejected:*
+- a workflow of its own without files, as `spec` has — release code of its own that only `sim` keeps;
+- an archive of the Go code only, as `engine` has — the gate runs on `gate.json`, `justfile` and the stage `toolchain` too, and without them the archive does not hold that the numbers are recorded on this tag.
 
-— *Следствие:* первый тег `v0.1.0` выходит мержем pull request T27. Вызывающие берут его тег и SHA — README, «Taking a release» — своими задачами: Д5 RUN.md `modules`, job гейта `learner-model` и `engine`. — RUN.md, T27; `.github/workflows/release.yml`, `justfile`, `.gitignore`, README; [architecture.md](architecture.md), раздел 3.9.
+— *Consequence:* the first tag `v0.1.0` comes out with the merge of the pull request of T27. The callers take its tag and SHA — README, "Taking a release" — by their own tasks: Д5 RUN.md `modules`, the gate's job of `learner-model` and `engine`. — RUN.md, T27; `.github/workflows/release.yml`, `justfile`, `.gitignore`, README; [architecture.md](architecture.md), section 3.9.
 
-## Эпик E3
+## Epic E3
 
-**R30. Эпик E3, первые кандидаты, идёт до первых выборов. В нём: малый путь в суде, новое закрепление пакетов с новой калибровкой путей до первого кандидата, решающий прогон на коммите кандидата, суд первого кандидата модели и первого кандидата движка, перевод на релизы выбранных и итог.** Это ответы автора 2026-11-09 при планировании E3 (RUN.md, таблица 1). Порядок задач T29–T35 — предложение планирования.
-- **Что выяснилось при планировании** (прочитано 2026-11-09):
-  - `modules` v0.1.1 опубликовал 2026-11-08 `olympiad-math` 0.1.1 — с новыми навыками и сотнями задач. Индекс новейшего релиза, v0.1.4, называет обе версии. `sim` закрепляет `modules` v0.1.0, так что база, пути и полосы сняты на `olympiad-math` 0.1.0;
-  - `just decisive` собирает стенд по `go.mod` и гонит только рабочих учеников, так что кандидата подставить некуда. Отложенных учеников `sim run -set` уже берёт;
-  - библиотеки подключают гейт — T22 RUN.md `learner-model` и T23 RUN.md `engine`, — но кандидатов ещё не предложили. Их основа — Д5–Д7 RUN.md `learner-model`, Д3 и Д4 RUN.md `engine`;
-  - `spec` вышел до v0.9.16, но модуль Go `spec` библиотеки не требуют, так что гейту переход не нужен.
-- **Решено автором:**
-  - малый путь — вариант (а) В7: поправка 2026-11-09 к R04, код — T29;
-  - новое закрепление — до кандидатов: индекс `modules` v0.1.4 с `olympiad-math` 0.1.1, решающий прогон базы и потолка заново, новые пути и полосы, следующий тег `sim` (T30);
-  - эпик идёт до первых выборов: суд первого кандидата модели (T32) и движка (T33), перевод на их релизы (T34) и итог (T35).
-- **Предложение планирования:**
-  - порядок — малый путь (T29), закрепление (T30), рецепт прогона кандидата (T31, после T30: прогон базы рецептом совпадает до байта с тем, чьи SHA-256 называет новый файл путей), суды (T32, T33), релизы (T34), итог (T35);
-  - если кандидаты придут парой, их судит одна задача, T32, по критерию пары. Зерно её отложенных учеников записывается поправкой к R04 до прогона.
-  - если одна библиотека кандидата не предложила, когда суд другой сделан, автор откладывает её суд, и перевод на релизы и итог идут без него.
+**R30. Epic E3, the first candidates, runs up to the first choices. In it: the small path in the judgement, a new pin of the packages with a new calibration of the paths before the first candidate, the decisive run on a candidate's commit, the judgement of the model's first candidate and of the engine's first candidate, the move to the releases of the chosen ones and the outcome.** These are the author's answers 2026-11-09 when planning E3 (RUN.md, table 1). The order of the tasks T29–T35 is a proposal of the planning.
+- **What was found in planning** (read 2026-11-09):
+  - `modules` v0.1.1 published `olympiad-math` 0.1.1 on 2026-11-08 — with new skills and hundreds of tasks. The index of the newest release, v0.1.4, names both versions. `sim` pins `modules` v0.1.0, so the base, the paths and the bands are taken on `olympiad-math` 0.1.0;
+  - `just decisive` builds the simulator by `go.mod` and runs only the working learners, so there is nowhere to substitute a candidate. `sim run -set` already takes the held-out learners;
+  - the libraries connect the gate — T22 RUN.md `learner-model` and T23 RUN.md `engine`, — but have not proposed candidates yet. Their basis is Д5–Д7 RUN.md `learner-model`, Д3 and Д4 RUN.md `engine`;
+  - `spec` has come out up to v0.9.16, but the libraries do not require the Go module `spec`, so the gate needs no move.
+- **Decided by the author:**
+  - the small path — option (a) of В7: the 2026-11-09 amendment to R04, the code — T29;
+  - a new pin — before the candidates: the index of `modules` v0.1.4 with `olympiad-math` 0.1.1, the decisive run of the base and of the ceiling anew, new paths and bands, the next tag of `sim` (T30);
+  - the epic runs up to the first choices: the judgement of the model's first candidate (T32) and of the engine's (T33), the move to their releases (T34) and the outcome (T35).
+- **A proposal of the planning:**
+  - the order — the small path (T29), the pin (T30), the recipe of a candidate's run (T31, after T30: the run of the base by the recipe matches to the byte the one whose SHA-256 the new file of paths names), the judgements (T32, T33), the releases (T34), the outcome (T35);
+  - if the candidates come as a pair, one task judges them, T32, by the criterion of the pair. The seed of its held-out learners is written down by an amendment to R04 before the run.
+  - if one library has not proposed a candidate when the other's judgement is done, the author defers its judgement, and the move to the releases and the outcome go without it.
 
-— *Почему:*
-- **Закрепление до кандидатов.** Пути — калибровка, а не выбор, и читаются до первого кандидата (R04). Кандидат, выбранный на графе, которого ученики не увидят, выбран не на том. Закрепить после первых выборов значило бы калибровать заново, когда на путях уже судили.
-- **До первых выборов.** Ради них стенд и строился: первая версия каждой библиотеки — база, а то, что её улучшает, проходит через суд (R103 spec). Суды ждут кандидатов, но это работа `sim`, и в эпике она видна вместе с тем, что её готовит.
+— *Why:*
+- **The pin before the candidates.** The paths are calibration, not a choice, and are read before the first candidate (R04). A candidate chosen on a graph that the learners will not see is chosen on the wrong thing. Pinning after the first choices would mean calibrating anew when judgements had already been made on the paths.
+- **Up to the first choices.** The simulator was built for them: the first version of each library is the base, and what improves it passes through a judgement (R103 spec). The judgements wait for candidates, but this is the work of `sim`, and in the epic it is seen together with what prepares it.
 
-— *Отвергнуто:*
-- судить первых кандидатов на `olympiad-math` 0.1.0, а 0.1.1 закрепить после — см. «Почему»;
-- закрепить 0.1.1, а пути олимпиадных ячеек оставить от 0.1.0 — это были бы пути другого графа;
-- кончить эпик готовностью — малым путём, закреплением и рецептом, — а суд каждого кандидата вести задачей вне эпика. Тогда первые выборы не вошли бы ни в один эпик, и их порядок никто не видел бы заранее.
+— *Rejected:*
+- judging the first candidates on `olympiad-math` 0.1.0, and pinning 0.1.1 after — see the "Why";
+- pinning 0.1.1 and leaving the paths of the olympiad cells from 0.1.0 — those would be the paths of another graph;
+- ending the epic with readiness — the small path, the pin and the recipe, — and leading the judgement of each candidate by a task outside an epic. Then the first choices would enter no epic, and nobody would see their order in advance.
 
-— *Следствие:*
-- E2 перенесён в архив [docs/plan/E2.md](plan/E2.md);
-- таблица 1 RUN.md — E3 задачами T29–T35;
-- строка E3 ушла из таблицы 2, В7 — из таблицы 3;
-- В9 «в реестр spec» говорит `spec`, что эпик развёрнут и кандидатов судят после тега с новым закреплением.
+— *Consequence:*
+- E2 is moved to the archive [docs/plan/E2.md](plan/E2.md);
+- table 1 of RUN.md is E3 in the tasks T29–T35;
+- the row E3 left table 2, and В7 table 3;
+- В9 «в реестр spec» tells `spec` that the epic is laid out and the candidates are judged after the tag with the new pin.
 
-Где записано: RUN.md, таблицы 1–3 и тела T29–T35; [architecture.md](architecture.md), разделы 2.4 и 3.
+Where it is written: RUN.md, tables 1–3 and the bodies of T29–T35; [architecture.md](architecture.md), sections 2.4 and 3.
 
-## Новое закрепление пакетов
+## A new pin of the packages
 
-**R31. Стенд закреплён на релизе `modules` v0.1.4 — `olympiad-math` 0.1.1, `grade-3-math` 0.1.0 и `english-essays` 0.1.0. Популяции `A-` идут на паре опубликованных математик. Гейт держит 100 учеников на ячейку и при повторе прогона берёт выбор на каждом шаге заново только у первых 10 учеников ячейки.** Это ответы автора 2026-11-09 при планировании T30 и E3 (R30).
-- **Что выяснилось при планировании** (2026-11-09, замеры на копии репозитория; источники — [architecture.md](architecture.md), раздел 4):
-  - `olympiad-math` 0.1.1 — 19 навыков вместо 3 и 772 задачи вместо 27, у 19 из них экземпляры шаблона. Видов ответа стало четыре, а не только `number`. Ячеек `predicate` по-прежнему нет;
-  - два олимпиадных навыка опираются на навыки, которым учит школьная математика: `fractions-parts` — на `core.fractions-of-a-whole`, `number-divisibility` — на `core.division-with-remainder`. Так у популяций `A-` появился опубликованный граф;
-  - стенд читает пакет без правок кода; `G0` и `A-` на паре идут без нарушений инвариантов, `M9` читается;
-  - ученик олимпиадного графа идёт около 0,65 с вместо около 0,007 с. В профиле:
-    - `engine.Choose` на пуле из 772 задач — около 60 % процессора;
-    - из них около 28 % — выбор, который `invariant.Check` берёт заново на каждом шаге;
-    - сборка мусора — около 23 %;
-  - гейт на 300 учениках шёл 8,5 минуты и 135 минут процессора на 20 ядрах — против 45 секунд и 11 минут прежде. На 4 ядрах раннера это около 35–40 минут при бюджете `timeout-minutes: 15`;
-  - `sim gate changed` сравнивает с индексом, который передаёт CI `modules`, так что закрепление его не касается. Но `A-linked` идёт на обеих математиках, а команда отдавала только изменённые модули.
-- **Решено автором:**
-  - популяции `A-` — на опубликованной паре, в этой же калибровке;
-  - гейт урезан правкой `sim`, а бюджет остаётся 15 минут: 100 учеников на ячейку вместо 300, а при повторе прогона выбор на каждом шаге заново не берётся. Исполнитель по ревью оставил выбор заново у первых 10 учеников каждой ячейки — около 3 % работы: повтор не видит правило, которое меняет свой вход на месте одинаково в обоих прогонах;
-  - индекс `modules` v0.1.4 — ещё при планировании E3 (R30).
-- **Предложение исполнения:**
-  - архив `olympiad-math` 0.1.1 лежит в папке `v0.1.1/`, где его называет запись индекса, а неиспользуемые индекс и архив `olympiad-math` 0.1.0 из встроенных файлов убраны;
-  - `gate.Runs` отдаёт вместе с изменённым модулем и неизменённый, который граф популяции гейта держит вместе с ним;
-  - тесты, которые гоняют олимпиадный граф, идут на меньшем числе учеников, чтобы `ci-test` укладывался в бюджет сборок `same-bits`;
-  - тест потолка пускает ту же задачу снова после паузы в 24 часа, как и правило (R82 spec): на 27 задачах этого не случалось.
+**R31. The simulator is pinned to the release of `modules` v0.1.4 — `olympiad-math` 0.1.1, `grade-3-math` 0.1.0 and `english-essays` 0.1.0. The populations `A-` run on the pair of published maths. The gate holds 100 learners a cell, and on the repeat of the run takes the choice anew at every step only for the first 10 learners of a cell.** These are the author's answers 2026-11-09 when planning T30 and E3 (R30).
+- **What was found in planning** (2026-11-09, measurements on a copy of the repository; the sources — [architecture.md](architecture.md), section 4):
+  - `olympiad-math` 0.1.1 has 19 skills instead of 3 and 772 tasks instead of 27, 19 of them with instances of a template. There are now four kinds of answer, not only `number`. There are still no slots `predicate`;
+  - two olympiad skills rest on skills that school maths teaches: `fractions-parts` on `core.fractions-of-a-whole`, `number-divisibility` on `core.division-with-remainder`. So the populations `A-` got a published graph;
+  - the simulator reads the package without edits of the code; `G0` and `A-` on the pair run without violations of the invariants, and `M9` is read;
+  - a learner of the olympiad graph runs for about 0.65 s instead of about 0.007 s. In the profile:
+    - `engine.Choose` on a pool of 772 tasks — about 60 % of the CPU;
+    - of that, about 28 % is the choice that `invariant.Check` takes anew at every step;
+    - garbage collection — about 23 %;
+  - the gate on 300 learners ran for 8.5 minutes and 135 CPU minutes on 20 cores — against 45 seconds and 11 minutes before. On the 4 cores of the runner this is about 35–40 minutes, at a budget of `timeout-minutes: 15`;
+  - `sim gate changed` compares with the index that the CI of `modules` passes, so the pin does not touch it. But `A-linked` runs on both maths, and the command gave only the changed modules.
+- **Decided by the author:**
+  - the populations `A-` — on the published pair, in this same calibration;
+  - the gate is cut by an edit of `sim`, and the budget stays 15 minutes: 100 learners a cell instead of 300, and on the repeat of the run the choice is not taken anew at every step. The executor, after review, kept the choice anew for the first 10 learners of each cell — about 3 % of the work: the repeat does not see a rule that changes its input in place the same way in both runs;
+  - the index of `modules` v0.1.4 — already when planning E3 (R30).
+- **A proposal of the execution:**
+  - the archive of `olympiad-math` 0.1.1 lies in the folder `v0.1.1/`, where the index's record names it, and the unused index and archive of `olympiad-math` 0.1.0 are removed from the embedded files;
+  - `gate.Runs` gives, together with a changed module, the unchanged one that the graph of a population of the gate holds together with it;
+  - the tests that run the olympiad graph run on fewer learners, so that `ci-test` fits into the budget of the builds of `same-bits`;
+  - the test of the ceiling lets the same task in again after a pause of 24 hours, as the rule does (R82 spec): on 27 tasks this did not happen.
 
-— *Почему:*
-- **`A-` в этой калибровке.** Иначе пути группы «Опора» и полосы `A-linked` пришлось бы закреплять ещё раз — уже после первых кандидатов.
-- **100 учеников.** Раздел 3.9 [architecture.md](architecture.md) велит урезать гейт, который не укладывается, правкой `sim`, а не временем. Полосы станут шире примерно в √3, около 1,7 раза. Код, который ничего не сдвинул, по-прежнему читает те же числа до бита, а кандидатов судит решающий прогон. Гейт теряет только чувствительность к малому ненамеренному сдвигу.
-- **Выбор заново при повторе — только у первых 10.** `I1` до бита держит повтор (`Same`), а отказ движка от своего входа ловит сам прогон. Выбор заново на каждом шаге у всех учеников стоил бы трети работы. Но повтор не видит правило, которое меняет вход на месте одинаково в обоих прогонах, а выбор заново видит, и на первых 10 учениках каждой ячейки он стоит около 3 %.
+— *Why:*
+- **`A-` in this calibration.** Otherwise the paths of the group "Anchor" and the bands of `A-linked` would have to be pinned once more — after the first candidates.
+- **100 learners.** [architecture.md](architecture.md), section 3.9, says to cut a gate that does not fit by an edit of `sim`, not by time. The bands become wider by about √3, about 1.7 times. Code that shifted nothing still reads the same numbers to the bit, and the candidates are judged by the decisive run. The gate loses only its sensitivity to a small unintended shift.
+- **The choice anew on the repeat — only for the first 10.** `I1` is held to the bit by the repeat (`Same`), and the engine's refusal of its own input is caught by the run itself. The choice anew at every step for all learners would cost a third of the work. But the repeat does not see a rule that changes its input in place the same way in both runs, while the choice anew does see it, and on the first 10 learners of each cell it costs about 3 %.
 
-— *Отвергнуто:*
-- поднять бюджет до 45 минут и оставить 300 учеников — тогда каждый pull request трёх репозиториев ждал бы гейт около 40 минут;
-- ждать, пока `engine` ускорит выбор на большом пуле, — первые кандидаты ждали бы чужой задачи. Вопрос ушёл строкой В10 таблицы 3 RUN.md;
-- оставить `A-` на синтетике — см. «Почему».
+— *Rejected:*
+- raise the budget to 45 minutes and keep 300 learners — then every pull request of three repositories would wait for the gate about 40 minutes;
+- wait until `engine` speeds up the choice on a large pool — the first candidates would wait for someone else's task. The question went as row В10 of table 3 of RUN.md;
+- keep `A-` on synthetics — see the "Why".
 
-— *Следствие:* прогоны и новая таблица путей — поправка 2026-11-09 к R04, «новое закрепление»; поправки к R14, R17, R19, R21 и R26–R28; новый тег `sim`, его берут гейты библиотек (В9). Где записано: RUN.md, T30; [architecture.md](architecture.md), разделы 3, 3.2, 3.3, 3.7–3.9 и 4; README.
+— *Consequence:* the runs and the new table of the paths — the 2026-11-09 amendment to R04, "a new pin"; amendments to R14, R17, R19, R21 and R26–R28; a new tag of `sim`, which the gates of the libraries take (В9). Where it is written: RUN.md, T30; [architecture.md](architecture.md), sections 3, 3.2, 3.3, 3.7–3.9 and 4; README.
 
-— *Поправка 2026-11-10:* процесс прогона гейта, как и решающего, идёт на одном процессоре и с `GOGC` 400 (R33): биты те же, и `just gate exact` сходится до бита, а время гейта на раннере падает. Размер гейта прежний — 100 учеников на ячейку и выбор заново у первых 10; вернуть ему 300 — по-прежнему потом, поправкой к этой записи.
+— *Amendment 2026-11-10:* the process of the gate's run, like that of the decisive one, runs on one processor and with `GOGC` 400 (R33): the bits are the same, and `just gate exact` matches to the bit, while the gate's time on the runner falls. The gate's size is as before — 100 learners a cell and the choice anew for the first 10; giving it back 300 is still for later, by an amendment to this entry.
 
-— *Поправка 2026-11-10, замер (T35):* то, что время гейта на раннере падает, подтвердилось только на `ubuntu-24.04-arm`: 7 мин 3 с и 6 мин 49 с на pull request #40 и #41, 4 мин 36 с и 4 мин 42 с на #42 и #43. На `ubuntu-24.04` — 11 мин 52 с и 6 мин 54 с до T36, 8 мин 14 с и 8 мин 23 с после: время раннера гуляет сильнее, чем дала правка, и выигрыша там замер не показывает ([architecture.md](architecture.md), раздел 3.9).
+— *Amendment 2026-11-10, a measurement (T35):* that the gate's time on the runner falls was confirmed only on `ubuntu-24.04-arm`: 7 min 3 s and 6 min 49 s on pull requests #40 and #41, 4 min 36 s and 4 min 42 s on #42 and #43. On `ubuntu-24.04` — 11 min 52 s and 6 min 54 s before T36, 8 min 14 s and 8 min 23 s after: the runner's time wanders more than the edit gave, and the measurement shows no gain there ([architecture.md](architecture.md), section 3.9).
 
-— *Поправка 2026-11-11, после ускорения `engine` (T41; R38):* база гейта — `engine` v0.1.6, и в гейте 150 учеников на ячейку, а не 100. Выбор заново при повторе — по-прежнему у первых 10 учеников ячейки, бюджет — по-прежнему `timeout-minutes: 15`. Ответы автора 2026-11-10 и 2026-11-11 при планировании и исполнении T41 (RUN.md, T41).
-- **Что выяснилось** (2026-11-10 и 2026-11-11):
-  - на `engine` v0.1.6 гейт на 100 учениках читает все 69 чисел те же до бита, что на v0.1.4, и инварианты целы. Полосы на 100 не переписывались;
-  - в контейнере разработки, 100 учеников: 1 мин 44 с по часам и 25,9 мин процессора на v0.1.4, 1 мин 5 с и 16,5 мин на v0.1.6 — в 1,57 раза меньше;
-  - «Gate» `sim` на 100 учениках, pull request #49: `ubuntu-24.04` — 5 мин 39 с с холодным кешем Go и 4 мин 27 с с тёплым, `ubuntu-24.04-arm` — 3 мин 13 с и 3 мин 7 с. Постоянная часть job — около 35 секунд, прогон со сборкой — до 5 мин на 100 учеников;
-  - вызывающие кеша Go не держат, и у них гейт идёт дольше. «Gate» `engine` на коде v0.1.6 и 100 учениках шёл 5 мин 3 с и 7 мин 44 с, шаг гейта — до 7 мин 18 с, при `timeout-minutes: 25` (В27 RUN.md `engine`). «Gate» `learner-model` на прежнем теге `sim` и медленном выборе шёл 8–12 мин при `timeout-minutes: 15`; на v0.1.6 это около 5–7,6 мин на 100 учеников;
-  - в пересчёте по самому медленному замеру на 150 учеников: у `sim` — около 8 мин, у `engine` — около 11,5, у `learner-model` — около 11,2. На 200: у `sim` — около 10,6, но у `learner-model` — до 15, впритык к тайм-ауту. На 250 у `sim` — около 13,1;
-  - гейт на 150 учениках в контейнере разработки — 1 мин 28 с и 23,6 мин процессора. Все 69 чисел прочитаны там же, где на 100. Каждое новое значение отстоит от прежнего меньше чем на одну прежнюю полуширину, больше всех — `M1` у `G0` школьной, на 0,94. Полуширина — в среднем 0,85 прежней, около 1/√1,5.
-  - «Gate» на 150 учениках, pull request #49, второй коммит: `ubuntu-24.04` — 8 мин 21 с с холодным кешем Go и 6 мин 5 с с тёплым, `ubuntu-24.04-arm` — 4 мин 16 с. Пересчёт давал около 8 мин на холодном — замер с ним сошёлся.
-- **Решено автором:**
-  - размер гейта — по самому медленному замеру: наибольший с шагом 50, от 100 до 300, при котором самый медленный замер, пересчитанный на этот размер, не больше 12 минут — 3 минуты запаса до тайм-аута;
-  - 150, а не 200: на 200 гейт `learner-model` без кеша Go подходил бы к своим 15 минутам.
+— *Amendment 2026-11-11, after the speed-up of `engine` (T41; R38):* the gate's base is `engine` v0.1.6, and the gate has 150 learners a cell, not 100. The choice anew on the repeat is still for the first 10 learners of a cell, and the budget is still `timeout-minutes: 15`. The author's answers 2026-11-10 and 2026-11-11 when planning and executing T41 (RUN.md, T41).
+- **What was found** (2026-11-10 and 2026-11-11):
+  - on `engine` v0.1.6 the gate on 100 learners reads all 69 numbers the same to the bit as on v0.1.4, and the invariants are intact. The bands on 100 were not written anew;
+  - in the development container, 100 learners: 1 min 44 s by the clock and 25.9 CPU minutes on v0.1.4, 1 min 5 s and 16.5 min on v0.1.6 — 1.57 times less;
+  - "Gate" of `sim` on 100 learners, pull request #49: `ubuntu-24.04` — 5 min 39 s with a cold Go cache and 4 min 27 s with a warm one, `ubuntu-24.04-arm` — 3 min 13 s and 3 min 7 s. The constant part of the job is about 35 seconds, the run with the build up to 5 min on 100 learners;
+  - the callers keep no Go cache, and the gate runs longer at theirs. "Gate" of `engine` on the code of v0.1.6 and 100 learners ran for 5 min 3 s and 7 min 44 s, the gate's step up to 7 min 18 s, at `timeout-minutes: 25` (В27 RUN.md `engine`). "Gate" of `learner-model` on the previous tag of `sim` and the slow choice ran for 8–12 min at `timeout-minutes: 15`; on v0.1.6 this is about 5–7.6 min on 100 learners;
+  - recalculated from the slowest measurement to 150 learners: at `sim` — about 8 min, at `engine` — about 11.5, at `learner-model` — about 11.2. To 200: at `sim` — about 10.6, but at `learner-model` — up to 15, right at the timeout. To 250 at `sim` — about 13.1;
+  - the gate on 150 learners in the development container — 1 min 28 s and 23.6 CPU minutes. All 69 numbers are read in the same places as on 100. Each new value is less than one previous half-width from the previous one, the most of all `M1` for `G0` of school maths, by 0.94. The half-width is on average 0.85 of the previous one, about 1/√1.5.
+  - "Gate" on 150 learners, pull request #49, the second commit: `ubuntu-24.04` — 8 min 21 s with a cold Go cache and 6 min 5 s with a warm one, `ubuntu-24.04-arm` — 4 min 16 s. The recalculation gave about 8 min on a cold one — the measurement matched it.
+- **Decided by the author:**
+  - the gate's size is by the slowest measurement: the largest, in steps of 50, from 100 to 300, at which the slowest measurement, recalculated to this size, is no more than 12 minutes — 3 minutes of margin before the timeout;
+  - 150, not 200: on 200 the gate of `learner-model` without a Go cache would come close to its 15 minutes.
 
-— *Почему:* правило R38 — гейту столько учеников, сколько укладывается в бюджет на раннере. Время раннера гуляет: на одном коде «Gate» шёл и 6 мин 54 с, и 11 мин 52 с. Гейт, упавший по тайм-ауту, держит мерж в трёх репозиториях, поэтому мерой взят самый медленный замер, с запасом. Укладываться он должен у каждого вызывающего, а не только в своём CI с кешем. 150 учеников сужают полосы примерно в √1,5 ≈ 1,22 раза.
+— *Why:* the rule of R38 — the gate gets as many learners as fit into the budget on the runner. The runner's time wanders: on the same code "Gate" ran both 6 min 54 s and 11 min 52 s. A gate that fails by timeout holds the merge in three repositories, so the slowest measurement is taken as the measure, with a margin. It must fit at every caller, not only in its own CI with a cache. 150 learners narrow the bands by about √1.5 ≈ 1.22 times.
 
-— *Отвергнуто:*
-- 200 с `timeout-minutes: 25` у `learner-model`, как у `engine`, — каждый pull request `learner-model` ждал бы гейт дольше, и это правка чужого workflow;
-- 200 как есть — «Gate» `learner-model` падал бы по тайм-ауту на медленном раннере;
-- 300 — около 16 мин даже в своём CI;
-- размер по типичному замеру, а не по самому медленному, — медленный раннер ронял бы гейт.
+— *Rejected:*
+- 200 with `timeout-minutes: 25` at `learner-model`, as at `engine` — every pull request of `learner-model` would wait for the gate longer, and this is an edit of someone else's workflow;
+- 200 as it is — "Gate" of `learner-model` would fail by timeout on a slow runner;
+- 300 — about 16 min even in its own CI;
+- the size by a typical measurement, not by the slowest — a slow runner would bring the gate down.
 
-— *Следствие:* `gate.Learners` — 150; полосы записаны заново, `just gate record` с причиной; пороги CI `modules` берутся из новой записи (R27). 300 учеников гейта ждут ускорения `learner-model`: треть выбора теперь — `Readout.Task` (строка В32 RUN.md `engine`, «в реестр spec»). Где записано: RUN.md, T41; [architecture.md](architecture.md), разделы 3.7–3.9; README; `internal/gate/gate.go`, `gate.json`.
+— *Consequence:* `gate.Learners` is 150; the bands are recorded anew, `just gate record` with a reason; the thresholds of the CI of `modules` are taken from the new record (R27). 300 learners of the gate wait for a speed-up of `learner-model`: a third of the choice is now `Readout.Task` (row В32 RUN.md `engine`, «в реестр spec»). Where it is written: RUN.md, T41; [architecture.md](architecture.md), sections 3.7–3.9; README; `internal/gate/gate.go`, `gate.json`.
 
-— *Поправка 2026-11-12, после ускорения `learner-model` (T46; R43, R44):* в гейте 250 учеников на ячейку, а не 150. Выбор заново при повторе — по-прежнему у первых 10 учеников ячейки, бюджет — по-прежнему `timeout-minutes: 15`, правило размера — то же: наибольший с шагом 50, от 100 до 300, при котором самый медленный замер, пересчитанный на этот размер, не больше 12 минут, — с одним уточнением автора: размер, который проходит правило впритык, меньше чем с минутой до 12, не берётся, и гейт берёт шаг меньше. По одному правилу вышло бы 300. Ответы автора 2026-11-12 при планировании T46 (RUN.md, T46).
-- **Что выяснилось** (2026-11-12):
-  - «Gate» `sim` на теге v0.1.9 — `learner-model` v0.1.6, `modules` v0.2.5, 150 учеников, — оба раза с холодным кешем Go: pull request #52 — 6 мин 17 с на `ubuntu-24.04` и 3 мин 36 с на `ubuntu-24.04-arm`, push в main — 5 мин 0 с и 3 мин 32 с. В T41 на 150 учениках с холодным кешем было 8 мин 21 с, около 0,75 от этого;
-  - вызывающие на v0.1.9 ещё не перешли. «Gate» `learner-model` на `sim` v0.1.8 гонит его уже быстрый код — до 6 мин 12 с. «Gate» `engine` на `sim` v0.1.6 идёт с `learner-model` v0.1.4 — до 8 мин 21 с, около 6 мин 16 с в пересчёте отношением 0,75;
-  - в пересчёте самого медленного замера, около 6 мин 17 с, с постоянной частью job около 35 с, как в T41: 200 учеников — около 8 мин 11 с, 250 — около 10 мин 5 с, 300 — около 11 мин 59 с;
-  - «Gate» на 250 учениках, pull request #53, с холодным кешем Go: `ubuntu-24.04` — 7 мин 41 с, шаг гейта — 7 мин 3 с; `ubuntu-24.04-arm` — 5 мин 28 с; весь CI зелёный. Повтор job на `ubuntu-24.04` с тёплым кешем — 5 мин 34 с, шаг гейта — 5 мин 6 с. На втором коммите pull request, тоже с тёплым кешем, — 9 мин 38 с, шаг гейта — 9 мин 9 с: раннер попался медленный. У вызывающих кеша Go нет, и на таком раннере их гейт подошёл бы к 12 минутам или чуть за них — около 11 мин 45 с – 13 мин 17 с, смотря как пересчитывать холодный кеш, — при тайм-ауте 15 у `learner-model` и 25 у `engine`. Автор решил оставить 250: самый медленный замер на деле — 9 мин 38 с, а вызывающие покажут своё время на новом теге;
-  - в контейнере разработки гейт на 250 учениках — 1 мин 52 с и 29,6 минуты процессора при load average около 40–60 от соседних контейнеров.
-- **Решено автором:** 250 учеников.
+— *Amendment 2026-11-12, after the speed-up of `learner-model` (T46; R43, R44):* the gate has 250 learners a cell, not 150. The choice anew on the repeat is still for the first 10 learners of a cell, the budget is still `timeout-minutes: 15`, and the rule of the size is the same: the largest, in steps of 50, from 100 to 300, at which the slowest measurement, recalculated to this size, is no more than 12 minutes — with one refinement of the author: a size that passes the rule right at the edge, with less than a minute to 12, is not taken, and the gate takes the step below. By the rule alone it would come out as 300. The author's answers 2026-11-12 when planning T46 (RUN.md, T46).
+- **What was found** (2026-11-12):
+  - "Gate" of `sim` on the tag v0.1.9 — `learner-model` v0.1.6, `modules` v0.2.5, 150 learners —, both times with a cold Go cache: pull request #52 — 6 min 17 s on `ubuntu-24.04` and 3 min 36 s on `ubuntu-24.04-arm`, the push to main — 5 min 0 s and 3 min 32 s. In T41 on 150 learners with a cold cache it was 8 min 21 s, about 0.75 of this;
+  - the callers have not moved to v0.1.9 yet. "Gate" of `learner-model` on `sim` v0.1.8 runs its already fast code — up to 6 min 12 s. "Gate" of `engine` on `sim` v0.1.6 runs with `learner-model` v0.1.4 — up to 8 min 21 s, about 6 min 16 s recalculated by the ratio 0.75;
+  - recalculating the slowest measurement, about 6 min 17 s, with the constant part of the job about 35 s, as in T41: 200 learners — about 8 min 11 s, 250 — about 10 min 5 s, 300 — about 11 min 59 s;
+  - "Gate" on 250 learners, pull request #53, with a cold Go cache: `ubuntu-24.04` — 7 min 41 s, the gate's step 7 min 3 s; `ubuntu-24.04-arm` — 5 min 28 s; the whole CI is green. A repeat of the job on `ubuntu-24.04` with a warm cache — 5 min 34 s, the gate's step 5 min 6 s. On the second commit of the pull request, also with a warm cache, — 9 min 38 s, the gate's step 9 min 9 s: the runner happened to be slow. The callers have no Go cache, and on such a runner their gate would come close to 12 minutes or a little beyond — about 11 min 45 s – 13 min 17 s, depending on how the cold cache is recalculated —, at a timeout of 15 at `learner-model` and 25 at `engine`. The author decided to keep 250: the slowest measurement is in fact 9 min 38 s, and the callers will show their time on the new tag;
+  - in the development container the gate on 250 learners — 1 min 52 s and 29.6 CPU minutes, at a load average of about 40–60 from neighbouring containers.
+- **Decided by the author:** 250 learners.
 
-— *Почему:* по правилу 300 учеников проходят впритык — около 11 мин 59 с при пороге 12, — а время раннера на одном коде гуляло до 1,7 раза (поправка 2026-11-10 «замер»), и вызывающие на новом теге ещё не замерены. 250 оставляют около двух минут сверх трёх минут запаса правила. Полосы на 250 уже, чем на 150, в √(5/3) ≈ 1,29 раза.
+— *Why:* by the rule 300 learners pass right at the edge — about 11 min 59 s at a threshold of 12 —, while the runner's time on the same code wandered up to 1.7 times (the 2026-11-10 amendment "a measurement"), and the callers on the new tag have not been measured yet. 250 leave about two minutes beyond the rule's three minutes of margin. The bands on 250 are narrower than on 150 by √(5/3) ≈ 1.29 times.
 
-— *Отвергнуто:*
-- 300 по букве правила — запаса на шум раннера нет;
-- 300 с откатом на 250, если замер pull request выйдет за 12 минут, — один удачный замер не защищает вызывающих от тайм-аута.
+— *Rejected:*
+- 300 by the letter of the rule — there is no margin for the runner's noise;
+- 300 with a rollback to 250 if the measurement of the pull request goes over 12 minutes — one lucky measurement does not protect the callers from a timeout.
 
-— *Следствие:* `gate.Learners` — 250; полосы записаны заново, `just gate record` с причиной (поправка 2026-11-12 к R26); пороги CI `modules` берутся из новой записи (R27). Д7 закрыт вместе с поправкой 2026-11-12 к R33. Где записано: RUN.md, T46; [architecture.md](architecture.md), разделы 3.7–3.9; README; `internal/gate/gate.go`, `gate.json`.
+— *Consequence:* `gate.Learners` is 250; the bands are recorded anew, `just gate record` with a reason (the 2026-11-12 amendment to R26); the thresholds of the CI of `modules` are taken from the new record (R27). Д7 is closed together with the 2026-11-12 amendment to R33. Where it is written: RUN.md, T46; [architecture.md](architecture.md), sections 3.7–3.9; README; `internal/gate/gate.go`, `gate.json`.
 
-## Тег `spec` v0.12.0
+## The tag `spec` v0.12.0
 
-**R32. `sim` стоит на `spec` v0.12.0, последнем релизе `spec`. С ним пакеты закреплены на `modules` v0.2.0 — все три модуля в формате 0.4 —, а библиотеки — на `learner-model` v0.1.4 и `engine` v0.1.4. Шаг gopls в образе — заготовки `spec`, R11 заменён.** Поручение автора 2026-11-10 — «перейди на spec последней версии» — и его ответы на три вопроса перехода.
-- **Что тег решил за `sim`** (`git -C spec diff v0.9.9 v0.12.0`, прочитано 2026-11-09 и 2026-11-10; источники — [architecture.md](architecture.md), раздел 4):
-  - формат 0.4 вышел с v0.10.0 (R102, R108, R111 spec). Пока формат v0, платформа читает только текущую его версию ([текст формата](../spec/format/README.md), раздел 2), так что стенду нужно окно 0.4 и пакеты 0.4. Все дополнения 0.4 необязательны, и модуль 0.3, переведённый на 0.4, даёт те же вердикты и числа. В типах `formatv0` пояснение урока — теперь `ExplanationPart`;
-  - Д137 таблицы 4 RUN.md `spec` — ответ на строку `engine` В24: `sim` берёт `engine` и `learner-model` v0.1.3 в новом закреплении, до решающего прогона базы. Они вышли через гейт с теми же числами;
-  - Д123 и Д136 — ответы на строки `sim` В6, В8 и В9 по их рекомендациям: строки 4.5 и 4.8 [COORDINATION.md](../spec/COORDINATION.md) закрыты, а первые кандидаты — строка 4.9;
-  - поправка 2026-11-09 к R103 spec: кандидатов одной библиотеки `sim` судит кругом — решающий прогон на каждом, один суд со всеми, подтверждение только выбранного (строка `learner-model` В31). Это касается T32 и T33;
-  - вид `go` заготовки даёт шаг gopls с lock-файлом (R102 spec), той же версии 0.24.0, что у `sim`;
-  - остальное — регион данных, правовые вопросы и данные учеников (R109, R112–R123 spec) — `sim` не касается: данных живых учеников у него нет.
-- **Что изменено здесь:**
-  - `spec/` — на v0.12.0, коммит 5b4640a; `gh release verify` подтвердил релиз;
-  - `go.mod` — `spec` v0.12.0, `engine` и `learner-model` v0.1.4; `release-verify` принял архивы обеих библиотек;
-  - окно формата — 0.4; синтетические пакеты и тесты — в 0.4; пояснение урока — `ExplanationPart`;
-  - закрепление — `modules` v0.2.0: `release-verify` принял индекс и три архива, все модули версии 0.2.0;
-  - `gate.json` — библиотеки v0.1.4 коммитами тегов, `modules` v0.2.0, `spec` v0.12.0. `just gate exact` сошёлся до бита: полосы прежние;
-  - шаг gopls и `.devcontainer/gopls/go.mod` — из заготовки; `go.sum` тот же;
-  - тег — в CLAUDE.md, README.md и начале RUN.md.
-- **Решено автором:**
-  - пути пишутся заново в T36, быстрым прогоном, а не здесь: T36 и так меняет устройство прогона, а кандидатов до неё не судят;
-  - библиотеки — v0.1.4, последние релизы: код тот же, что в v0.1.3, сверху только документы и переход на `spec` v0.12.0;
-  - шаг gopls — заготовки.
-- **Выяснилось при переходе:** первые 100 учеников каждой из 65 ячеек на новом стенде дают те же байты, что прогон базы T30, — 6 500 строк. Ни исправление библиотек v0.1.3, ни формат 0.4 чисел базы не сдвинули, так что пути T30 остаются в силе до T36. Но две части 0.4 стенд не прочтёт, когда модуль ими воспользуется: вид проверки `time` и наводящий вопрос `leading_question`. В опубликованных пакетах их нет; это открытый вопрос — [architecture.md](architecture.md), подраздел 2.5, строка В11 таблицы 3 RUN.md.
+**R32. `sim` stands on `spec` v0.12.0, the latest release of `spec`. With it the packages are pinned to `modules` v0.2.0 — all three modules in format 0.4 —, and the libraries to `learner-model` v0.1.4 and `engine` v0.1.4. The step of gopls in the image is the template's of `spec`, and R11 is superseded.** The author's instruction 2026-11-10 — «перейди на spec последней версии» — and their answers to three questions of the move.
+- **What the tag decided for `sim`** (`git -C spec diff v0.9.9 v0.12.0`, read 2026-11-09 and 2026-11-10; the sources — [architecture.md](architecture.md), section 4):
+  - format 0.4 came out with v0.10.0 (R102, R108, R111 spec). While the format is v0, the platform reads only its current version ([format text](../spec/format/README.md), section 2), so the simulator needs the window 0.4 and packages in 0.4. All the additions of 0.4 are optional, and a module of 0.3 moved to 0.4 gives the same verdicts and numbers. In the types `formatv0` a lesson's explanation is now `ExplanationPart`;
+  - Д137 of table 4 of RUN.md `spec` is the answer to row В24 of `engine`: `sim` takes `engine` and `learner-model` v0.1.3 in the new pin, before the decisive run of the base. They came out through the gate with the same numbers;
+  - Д123 and Д136 are the answers to the rows of `sim` В6, В8 and В9, by their recommendations: rows 4.5 and 4.8 of [COORDINATION.md](../spec/COORDINATION.md) are closed, and the first candidates are row 4.9;
+  - the 2026-11-09 amendment to R103 spec: `sim` judges the candidates of one library in a round — a decisive run on each, one judgement with all of them, a confirmation only of the chosen one (row В31 of `learner-model`). This concerns T32 and T33;
+  - the template's kind `go` gives the step of gopls with a lock file (R102 spec), of the same version 0.24.0 as `sim`'s;
+  - the rest — the data region, the legal questions and the learners' data (R109, R112–R123 spec) — does not concern `sim`: it has no data of live learners.
+- **What is changed here:**
+  - `spec/` — to v0.12.0, commit 5b4640a; `gh release verify` confirmed the release;
+  - `go.mod` — `spec` v0.12.0, `engine` and `learner-model` v0.1.4; `release-verify` accepted the archives of both libraries;
+  - the format window — 0.4; the synthetic packages and the tests — in 0.4; a lesson's explanation — `ExplanationPart`;
+  - the pin — `modules` v0.2.0: `release-verify` accepted the index and the three archives, all the modules of version 0.2.0;
+  - `gate.json` — the libraries v0.1.4 by the commits of their tags, `modules` v0.2.0, `spec` v0.12.0. `just gate exact` matched to the bit: the bands are as before;
+  - the step of gopls and `.devcontainer/gopls/go.mod` — from the template; `go.sum` is the same;
+  - the tag — in CLAUDE.md, README.md and the opening of RUN.md.
+- **Decided by the author:**
+  - the paths are written anew in T36, by a fast run, not here: T36 changes the design of the run anyway, and no candidates are judged before it;
+  - the libraries — v0.1.4, the latest releases: the code is the same as in v0.1.3, with only documents and the move to `spec` v0.12.0 on top;
+  - the step of gopls — the template's.
+- **Found in the move:** the first 100 learners of each of the 65 cells on the new simulator give the same bytes as the run of the base of T30 — 6,500 lines. Neither the fix of the libraries v0.1.3 nor format 0.4 shifted the base's numbers, so the paths of T30 stay in force until T36. But two parts of 0.4 the simulator will not read when a module uses them: the check kind `time` and the leading question `leading_question`. The published packages do not have them; this is an open question — [architecture.md](architecture.md), subsection 2.5, row В11 of table 3 of RUN.md.
 
-— *Почему сейчас:* поручение автора. v0.12.0 — последний релиз `spec` на 2026-11-10, на нём уже `modules`, `engine` и `learner-model`. Без него стенд не прочтёт пакетов 0.4, а гейт CI `modules` на `v0.2.0` не пойдёт.
+— *Why now:* the author's instruction. v0.12.0 is the latest release of `spec` on 2026-11-10, and `modules`, `engine` and `learner-model` already stand on it. Without it the simulator will not read packages in 0.4, and the gate of the CI of `modules` on `v0.2.0` will not run.
 
-— *Отвергнуто:*
-- остаться на v0.9.9 — см. «Почему сейчас»;
-- библиотеки v0.1.3 — ровно то, что назвал Д137, но v0.1.4 — тот же код на том же теге `spec`, что у `sim`;
-- решающий прогон сейчас — около 8 часов, а после T36 пути всё равно пишутся заново;
-- свой шаг gopls — расходился бы с заготовкой, и gopls пришлось бы поднимать руками.
+— *Rejected:*
+- stay on v0.9.9 — see the "Why now";
+- the libraries v0.1.3 — exactly what Д137 named, but v0.1.4 is the same code on the same tag of `spec` as `sim`'s;
+- the decisive run now — about 8 hours, and after T36 the paths are written anew anyway;
+- a step of gopls of its own — it would diverge from the template, and gopls would have to be raised by hand.
 
-— *Следствие:* таблица 3 RUN.md — В6, В8 и В9 закрыты, В10 остаётся; R11 заменён; поправки 2026-11-10 к R04, R14 и R26. Мерж выпускает следующий тег `sim`, и гейты библиотек берут его. Где записано: RUN.md, T37; [architecture.md](architecture.md), статус и разделы 3, 3.3 и 4; CLAUDE.md, README.md.
+— *Consequence:* table 3 of RUN.md — В6, В8 and В9 closed, В10 stays; R11 is superseded; the 2026-11-10 amendments to R04, R14 and R26. The merge releases the next tag of `sim`, and the gates of the libraries take it. Where it is written: RUN.md, T37; [architecture.md](architecture.md), the status and sections 3, 3.3 and 4; CLAUDE.md, README.md.
 
-## Прогоны не дольше часа
+## Runs no longer than an hour
 
-**R33. Решающий прогон и подтверждение идут на 1 000 учениках на ячейку вместо 4 000. Выбор на каждом шаге заново для `I1` берут только первые 10 учеников ячейки — в каждом прогоне, как в гейте. Процесс прогона идёт с `GOGC` 400, а процесс части прогона — ещё и на одном процессоре. Файлы решающих прогонов хранятся в `runs/` рабочей копии, которую `git` не видит, и суд гонит только кандидата.** Решение автора 2026-11-09, при T30: прогон дольше часа недопустим — автор прототипирует, и функциональность меняется быстро. Ответы автора 2026-11-10 при планировании T36 (RUN.md, T36); среда выполнения — предложение исполнения.
-- **Что выяснилось при планировании** (2026-11-10, замеры на копии репозитория; источники — [architecture.md](architecture.md), раздел 4):
-  - 10 учеников на ячейку во всех 65 ячейках — 1 064 с процессора:
-    - половина — шесть популяций `F-`, у которых 180 дней;
-    - школьная математика, сочинения и `S-predicate` вместе — меньше 1 %;
-    - остальное — олимпиадный граф, 772 задачи;
-  - в профиле `G0` и `F-model`:
-    - `engine.Choose` — 64 % процессора, из них выбор заново в `invariant.Check` — 31 % всего;
-    - сборка мусора — около четверти;
-  - на одной выборке, байты результатов во всех вариантах одни:
-    - выбор заново только у первых 10 — 121 → 70 с процессора;
-    - `GOGC=400` — 121 → 87 с;
-    - всё вместе с `GOMAXPROCS=1` — 43 с, в 2,8 раза меньше;
-    - потолок с `GOGC=400` и `GOMAXPROCS=1` — 22 → 16 с;
-  - память при `GOGC=400` — около 100 МБ на процесс, 20 процессов — около 2 ГБ;
-  - после этих правок `engine.Choose` — 73 % процессора, а собственный код стенда — около 17 %, в основном P* пула на каждом шаге для мер. Дальше прогон ускоряет только `engine` (строка В10 таблицы 3 RUN.md). Прогон базы на 4 000 учениках шёл бы около 2,4 часа;
-  - файлы решающих прогонов T30 лежали в `/tmp` и пропали после Rebuild Container.
-- **Решено автором:**
-  - 1 000 учеников на ячейку у решающего прогона и подтверждения;
-  - выбор заново для `I1` — у первых 10 учеников ячейки, `bench.Rechosen`;
-  - прогон базы хранится в `runs/`.
-- **Предложение исполнения:**
-  - `sim run` и `sim gate run` ставят себе `GOGC` 400, а прогон по частям — ещё и `GOMAXPROCS` 1, в коде, а не в рецепте, так что их получает всякий вызов. R09 и так держит горутины вне кода, а части прогона — процессы, по одному на процессор. Прогон целиком — один процесс на машине, и процессоры остаются его сборке мусора;
-  - популяции решающего прогона — все: «не хуже» читается на каждой популяции с вердиктом (раздел 3.6 [architecture.md](architecture.md)), и без какой-то из них суд не прочёл бы своего ограничения;
-  - `invariant.CheckRepeated` переименована в `CheckWithoutI1`: у решающего прогона повтора нет;
-  - рецепт `just decisive` создаёт папку файла, если её нет.
-- **Прогон** (поправка 2026-11-10 к R04, «прогоны не дольше часа»): база на 1 000 учениках — около 37 минут процессора на процесс, потолок — около 14. На свободной машине каждый прогон укладывается в час; на машине, которую грузили чужие контейнеры, база шла 1 ч 42 мин по часам. Пути близки к путям T30, а мер с малым путём — те же семь.
+**R33. The decisive run and the confirmation go on 1,000 learners a cell instead of 4,000. The choice anew at every step for `I1` is taken only by the first 10 learners of a cell — in every run, as in the gate. The process of a run goes with `GOGC` 400, and the process of a part of a run also on one processor. The files of the decisive runs are kept in `runs/` of the working copy, which `git` does not see, and a judgement runs only the candidate.** The author's decision 2026-11-09, in T30: a run longer than an hour is not acceptable — the author is prototyping, and the functionality changes fast. The author's answers 2026-11-10 when planning T36 (RUN.md, T36); the runtime environment is a proposal of the execution.
+- **What was found in planning** (2026-11-10, measurements on a copy of the repository; the sources — [architecture.md](architecture.md), section 4):
+  - 10 learners a cell in all 65 cells — 1,064 s of CPU:
+    - half of it — the six populations `F-`, which have 180 days;
+    - school maths, the essays and `S-predicate` together — less than 1 %;
+    - the rest — the olympiad graph, 772 tasks;
+  - in the profile of `G0` and `F-model`:
+    - `engine.Choose` — 64 % of the CPU, of that the choice anew in `invariant.Check` — 31 % of the whole;
+    - garbage collection — about a quarter;
+  - on one sample, the bytes of the results are the same in all the variants:
+    - the choice anew only for the first 10 — 121 → 70 s of CPU;
+    - `GOGC=400` — 121 → 87 s;
+    - all together with `GOMAXPROCS=1` — 43 s, 2.8 times less;
+    - the ceiling with `GOGC=400` and `GOMAXPROCS=1` — 22 → 16 s;
+  - the memory at `GOGC=400` — about 100 MB a process, 20 processes — about 2 GB;
+  - after these edits `engine.Choose` is 73 % of the CPU, and the simulator's own code about 17 %, mostly the P* of the pool at every step for the measures. Beyond that only `engine` speeds up the run (row В10 of table 3 of RUN.md). The run of the base on 4,000 learners would take about 2.4 hours;
+  - the files of the decisive runs of T30 lay in `/tmp` and were lost after Rebuild Container.
+- **Decided by the author:**
+  - 1,000 learners a cell for the decisive run and the confirmation;
+  - the choice anew for `I1` — for the first 10 learners of a cell, `bench.Rechosen`;
+  - the run of the base is kept in `runs/`.
+- **A proposal of the execution:**
+  - `sim run` and `sim gate run` set themselves `GOGC` 400, and the run by parts also `GOMAXPROCS` 1, in the code, not in the recipe, so that every call gets them. R09 keeps goroutines out of the code anyway, and the parts of a run are processes, one per processor. A whole run is one process on the machine, and the processors are left to its garbage collection;
+  - the populations of the decisive run — all of them: "no worse" is read on every population with a verdict ([architecture.md](architecture.md), section 3.6), and without any of them the judgement would not read its constraint;
+  - `invariant.CheckRepeated` is renamed `CheckWithoutI1`: the decisive run has no repeat;
+  - the recipe `just decisive` creates the file's folder if there is none.
+- **The run** (the 2026-11-10 amendment to R04, "runs no longer than an hour"): the base on 1,000 learners — about 37 CPU minutes per process, the ceiling — about 14. On a free machine each run fits into an hour; on a machine that other containers loaded, the base took 1 h 42 min by the clock. The paths are close to the paths of T30, and the measures with a small path are the same seven.
 
-— *Почему:*
-- **1 000 учеников.** Стенд своими средствами ускоряет прогон в 2,8 раза, а нужно было около семи. Остальное даёт только меньшее число учеников, пока `engine` не ускорит выбор. 1 000 оставляют запас на занятую машину и на рост пулов. Разрешение «не хуже» — 4,3 стандартной ошибки парной разности — шире в √4 = 2 раза, и допуск автора там, где он меньше, уступает разрешению. Суд по-прежнему различает то, что сильнее шума, а грубый взгляд — меньше 1 000 — по-прежнему ничего не решает.
-- **Выбор заново у первых 10.** Повтор, `Same`, держит `I1` до бита у гейта, а первые 10 учеников каждой ячейки ловят правило, которое меняет свой вход на месте (R31). В решающем прогоне это 650 учеников и около 130 тысяч выборов. Выбор заново у всех стоил около 40 % процессора. Правило, которое выбирает не одно и то же на одном входе, — например, по порядку обхода карты, — решающий прогон без повтора у остальных учеников не увидит. Но кандидат, прежде чем его судят, проходит гейт в CI своей библиотеки, а гейт повторяет каждого из своих 100 учеников каждой ячейки и держит `I1` до бита (R31). А его решающий прогон, повторённый на тех же зёрнах, должен дать те же байты.
-- **`GOMAXPROCS` 1 и `GOGC` 400.** Ни то, ни другое не меняет бита, а сборка мусора стоила около четверти процессора. Процессов столько, сколько процессоров, и лишние потоки каждого процесса только отнимают процессор у других.
-- **`runs/`.** Папка рабочей копии переживает Rebuild Container, а `/tmp` — нет. `git` её не видит, и файлы по-прежнему не лежат в репозитории (R28). Суд гонит кандидата, а файл базы сверяется по SHA-256 с тем, что называет `paths.json`; как это делает рецепт прогона кандидата, решает T31.
+— *Why:*
+- **1,000 learners.** By its own means the simulator speeds the run up 2.8 times, and about seven were needed. The rest only a smaller number of learners gives, until `engine` speeds up the choice. 1,000 leave a margin for a busy machine and for the growth of the pools. The resolution of "no worse" — 4.3 standard errors of the paired difference — is wider by √4 = 2 times, and the author's tolerance, where it is smaller, gives way to the resolution. The judgement still tells apart what is stronger than the noise, and a rough look — fewer than 1,000 — still decides nothing.
+- **The choice anew for the first 10.** The repeat, `Same`, holds `I1` to the bit at the gate, and the first 10 learners of each cell catch a rule that changes its input in place (R31). In the decisive run these are 650 learners and about 130 thousand choices. The choice anew for all cost about 40 % of the CPU. A rule that does not choose the same thing on the same input — for example, by the order of ranging over a map — the decisive run without a repeat will not see for the other learners. But a candidate, before it is judged, passes the gate in the CI of its library, and the gate repeats each of its 100 learners of each cell and holds `I1` to the bit (R31). And its decisive run, repeated on the same seeds, must give the same bytes.
+- **`GOMAXPROCS` 1 and `GOGC` 400.** Neither changes a bit, and garbage collection cost about a quarter of the CPU. There are as many processes as processors, and the extra threads of each process only take CPU away from the others.
+- **`runs/`.** A folder of the working copy survives Rebuild Container, and `/tmp` does not. `git` does not see it, and the files still do not lie in the repository (R28). A judgement runs the candidate, and the base's file is checked by SHA-256 against what `paths.json` names; how the recipe of a candidate's run does this, T31 decides.
 
-— *Отвергнуто:*
-- оставить 4 000 и ждать, пока `engine` ускорит выбор, — суды ждали бы чужой задачи, а прогон шёл бы около 2,4 часа и после правок стенда;
-- 1 500 учеников — около 54 минут на свободной машине, впритык к часу, а на занятой — больше;
-- 1 000 только на олимпиадных ячейках и 4 000 на остальных — размер прогона зависел бы от графа, и с ростом пакетов правило пришлось бы пересматривать;
-- выбор заново у всех учеников — тогда в час укладывались бы около 750 учеников, а разрешение было бы в 2,3 раза шире;
-- урезать популяции до групп оценки — см. «Предложение исполнения»;
-- гонять базу заново в каждом суде — два прогона вместо одного.
+— *Rejected:*
+- keep 4,000 and wait until `engine` speeds up the choice — the judgements would wait for someone else's task, and the run would take about 2.4 hours even after the edits of the simulator;
+- 1,500 learners — about 54 minutes on a free machine, right at the hour, and on a busy one more;
+- 1,000 only on the olympiad cells and 4,000 on the others — the size of the run would depend on the graph, and with the growth of the packages the rule would have to be revisited;
+- the choice anew for all learners — then about 750 learners would fit into an hour, and the resolution would be 2.3 times wider;
+- cut the populations down to the score groups — see the "A proposal of the execution";
+- run the base anew in every judgement — two runs instead of one.
 
-— *Следствие:* поправки 2026-11-10 к R04, R17, R28 и R31; новый `paths.json`. Вернуть 4 000 учеников — поправкой к R04, когда `engine` ускорит выбор (В10). Где записано: RUN.md, T36; [architecture.md](architecture.md), разделы 3, 3.6–3.8; README; `main.go`, `gate.go`, `internal/bench/`, `internal/invariant/`, `internal/criterion/`, `justfile`, `.gitignore`.
+— *Consequence:* the 2026-11-10 amendments to R04, R17, R28 and R31; a new `paths.json`. Returning to 4,000 learners — by an amendment to R04, when `engine` speeds up the choice (В10). Where it is written: RUN.md, T36; [architecture.md](architecture.md), sections 3, 3.6–3.8; README; `main.go`, `gate.go`, `internal/bench/`, `internal/invariant/`, `internal/criterion/`, `justfile`, `.gitignore`.
 
-— *Поправка 2026-11-11, после ускорения `engine` (T41; R38):* решающий прогон и подтверждение идут на 1 500 учениках на ячейку, а не на 1 000. Выбор заново для `I1` — по-прежнему у первых 10 учеников ячейки; `GOGC` 400 и один процессор на часть — как были. Ответы автора 2026-11-10 при планировании T41 (RUN.md, T41).
-- **Что выяснилось** (2026-11-10, машина разработки, 20 потоков; голова pull request #57 `engine`, `74afdf8`, по файлам та же, что тег v0.1.6):
-  - выборка — 100 учеников на ячейку во всех 65 ячейках, по частям на 20 процессах: база на `engine` v0.1.4 — 256 с, на v0.1.6 — 166 с, в 1,54 раза меньше; потолок — 83 с, он `engine` не зовёт;
-  - в пересчёте на 1 000 учеников база — около 28 мин вместо 43, на 1 500 — около 41 мин, на 1 600 — около 44;
-  - прогон базы на 1 500 учениках — 38 мин по часам на почти свободной машине, потолок — около 19 мин процессора на процесс (поправка 2026-11-11 к R04);
-  - мер с путём не больше допуска автора — те же семь, что на 1 000.
-- **Решено автором:** 1 500 учеников; выбор заново для `I1` — у первых 10.
+— *Amendment 2026-11-11, after the speed-up of `engine` (T41; R38):* the decisive run and the confirmation go on 1,500 learners a cell, not on 1,000. The choice anew for `I1` is still for the first 10 learners of a cell; `GOGC` 400 and one processor a part are as they were. The author's answers 2026-11-10 when planning T41 (RUN.md, T41).
+- **What was found** (2026-11-10, the development machine, 20 threads; the head of pull request #57 of `engine`, `74afdf8`, by its files the same as the tag v0.1.6):
+  - the sample — 100 learners a cell in all 65 cells, by parts on 20 processes: the base on `engine` v0.1.4 — 256 s, on v0.1.6 — 166 s, 1.54 times less; the ceiling — 83 s, it does not call `engine`;
+  - recalculated to 1,000 learners the base is about 28 min instead of 43, to 1,500 about 41 min, to 1,600 about 44;
+  - the run of the base on 1,500 learners — 38 min by the clock on an almost free machine, the ceiling — about 19 CPU minutes per process (the 2026-11-11 amendment to R04);
+  - the measures with a path no greater than the author's tolerance — the same seven as on 1,000.
+- **Decided by the author:** 1,500 learners; the choice anew for `I1` — for the first 10.
 
-— *Почему:* правило R38 — решающему прогону столько учеников, сколько с запасом укладывается в час, а «с запасом» — не дольше 45 минут на свободной машине, четверть часа на занятую машину и рост пулов. 1 500 — около 41 минуты. Разрешение «не хуже» уже в √1,5 ≈ 1,22 раза. Отказ R33 от 1 500 стоял на 54 минутах при `engine` v0.1.4 — новый факт снял его.
+— *Why:* the rule of R38 — the decisive run gets as many learners as fit into an hour with a margin, and "with a margin" is no longer than 45 minutes on a free machine, a quarter of an hour for a busy machine and the growth of the pools. 1,500 is about 41 minutes. The resolution of "no worse" is narrower by √1.5 ≈ 1.22 times. R33's rejection of 1,500 stood on 54 minutes at `engine` v0.1.4 — a new fact removed it.
 
-— *Отвергнуто:*
-- 1 600 — около 44 минут, впритык к 45: на рост пулов запаса не остаётся;
-- 1 250 — около 35 минут: запаса больше, чем велит R38, а разрешение уже лишь в 1,12 раза;
-- выбор заново для `I1` у всех учеников — тогда в 45 минут уложились бы около 1 000, а `I1` до бита и так держит повтор гейта (R31).
+— *Rejected:*
+- 1,600 — about 44 minutes, right at 45: no margin is left for the growth of the pools;
+- 1,250 — about 35 minutes: more margin than R38 asks, and the resolution is narrower only by 1.12 times;
+- the choice anew for `I1` for all learners — then about 1,000 would fit into 45 minutes, and `I1` is held to the bit by the gate's repeat anyway (R31).
 
-— *Следствие:* `criterion.Decisive` и рецепт `just decisive` — 1 500; поправка 2026-11-11 к R04 — новый `paths.json`; суды `engine-1` и `model-1` остаются на своих прогонах 1 000, а следующие суды и подтверждения идут на 1 500. 4 000 по-прежнему не укладываются: треть выбора теперь — `Readout.Task` `learner-model` (строка В32 RUN.md `engine`, «в реестр spec»), и дальше прогон ускоряет `learner-model`. Где записано: RUN.md, T41; [architecture.md](architecture.md), разделы 3.6 и 3.8; README; `internal/criterion/criterion.go`, `justfile`.
+— *Consequence:* `criterion.Decisive` and the recipe `just decisive` — 1,500; the 2026-11-11 amendment to R04 — a new `paths.json`; the judgements `engine-1` and `model-1` stay on their runs of 1,000, and the next judgements and confirmations go on 1,500. 4,000 still do not fit: a third of the choice is now `Readout.Task` of `learner-model` (row В32 RUN.md `engine`, «в реестр spec»), and beyond that `learner-model` speeds up the run. Where it is written: RUN.md, T41; [architecture.md](architecture.md), sections 3.6 and 3.8; README; `internal/criterion/criterion.go`, `justfile`.
 
-— *Поправка 2026-11-12, после ускорения `learner-model` (T46; R43, R44):* решающий прогон и подтверждение идут на 2 000 учениках на ячейку, а не на 1 500. Выбор заново для `I1` — по-прежнему у первых 10 учеников ячейки; `GOGC` 400 и один процессор на часть — как были. Ответы автора 2026-11-12 при планировании и исполнении T46 (RUN.md, T46).
-- **Что выяснилось** (2026-11-12, машина разработки, 20 потоков; `learner-model` v0.1.6, `engine` v0.1.6, пакеты `modules` v0.2.5):
-  - выборка — 100 учеников на ячейку во всех 65 ячейках, по частям на 20 процессах, на свободной машине: load average — 1,8 перед сборкой стенда и 2,0 после неё, у старта прогона. База — 1 мин 55 с против 166 с в T41, потолок — 1 мин 20 с против 83 с: у базы ускорение `Readout.Task`, а потолок `engine` не зовёт;
-  - в пересчёте база на 1 500 учениках — около 28,8 минуты, на 1 750 — около 33,5, на 2 000 — около 38,3, на 2 250 — около 43,1; потолок на 2 000 — около 26,7. Это сходится с замером процессора T45 — около 25,9 минуты на процесс у базы на 1 500 (R43). В T41 такая выборка обещала 41 минуту на 1 500, а прогон шёл 38: пересчёт немного завышает;
-  - прогоны на 2 000 учениках шли на хосте, который делили соседние контейнеры: база — 62 мин 37 с по часам и около 31,3 минуты процессора на процесс, потолок — 30 мин 37 с и около 24,1 (поправка 2026-11-12 к R04). Процессора на процесс у потолка — в 4/3 больше, чем на 1 500 в T45 (18,0), как и ждали, а у базы — лишь в 1,21 раза (25,9 → 31,3): процессорное время на перегруженном хосте само гуляет, так что размер выбран по выборке, а не по нему;
-  - файл прогона — около 1,0 ГБ у базы и 0,8 ГБ у потолка; `sim paths` читает оба за 5 мин 23 с.
-- **Решено автором:** размер — наибольший на сетке с шагом 250, от 1 500 до 4 000, при котором база в пересчёте выборки на свободной машине не дольше 41 минуты, как 1 500 в T41. Это 2 000; выбор заново для `I1` — у первых 10.
+— *Amendment 2026-11-12, after the speed-up of `learner-model` (T46; R43, R44):* the decisive run and the confirmation go on 2,000 learners a cell, not on 1,500. The choice anew for `I1` is still for the first 10 learners of a cell; `GOGC` 400 and one processor a part are as they were. The author's answers 2026-11-12 when planning and executing T46 (RUN.md, T46).
+- **What was found** (2026-11-12, the development machine, 20 threads; `learner-model` v0.1.6, `engine` v0.1.6, the packages of `modules` v0.2.5):
+  - the sample — 100 learners a cell in all 65 cells, by parts on 20 processes, on a free machine: the load average was 1.8 before the build of the simulator and 2.0 after it, at the start of the run. The base — 1 min 55 s against 166 s in T41, the ceiling — 1 min 20 s against 83 s: the base has the speed-up of `Readout.Task`, and the ceiling does not call `engine`;
+  - recalculated, the base on 1,500 learners is about 28.8 minutes, on 1,750 about 33.5, on 2,000 about 38.3, on 2,250 about 43.1; the ceiling on 2,000 about 26.7. This matches the CPU measurement of T45 — about 25.9 minutes per process for the base on 1,500 (R43). In T41 such a sample promised 41 minutes on 1,500, and the run took 38: the recalculation overstates a little;
+  - the runs on 2,000 learners went on a host that neighbouring containers shared: the base — 62 min 37 s by the clock and about 31.3 CPU minutes per process, the ceiling — 30 min 37 s and about 24.1 (the 2026-11-12 amendment to R04). The CPU per process of the ceiling is 4/3 more than on 1,500 in T45 (18.0), as expected, and that of the base only 1.21 times more (25.9 → 31.3): CPU time on an overloaded host wanders by itself, so the size is chosen by the sample, not by it;
+  - the file of a run — about 1.0 GB for the base and 0.8 GB for the ceiling; `sim paths` reads both in 5 min 23 s.
+- **Decided by the author:** the size is the largest on a grid in steps of 250, from 1,500 to 4,000, at which the base, recalculated from the sample on a free machine, is no longer than 41 minutes, as 1,500 was in T41. This is 2,000; the choice anew for `I1` — for the first 10.
 
-— *Почему:* правило R38 — решающему прогону столько учеников, сколько с запасом укладывается в час, а «с запасом» — не дольше 45 минут на свободной машине (поправка 2026-11-11). 2 000 — около 38 минут; 2 250 — около 43, впритык, как отвергнутые в T41 1 600 при 44 минутах. Разрешение «не хуже» уже в √(4/3) ≈ 1,15 раза.
+— *Why:* the rule of R38 — the decisive run gets as many learners as fit into an hour with a margin, and "with a margin" is no longer than 45 minutes on a free machine (the 2026-11-11 amendment). 2,000 is about 38 minutes; 2,250 about 43, right at the edge, like the 1,600 at 44 minutes rejected in T41. The resolution of "no worse" is narrower by √(4/3) ≈ 1.15 times.
 
-— *Отвергнуто:*
-- 2 250 — около 43 минут: на рост пулов запаса не остаётся;
-- шаг 100 — 2 100 или 2 200 дали бы 3–5 % разрешения ценой некруглого размера и меньшего запаса;
-- не дольше 38 минут — запаса больше, чем велит R38: тогда 1 750, и разрешение уже лишь в 1,08 раза;
-- размер по часам прогона на занятом хосте — он мерит соседей, а не стенд.
+— *Rejected:*
+- 2,250 — about 43 minutes: no margin is left for the growth of the pools;
+- a step of 100 — 2,100 or 2,200 would give 3–5 % of resolution at the price of an uneven size and a smaller margin;
+- no longer than 38 minutes — more margin than R38 asks: then 1,750, and the resolution is narrower only by 1.08 times;
+- the size by the clock of a run on a busy host — it measures the neighbours, not the simulator.
 
-— *Следствие:* `criterion.Decisive` и рецепт `just decisive` — 2 000; поправка 2026-11-12 к R04 — новый `paths.json`; суды `engine-1` и `model-1` остаются на своих прогонах 1 000, а следующие суды и подтверждения, начиная с `model-2`, идут на 2 000. 4 000 по-прежнему не укладываются — около 77 минут базы; Д7 закрыт вместе с поправкой 2026-11-12 к R31: размеры снова так велики, как позволяет время. Где записано: RUN.md, T46; [architecture.md](architecture.md), разделы 3.6 и 3.8; README; `internal/criterion/criterion.go`, `justfile`.
+— *Consequence:* `criterion.Decisive` and the recipe `just decisive` — 2,000; the 2026-11-12 amendment to R04 — a new `paths.json`; the judgements `engine-1` and `model-1` stay on their runs of 1,000, and the next judgements and confirmations, starting with `model-2`, go on 2,000. 4,000 still do not fit — about 77 minutes of the base; Д7 is closed together with the 2026-11-12 amendment to R31: the sizes are again as large as the time allows. Where it is written: RUN.md, T46; [architecture.md](architecture.md), sections 3.6 and 3.8; README; `internal/criterion/criterion.go`, `justfile`.
 
-## Решающий прогон кандидата
+## A candidate's decisive run
 
-**R34. Решающий прогон кандидата гонит тот же рецепт `just decisive`, что и прогон базы: с набором учеников и с кандидатом из `CANDIDATE_LEARNER_MODEL`, `CANDIDATE_ENGINE` или обеих. Кандидат — коммит по полному SHA, который рецепт скачивает с GitHub, или папка без незакоммиченных правок. Стенд кандидата собирается через рабочее пространство гейта: этот кусок рецептов один на оба рецепта, а сборку до прогона держит `sim gate verify`. База без кандидата собирается по `go.mod`, как прежде.** Ответы автора 2026-11-10 при планировании T31 (RUN.md, T31); остальное — предложение исполнения.
-- **Что выяснилось при планировании** (2026-11-10):
-  - в `engine` открыты три кандидата, pull request #46–48 — A, B и C (T31 `engine`). Судить их кругом будет T33 (поправка 2026-11-09 к R103 spec);
-  - GitHub отдаёт коммит по полному SHA и тогда, когда его нет ни на одной ветке: голова открытого #48 `engine` скачалась `git fetch --depth 1`;
-  - сборку гейта держит `gate.Verify`: библиотеки из рабочего пространства, общие зависимости и строки `go` файла гейта, `go.mod` `sim`, закреплённые пакеты. Частей прогона ей не нужно, но звала её только `sim gate check`, вместе с полосами;
-  - шапку файла результатов пишет `bench.Names`. Библиотеку из рабочего пространства она называет коммитом, который передан через `-commit`, а библиотеку из `go.mod` — версией.
-- **Решено автором:**
-  - база без кандидата — по `go.mod`;
-  - кандидат — SHA или чистая папка, пара — обе переменные.
-- **Предложение исполнения:**
-  - скрытый рецепт `workspace dir prefix clean`. Он берёт каждую библиотеку из `<prefix>_<ИМЯ>` или по коммиту файла гейта, проверяет тег, пишет `go.work` и печатает по строке на библиотеку: путь, папку, коммит. Гейт зовёт его с `GATE` и без проверки чистоты, решающий прогон — с `CANDIDATE` и с ней;
-  - `sim gate verify -file <файл гейта> -go <папка>…` — `gate.Verify` без полос: кандидат, чей `go.mod` поднял общую зависимость, не прогоняется, как не прошёл бы и гейт своего CI;
-  - вторая библиотека у кандидата — тоже из рабочего пространства, по коммиту файла гейта. Так `gate.Verify` применима без правок, а шапка называет обе библиотеки коммитами;
-  - пара — обе переменные вместе с `CANDIDATE_PAIR=yes`. Переменная, оставшаяся от другого прогона, не делает из кандидата пару незаметно, а переменная с именем, которого нет среди библиотек файла гейта, — отказ;
-  - относительная папка — от папки вызывающего, как файл прогона;
-  - набор учеников рецепт проверяет до прогона, коротким прогоном одного ученика;
-  - README — раздел «Judging a candidate»: от коммита pull request до суда, подтверждения и записи полос.
+**R34. A candidate's decisive run is run by the same recipe `just decisive` as the run of the base: with a set of learners and with the candidate from `CANDIDATE_LEARNER_MODEL`, `CANDIDATE_ENGINE` or both. A candidate is a commit by its full SHA, which the recipe fetches from GitHub, or a folder without uncommitted edits. The candidate's simulator is built through the gate's workspace: this piece of the recipes is one for both recipes, and the build before the run is held by `sim gate verify`. The base without a candidate is built by `go.mod`, as before.** The author's answers 2026-11-10 when planning T31 (RUN.md, T31); the rest is a proposal of the execution.
+- **What was found in planning** (2026-11-10):
+  - three candidates are open in `engine`, pull requests #46–48 — A, B and C (T31 `engine`). T33 will judge them in a round (the 2026-11-09 amendment to R103 spec);
+  - GitHub gives a commit by its full SHA even when it is on no branch: the head of the open #48 of `engine` was fetched by `git fetch --depth 1`;
+  - the gate's build is held by `gate.Verify`: the libraries from the workspace, the shared dependencies and the lines `go` of the gate file, the `go.mod` of `sim`, the pinned packages. It needs no parts of a run, but only `sim gate check` called it, together with the bands;
+  - the header of the results file is written by `bench.Names`. It names a library from the workspace by the commit passed through `-commit`, and a library from `go.mod` by its version.
+- **Decided by the author:**
+  - the base without a candidate — by `go.mod`;
+  - a candidate — a SHA or a clean folder, a pair — both variables.
+- **A proposal of the execution:**
+  - a hidden recipe `workspace dir prefix clean`. It takes each library from `<prefix>_<NAME>` or by the commit of the gate file, checks the tag, writes `go.work` and prints a line per library: the path, the folder, the commit. The gate calls it with `GATE` and without the check of cleanness, the decisive run with `CANDIDATE` and with it;
+  - `sim gate verify -file <gate file> -go <folder>…` — `gate.Verify` without the bands: a candidate whose `go.mod` raised a shared dependency is not run, just as it would not pass the gate of its own CI;
+  - the second library of a candidate is also from the workspace, by the commit of the gate file. So `gate.Verify` applies without edits, and the header names both libraries by commits;
+  - a pair is both variables together with `CANDIDATE_PAIR=yes`. A variable left over from another run does not silently make a pair of a candidate, and a variable with a name that is not among the libraries of the gate file is a refusal;
+  - a relative folder is from the caller's folder, as the run's file is;
+  - the recipe checks the set of learners before the run, by a short run of one learner;
+  - README — the section "Judging a candidate": from the commit of a pull request to the judgement, the confirmation and the recording of the bands.
 
-— *Почему:*
-- **База по `go.mod`.** Тогда её файл до байта тот, чей SHA-256 называет `paths.json` (R28; поправка 2026-11-10 к R04). Через рабочее пространство шапка называла бы библиотеки коммитами, байты разошлись бы, и базу с путями пришлось бы писать заново.
-- **SHA или папка.** Голова pull request лежит на GitHub, и SHA её однозначно называет. Папка нужна для кандидата, которого ещё нет на GitHub. Без правок — потому что шапка называет коммит, и файл должен быть прогоном именно его.
-- **Один кусок рабочего пространства.** Гейт и прогон кандидата собирают стенд одинаково; две копии разошлись бы.
+— *Why:*
+- **The base by `go.mod`.** Then its file is to the byte the one whose SHA-256 `paths.json` names (R28; the 2026-11-10 amendment to R04). Through the workspace the header would name the libraries by commits, the bytes would diverge, and the base with the paths would have to be written anew.
+- **A SHA or a folder.** The head of a pull request lies on GitHub, and the SHA names it unambiguously. A folder is needed for a candidate that is not on GitHub yet. Without edits — because the header names a commit, and the file must be a run of exactly that commit.
+- **One piece of the workspace.** The gate and a candidate's run build the simulator the same way; two copies would diverge.
 
-— *Отвергнуто:*
-- база через `go.work` — см. «Почему»;
-- только SHA — кандидата без pull request нельзя было бы прогнать;
-- папка с незакоммиченными правками — шапка назвала бы коммит, а шёл бы другой код;
-- своя копия куска `go.work` в рецепте `decisive`.
+— *Rejected:*
+- the base through `go.work` — see the "Why";
+- only a SHA — a candidate without a pull request could not be run;
+- a folder with uncommitted edits — the header would name a commit, and other code would run;
+- a copy of its own of the piece of `go.work` in the recipe `decisive`.
 
-— *Следствие:* поправки 2026-11-10 к R26 и R28; T32 и T33 гонят кандидатов этим рецептом. Где записано: RUN.md, T31; [architecture.md](architecture.md), разделы 3, 3.6, 3.8 и 3.9; README; `justfile`, `gate.go`.
+— *Consequence:* the 2026-11-10 amendments to R26 and R28; T32 and T33 run the candidates by this recipe. Where it is written: RUN.md, T31; [architecture.md](architecture.md), sections 3, 3.6, 3.8 and 3.9; README; `justfile`, `gate.go`.
 
-## Порядок судов и отчёт суда
+## The order of the judgements and the judgement's report
 
-**R35. Из двух первых судов — модели и движка — первым идёт тот, чьи кандидаты готовы раньше, а второй — на базе с выбранным первым. Отчёт суда лежит в репозитории, в `judgements/<критерий>-<n>/`. Строки «В реестр spec» при теге с кандидатом нет.** Ответы автора 2026-11-10 при планировании T32 (RUN.md, T32).
-- **Что выяснилось при планировании** (2026-11-10):
-  - разведка `learner-model` — его T30, pull request #42 — выбрала трёх кандидатов: `g10`, `halve035` и `forget-set`. Все в группе «Забывает», без цели и без нового поля, а их черновые pull request — T31 `learner-model`, ещё не начатая;
-  - кандидаты движка A, B и C уже готовы, pull request #46–48 `engine`;
-  - после первого выбора база — выбранное ([architecture.md](architecture.md), раздел 3.6), так что порядок судов решает, на какой базе идёт второй;
-  - `sim judge` не сверяет, что вторая библиотека у кандидата та же, что у базы; от такой ошибки сейчас защищает `CANDIDATE_PAIR` рецепта (R34).
-- **Решено автором:**
-  - **порядок.** Сейчас первым идёт T33. Если он выбрал движок, T32 гонит базу заново — модель v0.1.4 с выбранным движком, рецептом по новому `go.mod`, — а кандидатов модели рецепт соберёт с движком по коммиту `gate.json` (R34). Путь остаётся закреплённым (R28);
-  - **отчёт.** Папка `judgements/<критерий>-<n>/`, где n — номер выбора этого критерия, как у отложенных учеников (раздел 3.8 [architecture.md](architecture.md)): файл суда, отчёт `sim judge` как есть и SHA-256 каждого прогона. Итог и его причины записывает решение журнала;
-  - **`spec`.** Первых кандидатов ведёт строка 4.9 [COORDINATION.md](../spec/COORDINATION.md), а порядок релизов — R103 spec: тег `sim` с полосами и отчёт `spec` увидит на `main`, а тег в «Gate» поднимает сессия библиотеки.
+**R35. Of the first two judgements — of the model and of the engine — the first is the one whose candidates are ready earlier, and the second goes on the base with what the first chose. The judgement's report lies in the repository, in `judgements/<criterion>-<n>/`. There is no row «В реестр spec» with a tag with a candidate.** The author's answers 2026-11-10 when planning T32 (RUN.md, T32).
+- **What was found in planning** (2026-11-10):
+  - the exploration of `learner-model` — its T30, pull request #42 — chose three candidates: `g10`, `halve035` and `forget-set`. All in the group "Forgets", without a target and without a new field, and their draft pull requests are T31 `learner-model`, not started yet;
+  - the engine's candidates A, B and C are already ready, pull requests #46–48 of `engine`;
+  - after the first choice the base is what was chosen ([architecture.md](architecture.md), section 3.6), so the order of the judgements decides on which base the second goes;
+  - `sim judge` does not check that a candidate's second library is the same as the base's; from such an error the recipe's `CANDIDATE_PAIR` protects now (R34).
+- **Decided by the author:**
+  - **the order.** Now T33 goes first. If it chose the engine, T32 runs the base anew — the model v0.1.4 with the chosen engine, by the recipe on the new `go.mod` —, and the recipe builds the model's candidates with the engine at the commit of `gate.json` (R34). The path stays pinned (R28);
+  - **the report.** The folder `judgements/<criterion>-<n>/`, where n is the number of the choice of this criterion, as for the held-out learners ([architecture.md](architecture.md), section 3.8): the judgement file, the report of `sim judge` as it is and the SHA-256 of each run. The outcome and its reasons are recorded by a decision of the log;
+  - **`spec`.** The first candidates are led by row 4.9 of [COORDINATION.md](../spec/COORDINATION.md), and the order of releases by R103 spec: `spec` will see the tag of `sim` with the bands and the report on `main`, and the tag in "Gate" is raised by the library's session.
 
-— *Почему:*
-- **Кто готов — тот первый.** Кандидаты одной библиотеки не ждут чужих, а второй суд судит свои кандидаты вместе с уже выбранным, как раздел 3.6 и велит.
-- **Отчёт в репозитории.** Полосы записываются заново pull request с причиной — отчётом суда и подтверждения (раздел 3.7 [architecture.md](architecture.md)), — и ревью читает этот отчёт рядом с полосами. Прогоны воспроизводятся до байта, но снимать отчёт заново, чтобы его прочесть, ревью не должно.
+— *Why:*
+- **Whoever is ready goes first.** The candidates of one library do not wait for someone else's, and the second judgement judges its candidates together with what is already chosen, as section 3.6 says.
+- **The report in the repository.** The bands are recorded anew by a pull request with a reason — the report of the judgement and of the confirmation ([architecture.md](architecture.md), section 3.7) —, and review reads this report beside the bands. The runs are reproduced to the byte, but review should not have to take the report anew in order to read it.
 
-— *Отвергнуто:*
-- судить парой — кандидаты движка ждали бы кандидатов модели, а сочетаний 3 × 3 — девять прогонов;
-- оба суда на прежней базе — выбранные модель и движок вместе не судились бы ни разу;
-- отчёт только в журнале — см. «Почему»;
-- строка «В реестр spec» — то, что она спросила бы, уже ведёт строка 4.9.
+— *Rejected:*
+- judge as a pair — the engine's candidates would wait for the model's candidates, and the combinations 3 × 3 are nine runs;
+- both judgements on the previous base — the chosen model and engine would never be judged together;
+- the report only in the log — see the "Why";
+- a row «В реестр spec» — what it would ask row 4.9 already leads.
 
-— *Следствие:* T33 идёт раньше T32; отчёты — `judgements/engine-1/` и `judgements/model-1/`. Где записано: RUN.md, T32 и T33; [architecture.md](architecture.md), раздел 3.6.
+— *Consequence:* T33 goes before T32; the reports are `judgements/engine-1/` and `judgements/model-1/`. Where it is written: RUN.md, T32 and T33; [architecture.md](architecture.md), section 3.6.
 
-— *Поправка 2026-11-10, после суда `engine-1` (R36):* n в `judgements/<критерий>-<n>/` — номер круга суда этого критерия, а не номер выбора. Круг может кончиться выходом без подтверждения, и тогда выбора нет, а следующему кругу нужна своя папка. Отложенный набор круга — первый ещё не тронутый `held-out-<критерий>-<n>` (раздел 3.8 [architecture.md](architecture.md)): у `engine-2` это снова `held-out-engine-1`.
+— *Amendment 2026-11-10, after the judgement `engine-1` (R36):* n in `judgements/<criterion>-<n>/` is the number of the round of the judgement of this criterion, not the number of the choice. A round may end in an exit without a confirmation, and then there is no choice, and the next round needs a folder of its own. The held-out set of a round is the first `held-out-<criterion>-<n>` not yet touched ([architecture.md](architecture.md), section 3.8): for `engine-2` it is `held-out-engine-1` again.
 
-— *Поправка 2026-11-11 (T40; R40):* суд сам сверяет, что вторая библиотека кандидата — та же, что у базы, по встроенному `gate.json`; Д6 закрыт. Защита рецепта — пара требует `CANDIDATE_PAIR=yes` (R34) — остаётся.
+— *Amendment 2026-11-11 (T40; R40):* the judgement itself checks that a candidate's second library is the same as the base's, by the embedded `gate.json`; Д6 is closed. The recipe's protection — a pair requires `CANDIDATE_PAIR=yes` (R34) — stays.
 
-## Суд `engine-1`
+## The judgement `engine-1`
 
-**R36. Первый суд кандидатов `engine` — A, B и C, pull request #46–48 — кончился выходом: ни один кандидат не держит всех ограничений критерия движка, и база остаётся как есть. Подтверждения не было, и `held-out-engine-1` по-прежнему отложен. `gate.json`, `go.mod` и полосы не меняются.** Суд T33 (RUN.md), круг по поправке 2026-11-09 к R103 spec; отчёт — `judgements/engine-1/` (R35).
-- **Кандидаты** — все в группе `corridor`, без новых констант и без нового поля; строки для файла суда дали их описания:
-  - A, `7ef8288c…`, `distance` 1 — задача в коридоре раньше невиданной вне его;
-  - B, `32aa835d…`, `distance` 2 — виденное решение после паузы не меняет порядок;
-  - C, `97abff0d…`, `distance` 3 — порядок A и закрепление ошибки только в коридоре.
-- **Прогоны** — решающие, на 1 000 рабочих учениках на ячейку, рецептом `just decisive` (R34), на свободной машине:
-  - база — `runs/base.jsonl` прогона T36, SHA-256 `b13a9264…4c92`, тот, что называет `paths.json`;
-  - A — 48 мин по часам, SHA-256 `6ac032a5…e94d`;
-  - B — 42 мин, `21ad0cbd…f8e4`;
-  - C — 41 мин, `79353c9a…b8459`.
+**R36. The first judgement of the candidates of `engine` — A, B and C, pull requests #46–48 — ended in an exit: no candidate holds all the constraints of the engine's criterion, and the base stays as it is. There was no confirmation, and `held-out-engine-1` is still held out. `gate.json`, `go.mod` and the bands do not change.** The judgement of T33 (RUN.md), a round by the 2026-11-09 amendment to R103 spec; the report — `judgements/engine-1/` (R35).
+- **The candidates** — all in the group `corridor`, without new constants and without a new field; the lines for the judgement file came from their descriptions:
+  - A, `7ef8288c…`, `distance` 1 — a task in the corridor before an unseen one outside it;
+  - B, `32aa835d…`, `distance` 2 — a seen solution after a pause does not change the order;
+  - C, `97abff0d…`, `distance` 3 — the order of A and consolidation of an error only in the corridor.
+- **The runs** — decisive, on 1,000 working learners a cell, by the recipe `just decisive` (R34), on a free machine:
+  - the base — `runs/base.jsonl` of the run of T36, SHA-256 `b13a9264…4c92`, the one that `paths.json` names;
+  - A — 48 min by the clock, SHA-256 `6ac032a5…e94d`;
+  - B — 42 min, `21ad0cbd…f8e4`;
+  - C — 41 min, `79353c9a…b8459`.
 
-  Так подтверждён и час T36 по часам (R33). Одна двадцатая прогона A прогнана заново и совпала с его файлом строка в строку, 3 250 строк.
-- **Отчёт** `sim judge`:
+  So the hour of T36 by the clock is confirmed too (R33). One twentieth of the run of A was run anew and matched its file line for line, 3,250 lines.
+- **The report** of `sim judge`:
 
-  | кандидат | оценка | группа `corridor` | проваленных «не хуже» |
+  | candidate | score | group `corridor` | failed "no worse" |
   |---|---|---|---|
-  | A | 0,124 [0,115; 0,133] | 0,133 [0,122; 0,144] | 3 |
-  | B | 0,130 [0,118; 0,141] | 0,147 [0,134; 0,160] | 30 |
-  | C | 0,127 [0,117; 0,138] | 0,137 [0,126; 0,148] | 3 |
+  | A | 0.124 [0.115; 0.133] | 0.133 [0.122; 0.144] | 3 |
+  | B | 0.130 [0.118; 0.141] | 0.147 [0.134; 0.160] | 30 |
+  | C | 0.127 [0.117; 0.138] | 0.137 [0.126; 0.148] | 3 |
 
-  - Все трое лучше базы по оценке.
-  - A проваливает отставание `M3.lag` на `G2` обеих математик (на школьной — хуже на 0,036 при допуске 0,019) и `E4.given` у `F-growth5` (0,01015 при 0,01).
-  - C проваливает школьные `E1.corridor` у `G2` (0,01004 при 0,01) и `M3.lag` у `G2` (0,036 при 0,018), а также олимпиадный `M3.lag` у `G2-fading`.
-  - B проваливает `E4.given` почти на всех олимпиадных популяциях, `E3.retention` у `F-`, `M4.false.all` у `W-repeat` и `M3.lag`. Сбылся риск повторить виденное решение (R06 learner-model).
-  - Из оценки у всех вышли три `E3.end` на школьной математике — их путь в пределах допуска (поправка 2026-11-09 к R04).
+  - All three are better than the base by the score.
+  - A fails the lag `M3.lag` on `G2` of both maths (on school maths worse by 0.036 at a tolerance of 0.019) and `E4.given` for `F-growth5` (0.01015 at 0.01).
+  - C fails the school `E1.corridor` for `G2` (0.01004 at 0.01) and `M3.lag` for `G2` (0.036 at 0.018), and also the olympiad `M3.lag` for `G2-fading`.
+  - B fails `E4.given` on almost all the olympiad populations, `E3.retention` for `F-`, `M4.false.all` for `W-repeat` and `M3.lag`. The risk of repeating a seen solution came true (R06 learner-model).
+  - For all of them three `E3.end` on school maths left the score — their path is within the tolerance (the 2026-11-09 amendment to R04).
 
-— *Почему выход:* выбор берёт только кандидата, который держит все ограничения и лучше базы ([architecture.md](architecture.md), раздел 3.6). Таких нет. Общая причина A и C — отставание модели `M3.lag` на `G2`: новый порядок задач даёт модели меньше свидетельств там, где правда учится. Это читается как сигнал для следующего круга `engine`, а не как довод ослабить допуск: допуски записаны до первого кандидата (R04).
+— *Why an exit:* the choice takes only a candidate that holds all the constraints and is better than the base ([architecture.md](architecture.md), section 3.6). There are none such. The common reason of A and C is the model's lag `M3.lag` on `G2`: the new order of the tasks gives the model less evidence where the truth is learning. This is read as a signal for the next round of `engine`, not as an argument to loosen the tolerance: the tolerances were written down before the first candidate (R04).
 
-— *Следствие:* pull request #46–48 `engine` закрывает его сессия, со ссылкой на `judgements/engine-1/`. Строки «В реестр spec» о ветке 3 у C нет: C не выбран. T32 судит кандидатов модели на прежней базе — `runs/base.jsonl`, — потому что первого выбора нет (R35). Следующий суд движка — `judgements/engine-2/`, а его подтверждение — снова на `held-out-engine-1`: тот не тронут (поправка 2026-11-10 к R35). Где записано: RUN.md, T33; `judgements/engine-1/`.
+— *Consequence:* pull requests #46–48 of `engine` are closed by its session, with a link to `judgements/engine-1/`. There is no row «В реестр spec» about branch 3 of C: C is not chosen. T32 judges the model's candidates on the previous base — `runs/base.jsonl` —, because there is no first choice (R35). The next judgement of the engine is `judgements/engine-2/`, and its confirmation is again on `held-out-engine-1`: it is untouched (the 2026-11-10 amendment to R35). Where it is written: RUN.md, T33; `judgements/engine-1/`.
 
-## Суд `model-1`
+## The judgement `model-1`
 
-**R37. Первый суд кандидатов `learner-model` — `g10`, `halve035` и `forget-set`, pull request #43–45 — кончился выходом: ни один кандидат не держит всех ограничений критерия модели, и база остаётся как есть. Подтверждения не было, и `held-out-model-1` по-прежнему отложен. `gate.json`, `go.mod` и полосы не меняются.** Суд T32 (RUN.md), один круг по поправке 2026-11-09 к R103 spec; отчёт — `judgements/model-1/` (R35 и поправка к нему). Он шёл после суда движка, тоже кончившегося выходом (R36), так что база прежняя.
-- **Кандидаты** — все в группе `forgets`, без цели и без нового поля; поля для файла суда дала сессия `learner-model`. Все три черновика сделаны от `main` 9fb144f, где код модели тот же, что в релизе v0.1.4:
-  - `g10`, `7f735b20…` — `stabilityGrowth` 10, одна константа;
-  - `halve035`, `17e0a42f…` — `stabilityCut` 0,35, одна константа;
-  - `forget-set`, `75c6a908…` — обе, две константы.
-- **Прогоны** — решающие, на 1 000 рабочих учениках на ячейку, рецептом `just decisive` с `CANDIDATE_LEARNER_MODEL` (R34). Движок взят по коммиту `gate.json`, v0.1.4:
-  - база — `runs/base.jsonl`, SHA-256 `b13a9264…4c92`;
-  - `g10` — 41 мин по часам, `e19ff45e…0434`;
-  - `halve035` — 44 мин, `400d9a6d…d66e`;
-  - `forget-set` — 41 мин, `cdf7755c…4c25`. Первый его запуск оборвался вместе с сессией и был повторён целиком.
+**R37. The first judgement of the candidates of `learner-model` — `g10`, `halve035` and `forget-set`, pull requests #43–45 — ended in an exit: no candidate holds all the constraints of the model's criterion, and the base stays as it is. There was no confirmation, and `held-out-model-1` is still held out. `gate.json`, `go.mod` and the bands do not change.** The judgement of T32 (RUN.md), one round by the 2026-11-09 amendment to R103 spec; the report — `judgements/model-1/` (R35 and its amendment). It went after the engine's judgement, which also ended in an exit (R36), so the base is the previous one.
+- **The candidates** — all in the group `forgets`, without a target and without a new field; the fields for the judgement file came from the session of `learner-model`. All three drafts are made from `main` 9fb144f, where the model's code is the same as in the release v0.1.4:
+  - `g10`, `7f735b20…` — `stabilityGrowth` 10, one constant;
+  - `halve035`, `17e0a42f…` — `stabilityCut` 0.35, one constant;
+  - `forget-set`, `75c6a908…` — both, two constants.
+- **The runs** — decisive, on 1,000 working learners a cell, by the recipe `just decisive` with `CANDIDATE_LEARNER_MODEL` (R34). The engine is taken at the commit of `gate.json`, v0.1.4:
+  - the base — `runs/base.jsonl`, SHA-256 `b13a9264…4c92`;
+  - `g10` — 41 min by the clock, `e19ff45e…0434`;
+  - `halve035` — 44 min, `400d9a6d…d66e`;
+  - `forget-set` — 41 min, `cdf7755c…4c25`. Its first start broke off together with the session and was repeated whole.
 
-  Одна двадцатая прогона `halve035` прогнана заново и совпала с его файлом строка в строку, 3 250 строк.
-- **Отчёт** `sim judge`:
+  One twentieth of the run of `halve035` was run anew and matched its file line for line, 3,250 lines.
+- **The report** of `sim judge`:
 
-  | кандидат | оценка | группа `forgets` | проваленных «не хуже» |
+  | candidate | score | group `forgets` | failed "no worse" |
   |---|---|---|---|
-  | `g10` | 0,025 [0,011; 0,037] | 0,195 [0,098; 0,294] | 4 |
-  | `halve035` | 0,014 [0,002; 0,027] | 0,117 [0,031; 0,213] | 3 |
-  | `forget-set` | 0,033 [0,020; 0,046] | 0,277 [0,184; 0,373] | 8 |
+  | `g10` | 0.025 [0.011; 0.037] | 0.195 [0.098; 0.294] | 4 |
+  | `halve035` | 0.014 [0.002; 0.027] | 0.117 [0.031; 0.213] | 3 |
+  | `forget-set` | 0.033 [0.020; 0.046] | 0.277 [0.184; 0.373] | 8 |
 
-  - Все трое лучше базы по оценке, и группа «Забывает» у всех выше нуля.
-  - `halve035` проваливает три проверки, все на волоске от допуска: `E3.late` у `F-growth5` (0,04967 при 0,049), `M3.settle` у `F-break` (19,42 при 18,11) и `M1.rms.200` у `A-unpractised` (0,03116 при 0,03076).
-  - `g10` проваливает `M1.rms.200` у `G3-drop`, `G8` и `S-scale1.5` и `M3.settle` у `F-break`.
-  - `forget-set` проваливает то же, что `g10`, и ещё олимпиадный `E1.corridor` у `G2`, `G2-fading` и `S-adult` и `M1.rms.200` у `F-none`.
-  - Общее у всех — догонка после перерыва `M3.settle` у `F-break`: с новыми числами забывания модель догоняет правду после перерыва дольше. Почему — суд не читает; это вопрос следующего круга.
+  - All three are better than the base by the score, and the group "Forgets" is above zero for all of them.
+  - `halve035` fails three checks, all within a hair of the tolerance: `E3.late` for `F-growth5` (0.04967 at 0.049), `M3.settle` for `F-break` (19.42 at 18.11) and `M1.rms.200` for `A-unpractised` (0.03116 at 0.03076).
+  - `g10` fails `M1.rms.200` for `G3-drop`, `G8` and `S-scale1.5` and `M3.settle` for `F-break`.
+  - `forget-set` fails the same as `g10`, and also the olympiad `E1.corridor` for `G2`, `G2-fading` and `S-adult` and `M1.rms.200` for `F-none`.
+  - Common to all is the catching up after a break, `M3.settle` for `F-break`: with the new numbers of forgetting the model catches up with the truth after a break more slowly. Why — the judgement does not read; this is a question for the next round.
 
-— *Почему выход:* выбор берёт только кандидата, который держит все ограничения и лучше базы ([architecture.md](architecture.md), раздел 3.6). Таких нет. Допуски записаны до первого кандидата (R04), и то, что `halve035` не прошёл на волоске, — не довод их сдвинуть. Это сигнал для следующего круга модели: менять забывание так, чтобы не задерживать догонку после перерыва.
+— *Why an exit:* the choice takes only a candidate that holds all the constraints and is better than the base ([architecture.md](architecture.md), section 3.6). There are none such. The tolerances were written down before the first candidate (R04), and that `halve035` failed by a hair is no argument to shift them. This is a signal for the next round of the model: to change forgetting so as not to delay the catching up after a break.
 
-— *Следствие:* pull request #43–45 `learner-model` закрывает его сессия, со ссылкой на `judgements/model-1/`. Первых выборов нет ни у модели, ни у движка, так что T34 — перевод на релизы выбранных — автор не делает: её статус `[-]`. База остаётся `learner-model` v0.1.4 и `engine` v0.1.4. Следующий круг модели — `judgements/model-2/`, его подтверждение — на `held-out-model-1`. Где записано: RUN.md, T32; `judgements/model-1/`.
+— *Consequence:* pull requests #43–45 of `learner-model` are closed by its session, with a link to `judgements/model-1/`. There are no first choices for either the model or the engine, so T34 — the move to the releases of the chosen ones — the author does not do: its status is `[-]`. The base stays `learner-model` v0.1.4 and `engine` v0.1.4. The next round of the model is `judgements/model-2/`, its confirmation on `held-out-model-1`. Where it is written: RUN.md, T32; `judgements/model-1/`.
 
-## Эпик E4
+## Epic E4
 
-**R38. Эпик E4 — «Стенд за библиотеками»: стенд догоняет `spec`, `engine` и `modules` раньше новых кандидатов. В нём: переход на `spec` v0.14.0, база на `engine` v0.1.5, суд, который видит вторую библиотеку кандидата (Д6), размеры прогонов после ускорения `engine`, вид проверки `time` и наводящий вопрос на релизе `learner-model`, закрепление `modules` v0.2.1 и итог. Вторые круги кандидатов идут задачами этого эпика, когда придут кандидаты. Размеры после ускорения — по замеру, а правило часа остаётся.** Ответы автора 2026-11-10 при развёртывании E4 (RUN.md, таблица 1).
-- **Что выяснилось при планировании** (прочитано 2026-11-10):
-  - `spec` вышел до v0.14.0, а `sim` стоит на v0.12.0 (R32);
-  - `spec` ответил на В10 по рекомендации строки (Д167 RUN.md `spec`): выбор на большом пуле ускоряет `engine` своей задачей. E4 `engine` — профиль `Choose` на `olympiad-math` 0.1.1, ускорение без изменения выбора, около 10×, и «Gate» на теге `sim`, который вернёт гейту 300 учеников (T37–T39 RUN.md `engine`);
-  - `spec` ответил на В11 (Д173 RUN.md `spec`; строка 4.10 его COORDINATION.md). Ответы на В10 и В11 вышли с тегом v0.14.0, а подмодуль стоит на v0.12.0, так что строки таблицы 3 уходят переходом T38. Порядок такой: `learner-model` выпускает `time` и наводящий вопрос одним релизом через гейт `sim` (его Д14); затем `sim` переводит их в правде ученика и в свидетельстве и выпускает тег; затем `modules` выпускает v0.2.1 (T56 RUN.md `modules`), и `sim` закрепляется на нём;
-  - `engine` выпустил v0.1.5 с исправлением R82 spec в базе: задача последней попытки с виденным решением не идёт следующей. Его нашёл инвариант `I4` гейта `sim` на кандидатах T31. По `engine`, все 69 чисел гейта те же до бита, а строка В29 RUN.md `engine` просит `sim` и `api` взять v0.1.5;
-  - новых кандидатов скоро не будет: `engine` ускоряет выбор, а `learner-model` записывает итог первого суда.
-- **Решено автором:**
-  - **состав** — «Стенд за библиотеками», вторые круги — когда придут кандидаты;
-  - **размеры после ускорения:** гейту — 300 учеников, если он укладывается на раннере в 15 минут; решающему прогону — сколько с запасом укладывается в час, но не больше 4 000. Новые размеры — это новые пути и новые полосы.
-- **Предложение исполнения к размерам**, решает T41 при планировании: если 300 учеников на раннере не укладываются в 15 минут, гейту — наибольший размер, который укладывается, но не меньше 100; «с запасом» — решающий прогон не дольше 45 минут на свободной машине, четверть часа на занятую машину и рост пулов.
-- **Предложение исполнения:** порядок задач — T38–T44 (RUN.md, «Почему такой порядок»); вторые круги — задачами с номером, свободным в момент записи.
+**R38. Epic E4 is «Стенд за библиотеками»: the simulator catches up with `spec`, `engine` and `modules` before new candidates. In it: the move to `spec` v0.14.0, the base on `engine` v0.1.5, a judgement that sees a candidate's second library (Д6), the sizes of the runs after the speed-up of `engine`, the check kind `time` and the leading question on a release of `learner-model`, the pin of `modules` v0.2.1 and the summing up. The second rounds of candidates go as tasks of this epic, when the candidates come. The sizes after the speed-up are by measurement, and the rule of the hour stays.** The author's answers 2026-11-10 when laying out E4 (RUN.md, table 1).
+- **What was found in planning** (read 2026-11-10):
+  - `spec` has come out up to v0.14.0, and `sim` stands on v0.12.0 (R32);
+  - `spec` answered В10 by the row's recommendation (Д167 RUN.md `spec`): `engine` speeds up the choice on a large pool by a task of its own. E4 of `engine` is the profile of `Choose` on `olympiad-math` 0.1.1, a speed-up without a change of the choice, about 10×, and "Gate" on a tag of `sim` that will give the gate back 300 learners (T37–T39 RUN.md `engine`);
+  - `spec` answered В11 (Д173 RUN.md `spec`; row 4.10 of its COORDINATION.md). The answers to В10 and В11 came out with the tag v0.14.0, while the submodule stands on v0.12.0, so the rows of table 3 leave by the move T38. The order is this: `learner-model` releases `time` and the leading question in one release through the gate of `sim` (its Д14); then `sim` translates them in the learner's truth and in the evidence and releases a tag; then `modules` releases v0.2.1 (T56 RUN.md `modules`), and `sim` pins itself to it;
+  - `engine` released v0.1.5 with the fix of R82 spec in the base: the task of the last attempt with a seen solution does not go next. It was found by the invariant `I4` of the gate of `sim` on the candidates of T31. According to `engine`, all 69 numbers of the gate are the same to the bit, and row В29 RUN.md `engine` asks `sim` and `api` to take v0.1.5;
+  - there will be no new candidates soon: `engine` is speeding up the choice, and `learner-model` is recording the outcome of the first judgement.
+- **Decided by the author:**
+  - **the content** — «Стенд за библиотеками», the second rounds — when the candidates come;
+  - **the sizes after the speed-up:** the gate gets 300 learners if it fits into 15 minutes on the runner; the decisive run gets as many as fit into an hour with a margin, but no more than 4,000. New sizes are new paths and new bands.
+- **A proposal of the execution for the sizes**, T41 decides it when planning: if 300 learners do not fit into 15 minutes on the runner, the gate gets the largest size that fits, but no less than 100; "with a margin" is a decisive run no longer than 45 minutes on a free machine, a quarter of an hour for a busy machine and the growth of the pools.
+- **A proposal of the execution:** the order of the tasks — T38–T44 (RUN.md, «Почему такой порядок»); the second rounds — as tasks with a number free at the moment of writing.
 
-— *Почему:*
-- **Стенд за библиотеками.** Судить кандидатов можно только на том, на чём стоят библиотеки и что получат ученики. `spec`, `engine` v0.1.5 и пакеты 0.2.1 уже вышли или выходят, а кандидатов пока нет.
-- **Размеры по замеру.** R33 урезал прогоны до часа, потому что выбор был дорог. Когда он подешевеет, вернуть стоит столько, сколько позволяет то же правило, а не прежние числа вслепую.
+— *Why:*
+- **The simulator behind the libraries.** Candidates can be judged only on what the libraries stand on and what the learners will get. `spec`, `engine` v0.1.5 and the packages 0.2.1 have already come out or are coming out, and there are no candidates yet.
+- **Sizes by measurement.** R33 cut the runs down to an hour because the choice was expensive. When it becomes cheaper, it is worth giving back as much as the same rule allows, not the previous numbers blindly.
 
-— *Отвергнуто:*
-- E4 как его предложил T35 — только вторые круги: эпик ждал бы кандидатов, а стенд отставал бы от библиотек;
-- вернуть 300 и 4 000 вслепую — решающий прогон мог бы выйти за час;
-- не трогать размеры после ускорения — гейт оставался бы грубее, чем может, а `engine` ждёт тега с 300 учениками.
+— *Rejected:*
+- E4 as T35 proposed it — only the second rounds: the epic would wait for candidates, and the simulator would lag behind the libraries;
+- give back 300 and 4,000 blindly — the decisive run could go over an hour;
+- leave the sizes alone after the speed-up — the gate would stay coarser than it can be, and `engine` is waiting for a tag with 300 learners.
 
-— *Следствие:*
-- E3 перенесён в архив [docs/plan/E3.md](plan/E3.md);
-- таблица 1 RUN.md — E4 задачами T38–T44;
-- строка E4 ушла из таблицы 2; В10 и В11 закрывает T38 ответами, пришедшими с тегом `spec` v0.14.0;
-- [architecture.md](architecture.md) — статус и подраздел 2.5, «Решено»; README, «Status».
+— *Consequence:*
+- E3 is moved to the archive [docs/plan/E3.md](plan/E3.md);
+- table 1 of RUN.md — E4 in the tasks T38–T44;
+- the row E4 left table 2; В10 and В11 are closed by T38 with the answers that came with the tag `spec` v0.14.0;
+- [architecture.md](architecture.md) — the status and subsection 2.5, "Decided"; README, "Status".
 
-## Тег `spec` v0.15.0
+## The tag `spec` v0.15.0
 
-**R39. `sim` стоит на `spec` v0.15.0 — последнем теге, а не на v0.14.0, который назвала задача. Подмодуль, `go.mod` и `gate.json` — на нём. Числа гейта те же до бита, и полосы прежние. Строки В10 и В11 таблицы 3 RUN.md закрыты ответами `spec`, пришедшими с тегом.** Поручение автора 2026-11-11: «делай T38, но вышла более свежая версия spec» (RUN.md, T38).
-- **Что выяснилось при переходе** (прочитано 2026-11-11; источники — [architecture.md](architecture.md), раздел 4):
-  - `spec` вышел до v0.15.0, тег на коммите 58d3f46, и `gh release verify` его подтвердил;
-  - для `sim` теги v0.13.0–v0.15.0 не меняют ничего, что стенд читает: `RULES.md`, текст и схемы формата 0.4 кроме примера ловушек, типы `formatv0`, заготовка и контейнер — те же, что на v0.12.0, а карточка architecture 3.9 spec не тронута;
-  - модуль Go `spec` добавил пакеты `consentagev1`, `exportv1` и `legalv2` и части `Legal`, `ConsentAge` и `Export`, а встроенные файлы держит частями. Его `go.mod` — тот же, так что новых зависимостей нет;
-  - за `sim` теги решили четыре ответа таблицы 4 RUN.md `spec`:
-    - Д167 — ответ на В10: выбор ускоряет `engine` своей задачей, а гейт и решающий прогон растут после неё. Это сделала T41: `engine` v0.1.6, гейт на 150 учениках, решающий прогон на 1 500 (поправки 2026-11-11 к R31 и R33);
-    - Д199 — тот же переход на `engine` v0.1.6: тоже T41;
-    - Д198 — ответ на В32 `engine`: `Readout.Task` ускоряет `learner-model` своей задачей, а `sim` возвращает гейту 300 учеников и решающему прогону 4 000, когда выйдут обе правки. Это долг Д7 таблицы 4 RUN.md;
-    - Д173 — ответ на В11: строка 4.10 COORDINATION.md `spec`. Сначала `learner-model` выпускает `time` и наводящий вопрос одним релизом через гейт `sim`, затем `sim` их переводит и выпускает тег, затем `modules` выпускает v0.2.1. Это T42 и T43;
-  - библиотеки модуля Go `spec` не требуют: `go.mod` `learner-model` v0.1.4 — без `require`, а `engine` v0.1.6 требует только `learner-model`. `spec` — зависимость самого стенда, и её версия — тег подмодуля (R64 spec);
-  - `just gate exact` на v0.15.0 — все 69 чисел до бита те же, полосы не переписывались.
-- **Решено автором:** переход сразу на v0.15.0.
+**R39. `sim` stands on `spec` v0.15.0 — the latest tag, not v0.14.0, which the task named. The submodule, `go.mod` and `gate.json` are on it. The gate's numbers are the same to the bit, and the bands are as before. Rows В10 and В11 of table 3 of RUN.md are closed by the answers of `spec` that came with the tag.** The author's instruction 2026-11-11: «делай T38, но вышла более свежая версия spec» (RUN.md, T38).
+- **What was found in the move** (read 2026-11-11; the sources — [architecture.md](architecture.md), section 4):
+  - `spec` has come out up to v0.15.0, the tag is on commit 58d3f46, and `gh release verify` confirmed it;
+  - for `sim` the tags v0.13.0–v0.15.0 change nothing that the simulator reads: `RULES.md`, the text and schemas of format 0.4 except the example of traps, the types `formatv0`, the template and the container are the same as on v0.12.0, and card architecture 3.9 spec is untouched;
+  - the Go module `spec` added the packages `consentagev1`, `exportv1` and `legalv2` and the parts `Legal`, `ConsentAge` and `Export`, and holds the embedded files in parts. Its `go.mod` is the same, so there are no new dependencies;
+  - for `sim` the tags decided four answers of table 4 of RUN.md `spec`:
+    - Д167 — the answer to В10: `engine` speeds up the choice by a task of its own, and the gate and the decisive run grow after it. T41 did this: `engine` v0.1.6, the gate on 150 learners, the decisive run on 1,500 (the 2026-11-11 amendments to R31 and R33);
+    - Д199 — the same move to `engine` v0.1.6: T41 too;
+    - Д198 — the answer to В32 of `engine`: `learner-model` speeds up `Readout.Task` by a task of its own, and `sim` gives the gate back 300 learners and the decisive run 4,000 when both edits come out. This is the debt Д7 of table 4 of RUN.md;
+    - Д173 — the answer to В11: row 4.10 of COORDINATION.md `spec`. First `learner-model` releases `time` and the leading question in one release through the gate of `sim`, then `sim` translates them and releases a tag, then `modules` releases v0.2.1. These are T42 and T43;
+  - the libraries do not require the Go module `spec`: the `go.mod` of `learner-model` v0.1.4 is without `require`, and `engine` v0.1.6 requires only `learner-model`. `spec` is a dependency of the simulator itself, and its version is the tag of the submodule (R64 spec);
+  - `just gate exact` on v0.15.0 — all 69 numbers are the same to the bit, and the bands were not written anew.
+- **Decided by the author:** the move straight to v0.15.0.
 
-— *Почему:* репозиторий стоит на последнем теге `spec` (RULES.md, Across repositories), и между v0.14.0 и v0.15.0 для стенда ничего не меняется. Переход на v0.14.0 лишь отложил бы следующий.
+— *Why:* the repository stands on the latest tag of `spec` (RULES.md, Across repositories), and between v0.14.0 and v0.15.0 nothing changes for the simulator. The move to v0.14.0 would only put off the next one.
 
-— *Отвергнуто:* v0.14.0, как назвала задача, — ещё один переход сразу следом.
+— *Rejected:* v0.14.0, as the task named it — one more move right after.
 
-— *Следствие:* В10 и В11 ушли из таблицы 3 RUN.md; `gate.json` называет `spec` v0.15.0; тег — в CLAUDE.md, README и начале RUN.md. Мерж выпускает тег `sim`, и гейты библиотек берут его. Где записано: RUN.md, T38; [architecture.md](architecture.md), статус, раздел 2 и раздел 4; README.
+— *Consequence:* В10 and В11 left table 3 of RUN.md; `gate.json` names `spec` v0.15.0; the tag — in CLAUDE.md, README and the opening of RUN.md. The merge releases a tag of `sim`, and the gates of the libraries take it. Where it is written: RUN.md, T38; [architecture.md](architecture.md), the status, section 2 and section 4; README.
 
-— *Поправка 2026-11-12:* `sim` стоит на `spec` v0.16.3 (R45): подмодуль, `go.mod` и `gate.json` — на нём, Go в контейнере — 1.27.4, а числа гейта — те же до бита.
+— *Amendment 2026-11-12:* `sim` stands on `spec` v0.16.3 (R45): the submodule, `go.mod` and `gate.json` are on it, Go in the container is 1.27.4, and the gate's numbers are the same to the bit.
 
-## Вторая библиотека кандидата
+## A candidate's second library
 
-**R40. Суд держит базу и кандидатов на библиотеках базы. `sim` встраивает `gate.json`, как встраивает `paths.json`, и `sim judge` отказывает суд целиком, если: база или база подтверждения идут не на тех библиотеках, на которых прочитаны пути; база — не на версиях, которые называет файл гейта; вторая библиотека кандидата одной библиотеки — или его же на отложенных учениках — не версия базы и не коммит её закрепления. У пары второй библиотеки нет. Шапки файлов результатов, рецепт и байты прогонов не меняются.** Ответы автора 2026-11-11 при планировании T40 (RUN.md, T40); остальное — предложение исполнения. Закрывает Д6 таблицы 4 RUN.md.
-- **Что выяснилось при планировании** (2026-11-11):
-  - шапка базы называет обе библиотеки версиями — базу рецепт `just decisive` собирает по `go.mod`, — а шапка кандидата обе коммитами: вторую библиотеку рецепт берёт коммитом из `gate.json` (R34). Сравнить их напрямую суд не может: версию с коммитом её тега сопоставляет только файл гейта;
-  - суд не сверял и базу с той, на которой прочитаны пути, хотя `paths.json` называет её версии (находка ревью T41);
-  - пока у библиотеки нет релиза, `go.mod` называет её псевдоверсией коммита, и `sim gate verify` уже сопоставляет псевдоверсию с коммитом по суффиксу из 12 знаков;
-  - пакеты `criterion` и `gate` друг друга не импортируют.
-- **Решено автором:**
-  - источник — `gate.json`, встроенный в `sim`;
-  - не та вторая библиотека — отказ всему суду, а не вердикт;
-  - заодно суд сверяет библиотеки базы с путями, а SHA-256 файла базы — нет.
-- **Предложение исполнения:**
-  - `main` встраивает `gate.json` и передаёт суду закрепления библиотек — `criterion.Pin`, коммит и тег, по пути модуля;
-  - `criterion.Judge` после путей зовёт сверку библиотек. Без закреплений суд не судит. Сверка с файлом гейта принимает тег, а пока его нет — псевдоверсию коммита, как `sim gate verify`; вторую библиотеку кандидата — ещё и коммит закрепления, а пустое имя — нет;
-  - отказ называет кандидата, библиотеку и обе точки: где шёл кандидат, а где база.
+**R40. A judgement holds the base and the candidates to the libraries of the base. `sim` embeds `gate.json`, as it embeds `paths.json`, and `sim judge` refuses the whole judgement if: the base or the base of the confirmation runs on other libraries than those on which the paths were read; the base is not on the versions that the gate file names; the second library of a candidate of one library — or of the same candidate on the held-out learners — is neither the base's version nor the commit of its pin. A pair has no second library. The headers of the results files, the recipe and the bytes of the runs do not change.** The author's answers 2026-11-11 when planning T40 (RUN.md, T40); the rest is a proposal of the execution. It closes Д6 of table 4 of RUN.md.
+- **What was found in planning** (2026-11-11):
+  - the base's header names both libraries by versions — the recipe `just decisive` builds the base by `go.mod` —, and a candidate's header names both by commits: the recipe takes the second library by the commit from `gate.json` (R34). The judgement cannot compare them directly: only the gate file matches a version with the commit of its tag;
+  - the judgement did not check the base against the one on which the paths were read either, though `paths.json` names its versions (a finding of the review of T41);
+  - while a library has no release, `go.mod` names it by the pseudo-version of a commit, and `sim gate verify` already matches a pseudo-version with a commit by the suffix of 12 characters;
+  - the packages `criterion` and `gate` do not import each other.
+- **Decided by the author:**
+  - the source is `gate.json`, embedded in `sim`;
+  - a wrong second library is a refusal of the whole judgement, not a verdict;
+  - along the way the judgement checks the base's libraries against the paths, but not the SHA-256 of the base's file.
+- **A proposal of the execution:**
+  - `main` embeds `gate.json` and passes the judgement the pins of the libraries — `criterion.Pin`, the commit and the tag, by the module path;
+  - `criterion.Judge` calls the check of the libraries after the paths. Without the pins the judgement does not judge. The check against the gate file accepts the tag, and while there is none, the pseudo-version of the commit, as `sim gate verify` does; for a candidate's second library also the commit of the pin, but not an empty name;
+  - the refusal names the candidate, the library and both points: where the candidate ran and where the base did.
 
-— *Почему:*
-- **`gate.json`.** Он один называет и версию, и коммит её тега, а прогоны кандидатов собраны именно по нему (R34). Шапки, рецепт и байты прогонов остаются прежними, и закреплённый прогон базы, чей SHA-256 называет `paths.json`, тот же (R28). Встроенный файл судит тем закреплением, с которым собран `sim`, — как пути.
-- **Отказ всему суду.** Прогон на чужой второй библиотеке — не кандидат этого суда: это ошибка входа, как прогон не на тех учениках, а не вердикт кандидату.
-- **База против путей.** Доля кандидата — его разность с базой, делённая на закреплённый путь. На базе других библиотек путь не тот, и доля была бы чужой.
+— *Why:*
+- **`gate.json`.** It alone names both the version and the commit of its tag, and the candidates' runs are built exactly by it (R34). The headers, the recipe and the bytes of the runs stay as before, and the pinned run of the base, whose SHA-256 `paths.json` names, is the same (R28). The embedded file judges by the pin with which `sim` is built — as the paths do.
+- **A refusal of the whole judgement.** A run on someone else's second library is not a candidate of this judgement: it is an error of the input, like a run on the wrong learners, not a verdict on the candidate.
+- **The base against the paths.** A candidate's share is its difference from the base divided by the pinned path. On a base of other libraries the path is not the right one, and the share would be someone else's.
 
-— *Отвергнуто:*
-- поле в шапке кандидата «взято у вызывающего» — меняет рецепт и шапку, а у прежних кандидатов его нет;
-- путь к файлу гейта в файле суда — можно указать не тот;
-- проверка «не та библиотека» с «не выполнено» у одного кандидата — суд выносил бы вердикт по прогону, который не из него;
-- сверять ещё и SHA-256 файла базы — грубым взглядам и тестам понадобился бы обход, а на чужой базе отказывает уже сверка библиотек;
-- только Д6, без сверки базы с путями, — см. «Почему».
+— *Rejected:*
+- a field in the candidate's header "taken from the caller" — it changes the recipe and the header, and the previous candidates do not have it;
+- a path to the gate file in the judgement file — the wrong one can be given;
+- a check "wrong library" with "not met" for one candidate — the judgement would give a verdict on a run that is not of it;
+- checking the SHA-256 of the base's file too — rough looks and tests would need a way around, and on someone else's base the check of the libraries already refuses;
+- only Д6, without the check of the base against the paths — see the "Why".
 
-— *Следствие:*
-- суды `engine-1` и `model-1` на нынешнем дереве получают отказ: их база — на `engine` v0.1.4, а пути — на v0.1.6. Их отчёты — записи на своих коммитах, и там они воспроизводятся;
-- защита рецепта остаётся: пара требует `CANDIDATE_PAIR=yes` (R34);
-- поправки 2026-11-11 к R25 и R35; Д6 закрыт.
+— *Consequence:*
+- the judgements `engine-1` and `model-1` on the present tree get a refusal: their base is on `engine` v0.1.4, and the paths on v0.1.6. Their reports are records on their own commits, and there they are reproduced;
+- the recipe's protection stays: a pair requires `CANDIDATE_PAIR=yes` (R34);
+- the 2026-11-11 amendments to R25 and R35; Д6 is closed.
 
-Где записано: RUN.md, T40; [architecture.md](architecture.md), разделы 3 и 3.6; README; `main.go`, `internal/criterion/criterion.go`.
+Where it is written: RUN.md, T40; [architecture.md](architecture.md), sections 3 and 3.6; README; `main.go`, `internal/criterion/criterion.go`.
 
-## Формат 0.4 на стенде
+## Format 0.4 on the simulator
 
-**R41. Стенд читает вид проверки `time` и наводящий вопрос формата 0.4 на `learner-model` v0.1.5. `time` — свой вид проверки, и правда угадывает его с вероятностью 0, как число. Наводящий вопрос стенд читает только тем, что он у задачи есть: просьба `G8` до первого ответа на такой задаче даёт и приём, и вопрос, свидетельство несёт `LeadingQuestionOnRequest`, а подъём логита — прежний. Решающего прогона здесь нет, и `paths.json` остаётся на `learner-model` v0.1.4: до T43 суд отказывает.** Ответы автора 2026-11-11 при планировании T42 (RUN.md, T42); остальное — предложение исполнения. Исполняет строку 4.10 COORDINATION.md `spec` в части `sim` (Д173 RUN.md `spec`; R39).
-- **Что выяснилось при планировании** (2026-11-11; источники — [architecture.md](architecture.md), раздел 4):
-  - `learner-model` v0.1.5 добавляет `CheckKindTime` без угадывания и поле свидетельства `LeadingQuestionOnRequest` — «подсказка по просьбе дала наводящий вопрос». Модель считает его помощью, как приём по просьбе: ответ идёт в шаг, но «освоено» не ставит. Вид свидетельства — 2; по R28 learner-model числа модели не меняются;
-  - наводящий вопрос даёт только подсказка по просьбе до первой ошибки ([текст формата](../spec/format/README.md), разделы 14 и 19). На стенде её просит только `G8`, а базовый ученик — никогда ([architecture.md](architecture.md), раздел 3.1);
-  - `modules` v0.2.1 с `time` у 30 задач и наводящими вопросами у 311 задач вышел 2026-11-10, раньше строки 4.10 (строка В38 RUN.md `modules`), так что T43 ждёт только этой записи.
-- **Решено автором:**
-  - наводящий вопрос — одна просьба, один подъём, без нового допущения;
-  - решающего прогона в T42 нет: пути один раз читает T43, уже на `modules` v0.2.1.
-- **Предложение исполнения:**
-  - `release-verify` принял `learner-model-proto-v0.1.5.tar.gz` — «learner-model v0.1.5, signed by the shared release.yml of .github v0.1.21»; `go.mod` и `gate.json` — на v0.1.5, коммит тега `3a2cd29`. `just gate exact` — все 69 чисел до бита те же. Полосы записаны заново `just gate record` только ради причины: значения в них те же до бита, а файл гейта называет теперь коммит, на котором они записаны;
-  - перевод: `time` — `CheckKindTime`; `pack.Task.Leading` — у задачи есть `leading_question`. Канонический текст держит оба (поправки 2026-11-11 к R14 и R27);
-  - правда: `Attempt.LeadingQuestion` — приём `G8` на задаче с вопросом, без нового числа из места `attempts`; свидетельство несёт его в `LeadingQuestionOnRequest`, вида 2 (поправка 2026-11-11 к R18). Правда ловушек не знает, так что 12-часового промаха у `time` нет;
-  - синтетика: навык листа на навыке-опоре отвечается временем, а у задач листа сложности 5 есть наводящий вопрос (поправка 2026-11-11 к R19);
-  - тест суда в `main_test.go` держит свои прогоны и встроенный файл гейта на библиотеках путей: между переходом библиотеки и решающим прогоном, который читает пути заново, они расходятся.
+**R41. The simulator reads the check kind `time` and the leading question of format 0.4 on `learner-model` v0.1.5. `time` is a check kind of its own, and the truth guesses it with a probability of 0, as a number. The simulator reads the leading question only by whether the task has one: a request of `G8` before the first answer on such a task gives both the technique and the question, the evidence carries `LeadingQuestionOnRequest`, and the rise of the logit is as before. There is no decisive run here, and `paths.json` stays on `learner-model` v0.1.4: until T43 the judgement refuses.** The author's answers 2026-11-11 when planning T42 (RUN.md, T42); the rest is a proposal of the execution. It carries out row 4.10 of COORDINATION.md `spec` in the part of `sim` (Д173 RUN.md `spec`; R39).
+- **What was found in planning** (2026-11-11; the sources — [architecture.md](architecture.md), section 4):
+  - `learner-model` v0.1.5 adds `CheckKindTime` without guessing and the field of evidence `LeadingQuestionOnRequest` — "a hint the learner asked for gave the task's leading question". The model counts it as help, as a technique on request: the answer goes into the step, but does not set "mastered". The kind of evidence is 2; by R28 learner-model the model's numbers do not change;
+  - the leading question is given only by a hint on request before the first error ([format text](../spec/format/README.md), sections 14 and 19). On the simulator only `G8` asks for it, and the base learner never does ([architecture.md](architecture.md), section 3.1);
+  - `modules` v0.2.1 with `time` in 30 tasks and leading questions in 311 tasks came out 2026-11-10, before row 4.10 (row В38 RUN.md `modules`), so T43 waits only for this record.
+- **Decided by the author:**
+  - the leading question — one request, one rise, without a new assumption;
+  - there is no decisive run in T42: the paths are read once by T43, already on `modules` v0.2.1.
+- **A proposal of the execution:**
+  - `release-verify` accepted `learner-model-proto-v0.1.5.tar.gz` — "learner-model v0.1.5, signed by the shared release.yml of .github v0.1.21"; `go.mod` and `gate.json` are on v0.1.5, the commit of the tag `3a2cd29`. `just gate exact` — all 69 numbers are the same to the bit. The bands are recorded anew by `just gate record` only for the sake of the reason: the values in them are the same to the bit, and the gate file now names the commit on which they are recorded;
+  - the translation: `time` — `CheckKindTime`; `pack.Task.Leading` — the task has a `leading_question`. The canonical text holds both (the 2026-11-11 amendments to R14 and R27);
+  - the truth: `Attempt.LeadingQuestion` — the technique of `G8` on a task with a question, without a new number from the place `attempts`; the evidence carries it in `LeadingQuestionOnRequest`, of kind 2 (the 2026-11-11 amendment to R18). The truth does not know traps, so there is no 12-hour miss for `time`;
+  - the synthetics: the skill of the sheet on the anchor skill is answered by a time, and the tasks of the sheet of difficulty 5 have a leading question (the 2026-11-11 amendment to R19);
+  - the judgement's test in `main_test.go` holds its runs and the embedded gate file to the libraries of the paths: between the move of a library and the decisive run that reads the paths anew, they diverge.
 
-— *Почему:*
-- **`time` — с угадыванием 0.** Ответ времени набирают, а не выбирают, как число, и модель угадывает его так же — 0 (R19 learner-model). Правда в остальном держит допущения модели (раздел 3.1 [architecture.md](architecture.md)).
-- **Одна просьба, один подъём.** По тексту формата наводящий вопрос приходит с той же подсказкой, что и приёмы, а модель считает их одной помощью. Насколько вопрос помогает сверх приёма, данных нет — ни у стенда, ни у `learner-model`, где R06 и R21 learner-model отвергли вес без данных. Без нового допущения числа `G8` не сдвигаются и в T43, а стенд судит задачу так, как её получит ученик: свидетельство несёт то, что запишет сервер.
-- **Только «вопрос есть».** Слова вопроса — для ученика, а стенд читает их не больше, чем текст условия. Поэтому правка слов не будит гейт CI `modules`, а добавленный или снятый вопрос — будит.
-- **Без решающего прогона.** T43 закрепляет пакеты с `time` и вопросами, а это новые пути в любом случае. Прогон здесь на `modules` v0.2.0 стоил бы около часа машины ради путей, которые T43 тут же перепишет. Кандидатов сейчас нет, так что отказ суда до T43 никого не держит.
+— *Why:*
+- **`time` with a guessing of 0.** An answer of time is typed, not chosen, like a number, and the model guesses it the same way — 0 (R19 learner-model). In the rest the truth holds the model's assumptions ([architecture.md](architecture.md), section 3.1).
+- **One request, one rise.** By the format text the leading question comes with the same hint as the techniques, and the model counts them as one help. How much the question helps beyond the technique there are no data — neither at the simulator nor at `learner-model`, where R06 and R21 learner-model rejected a weight without data. Without a new assumption the numbers of `G8` do not shift in T43 either, and the simulator judges the task as the learner will get it: the evidence carries what the server will record.
+- **Only "there is a question".** The question's words are for the learner, and the simulator reads them no more than the text of the statement. So an edit of the words does not wake the gate of the CI of `modules`, while an added or removed question does.
+- **Without a decisive run.** T43 pins the packages with `time` and questions, and these are new paths in any case. A run here on `modules` v0.2.0 would cost about an hour of the machine for paths that T43 would rewrite at once. There are no candidates now, so the judgement's refusal until T43 holds nobody up.
 
-— *Отвергнуто:*
-- свой подъём наводящего вопроса сверх приёма — величина без данных;
-- новая популяция, которая просит вопрос, — ещё одна ячейка решающего прогона, и тоже без данных;
-- `time` переводить как `number` — тогда стенд мерил бы другую задачу (вариант (б) подраздела 2.5 [architecture.md](architecture.md));
-- новый навык синтетики с `time` — он сдвинул бы выбор движка у ученика обеих синтетик, и тест якоря перестал бы видеть освоенную опору;
-- решающий прогон в T42 и T43 внутри T42 — см. «Почему» и RUN.md, T42.
+— *Rejected:*
+- a rise of its own for the leading question beyond the technique — a value without data;
+- a new population that asks for the question — one more cell of the decisive run, and also without data;
+- translate `time` as `number` — then the simulator would measure another task (option (b) of [architecture.md](architecture.md), subsection 2.5);
+- a new skill of the synthetics with `time` — it would shift the engine's choice for the learner of both synthetics, and the anchor's test would stop seeing the mastered anchor;
+- the decisive run in T42, and T43 inside T42 — see the "Why" and RUN.md, T42.
 
-— *Следствие:*
-- пока T43 не прочтёт пути заново, `sim judge` отказывает любому суду: база на `learner-model` v0.1.5, а `paths.json` прочитан на v0.1.4 (R40);
-- поправки 2026-11-11 к R14, R18, R19 и R27; подраздел 2.5 [architecture.md](architecture.md) сделан;
-- мерж выпускает тег `sim`, и гейты библиотек берут его своими задачами. Строки «в реестр spec» нет: порядок, который нарушил выход `modules` v0.2.1, уже подняла строка В38 RUN.md `modules`.
+— *Consequence:*
+- until T43 reads the paths anew, `sim judge` refuses any judgement: the base is on `learner-model` v0.1.5, and `paths.json` was read on v0.1.4 (R40);
+- the 2026-11-11 amendments to R14, R18, R19 and R27; [architecture.md](architecture.md), subsection 2.5, is done;
+- the merge releases a tag of `sim`, and the gates of the libraries take it by tasks of their own. There is no row «в реестр spec»: the order that the release of `modules` v0.2.1 broke has already been raised by row В38 RUN.md `modules`.
 
-Где записано: RUN.md, T42; [architecture.md](architecture.md), подраздел 2.5 и разделы 3, 3.1–3.3; README; `internal/pack/translate.go`, `internal/learner/attempt.go`, `internal/run/run.go`, `internal/synthetic/synthetic.go`.
+Where it is written: RUN.md, T42; [architecture.md](architecture.md), subsection 2.5 and sections 3, 3.1–3.3; README; `internal/pack/translate.go`, `internal/learner/attempt.go`, `internal/run/run.go`, `internal/synthetic/synthetic.go`.
 
-— *Поправка 2026-11-11 (T43):* суд больше не отказывает. Пути прочитаны заново на `learner-model` v0.1.5 и пакетах `modules` v0.2.5 (поправка 2026-11-11 к R04), а тест суда держит свои прогоны на библиотеках путей, как и прежде, — теперь это те же, что в `gate.json`. Почему — R42.
+— *Amendment 2026-11-11 (T43):* the judgement no longer refuses. The paths are read anew on `learner-model` v0.1.5 and the packages of `modules` v0.2.5 (the 2026-11-11 amendment to R04), and the judgement's test holds its runs to the libraries of the paths, as before — now these are the same as in `gate.json`. Why — R42.
 
-— *Поправка 2026-11-11 (T45):* перевод и правда — те же, а база — на `learner-model` v0.1.6, где `Readout.Task` быстрее при тех же битах: оба решающих прогона и гейт совпали с прогонами на v0.1.5 до бита. Пути прочитаны заново на ней, так что суд не отказывает. Почему — R43.
+— *Amendment 2026-11-11 (T45):* the translation and the truth are the same, and the base is on `learner-model` v0.1.6, where `Readout.Task` is faster with the same bits: both decisive runs and the gate matched the runs on v0.1.5 to the bit. The paths are read anew on it, so the judgement does not refuse. Why — R43.
 
-## Закрепление `modules` v0.2.5
+## The pin of `modules` v0.2.5
 
-**R42. Стенд закреплён на релизе `modules` v0.2.5 — `olympiad-math` и `grade-3-math` 0.3.0 с проверками `time`, наводящими вопросами и разобранными примерами и `english-essays` 0.2.0. Пути прочитаны заново на нём и на `learner-model` v0.1.5, полосы гейта — тоже. Размеры прогонов прежние: гейт — 150 учеников на ячейку, решающий прогон — 1 500.** Ответы автора 2026-11-11 при планировании и исполнении T43 (RUN.md, T43); остальное — предложение исполнения. Вместе с R41 исполняет часть `sim` строки 4.10 COORDINATION.md `spec` (Д173 RUN.md `spec`).
-- **Что выяснилось при планировании** (2026-11-11; источники — [architecture.md](architecture.md), раздел 4):
-  - `modules` v0.2.1 вышел 2026-11-10 с обеими математиками 0.3.0. Индекс v0.2.5 побайтно тот же, что у v0.2.1, — SHA-256 `cebf23cf…aec6a`: в v0.2.2–v0.2.5 менялись только синтетические образцы и переход на `spec` v0.15.0;
-  - `olympiad-math` 0.3.0 — 775 задач вместо 772 и 22 шаблона вместо 19, наводящий вопрос у 322 задач; проверок `number` — 572, `choice` — 166 вместо 196, `fraction` — 7, `time` — 30;
-  - `grade-3-math` 0.3.0 — те же задачи и проверки, а в каждом из четырёх уроков новое звено — разобранный пример, две минуты, как любое звено без задачи (R15);
-  - стенд читает новые пакеты без правок кода, а выборка решающего прогона на копии репозитория дала все 65 ячеек.
-- **Решено автором:**
-  - закрепление — последний релиз, v0.2.5, а не v0.2.1, который назвала задача;
-  - воспроизводимость — полным повтором потолка;
-  - при исполнении: решающему прогону — по-прежнему 1 500 учеников, хотя база шла 47 мин 48 с. Хост в это время делили соседние контейнеры, а правило часа прогон держит.
-- **Предложение исполнения:**
-  - `release-verify` принял индекс — «module-index.json: modules v0.2.5, signed by the shared release.yml of .github v0.1.15» — и оба архива из v0.2.1 — «modules v0.2.1, signed by the shared release.yml of .github v0.1.15». Архив сочинений 0.2.0 — тот же, что принят в R32;
-  - индекс лежит в `internal/published/v0.2.5/`, архивы — в папках релизов, которые называют их записи: `v0.2.1/` и `v0.2.0/` (поправка 2026-11-11 к R14);
-  - тесты фактов закрепления — на новые пакеты, с фактами 0.4: проверки `time`, задачи с наводящим вопросом, звено разобранного примера. Тест входа прогона держит экземпляр и факт «решение видел» по тому, шаблон ли задача: новый шаблон `squares-on-lines` попал в выбор его ученика;
-  - решающий прогон, новые пути — поправка 2026-11-11 к R04 — и полосы гейта (поправки 2026-11-11 к R26 и R28). Потолок повторён целиком и совпал до байта. Гейт в контейнере шёл 7 мин по часам на перегруженном хосте, 28,4 мин процессора — против 23,6 в T41; время на раннерах покажет CI pull request.
+**R42. The simulator is pinned to the release of `modules` v0.2.5 — `olympiad-math` and `grade-3-math` 0.3.0 with the checks `time`, leading questions and worked examples, and `english-essays` 0.2.0. The paths are read anew on it and on `learner-model` v0.1.5, and so are the gate's bands. The sizes of the runs are as before: the gate — 150 learners a cell, the decisive run — 1,500.** The author's answers 2026-11-11 when planning and executing T43 (RUN.md, T43); the rest is a proposal of the execution. Together with R41 it carries out the part of `sim` of row 4.10 of COORDINATION.md `spec` (Д173 RUN.md `spec`).
+- **What was found in planning** (2026-11-11; the sources — [architecture.md](architecture.md), section 4):
+  - `modules` v0.2.1 came out 2026-11-10 with both maths at 0.3.0. The index of v0.2.5 is byte for byte the same as that of v0.2.1 — SHA-256 `cebf23cf…aec6a`: in v0.2.2–v0.2.5 only the synthetic samples and the move to `spec` v0.15.0 changed;
+  - `olympiad-math` 0.3.0 has 775 tasks instead of 772 and 22 templates instead of 19, a leading question in 322 tasks; checks `number` — 572, `choice` — 166 instead of 196, `fraction` — 7, `time` — 30;
+  - `grade-3-math` 0.3.0 has the same tasks and checks, and in each of the four lessons a new segment — a worked example, two minutes, as any segment without a task (R15);
+  - the simulator reads the new packages without edits of the code, and a sample of the decisive run on a copy of the repository gave all 65 cells.
+- **Decided by the author:**
+  - the pin — the latest release, v0.2.5, not v0.2.1, which the task named;
+  - reproducibility — by a full repeat of the ceiling;
+  - in the execution: the decisive run gets 1,500 learners as before, though the base took 47 min 48 s. Neighbouring containers shared the host at that time, and the run holds the rule of the hour.
+- **A proposal of the execution:**
+  - `release-verify` accepted the index — "module-index.json: modules v0.2.5, signed by the shared release.yml of .github v0.1.15" — and both archives from v0.2.1 — "modules v0.2.1, signed by the shared release.yml of .github v0.1.15". The archive of the essays 0.2.0 is the same as the one accepted in R32;
+  - the index lies in `internal/published/v0.2.5/`, the archives in the folders of the releases that their records name: `v0.2.1/` and `v0.2.0/` (the 2026-11-11 amendment to R14);
+  - the tests of the facts of the pin — on the new packages, with the facts of 0.4: the checks `time`, the tasks with a leading question, the segment of a worked example. The test of a run's input holds the instance and the fact "solution seen" by whether the task is a template: the new template `squares-on-lines` came into the choice of its learner;
+  - the decisive run, the new paths — the 2026-11-11 amendment to R04 — and the gate's bands (the 2026-11-11 amendments to R26 and R28). The ceiling was repeated whole and matched to the byte. The gate in the container ran for 7 min by the clock on an overloaded host, 28.4 CPU minutes — against 23.6 in T41; the CI of the pull request will show the time on the runners.
 
-— *Почему:*
-- **v0.2.5.** Индекс тот же, а стенд называет последний релиз `modules`, как стоит на последнем теге `spec`.
-- **Сейчас, а не позже.** С T42 суд отказывает, пока пути не прочитаны заново. Закрепление и так требует новых путей, так что один прогон даёт и пакеты, которые получат ученики, и пути на новой библиотеке.
-- **1 500 при 47 минутах.** 45 минут R38 — запас на свободной машине, а прогон шёл на занятом хосте: процессора на процесс у базы — около 38,7 минуты против 33 в T41, и часть разницы — соседи. Прогон держит правило часа, а 1 400 учеников сделали бы разрешение «не хуже» грубее и стоили бы ещё одного прогона базы.
+— *Why:*
+- **v0.2.5.** The index is the same, and the simulator names the latest release of `modules`, as it stands on the latest tag of `spec`.
+- **Now, not later.** Since T42 the judgement refuses until the paths are read anew. The pin requires new paths anyway, so one run gives both the packages that the learners will get and the paths on the new library.
+- **1,500 at 47 minutes.** The 45 minutes of R38 are the margin on a free machine, and the run went on a busy host: the CPU per process of the base is about 38.7 minutes against 33 in T41, and part of the difference is the neighbours. The run holds the rule of the hour, while 1,400 learners would make the resolution of "no worse" coarser and would cost one more run of the base.
 
-— *Отвергнуто:*
-- v0.2.1 — тот же индекс, но не последний релиз;
-- одна двадцатая базы и потолка вместо полного повтора — около 17 минут экономии;
-- 1 400 учеников или новый замер на свободном хосте — см. «Почему».
+— *Rejected:*
+- v0.2.1 — the same index, but not the latest release;
+- one twentieth of the base and of the ceiling instead of a full repeat — about 17 minutes saved;
+- 1,400 learners or a new measurement on a free host — see the "Why".
 
-— *Следствие:*
-- суд снова судит (поправка 2026-11-11 к R41);
-- пороги CI `modules` берутся из новой записи полос (R27);
-- мерж ветки эпика выпускает тег `sim` с T42 и T43, и гейты `learner-model` и `engine` берут его своими задачами; строка 4.10 COORDINATION.md `spec` — строкой В12 таблицы 3 RUN.md, «в реестр spec».
+— *Consequence:*
+- the judgement judges again (the 2026-11-11 amendment to R41);
+- the thresholds of the CI of `modules` are taken from the new record of the bands (R27);
+- the merge of the epic's branch releases a tag of `sim` with T42 and T43, and the gates of `learner-model` and `engine` take it by tasks of their own; row 4.10 of COORDINATION.md `spec` — by row В12 of table 3 of RUN.md, «в реестр spec».
 
-Где записано: RUN.md, T43; [architecture.md](architecture.md), статус, подраздел 2.5 и разделы 3, 3.3, 3.8 и 4; README; `internal/published/`, `gate.json`, `internal/criterion/paths.json`.
+Where it is written: RUN.md, T43; [architecture.md](architecture.md), the status, subsection 2.5 and sections 3, 3.3, 3.8 and 4; README; `internal/published/`, `gate.json`, `internal/criterion/paths.json`.
 
-## База на `learner-model` v0.1.6
+## The base on `learner-model` v0.1.6
 
-**R43. База стоит на `learner-model` v0.1.6, где `Readout.Task` быстрее при тех же битах. Пути прочитаны заново на ней, полосы гейта — тоже, а числа не сдвинулись ни в одном бите. Размеры прогонов прежние: гейт — 150 учеников на ячейку, решающий прогон — 1 500; поднимает их замер эпика E5 (Д7).** Ответ автора 2026-11-11, после итога E4: «сделай что сейчас можешь из таблицы 4» и переход на v0.1.6 с путями, а не только предварительный замер (RUN.md, T45); остальное — предложение исполнения.
-- **Что выяснилось** (2026-11-11; источники — [architecture.md](architecture.md), раздел 4):
-  - `learner-model` v0.1.6 вышел 2026-11-11, тег на коммите 7d796e2, — «Make Readout.Task faster with the same bits (T40)». Строка В39 его RUN.md обещает тот же API и те же P до бита. В `go.mod` модуля на теге требований нет — только `go 1.27.3`, — так что тег `spec` он не двигает;
-  - `release-verify` принял `learner-model-proto-v0.1.6.tar.gz` — «learner-model v0.1.6, signed by the shared release.yml of .github v0.1.21»;
-  - из двух долгов таблицы 4 сейчас делается только часть Д7: Д3 ждёт этапа 2, а размеры — замера на свободной машине и на раннерах. Хост в этот день делили соседние контейнеры, load average — 25–46 на 20 ядрах.
-- **Предложение исполнения:**
-  - `go.mod`, `go.sum` и `gate.json` — на v0.1.6 (7d796e2); тесты, которые называют закрепление, — тоже;
-  - `just gate exact` — все 69 чисел до бита те же; полосы записаны заново только ради причины (поправка 2026-11-11 к R26);
-  - решающие прогоны базы и потолка на 1 500 учениках — те же байты строк, что у T43, и новые пути с теми же значениями (поправки 2026-11-11 к R04 и R28).
-- **Замер ускорения, предварительный.** Процессора на процесс у базы — около 25,9 минуты против 38,7 в T43, на треть меньше; у потолка — 18,0 против 18,8: потолок `Readout.Task` почти не зовёт. По часам база шла 62 мин 24 с — дольше часа — при load average до 46. Гейт в контейнере — 1 мин 16 с по часам и 18,7 минуты процессора против 28,4 в T43. Это не замер Д7: тот идёт на свободной машине и на раннерах, и по нему E5 выбирает размеры (поправки 2026-11-11 к R31 и R33).
+**R43. The base stands on `learner-model` v0.1.6, where `Readout.Task` is faster with the same bits. The paths are read anew on it, and so are the gate's bands, and the numbers did not shift by a single bit. The sizes of the runs are as before: the gate — 150 learners a cell, the decisive run — 1,500; the measurement of epic E5 raises them (Д7).** The author's answer 2026-11-11, after the summing up of E4: «сделай что сейчас можешь из таблицы 4» and the move to v0.1.6 with the paths, not only a preliminary measurement (RUN.md, T45); the rest is a proposal of the execution.
+- **What was found** (2026-11-11; the sources — [architecture.md](architecture.md), section 4):
+  - `learner-model` v0.1.6 came out 2026-11-11, the tag on commit 7d796e2 — "Make Readout.Task faster with the same bits (T40)". Row В39 of its RUN.md promises the same API and the same P to the bit. The module's `go.mod` at the tag has no requirements — only `go 1.27.3` —, so it does not move the tag of `spec`;
+  - `release-verify` accepted `learner-model-proto-v0.1.6.tar.gz` — "learner-model v0.1.6, signed by the shared release.yml of .github v0.1.21";
+  - of the two debts of table 4, only a part of Д7 is done now: Д3 waits for stage 2, and the sizes wait for a measurement on a free machine and on the runners. Neighbouring containers shared the host that day, the load average 25–46 on 20 cores.
+- **A proposal of the execution:**
+  - `go.mod`, `go.sum` and `gate.json` — on v0.1.6 (7d796e2); the tests that name the pin — too;
+  - `just gate exact` — all 69 numbers are the same to the bit; the bands are recorded anew only for the sake of the reason (the 2026-11-11 amendment to R26);
+  - the decisive runs of the base and of the ceiling on 1,500 learners — the same bytes of the lines as in T43, and new paths with the same values (the 2026-11-11 amendments to R04 and R28).
+- **A measurement of the speed-up, preliminary.** The CPU per process of the base is about 25.9 minutes against 38.7 in T43, a third less; of the ceiling 18.0 against 18.8: the ceiling hardly calls `Readout.Task`. By the clock the base took 62 min 24 s — longer than an hour — at a load average of up to 46. The gate in the container — 1 min 16 s by the clock and 18.7 CPU minutes against 28.4 in T43. This is not the measurement of Д7: that one goes on a free machine and on the runners, and by it E5 chooses the sizes (the 2026-11-11 amendments to R31 and R33).
 
-— *Почему:*
-- **Сейчас, а не в E5.** Переход ничего не стоит числам и снимает с E5 одну смену закрепления: второй круг модели судится на одном закреплении `sim` (строка В42 RUN.md `learner-model`), а замер размеров должен идти уже на v0.1.6. Решающие прогоны заодно дали первую оценку ускорения на прежних размерах.
-- **Пути заново, хотя числа те же.** Суд держит базу на библиотеках путей (R40): без новых путей он отказывал бы каждой базе на v0.1.6, как от T42 до T43.
-- **Без второго прогона потолка.** Новый потолок совпал до байта строк с потолком T43, а тот сам повторён целиком (R42).
-- **62 минуты при правиле часа.** Время по часам — соседей: процессора база взяла на треть меньше, чем в T43, где прогон уложился в 47 минут. Размер решающего прогона по этому замеру не меняется ни вверх, ни вниз.
+— *Why:*
+- **Now, not in E5.** The move costs the numbers nothing and takes one change of the pin off E5: the second round of the model is judged on one pin of `sim` (row В42 RUN.md `learner-model`), and the measurement of the sizes must already go on v0.1.6. The decisive runs also gave the first estimate of the speed-up on the previous sizes.
+- **The paths anew, though the numbers are the same.** The judgement holds the base to the libraries of the paths (R40): without new paths it would refuse every base on v0.1.6, as from T42 to T43.
+- **Without a second run of the ceiling.** The new ceiling matched the ceiling of T43 to the byte of the lines, and that one was itself repeated whole (R42).
+- **62 minutes under the rule of the hour.** The time by the clock is the neighbours': the base took a third less CPU than in T43, where the run fitted into 47 minutes. The size of the decisive run does not change by this measurement, neither up nor down.
 
-— *Отвергнуто:*
-- только предварительный замер на копии репозитория, без перехода — закрепление осталось бы на v0.1.5, и смена легла бы на E5;
-- переход без новых путей — суд отказывал бы;
-- поднять размеры по этому замеру — хост занят, а правило поправок 2026-11-11 к R31 и R33 требует свободной машины и раннеров.
+— *Rejected:*
+- only a preliminary measurement on a copy of the repository, without the move — the pin would stay on v0.1.5, and the change would fall on E5;
+- the move without new paths — the judgement would refuse;
+- raise the sizes by this measurement — the host is busy, and the rule of the 2026-11-11 amendments to R31 and R33 requires a free machine and the runners.
 
-— *Следствие:*
-- Д7 остаётся: размеры поднимает E5, а его первая задача теперь — замер и размеры, без перехода на v0.1.6;
-- мерж ветки эпика E4 выпускает тег `sim` и с этим переходом.
+— *Consequence:*
+- Д7 stays: E5 raises the sizes, and its first task is now the measurement and the sizes, without the move to v0.1.6;
+- the merge of the branch of epic E4 releases a tag of `sim` with this move too.
 
-Где записано: RUN.md, T45; [architecture.md](architecture.md), статус и разделы 3, 3.6–3.9 и 4; README; `go.mod`, `gate.json`, `internal/criterion/paths.json`.
+Where it is written: RUN.md, T45; [architecture.md](architecture.md), the status and sections 3, 3.6–3.9 and 4; README; `go.mod`, `gate.json`, `internal/criterion/paths.json`.
 
-## Эпик E5
+## Epic E5
 
-**R44. Эпик E5 — «Размеры и второй круг модели»: размеры прогонов на `learner-model` v0.1.6 по замеру (Д7), суд `model-2` с подтверждением на `held-out-model-1`, перевод базы на релиз выбранного и итог — T46–T49. Суд движка `engine-2` — отдельный эпик E6 таблицы 2 RUN.md, на базе после `model-2`.** Ответы автора 2026-11-11, после итога E4 и T45: «разверни эпик E5», и состав — размеры и `model-2`, а `engine-2` — отдельно (RUN.md, таблица 1, «Решено автором»); остальное — предложение исполнения.
-- **Что выяснилось** (2026-11-11; RUN.md `learner-model` и `engine` на `main`, прочитаны через `gh api`):
-  - E5 `learner-model` — «Второй круг кандидатов модели» — развёрнут: его T41 ждёт тег `sim` с размерами после v0.1.6, T43 — разведка после разбора `M3.settle` у `F-break`, T44 — до трёх черновых pull request кандидатов, T45 — суд `sim` и выпуск выбранного;
-  - `engine` — в своём E7, «Закрепление в уроке», а его E5 — «Второй круг коридора» — стоит в таблице 2 неразвёрнутым: кандидатов движка не видно;
-  - строки В42 и В43 RUN.md `learner-model`, «в реестр spec», `spec` ещё не записал. Их рекомендации — одно закрепление `sim` на круг модели и круг модели раньше круга движка;
-  - база уже на `learner-model` v0.1.6 (R43), так что размеры меряются без перехода.
-- **Предложение исполнения:** порядок задач — RUN.md, «Почему такой порядок»; одно закрепление от тега T46 до выбора суда `model-2` — «Общее для задач» эпика; размер гейта — от 100 до 300, как в поправке 2026-11-11 к R31, а не от 150, как в строке E5 таблицы 2, которую предложила T44.
+**R44. Epic E5 is «Размеры и второй круг модели»: the sizes of the runs on `learner-model` v0.1.6 by measurement (Д7), the judgement `model-2` with a confirmation on `held-out-model-1`, the move of the base to the release of the chosen one and the summing up — T46–T49. The engine's judgement `engine-2` is a separate epic E6 of table 2 of RUN.md, on the base after `model-2`.** The author's answers 2026-11-11, after the summing up of E4 and T45: «разверни эпик E5», and the content — the sizes and `model-2`, with `engine-2` separately (RUN.md, table 1, «Решено автором»); the rest is a proposal of the execution.
+- **What was found** (2026-11-11; RUN.md of `learner-model` and of `engine` on `main`, read through `gh api`):
+  - E5 of `learner-model` — «Второй круг кандидатов модели» — is laid out: its T41 waits for a tag of `sim` with the sizes after v0.1.6, T43 is the exploration after the analysis of `M3.settle` for `F-break`, T44 up to three draft pull requests of candidates, T45 the judgement of `sim` and the release of the chosen one;
+  - `engine` is in its E7, «Закрепление в уроке», and its E5 — «Второй круг коридора» — stands in table 2 not laid out: no candidates of the engine are in sight;
+  - `spec` has not recorded rows В42 and В43 RUN.md `learner-model`, «в реестр spec», yet. Their recommendations are one pin of `sim` per round of the model and the round of the model before the round of the engine;
+  - the base is already on `learner-model` v0.1.6 (R43), so the sizes are measured without a move.
+- **A proposal of the execution:** the order of the tasks — RUN.md, «Почему такой порядок»; one pin from the tag of T46 to the choice of the judgement `model-2` — the epic's «Общее для задач»; the gate's size — from 100 to 300, as in the 2026-11-11 amendment to R31, not from 150, as in the row E5 of table 2 that T44 proposed.
 
-— *Почему:*
-- **Размеры первыми.** Разведка и суд `learner-model` идут на размерах решающего прогона `sim`, а «Gate» `learner-model` ждёт тега с ними. Размеры двигают пути и полосы, а посреди круга закрепление не меняется (В42 RUN.md `learner-model`).
-- **`engine-2` отдельно.** Круг модели первым — по рекомендации В43 RUN.md `learner-model`, и круг движка судится на базе после него. А кандидатов движка нет даже в плане: эпик, который ждёт их, стоял бы открытым без срока, а с ним — итог размеров и круга модели.
+— *Why:*
+- **The sizes first.** The exploration and the judgement of `learner-model` go on the sizes of the decisive run of `sim`, and "Gate" of `learner-model` waits for a tag with them. The sizes move the paths and the bands, and in the middle of a round the pin does not change (В42 RUN.md `learner-model`).
+- **`engine-2` separately.** The round of the model first — by the recommendation of В43 RUN.md `learner-model`, and the round of the engine is judged on the base after it. And there are no candidates of the engine even in the plan: an epic that waits for them would stand open without a date, and with it the summing up of the sizes and of the round of the model.
 
-— *Отвергнуто:*
-- все три круга в одном эпике, как предложила T44 (строка E5 таблицы 2 RUN.md в редакции коммита 77828ca) — см. «Почему»;
-- суд `model-2` раньше размеров — круг пришлось бы судить заново или на грубых размерах, а «Gate» `learner-model` всё равно ждёт тега с ними.
+— *Rejected:*
+- all three rounds in one epic, as T44 proposed (row E5 of table 2 of RUN.md as of commit 77828ca) — see the "Why";
+- the judgement `model-2` before the sizes — the round would have to be judged anew or on rough sizes, and "Gate" of `learner-model` waits for a tag with them anyway.
 
-— *Следствие:* E4 — в архиве [docs/plan/E4.md](plan/E4.md); строка E5 таблицы 2 RUN.md ушла в таблицу 1, а на её место встала E6 «Второй круг движка»; Д7 закрывает T46.
+— *Consequence:* E4 is in the archive [docs/plan/E4.md](plan/E4.md); the row E5 of table 2 of RUN.md went to table 1, and in its place stood E6 «Второй круг движка»; T46 closes Д7.
 
-Где записано: RUN.md, таблицы 1, 2 и 4 и «Эпик E5»; [architecture.md](architecture.md), статус и раздел 3; README.
+Where it is written: RUN.md, tables 1, 2 and 4 and «Эпик E5»; [architecture.md](architecture.md), the status and section 3; README.
 
-— *Поправка 2026-11-12:* у «одного закрепления на круг» — исключение R45: версия `spec` в `go.mod` и `gate.json` поднята до v0.16.3 посреди круга `model-2`, потому что биты те же; пакеты, библиотеки, пути и полосы прежние. Переход и перестройка документов по строке 7.10 COORDINATION.md `spec` — задачи T50–T53 вне эпика.
+— *Amendment 2026-11-12:* "one pin per round" has an exception, R45: the version of `spec` in `go.mod` and `gate.json` is raised to v0.16.3 in the middle of the round `model-2`, because the bits are the same; the packages, the libraries, the paths and the bands are as before. The move and the rebuilding of the documents by row 7.10 of COORDINATION.md `spec` are the tasks T50–T53, outside an epic.
 
-## Тег `spec` v0.16.3
+## The tag `spec` v0.16.3
 
-**R45. `sim` стоит на `spec` v0.16.3 — последнем теге, из линии 0.16 эпика E10 `spec`. Подмодуль, `go.mod` и `gate.json` — на нём, Go в контейнере — 1.27.4; числа гейта те же до бита, так что пути, полосы и прогоны базы остаются. Строку 7.10 COORDINATION.md `spec` — переход, перестройку документов и перевод `docs/` на английский — `sim` берёт раньше пилота `module-kit` и делит на четыре задачи вне эпика, T50–T53; порядок работы по заготовке v0.16.3 — уже с T50.** Поручение автора 2026-11-12 — «переходи на spec последней версии» — и его ответы на два вопроса перехода (RUN.md, T50).
-- **Что выяснилось при переходе** (`git -C spec diff v0.15.0 v0.16.3`, прочитано 2026-11-12; источники — [architecture.md](architecture.md), раздел 4):
-  - `spec` вышел до v0.16.3, тег на коммите 664398e, и `gh release verify` его подтвердил;
-  - линия 0.16 — эпик E10 `spec`, экономия токенов сессий (R143 spec, R145 spec). Переход на неё у каждого репозитория — строка пункта 7 COORDINATION.md `spec`, у `sim` — 7.10: одна задача вне эпика по общему тексту T123 `spec`, с переходом на тег, перестройкой документов по образцу `spec` и переводом `docs/`. Строки 7.2–7.12 ждут пилота — строки 7.1 `module-kit`. Около 20:30 UTC 2026-11-12 `module-kit` стоял на v0.15.0 без pull request перехода, а в 20:59 UTC перешёл на v0.16.3 только тегом — Go 1.27.4 и Д215, — оставив остальное строки 7.1 своей задаче T43 (R54 module-kit): пилот ещё не пройден. Большой репозиторий, по тексту T123, до начала предлагает разбить задачу по правилу 11 своего RUN.md;
-  - тег не меняет ничего, что стенд читает: `format/`, `types/formatv0` и корневой пакет `spec` те же, а изменились контракты `api/v1` и `admissionv0`, которых стенд не берёт. `go.mod` модуля `spec` тот же — новых зависимостей нет. Шапка файла прогона называет только библиотеки, так что прогоны базы и потолка на 2 000 учеников в силе;
-  - Go стадии `toolchain` — 1.27.4: в 1.27.3 — уязвимость GO-2026-6859 стандартной библиотеки, и переход на тег приносит 1.27.4 каждому репозиторию Go вместе с `go 1.27.4` lock-файла gopls заготовки. Директивы `go` в `go.mod` не меняются — они называют наименьшую версию, а не версию контейнера (поправка 2026-11-11 к R64 spec);
-  - RULES.md: одна задача — одна сессия, и хук `UserPromptSubmit` останавливает фразу, которая начинает другую; решение, которое меняет другую запись, ставит к ней поправку; внешние факты — записями `docs/sources.md`, итоги замеров — в `docs/measurements.md`; `docs/` — на английском, а документ на русском остаётся таким до своей задачи перевода; входящие `spec` разбирает по слову автора или в конце эпика (R143 spec);
-  - Д215 `spec` — строка `**/sim/spec/.claude/rules/**` в `claudeMdExcludes`: правила частей `spec` не грузятся в сессию `sim`. Строки Д140, Д196 и Д198 `spec`, у которых «когда» — переход или задача `sim`, исполнены раньше: R32, R39–R43, T46;
-  - ответ на В12 таблицы 3 RUN.md — по рекомендации (а): строка 4.10 COORDINATION.md `spec` закрыта тегом `sim` v0.1.9, а строка 3.9 больше её не ждёт (Д173 в DEBT.md `spec` и таблица 5 RUN.md `spec`).
-- **Решено автором (2026-11-12):**
-  - вся строка 7.10 — сейчас, раньше пилота, и четырьмя задачами вне эпика по правилу 11: T50 — тег и порядок работы, T51 — `sources.md`, `measurements.md` и перевод architecture, T52 и T53 — перевод журнала, бюджеты и замер «после». Около 650 КБ русского текста — журнал 424 КБ, architecture 225 КБ — на одну проверку не ложатся;
-  - исключение из правила эпика E5 «одно закрепление на круг»: версия `spec` в `go.mod` и `gate.json` меняется посреди круга `model-2`, если биты те же. Условие — `just gate exact`, все числа до бита, и первые 100 учеников каждой ячейки на новом стенде побайтно те же, что их строки в решающем прогоне базы на 2 000, как в R32.
-- **Что изменено здесь:**
-  - `spec/` — на v0.16.3; `go.mod` и `go.sum` — модуль Go `spec` v0.16.3; `gate.json` — `spec` v0.16.3, полосы не переписывались; `gate_test.go` — версию `spec` в сборке, которую подставляют тесты, берёт `specRecorded` из встроенного `gate.json`, а не литералом, и следующий переход её не тронет;
-  - `.devcontainer/Dockerfile` — `GO_VERSION` 1.27.4 и суммы, как в `spec`; `.devcontainer/gopls/go.mod` — `go 1.27.4`, как в заготовке, а `go.sum` тот же;
-  - `.claude/settings.json` — по заготовке и виду `go`: сжатие на 400 тыс. токенов, без коннекторов claude.ai, хук `spec/tools/session/`, плагин `gopls-lsp` и строка Д215;
-  - CLAUDE.md — по заготовке: документы с `DEBT.md` и `sources.md`, бюджеты и правила частей `.claude/rules/` — `go`, `gate` и `ci`; AGENTS.md — заготовки, со строкой о правилах по путям;
-  - RUN.md — «Как пользоваться» и «Как устроен план» по заготовке: одна задача — одна сессия, тело сделанной задачи — сразу в архив эпика, таблица 4 — в своём файле `DEBT.md`; тело T46 — в новом архиве [docs/plan/E5.md](plan/E5.md); раздел «Задачи вне эпика» с T51–T53; В12 закрыта, В13 — в таблице 3;
-  - тег — в CLAUDE.md, README.md, начале RUN.md и статусе [architecture.md](architecture.md).
-- **Биты те же:** `just gate exact` на v0.16.3 — все 69 чисел до бита; первые 100 учеников каждой из 65 ячеек на новом стенде — 6 500 строк — побайтно те же, что их строки в решающем прогоне базы T46 на 2 000, `runs/base.jsonl`. Так — и на Go 1.27.3 контейнера, и на Go 1.27.4, на котором стенд соберёт CI: его тулчейн взят из прокси Go через `GOTOOLCHAIN=go1.27.4`. Условие исключения выполнено, и полосы не переписывались.
+**R45. `sim` stands on `spec` v0.16.3 — the latest tag, of the line 0.16 of epic E10 of `spec`. The submodule, `go.mod` and `gate.json` are on it, and Go in the container is 1.27.4; the gate's numbers are the same to the bit, so the paths, the bands and the runs of the base stay. Row 7.10 of COORDINATION.md `spec` — the move, the rebuilding of the documents and the translation of `docs/` into English — `sim` takes before the pilot of `module-kit` and splits into four tasks outside an epic, T50–T53; the way of working by the template v0.16.3 applies already from T50.** The author's instruction 2026-11-12 — «переходи на spec последней версии» — and their answers to two questions of the move (RUN.md, T50).
+- **What was found in the move** (`git -C spec diff v0.15.0 v0.16.3`, read 2026-11-12; the sources — [architecture.md](architecture.md), section 4):
+  - `spec` has come out up to v0.16.3, the tag is on commit 664398e, and `gh release verify` confirmed it;
+  - the line 0.16 is epic E10 of `spec`, the saving of the sessions' tokens (R143 spec, R145 spec). The move to it is, for each repository, a row of item 7 of COORDINATION.md `spec`, for `sim` 7.10: one task outside an epic by the shared text T123 of `spec`, with the move to the tag, the rebuilding of the documents on the model of `spec` and the translation of `docs/`. Rows 7.2–7.12 wait for the pilot — row 7.1, `module-kit`. At about 20:30 UTC 2026-11-12 `module-kit` stood on v0.15.0 without a pull request of the move, and at 20:59 UTC it moved to v0.16.3 only by the tag — Go 1.27.4 and Д215 —, leaving the rest of row 7.1 to its task T43 (R54 module-kit): the pilot is not passed yet. A large repository, by the text of T123, proposes before starting to split the task by rule 11 of its RUN.md;
+  - the tag changes nothing that the simulator reads: `format/`, `types/formatv0` and the root package of `spec` are the same, and what changed are the contracts `api/v1` and `admissionv0`, which the simulator does not take. The `go.mod` of the module `spec` is the same — there are no new dependencies. The header of a run's file names only the libraries, so the runs of the base and of the ceiling on 2,000 learners are in force;
+  - the Go of the stage `toolchain` is 1.27.4: 1.27.3 has the vulnerability GO-2026-6859 of the standard library, and the move to the tag brings 1.27.4 to every Go repository together with `go 1.27.4` of the template's lock file of gopls. The directives `go` in `go.mod` do not change — they name the lowest version, not the container's version (the 2026-11-11 amendment to R64 spec);
+  - RULES.md: one task is one session, and the hook `UserPromptSubmit` stops a phrase that starts another; a decision that changes another entry puts an amendment on it; external facts — as records of `docs/sources.md`, the results of measurements — in `docs/measurements.md`; `docs/` is in English, and a document in Russian stays so until its task of translation; `spec` triages its inbox on the author's word or at the end of an epic (R143 spec);
+  - Д215 of `spec` — the line `**/sim/spec/.claude/rules/**` in `claudeMdExcludes`: the rules of the parts of `spec` are not loaded into a session of `sim`. Rows Д140, Д196 and Д198 of `spec`, whose "when" is a move or a task of `sim`, were carried out earlier: R32, R39–R43, T46;
+  - the answer to В12 of table 3 of RUN.md is by the recommendation, (a): row 4.10 of COORDINATION.md `spec` is closed by the tag `sim` v0.1.9, and row 3.9 no longer waits for it (Д173 in DEBT.md `spec` and table 5 of RUN.md `spec`).
+- **Decided by the author (2026-11-12):**
+  - the whole row 7.10 — now, before the pilot, and in four tasks outside an epic by rule 11: T50 — the tag and the way of working, T51 — `sources.md`, `measurements.md` and the translation of architecture, T52 and T53 — the translation of the log, the budgets and the measurement "after". About 650 KB of Russian text — the log 424 KB, architecture 225 KB — do not fit into one check;
+  - an exception to the rule of epic E5 "one pin per round": the version of `spec` in `go.mod` and `gate.json` changes in the middle of the round `model-2` if the bits are the same. The condition is `just gate exact`, all the numbers to the bit, and the first 100 learners of each cell on the new simulator byte for byte the same as their lines in the decisive run of the base on 2,000, as in R32.
+- **What is changed here:**
+  - `spec/` — to v0.16.3; `go.mod` and `go.sum` — the Go module `spec` v0.16.3; `gate.json` — `spec` v0.16.3, the bands were not written anew; `gate_test.go` — the version of `spec` in the build that the tests substitute is taken by `specRecorded` from the embedded `gate.json`, not as a literal, and the next move will not touch it;
+  - `.devcontainer/Dockerfile` — `GO_VERSION` 1.27.4 and the sums, as in `spec`; `.devcontainer/gopls/go.mod` — `go 1.27.4`, as in the template, and `go.sum` is the same;
+  - `.claude/settings.json` — by the template and the kind `go`: compaction at 400 thousand tokens, no claude.ai connectors, the hook `spec/tools/session/`, the plugin `gopls-lsp` and the line of Д215;
+  - CLAUDE.md — by the template: the documents with `DEBT.md` and `sources.md`, the budgets and the rules of the parts `.claude/rules/` — `go`, `gate` and `ci`; AGENTS.md — the template's, with a line about the rules by paths;
+  - RUN.md — «Как пользоваться» and «Как устроен план» by the template: one task is one session, the body of a done task goes at once to the epic's archive, table 4 is in a file of its own, `DEBT.md`; the body of T46 — in the new archive [docs/plan/E5.md](plan/E5.md); the section «Задачи вне эпика» with T51–T53; В12 is closed, В13 is in table 3;
+  - the tag — in CLAUDE.md, README.md, the opening of RUN.md and the status of [architecture.md](architecture.md).
+- **The bits are the same:** `just gate exact` on v0.16.3 — all 69 numbers to the bit; the first 100 learners of each of the 65 cells on the new simulator — 6,500 lines — byte for byte the same as their lines in the decisive run of the base of T46 on 2,000, `runs/base.jsonl`. So it is both on the container's Go 1.27.3 and on Go 1.27.4, on which CI will build the simulator: its toolchain was taken from the Go proxy through `GOTOOLCHAIN=go1.27.4`. The condition of the exception is met, and the bands were not written anew.
 
-— *Почему:* поручение автора; репозиторий стоит на последнем теге `spec` (RULES.md, Across repositories), а экономия E10 у `sim` — сессии каждой следующей задачи. Посреди круга `model-2` — потому что правило «одно закрепление» держит числа, на которых судится круг, а они не сдвинулись ни на бит, и кандидатов второго круга ещё нет. Раньше пилота — слово автора; пилот ловит ошибки общего текста T123, и что найдут T50–T53, они записывают в «Сделано».
+— *Why:* the author's instruction; the repository stands on the latest tag of `spec` (RULES.md, Across repositories), and the saving of E10 for `sim` is the sessions of every next task. In the middle of the round `model-2` — because the rule "one pin" holds the numbers on which the round is judged, and they did not shift by a bit, and there are no candidates of the second round yet. Before the pilot — the author's word; the pilot catches errors of the shared text T123, and what T50–T53 find, they write down in «Сделано».
 
-— *Отвергнуто:*
-- ждать пилота 7.1 — решение автора: `module-kit` взял пока только тег (R54 module-kit), а его T43 не сделана;
-- ждать конца суда `model-2`, как велит правило эпика E5, — оно держит числа круга, а они те же;
-- вся строка 7.10 одной задачей, как в тексте T123, — больше одной проверки (правило 11);
-- только тег, а перестройку и перевод — после пилота, как сделал `module-kit` (R54 module-kit): решение автора — вся строка сейчас.
+— *Rejected:*
+- wait for the pilot 7.1 — the author's decision: `module-kit` has so far taken only the tag (R54 module-kit), and its T43 is not done;
+- wait for the end of the judgement `model-2`, as the rule of epic E5 says — it holds the numbers of the round, and they are the same;
+- the whole row 7.10 as one task, as in the text of T123 — more than one check (rule 11);
+- only the tag, and the rebuilding and the translation after the pilot, as `module-kit` did (R54 module-kit): the author's decision is the whole row now.
 
-— *Следствие:* поправки 2026-11-12 к R02, R39 и R44; В12 ушла из таблицы 3, а В13 «в реестр spec» называет `spec` задачи строки 7.10. Мерж выпускает тег `sim` с теми же числами: «Gate» `learner-model` может остаться на v0.1.10, а суд `model-2` идёт на тех же прогонах базы. T51–T53 — каждая своей сессией. Где записано: RUN.md, «Задачи вне эпика», «Общее для задач» E5 и таблица 3; [docs/plan/E5.md](plan/E5.md); CLAUDE.md; `.claude/`; DEBT.md; README.md.
+— *Consequence:* the 2026-11-12 amendments to R02, R39 and R44; В12 left table 3, and В13 «в реестр spec» names to `spec` the tasks of row 7.10. The merge releases a tag of `sim` with the same numbers: "Gate" of `learner-model` may stay on v0.1.10, and the judgement `model-2` goes on the same runs of the base. T51–T53 — each in a session of its own. Where it is written: RUN.md, «Задачи вне эпика», «Общее для задач» of E5 and table 3; [docs/plan/E5.md](plan/E5.md); CLAUDE.md; `.claude/`; DEBT.md; README.md.

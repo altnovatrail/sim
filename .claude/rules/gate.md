@@ -10,7 +10,7 @@ paths:
 
 # The gate, the paths and the judgements
 
-[gate.json](../../gate.json) names the commits of learner-model and engine the bands were recorded on, the pin of modules, spec's version and the bands themselves (R05, R26). [internal/criterion/paths.json](../../internal/criterion/paths.json), embedded in the bench, holds the paths the criteria score by, read from the decisive runs of the base and of the ceiling, whose SHA-256 it names (R28). How they are used is [README.md](../../README.md), "Gate" and "Judging a candidate", and [docs/architecture.md](../../docs/architecture.md), sections 3.6–3.9.
+[gate.json](../../gate.json) names the commits of learner-model and engine the bands were recorded on, the pin of modules, spec's version and the bands themselves (R05, R26). [internal/criterion/paths.json](../../internal/criterion/paths.json), embedded in the simulator, holds the paths the criteria score by, read from the decisive runs of the base and of the ceiling, whose SHA-256 it names (R28). How they are used is [README.md](../../README.md), "Gate" and "Judging a candidate", and [docs/architecture.md](../../docs/architecture.md), sections 3.6–3.9.
 
 - `just gate exact` — every number of the gate the same to the bit as the bands recorded: a change that should move no number ends with it green (R26). `just gate` holds the numbers to their bands, as the callers' "Gate" does.
 - `just gate record "<reason>"` records the bands anew, with the reason, when a change moves the base on purpose (R26).
