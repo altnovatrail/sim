@@ -511,7 +511,7 @@ func TestRecordPaths(t *testing.T) {
 		t.Error("a path on a synthetic graph")
 	}
 	rows := p.Table()
-	if !strings.Contains(rows, "| `"+g0+"` | `E1.corridor` | 0,8998 | 0,4998 | 0,4000 |\n") || !strings.Contains(rows, "| `"+g0+"` | `M4.false.all` | — | — | — |\n") {
+	if !strings.Contains(rows, "| `"+g0+"` | `E1.corridor` | 0.8998 | 0.4998 | 0.4000 |\n") || !strings.Contains(rows, "| `"+g0+"` | `M4.false.all` | — | — | — |\n") {
 		t.Errorf("the table:\n%s", rows)
 	}
 	var buf bytes.Buffer
