@@ -4,7 +4,10 @@
 // runs of lessons, the attempts closed by "Done", the last closed attempt and the summary of what
 // was handed out —, takes the engine's choice, has the learner answer by its truth, and gives the
 // model the evidence (docs/architecture.md, sections 1 and 3; architecture 3.8 spec; R104, R107
-// spec; R16 in docs/decisions.md). It records each step, for the invariants and the measures.
+// spec; R16 in docs/decisions.md). Within a lesson whose skills all have a verdict it calls the
+// engine at the end of each task link, as api will, and plays its answer: further through the
+// lesson, or a task of consolidation (R48). It records each step, for the invariants and the
+// measures.
 package run
 
 import (
@@ -42,7 +45,9 @@ var Forgetting = Limit{Days: 180}
 var Essays = Limit{Days: 60, Rubrics: true}
 
 // Step is one choice of the run and what came of it. Evidence and Instances stand beside
-// Attempts, one for each.
+// Attempts, one for each. A lesson with a task of consolidation is several steps, in the order of
+// time: the lesson up to the consolidation, the consolidation — a choice of a task —, and the
+// lesson after it, Resumed (R48).
 type Step struct {
 	Input    engine.Input // the input as the engine got it; the choice is the same on it again
 	Choice   engine.Choice
@@ -56,9 +61,22 @@ type Step struct {
 	// Obs is what the measures read of each attempt with a verdict: the model and the truth before
 	// and after it; nil for an attempt of a task with a rubric (R22 in docs/decisions.md).
 	Obs  []*Obs
-	Pass *learner.Pass // the pass of a lesson, when the choice is one
-	// Pool is what the truth says of the pool at the choice, before the engine chose (R23).
+	Pass *learner.Pass // the pass of a lesson, on the step that ends it, with all its attempts
+	// Pool is what the truth says of the pool at the choice, before the engine chose (R23); nil on a
+	// step Resumed.
 	Pool *Pool
+	// Further are the calls of the engine at the end of the step's task links answered with the
+	// lesson of the same run: further through the lesson, no new choice (R48).
+	Further []Call
+	// Resumed tells that the step is a lesson going on after a task of consolidation: its choice is
+	// the engine's answer after the consolidation, the lesson of the same run, and no new choice.
+	Resumed bool
+}
+
+// Call is a call of the engine within a lesson: the input it got and its answer.
+type Call struct {
+	Input  engine.Input
+	Choice engine.Choice
 }
 
 // Record is a learner's run.
@@ -84,6 +102,8 @@ type Run struct {
 	rule     Rule
 	ended    bool     // the calendar went past the limit's last day
 	verdicts []string // the skills with a verdict of the modules, by full ID, for the ceiling
+	// choose is the engine's rule: engine.Choose, or a test's.
+	choose func(engine.Input) (engine.Choice, error)
 
 	state      learnermodel.State
 	runs       []engine.Run
@@ -111,7 +131,7 @@ func New(l *learner.Learner, modules []*pack.Module, limit Limit) (*Run, error) 
 		return nil, fmt.Errorf("%w: a limit with no days, %+v, may never end", ErrRun, limit)
 	}
 	r := &Run{
-		l: l, cal: l.NewCalendar(), graphs: learnermodel.Graphs{}, limit: limit, rubrics: map[string]bool{},
+		l: l, cal: l.NewCalendar(), graphs: learnermodel.Graphs{}, limit: limit, rubrics: map[string]bool{}, choose: engine.Choose,
 		issued: map[string]engine.SkillIssue{}, choices: map[string]int64{},
 		rec: Record{Unit: l.Unit, Learner: l},
 	}
@@ -212,7 +232,7 @@ func (r *Run) Step() error {
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrRun, err)
 	}
-	choose := engine.Choose
+	choose := r.choose
 	if r.rule == Ceiling {
 		choose = func(in engine.Input) (engine.Choice, error) { return r.ceiling(in, pool) }
 	}
@@ -221,112 +241,237 @@ func (r *Run) Step() error {
 		return fmt.Errorf("%w: the engine refuses the input at %d: %w", ErrRun, at, err)
 	}
 	step := Step{Input: in, Choice: choice, Pool: pool}
+	steps := []Step{step}
 	switch choice.Kind {
 	case engine.ChoiceNothing:
 		r.cal.EndSession()
 	case engine.ChoiceTask:
-		m, t, err := r.task(choice.ID)
+		end, err := r.give(&steps[0], at)
 		if err != nil {
 			return err
 		}
-		_, seen := r.l.SolvedAt(t.Candidate.Task.ID)
-		before, err := r.observeBefore(m, t, at, seen, &in.Readout)
-		if err != nil {
-			return err
-		}
-		a, err := r.l.Answer(t, at)
-		if err != nil {
-			return fmt.Errorf("%w: %w", ErrRun, err)
-		}
-		e, err := r.close(m, t, a, choice.Reason, "", at, seen)
-		if err != nil {
-			return err
-		}
-		o, err := r.observeAfter(m, t, a, before)
-		if err != nil {
-			return err
-		}
-		step.Obs = []*Obs{o}
-		n, err := instance(m, t, a)
-		if err != nil {
-			return err
-		}
-		step.Attempts, step.Evidence, step.Instances = []learner.Attempt{a}, []*learnermodel.Evidence{e}, []int{n}
-		r.choices[m.ID]++
-		r.cal.Done(a.End)
+		r.cal.Done(end)
 	case engine.ChoiceLesson:
-		m, lesson, err := r.lesson(choice.ID)
-		if err != nil {
+		var end int64
+		if steps, end, err = r.passLesson(step, at); err != nil {
 			return err
 		}
-		seen := map[string]bool{}
-		for _, lt := range lesson.Lesson.Tasks {
-			_, seen[lt.ID] = r.l.SolvedAt(lt.ID)
-		}
-		// Each task of the lesson is closed as it is answered, so that the model and the truth are read
-		// before and after it as they stand then, with the tasks before it and not those after.
-		var before *Obs
-		each := &learner.Each{
-			Before: func(t *pack.Task, at int64) (err error) {
-				before, err = r.observeBefore(m, t, at, seen[t.Candidate.Task.ID], nil)
-				return err
-			},
-			After: func(t *pack.Task, a learner.Attempt) error {
-				e, err := r.close(m, t, a, choice.Reason, lesson.Lesson.ID, at, seen[a.Task])
-				if err != nil {
-					return err
-				}
-				n, err := instance(m, t, a)
-				if err != nil {
-					return err
-				}
-				o, err := r.observeAfter(m, t, a, before)
-				if err != nil {
-					return err
-				}
-				step.Evidence, step.Instances, step.Obs = append(step.Evidence, e), append(step.Instances, n), append(step.Obs, o)
-				return nil
-			},
-		}
-		pass, err := r.l.PassLesson(m, lesson, at, each)
-		if errors.Is(err, ErrRun) {
-			return err
-		}
-		if err != nil {
-			return fmt.Errorf("%w: %w", ErrRun, err)
-		}
-		for _, s := range lesson.Lesson.Skills {
-			is := r.issued[s]
-			is.Skill, is.Issued, is.LastIssued = s, true, at
-			r.issued[s] = is
-		}
-		r.pass(lesson, pass)
-		step.Attempts, step.Pass = pass.Attempts, &pass
-		r.choices[m.ID]++
-		r.cal.Done(pass.End)
+		r.cal.Done(end)
 	default:
 		return fmt.Errorf("%w: the engine chose %v", ErrRun, choice.Kind)
 	}
-	r.rec.Steps = append(r.rec.Steps, step)
+	r.rec.Steps = append(r.rec.Steps, steps...)
 	r.rec.State = r.state
 	return nil
 }
 
-// pass records a pass of a lesson as a run: an open run of the lesson goes on — passed now, or open
-// still —, and a new pass is a new run, passed or left open (concepts 5 spec).
+// give follows the choice of a task at a time: the learner answers it, the attempt is closed, and
+// the module has one choice more. It gives when the attempt closed.
+func (r *Run) give(step *Step, at int64) (int64, error) {
+	m, t, err := r.task(step.Choice.ID)
+	if err != nil {
+		return 0, err
+	}
+	_, seen := r.l.SolvedAt(t.Candidate.Task.ID)
+	before, err := r.observeBefore(m, t, at, seen, &step.Input.Readout)
+	if err != nil {
+		return 0, err
+	}
+	a, err := r.l.Answer(t, at)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %w", ErrRun, err)
+	}
+	e, err := r.close(m, t, a, step.Choice.Reason, "", at, seen)
+	if err != nil {
+		return 0, err
+	}
+	o, err := r.observeAfter(m, t, a, before)
+	if err != nil {
+		return 0, err
+	}
+	step.Obs = []*Obs{o}
+	n, err := instance(m, t, a)
+	if err != nil {
+		return 0, err
+	}
+	step.Attempts, step.Evidence, step.Instances = []learner.Attempt{a}, []*learnermodel.Evidence{e}, []int{n}
+	r.choices[m.ID]++
+	return a.End, nil
+}
+
+// passLesson follows the choice of a lesson at a time: the module has one choice more and each skill
+// of the lesson is handed out then, the run of the lesson is open, and the learner passes it link by
+// link. At the end of each task link of a lesson whose skills all have a verdict the engine is
+// called, as api will call it (R48): the lesson of the same run goes on, and a task outside the
+// lesson is a consolidation, given at once. The ceiling calls nothing there and goes on. It gives the
+// steps the choice became: the lesson, or, with consolidations, its parts and the consolidations
+// between them, in the order of time, and when the pass ended.
+func (r *Run) passLesson(step Step, at int64) ([]Step, int64, error) {
+	m, lesson, err := r.lesson(step.Choice.ID)
+	if err != nil {
+		return nil, 0, err
+	}
+	seen := map[string]bool{}
+	for _, lt := range lesson.Lesson.Tasks {
+		_, seen[lt.ID] = r.l.SolvedAt(lt.ID)
+	}
+	r.choices[m.ID]++
+	r.issue(lesson.Lesson.Skills, at)
+	r.open(lesson, at)
+	consolidates := r.rule == Engine && verdicts(m, lesson)
+	var steps []Step
+	cur := &step
+	// Each task of the lesson is closed as it is answered, so that the model and the truth are read
+	// before and after it as they stand then, with the tasks before it and not those after.
+	var before *Obs
+	each := &learner.Each{
+		Before: func(t *pack.Task, at int64) (err error) {
+			before, err = r.observeBefore(m, t, at, seen[t.Candidate.Task.ID], nil)
+			return err
+		},
+		After: func(t *pack.Task, a learner.Attempt) error {
+			e, err := r.close(m, t, a, step.Choice.Reason, lesson.Lesson.ID, at, seen[a.Task])
+			if err != nil {
+				return err
+			}
+			n, err := instance(m, t, a)
+			if err != nil {
+				return err
+			}
+			o, err := r.observeAfter(m, t, a, before)
+			if err != nil {
+				return err
+			}
+			cur.Attempts, cur.Evidence, cur.Instances, cur.Obs = append(cur.Attempts, a), append(cur.Evidence, e), append(cur.Instances, n), append(cur.Obs, o)
+			return nil
+		},
+		End: func(_ *pack.Task, a learner.Attempt) (int64, error) {
+			if !consolidates {
+				return a.End, nil
+			}
+			in, c, err := r.call(a.End)
+			if err != nil {
+				return 0, err
+			}
+			if further(c, lesson) {
+				cur.Further = append(cur.Further, Call{Input: in, Choice: c})
+				return a.End, nil
+			}
+			task, back, err := r.consolidate(lesson, in, c)
+			if err != nil {
+				return 0, err
+			}
+			steps = append(steps, *cur, *task)
+			cur = back
+			return task.Attempts[0].End, nil
+		},
+	}
+	pass, err := r.l.PassLesson(m, lesson, at, each)
+	if errors.Is(err, ErrRun) {
+		return nil, 0, err
+	}
+	if err != nil {
+		return nil, 0, fmt.Errorf("%w: %w", ErrRun, err)
+	}
+	r.pass(lesson, pass)
+	cur.Pass = &pass
+	return append(steps, *cur), pass.End, nil
+}
+
+// consolidate follows the engine's answer c at the end of a task link of a lesson, on the input in,
+// when it is not further through the lesson: a task outside the lesson is a choice of its module and
+// is given at once, with the pool read as at any choice; then the engine is called again, and the
+// lesson of the same run must go on (R48). Any other answer is a run that cannot go on. It gives the
+// step of the consolidation and the step of the lesson resumed.
+func (r *Run) consolidate(lesson *pack.Lesson, in engine.Input, c engine.Choice) (*Step, *Step, error) {
+	if c.Kind != engine.ChoiceTask || slices.ContainsFunc(lesson.Lesson.Tasks, func(t learnermodel.Task) bool { return t.ID == c.ID }) {
+		return nil, nil, fmt.Errorf("%w: at the end of a link of %s at %d the engine chose %v %s (%v), neither the lesson nor a task outside it",
+			ErrRun, lesson.Lesson.ID, in.Time, c.Kind, c.ID, c.Reason)
+	}
+	pool, err := r.pool(in.Time)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%w: %w", ErrRun, err)
+	}
+	task := &Step{Input: in, Choice: c, Pool: pool}
+	end, err := r.give(task, in.Time)
+	if err != nil {
+		return nil, nil, err
+	}
+	back, b, err := r.call(end)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !further(b, lesson) {
+		return nil, nil, fmt.Errorf("%w: after the consolidation %s at %d the engine chose %v %s (%v), not the lesson %s",
+			ErrRun, c.ID, end, b.Kind, b.ID, b.Reason, lesson.Lesson.ID)
+	}
+	return task, &Step{Input: back, Choice: b, Resumed: true}, nil
+}
+
+// call calls the engine within a lesson at a time, on the input api would build then.
+func (r *Run) call(at int64) (engine.Input, engine.Choice, error) {
+	in, err := r.input(at)
+	if err != nil {
+		return in, engine.Choice{}, err
+	}
+	c, err := r.choose(in)
+	if err != nil {
+		return in, c, fmt.Errorf("%w: the engine refuses the input at %d: %w", ErrRun, at, err)
+	}
+	return in, c, nil
+}
+
+// further tells whether an answer of the engine within a lesson is the lesson of the same run:
+// further through it.
+func further(c engine.Choice, lesson *pack.Lesson) bool {
+	return c.Kind == engine.ChoiceLesson && c.ID == lesson.Lesson.ID && c.Reason == engine.ReasonOpenRun
+}
+
+// verdicts tells whether a lesson has skills and every one has a verdict: only then is the engine
+// called within it (concepts 5 spec; R48).
+func verdicts(m *pack.Module, lesson *pack.Lesson) bool {
+	if len(lesson.Lesson.Skills) == 0 {
+		return false
+	}
+	for _, id := range lesson.Lesson.Skills {
+		if !verdict(m, id) {
+			return false
+		}
+	}
+	return true
+}
+
+// issue hands out skills at a time: the time of their last issue does not go back, so that a lesson
+// going on after a consolidation leaves the consolidation's time (R48).
+func (r *Run) issue(skills []string, at int64) {
+	for _, s := range skills {
+		is := r.issued[s]
+		is.Skill, is.Issued, is.LastIssued = s, true, max(is.LastIssued, at)
+		r.issued[s] = is
+	}
+}
+
+// open records the run of a lesson as open while it is passed, as api holds it: an open run of the
+// lesson goes on, and a new pass is a new run (concepts 5 spec).
+func (r *Run) open(lesson *pack.Lesson, at int64) {
+	if slices.ContainsFunc(r.runs, func(x engine.Run) bool { return x.Lesson == lesson.Lesson.ID && x.End == engine.RunOpen }) {
+		return
+	}
+	r.runs = append(r.runs, engine.Run{Lesson: lesson.Lesson.ID, Skills: lesson.Lesson.Skills, End: engine.RunOpen})
+	r.runStarts = append(r.runStarts, at)
+}
+
+// pass ends the open run of a lesson by its pass: passed, or open still when the pass was left.
 func (r *Run) pass(lesson *pack.Lesson, p learner.Pass) {
-	end, endedAt := engine.RunPassed, p.End
 	if p.Abandoned {
-		end, endedAt = engine.RunOpen, 0
+		return
 	}
 	for i := range r.runs {
 		if r.runs[i].Lesson == lesson.Lesson.ID && r.runs[i].End == engine.RunOpen {
-			r.runs[i].End, r.runs[i].EndedAt = end, endedAt
+			r.runs[i].End, r.runs[i].EndedAt = engine.RunPassed, p.End
 			return
 		}
 	}
-	r.runs = append(r.runs, engine.Run{Lesson: lesson.Lesson.ID, Skills: lesson.Lesson.Skills, End: end, EndedAt: endedAt})
-	r.runStarts = append(r.runStarts, p.Start)
 }
 
 // instance gives the number of the instance of a template an attempt takes, by its seed; -1 for a
@@ -395,7 +540,8 @@ func (r *Run) lesson(id string) (*pack.Module, *pack.Lesson, error) {
 // close records a closed attempt as api would: the evidence of a task with a verdict, appended to
 // the model's state; the attempt closed by "Done" of a task with a rubric; the solution sent to the
 // device when the attempt closed right or with the solution shown (R82 spec); the summary of each
-// primary skill, handed out at issued — the time of the choice of the task, or of its lesson —;
+// primary skill, handed out at issued — the time of the choice of the task, or of its lesson, and
+// never back (R48) —;
 // and the last closed attempt. seen tells whether the task's solution went to the device before
 // the attempt, as the learner keeps it.
 func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine.ReasonCode, lesson string, issued int64, seen bool) (*learnermodel.Evidence, error) {
@@ -403,7 +549,7 @@ func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine
 	results := results(t, a)
 	for _, res := range results {
 		is := r.issued[res.Skill]
-		is.Skill, is.Issued, is.LastIssued, is.LastCode, is.LastResult, is.HasLast = res.Skill, true, issued, code, res, true
+		is.Skill, is.Issued, is.LastIssued, is.LastCode, is.LastResult, is.HasLast = res.Skill, true, max(is.LastIssued, issued), code, res, true
 		r.issued[res.Skill] = is
 	}
 	r.last = engine.Last{Task: task.ID, Left: a.Closure == learner.ClosedLeft, Lesson: lesson, InLesson: lesson != "", Results: results}

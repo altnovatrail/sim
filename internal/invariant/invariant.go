@@ -2,8 +2,9 @@
 // of zero: one breach on one learner makes the run red (docs/architecture.md, section 3.5; R04;
 // R17 in docs/decisions.md).
 //
-//   - I1, reproducibility: the choice taken again on the input it keeps is the same choice, and a
-//     run repeated on the same seeds gives the same bits (Same);
+//   - I1, reproducibility: the choice taken again on the input it keeps is the same choice — each
+//     call further through a lesson too (R48) —, and a run repeated on the same seeds gives the same
+//     bits (Same);
 //   - I2, the reason code: each choice of a task or a lesson has one code of the closed list, a
 //     choice of nothing none, and the code is true to its meaning on the facts it names;
 //   - I3, the author's order: a skill with a rubric or without assessment comes after the skills of
@@ -56,17 +57,26 @@ func check(rec *run.Record, again bool) []Breach {
 		breach := func(inv, format string, args ...any) {
 			out = append(out, Breach{Invariant: inv, Unit: rec.Unit, Step: k, Choice: s.Choice, Detail: fmt.Sprintf(format, args...)})
 		}
-		if again {
-			c, err := engine.Choose(s.Input)
-			switch {
-			case err != nil:
-				breach("I1", "the engine refuses the input it took: %v", err)
-			case c != s.Choice:
-				breach("I1", "the choice taken again is %v %s (%v)", c.Kind, c.ID, c.Reason)
+		// The calls further through a lesson are choices of the engine too: taken again, and true to
+		// their code (R48).
+		calls := append([]run.Call{{Input: s.Input, Choice: s.Choice}}, s.Further...)
+		for i, call := range calls {
+			at := ""
+			if i > 0 {
+				at = fmt.Sprintf("call %d further through the lesson: ", i)
 			}
-		}
-		for _, d := range reasonCode(s) {
-			breach("I2", "%s", d)
+			if again {
+				c, err := engine.Choose(call.Input)
+				switch {
+				case err != nil:
+					breach("I1", "%sthe engine refuses the input it took: %v", at, err)
+				case c != call.Choice:
+					breach("I1", "%sthe choice taken again is %v %s (%v)", at, c.Kind, c.ID, c.Reason)
+				}
+			}
+			for _, d := range reasonCode(run.Step{Input: call.Input, Choice: call.Choice}) {
+				breach("I2", "%s%s", at, d)
+			}
 		}
 		for _, d := range authorOrder(s) {
 			breach("I3", "%s", d)
@@ -89,8 +99,11 @@ func Same(a, b *run.Record) []Breach {
 	}
 	for k := range a.Steps {
 		sa, sb := a.Steps[k], b.Steps[k]
-		if sa.Choice != sb.Choice {
-			return breach(k, "chose %v, then %v", sa.Choice, sb.Choice)
+		if sa.Choice != sb.Choice || sa.Resumed != sb.Resumed {
+			return breach(k, "chose %v (resumed %v), then %v (%v)", sa.Choice, sa.Resumed, sb.Choice, sb.Resumed)
+		}
+		if !slices.EqualFunc(sa.Further, sb.Further, func(x, y run.Call) bool { return x.Choice == y.Choice }) {
+			return breach(k, "went further through the lesson %d times, then %d, or by other choices", len(sa.Further), len(sb.Further))
 		}
 		if len(sa.Evidence) != len(sb.Evidence) {
 			return breach(k, "%d pieces of evidence, then %d", len(sa.Evidence), len(sb.Evidence))

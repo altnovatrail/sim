@@ -33,9 +33,10 @@ func Engine(rec *run.Record) Sums {
 	return s
 }
 
-// gives tells whether a step gave something: a task or a lesson.
+// gives tells whether a step gave something: a task or a lesson, but for a lesson going on after a
+// consolidation, which is no new choice (R48).
 func gives(st run.Step) bool {
-	return st.Choice.Kind == engine.ChoiceTask || st.Choice.Kind == engine.ChoiceLesson
+	return !st.Resumed && (st.Choice.Kind == engine.ChoiceTask || st.Choice.Kind == engine.ChoiceLesson)
 }
 
 // e1: of the items with a verdict given, the shares with P* at the time given in the corridor
@@ -89,6 +90,9 @@ func e2(s Sums, rec *run.Record) {
 	streaks := map[string]streak{}
 	stuck := false
 	for _, st := range rec.Steps {
+		if st.Resumed {
+			continue // a lesson going on after a consolidation is no new choice (R48)
+		}
 		if st.Pool != nil && st.Pool.Given {
 			s.add("E2.given", 1)
 			if st.Choice.Kind == engine.ChoiceNothing {
