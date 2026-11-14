@@ -202,10 +202,26 @@ func TestPassLesson(t *testing.T) {
 	if !slices.Equal(calls, want) {
 		t.Errorf("each called %v, want %v", calls, want)
 	}
+	// End gives when the next link is given: a minute after each task here, so the pass ends a minute
+	// later for each of its tasks, and no task is given before the link before it ends.
+	each.End = func(_ *pack.Task, a Attempt) (int64, error) { return a.End + 60, nil }
+	q, err := learnerOf(t, "G0", 2, olympiad).PassLesson(m, lesson, Start, each)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 1; i < len(q.Attempts); i++ {
+		if q.Attempts[i].Start < q.Attempts[i-1].End+60 {
+			t.Errorf("task %d given at %d, the one before closed at %d", i, q.Attempts[i].Start, q.Attempts[i-1].End)
+		}
+	}
+	if len(q.Attempts) > 0 && q.End < q.Attempts[len(q.Attempts)-1].End+60 {
+		t.Errorf("the pass ends at %d, before the end of its last link", q.End)
+	}
 	stop := errors.New("stop")
 	for _, e := range []*Each{
 		{Before: func(*pack.Task, int64) error { return stop }, After: each.After},
 		{Before: each.Before, After: func(*pack.Task, Attempt) error { return stop }},
+		{Before: each.Before, After: each.After, End: func(*pack.Task, Attempt) (int64, error) { return 0, stop }},
 	} {
 		if _, err := learnerOf(t, "G0", 3, olympiad).PassLesson(m, lesson, Start, e); !errors.Is(err, stop) {
 			t.Errorf("an error of each: %v", err)

@@ -321,3 +321,29 @@ func TestAuthorOrderGraph(t *testing.T) {
 		t.Fatalf("C, which nothing can teach: %v", got)
 	}
 }
+
+// The calls further through a lesson are choices too: one the input does not give again is a breach
+// of I1, one against its code of I2, and a repeat that goes further otherwise of I1 by Same (R48).
+func TestFurtherBreaches(t *testing.T) {
+	rec := record(t, "G0", 0, run.Maths, olympiad)
+	k, s := first(t, rec, func(s run.Step) bool { return len(s.Further) > 0 })
+	if bs := Check(&run.Record{Unit: rec.Unit, Steps: []run.Step{s}}); len(bs) != 0 {
+		t.Fatalf("the base breaks the invariants further through a lesson: %v", bs)
+	}
+	bad := s
+	bad.Further = slices.Clone(s.Further)
+	bad.Further[0].Choice.ID = "novatrail/olympiad-math/lesson/none"
+	bs := Check(&run.Record{Unit: rec.Unit, Steps: []run.Step{bad}})
+	if !hasBreach(bs, "I1") || !hasBreach(bs, "I2") || !strings.Contains(bs[0].Detail, "call 1 further") {
+		t.Errorf("a call further taken again otherwise: %v", bs)
+	}
+	if bs := CheckWithoutI1(&run.Record{Unit: rec.Unit, Steps: []run.Step{bad}}); hasBreach(bs, "I1") || !hasBreach(bs, "I2") {
+		t.Errorf("without I1, a call further against its code: %v", bs)
+	}
+	other := *rec
+	other.Steps = slices.Clone(rec.Steps)
+	other.Steps[k] = bad
+	if bs := Same(rec, &other); len(bs) != 1 || bs[0].Step != k {
+		t.Errorf("a repeat that goes further otherwise: %v", bs)
+	}
+}

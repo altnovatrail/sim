@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/altnovatrail/sim/internal/measure"
 )
 
 // Write writes the report in Markdown: whether the run decides or is a rough look, the graphs of
-// the choice and the cells of no graph, each candidate's score, group and the checks it fails, the
-// choice, and the confirmation.
+// the choice and the cells of no graph, each candidate's score, group, the checks it fails and the
+// note of consolidation in a lesson, the choice, and the confirmation.
 func (r *Report) Write(w io.Writer) error {
 	var b strings.Builder
 	kind := "a rough look, which decides nothing"
@@ -27,7 +29,11 @@ func (r *Report) Write(w io.Writer) error {
 	}
 	b.WriteString("## Outcome\n\n")
 	if len(r.Equals) > 1 {
-		fmt.Fprintf(&b, "Equal to the best: %s; the simplest of them is chosen.\n\n", strings.Join(r.Equals, ", "))
+		chosen := "is chosen"
+		if !r.Decisive {
+			chosen = "would be chosen by a decisive run"
+		}
+		fmt.Fprintf(&b, "Equal to the best: %s; the simplest of them %s.\n\n", strings.Join(r.Equals, ", "), chosen)
 	}
 	if r.Confirmed != nil {
 		b.WriteString("The confirmation on the held-out learners:\n\n")
@@ -70,6 +76,33 @@ func writeVerdict(b *strings.Builder, v Verdict) {
 		fmt.Fprintf(b, "- nothing to hold, the base reads none: %s\n", strings.Join(skipped, "; "))
 	}
 	b.WriteString("\n")
+	writeNote(b, v.Note)
+}
+
+// writeNote writes the note of consolidation in a lesson, E6, on the cells where the base or the
+// candidate consolidated: it explains where a shift of E1 comes from and decides nothing (R49).
+func writeNote(b *strings.Builder, note []Note) {
+	if len(note) == 0 {
+		return
+	}
+	b.WriteString("#### Note, which decides nothing: consolidation in a lesson\n\n")
+	b.WriteString("| cell | number | base | candidate | candidate − base |\n|---|---|---|---|---|\n")
+	for _, n := range note {
+		diff := "—"
+		if d := n.Diff; d.Read { // 0 − x, not −x, so that no difference is written −0
+			diff = fmt.Sprintf("%.4g [%.4g, %.4g]", 0-d.Value, 0-d.High, 0-d.Low)
+		}
+		fmt.Fprintf(b, "| `%s` | `%s` | %s | %s | %s |\n", n.Cell, n.Diff.Name, showValue(n.A), showValue(n.B), diff)
+	}
+	b.WriteString("\n")
+}
+
+// showValue writes a value of the note, or a dash when it is not read.
+func showValue(v measure.Value) string {
+	if !v.Read {
+		return "—"
+	}
+	return fmt.Sprintf("%.4g", v.Value)
 }
 
 // writeLeft writes the numbers that left a score, and why. The group's score is of the same numbers

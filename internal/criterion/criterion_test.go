@@ -364,6 +364,11 @@ func TestRefuses(t *testing.T) {
 	if _, err := Judge(conf); !errors.Is(err, ErrCriterion) {
 		t.Errorf("a confirmation whose candidate ran on other learners: %v", err)
 	}
+	theirs := input(Engine, Candidate{Name: "x", File: good, Group: "corridor"})
+	theirs.Confirm = &Confirm{Base: other, Candidate: other}
+	if _, err := Judge(theirs); !errors.Is(err, ErrCriterion) || !strings.Contains(err.Error(), "of the criterion engine") {
+		t.Errorf("a confirmation of the engine on the model's held-out learners: %v", err)
+	}
 	// With no path fixed, or none to read, there is nothing to score by.
 	fixed = func() (*Paths, error) { return &Paths{}, nil }
 	if _, err := Judge(input(Model, Candidate{Name: "x", File: good})); !errors.Is(err, ErrCriterion) || !strings.Contains(err.Error(), "no path is fixed") {
@@ -601,7 +606,7 @@ func TestReport(t *testing.T) {
 	if err := r.Write(&b); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"a rough look", "novatrail/olympiad-math", "No graph", "### better", "### worse", "fails no worse", "Equal to the best", "confirmation", "Chosen and confirmed: better"} {
+	for _, want := range []string{"a rough look", "novatrail/olympiad-math", "No graph", "### better", "### worse", "fails no worse", "Equal to the best: better, same; the simplest of them would be chosen by a decisive run.", "confirmation", "A rough look, which decides nothing: chosen and confirmed: better"} {
 		if !strings.Contains(b.String(), want) {
 			t.Errorf("the report does not say %q:\n%s", want, b.String())
 		}
@@ -675,15 +680,115 @@ func TestPathSmall(t *testing.T) {
 
 // The recipe of the decisive run, just decisive, runs Decisive learners a cell, of the working ones
 // unless it is given another set: a decisive run of another size would be refused by sim paths, or
-// read as a rough look, and a base of other learners would not be the one paths.json names.
+// read as a rough look, and a base of other learners would not be the one paths.json names. A rough
+// look, just rough, runs fewer, on the working learners alone (R49).
 func TestDecisiveRecipe(t *testing.T) {
 	justfile, err := os.ReadFile(filepath.Join("..", "..", "justfile"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{fmt.Sprintf("-learners %d -set ", Decisive), `decisive rule out set="working":`} {
+	for _, want := range []string{
+		fmt.Sprintf(`decisive rule out set="working": (cells "decisive" rule out set "%d")`, Decisive),
+		`rough rule out learners="300": (cells "rough" rule out "working" learners)`,
+		fmt.Sprintf(`[ "$learners" -ge %d ]`, Decisive),
+		`-learners "$learners" -set `,
+	} {
 		if !strings.Contains(string(justfile), want) {
 			t.Errorf("the recipe decisive has no %q", want)
 		}
+	}
+}
+
+// The check "neutral": a candidate that gives the base's runs on a graph it names holds it; one
+// learner's sum apart fails it, named by the learner and the key; a graph the runs have no cell of
+// fails it too, and a graph of no published package neither holds nor fails it (R49).
+func TestNeutral(t *testing.T) {
+	usual(t)
+	apart := file("engine", seed.Working, baseSide, false)
+	apart.Lines[2*learners+7].Sums["E1.items"]++ // the 8th learner of G2-half
+	sheet := synthetic.Sheet + "+" + synthetic.Workbook
+	in := input(Engine,
+		Candidate{Name: "equal", File: file("engine", seed.Working, baseSide, false), EqualOn: []string{olympiad[0], sheet}},
+		Candidate{Name: "apart", File: apart, EqualOn: olympiad},
+		Candidate{Name: "absent", File: file("engine", seed.Working, baseSide, false), EqualOn: []string{"novatrail/grade-3-math"}},
+	)
+	for _, f := range []*bench.File{in.Base, in.Candidates[0].File, in.Candidates[1].File, in.Candidates[2].File} {
+		for i := range f.Lines {
+			f.Lines[i].N += 1000 // the learners of a part of a run: a check names a learner by its number
+		}
+	}
+	r, err := Judge(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	kinds := func(v Verdict) (met, all, noGraph int, details []string) {
+		for _, k := range v.Checks {
+			if k.Kind != "neutral" {
+				continue
+			}
+			all++
+			met += b2i(k.Met)
+			noGraph += b2i(k.NoGraph)
+			if !k.Met {
+				details = append(details, k.Cell+": "+k.Detail)
+			}
+		}
+		return
+	}
+	if met, all, noGraph, _ := kinds(verdict(t, r, "equal")); met != 5 || all != 5 || noGraph != 1 || slices.Contains(failed(verdict(t, r, "equal")), "neutral") {
+		t.Errorf("equal: %d of %d met, %d of no graph; failed %v", met, all, noGraph, failed(verdict(t, r, "equal")))
+	}
+	if _, _, _, details := kinds(verdict(t, r, "apart")); len(details) != 1 || !strings.Contains(details[0], "G2-half/novatrail/olympiad-math: learner 1007 differs first in E1.items") || verdict(t, r, "apart").Holds {
+		t.Errorf("apart: %v", details)
+	}
+	if _, _, _, details := kinds(verdict(t, r, "absent")); len(details) != 1 || !strings.Contains(details[0], "no cell on the graph novatrail/grade-3-math") {
+		t.Errorf("absent: %v", details)
+	}
+	if v := verdict(t, r, "equal"); len(v.Note) != 0 {
+		t.Errorf("a note where nobody consolidated: %v", v.Note)
+	}
+}
+
+// The note of consolidation in a lesson stands on the cells where a run consolidated, base and
+// candidate side by side, and the report writes it as a table apart from the checks (R49).
+func TestNote(t *testing.T) {
+	usual(t)
+	consolidates := file("engine", seed.Working, baseSide, false)
+	for i := range consolidates.Lines {
+		if l := &consolidates.Lines[i]; l.Population == "G2-half" {
+			maps.Copy(l.Sums, measure.Sums{"E6.consolidations": float64(l.N % 3), "E6.passes": 2, "E6.consolidation.items": 4, "E6.consolidation.corridor": 1})
+		}
+	}
+	in := input(Engine, Candidate{Name: "lesson", File: consolidates, Group: "corridor"})
+	for i := range in.Base.Lines {
+		if l := &in.Base.Lines[i]; l.Population == "G2-half" {
+			l.Sums["E6.passes"] = 2 // the base passes its lessons and consolidates in none
+		}
+	}
+	r, err := Judge(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	v := verdict(t, r, "lesson")
+	if len(v.Note) != len(measure.NoteNumbers()) || v.Note[0].Cell != "G2-half/novatrail/olympiad-math" || v.Note[0].Diff.Name != "E6.consolidations" {
+		t.Fatalf("the note %+v", v.Note)
+	}
+	if n := v.Note[0]; !n.A.Read || n.A.Value != 0 || !n.B.Read || math.Abs(n.B.Value-0.5) > 0.02 {
+		t.Errorf("consolidations a pass: the base %+v, the candidate %+v", n.A, n.B)
+	}
+	var b bytes.Buffer
+	if err := r.Write(&b); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"#### Note, which decides nothing: consolidation in a lesson", "| `G2-half/novatrail/olympiad-math` | `E6.consolidations` | 0 | ", "| `G2-half/novatrail/olympiad-math` | `E6.lesson.corridor` | — | — | — |"} {
+		if !strings.Contains(b.String(), want) {
+			t.Errorf("the report does not say %q:\n%s", want, b.String())
+		}
+	}
+	var same strings.Builder
+	zero := measure.Value{Name: "E6.next", Read: true}
+	writeNote(&same, []Note{{Cell: "G2-half/novatrail/olympiad-math", A: zero, B: zero, Diff: zero}})
+	if want := "| `E6.next` | 0 | 0 | 0 [0, 0] |"; !strings.Contains(same.String(), want) {
+		t.Errorf("no difference is not written as %q:\n%s", want, same.String())
 	}
 }

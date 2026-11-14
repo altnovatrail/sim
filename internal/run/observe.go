@@ -202,8 +202,11 @@ func (r *Run) observeAfter(m *pack.Module, t *pack.Task, a learner.Attempt, o *O
 }
 
 // verdict tells whether a skill of a module has a verdict.
-func verdict(m *pack.Module, id string) bool {
-	return slices.ContainsFunc(m.Graph.Skills, func(s learnermodel.Skill) bool {
+func verdict(m *pack.Module, id string) bool { return verdictIn(m.Graph, id) }
+
+// verdictIn tells whether a skill of a graph has a verdict.
+func verdictIn(g learnermodel.Graph, id string) bool {
+	return slices.ContainsFunc(g.Skills, func(s learnermodel.Skill) bool {
 		return s.ID == id && s.Assessability == learnermodel.AssessabilityVerdict
 	})
 }

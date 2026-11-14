@@ -33,9 +33,10 @@ func Engine(rec *run.Record) Sums {
 	return s
 }
 
-// gives tells whether a step gave something: a task or a lesson.
+// gives tells whether a step gave something: a task or a lesson, but for a lesson going on after a
+// consolidation, which is no new choice (R48).
 func gives(st run.Step) bool {
-	return st.Choice.Kind == engine.ChoiceTask || st.Choice.Kind == engine.ChoiceLesson
+	return !st.Resumed && (st.Choice.Kind == engine.ChoiceTask || st.Choice.Kind == engine.ChoiceLesson)
 }
 
 // e1: of the items with a verdict given, the shares with P* at the time given in the corridor
@@ -47,21 +48,28 @@ func e1(s Sums, rec *run.Record) {
 			if o == nil {
 				continue
 			}
-			for _, it := range o.Items {
-				s.add("E1.items", 1)
-				switch {
-				case it.PGiven >= run.CorridorLow && it.PGiven <= run.CorridorHigh:
-					s.add("E1.corridor", 1)
-				case it.PGiven < hardP:
-					s.add("E1.hard", 1)
-				case it.PGiven > easyP:
-					s.add("E1.easy", 1)
-				}
-			}
+			shares(s, "E1", o.Items)
 		}
 		if gives(st) && st.Pool != nil && st.Pool.Given {
 			s.add("E1.ceiling.sum", st.Pool.Ceiling)
 			s.add("E1.ceiling.n", 1)
+		}
+	}
+}
+
+// shares adds items with a verdict to the sums of a measure's shares by P* at the time given: all of
+// them, and those in the corridor, below 0.50 and above 0.95. E1 reads all the items so, and the
+// note E6 those of the lessons and of the consolidations (R49).
+func shares(s Sums, of string, items []run.ItemObs) {
+	for _, it := range items {
+		s.add(of+".items", 1)
+		switch {
+		case it.PGiven >= run.CorridorLow && it.PGiven <= run.CorridorHigh:
+			s.add(of+".corridor", 1)
+		case it.PGiven < hardP:
+			s.add(of+".hard", 1)
+		case it.PGiven > easyP:
+			s.add(of+".easy", 1)
 		}
 	}
 }
@@ -89,6 +97,9 @@ func e2(s Sums, rec *run.Record) {
 	streaks := map[string]streak{}
 	stuck := false
 	for _, st := range rec.Steps {
+		if st.Resumed {
+			continue // a lesson going on after a consolidation is no new choice (R48)
+		}
 		if st.Pool != nil && st.Pool.Given {
 			s.add("E2.given", 1)
 			if st.Choice.Kind == engine.ChoiceNothing {

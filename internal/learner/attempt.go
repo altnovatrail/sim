@@ -222,10 +222,14 @@ type Pass struct {
 }
 
 // Each is what a lesson's pass calls around each of its tasks, so that the caller reads the truth
-// and the model between them, as they stand when the task is given and once it is answered.
+// and the model between them, as they stand when the task is given and once it is answered. End,
+// when given, is called last, at the end of the task's link: it gives when the next link is given,
+// at the attempt's end or later — after a task of consolidation the caller gave outside the lesson
+// (R48 in docs/decisions.md).
 type Each struct {
 	Before func(t *pack.Task, at int64) error
 	After  func(t *pack.Task, a Attempt) error
+	End    func(t *pack.Task, a Attempt) (int64, error)
 }
 
 // PassLesson has the learner pass a lesson of a module given at a time, link by link in the author's
@@ -233,7 +237,8 @@ type Each struct {
 // minutes and changes nothing of the truth (R15) but for L-explain, where the first one reached
 // teaches the lesson's skills once; a task is answered as any task is. L-abandon leaves a pass at a
 // link drawn evenly, and the next pass of the lesson goes on from that link. each, when given, is
-// called around each task: Before when it is given, After once it is answered.
+// called around each task: Before when it is given, After once it is answered, End at the end of its
+// link; the pass ends when its last link does.
 func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64, each *Each) (Pass, error) {
 	if _, err := l.Module(m.ID); err != nil {
 		return Pass{}, err
@@ -284,6 +289,11 @@ func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64, each
 		}
 		p.Attempts = append(p.Attempts, a)
 		at = a.End
+		if each != nil && each.End != nil {
+			if at, err = each.End(t, a); err != nil {
+				return Pass{}, err
+			}
+		}
 	}
 	if p.Abandoned {
 		l.resume[lesson.Lesson.ID] = stop

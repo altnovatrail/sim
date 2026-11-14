@@ -1,6 +1,8 @@
 package seed
 
 import (
+	"maps"
+	"slices"
 	"strconv"
 	"testing"
 )
@@ -41,17 +43,21 @@ func TestUnits(t *testing.T) {
 
 // No learner is drawn alike in two sets (docs/architecture.md, section 3.8): the low word of a
 // place is its set's seed, so places of different sets never share a state, and their first draws
-// part. Checked across the recorded sets for the first 300 learners of one population of each
+// part. Checked across all the recorded sets — the working one, held-out-model-1, held-out-engine-1
+// and held-out-engine-lesson-1 — for the first 300 learners of one population of each
 // family of section 3.2, every purpose of a learner, and the miss of tasks of each module; the
 // test of every population comes with the populations (T16–T19 in RUN.md).
 func TestSetsApart(t *testing.T) {
 	sets := []Set{Working}
-	for _, c := range []string{CriterionModel, CriterionEngine} {
-		s, err := HeldOut(c, 1)
+	for _, name := range slices.Sorted(maps.Keys(heldOut)) {
+		s, err := Named(name)
 		if err != nil {
 			t.Fatal(err)
 		}
 		sets = append(sets, s)
+	}
+	if len(sets) != 4 {
+		t.Errorf("the recorded sets %v", sets)
 	}
 	type place struct{ unit, purpose string }
 	var places []place
@@ -120,6 +126,10 @@ func TestNamed(t *testing.T) {
 	}
 	if s, err := Named("held-out-engine-1"); err != nil || s != (Set{Seed: 20261109, Experiment: "held-out-engine-1"}) {
 		t.Errorf("Named(held-out-engine-1) = %v, %v", s, err)
+	}
+	// The judgement of consolidation in a lesson has a set of its own, apart from the rounds (R49).
+	if s, err := Named("held-out-engine-lesson-1"); err != nil || s != (Set{Seed: 20261113, Experiment: "held-out-engine-lesson-1"}) {
+		t.Errorf("Named(held-out-engine-lesson-1) = %v, %v", s, err)
 	}
 	if _, err := Named("held-out-pair-1"); err != ErrNotRecorded {
 		t.Errorf("Named(held-out-pair-1): %v", err)

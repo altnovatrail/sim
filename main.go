@@ -140,7 +140,7 @@ func runCommand(args []string, stdout, stderr io.Writer) error {
 	fs.SetOutput(stderr)
 	pops := fs.String("populations", "all", "the populations, by name and comma-separated, or all")
 	learners := fs.Int("learners", 100, "the learners of each graph of each population")
-	set := fs.String("set", "working", "the set of learners: working, or held-out-<criterion>-<n>")
+	set := fs.String("set", "working", "the set of learners: working, or held-out-<criterion>-<n> or held-out-<criterion>-<variant>-<n>")
 	rule := fs.String("rule", "engine", "the rule that chooses: engine, or ceiling")
 	out := fs.String("out", "", "the file of results; stdout when empty")
 	commits := commitFlag(fs)
@@ -300,20 +300,22 @@ func compareCommand(args []string, stdout, stderr io.Writer) error {
 }
 
 // judgement is a judgement file: the criterion, the files of results of the base and of each
-// candidate, and of the confirmation when it has run; a path is relative to the judgement file. The
-// paths of the score are those the criterion holds fixed, so no ceiling runs beside them (R28).
+// candidate — with the graphs it claims to give the base's runs on, equal_on (R49) —, and of the
+// confirmation when it has run; a path is relative to the judgement file. The paths of the score
+// are those the criterion holds fixed, so no ceiling runs beside them (R28).
 type judgement struct {
 	Criterion  string `json:"criterion"`
 	Base       string `json:"base"`
 	Candidates []struct {
-		Name      string `json:"name"`
-		File      string `json:"file"`
-		Group     string `json:"group"`
-		Goal      string `json:"goal"`
-		Constants int    `json:"constants"`
-		NewField  bool   `json:"new_field"`
-		Distance  int    `json:"distance"`
-		Library   string `json:"library"`
+		Name      string   `json:"name"`
+		File      string   `json:"file"`
+		Group     string   `json:"group"`
+		Goal      string   `json:"goal"`
+		Constants int      `json:"constants"`
+		NewField  bool     `json:"new_field"`
+		Distance  int      `json:"distance"`
+		Library   string   `json:"library"`
+		EqualOn   []string `json:"equal_on"`
 	} `json:"candidates"`
 	Confirm *struct {
 		Base      string `json:"base"`
@@ -394,7 +396,7 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 			return err
 		}
 		in.Candidates = append(in.Candidates, criterion.Candidate{Name: c.Name, File: f, Group: c.Group, Goal: c.Goal,
-			Constants: c.Constants, NewField: c.NewField, Distance: c.Distance, Library: c.Library})
+			Constants: c.Constants, NewField: c.NewField, Distance: c.Distance, Library: c.Library, EqualOn: c.EqualOn})
 	}
 	if c := j.Confirm; c != nil {
 		in.Confirm = &criterion.Confirm{}

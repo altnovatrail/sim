@@ -76,8 +76,12 @@ A candidate of learner-model or engine is judged by a criterion on decisive runs
    ```
 
    `sim judge <judgement file>` writes the report: the constraints, the score and the choice. It refuses runs that are not of the judgement: a base on other libraries than those the paths were read on, or than the embedded gate.json names, and a candidate of one library on another commit of the other (R40).
-4. **The confirmation.** The candidate chosen and the base run once more, on the held-out learners of the choice: `just decisive engine runs/base-held-out.jsonl held-out-engine-1`, and the same with `CANDIDATE_ENGINE`. The judgement file then names them under `"confirm": {"base": …, "candidate": …}`.
+
+   A candidate may name `"equal_on"`: the graphs, as the IDs of their modules joined by `+`, on which it gives the base's runs. On each cell of them every learner's sums must be the base's, or the candidate fails the constraint `neutral`. The judgement of consolidation in a lesson names `["novatrail/grade-3-math", "novatrail/english-essays"]` (R49). Beside each candidate the report writes the note of consolidation in a lesson, `E6`, on the cells where a run consolidated; it decides nothing.
+4. **The confirmation.** The candidate chosen and the base run once more, on the held-out learners of the choice, its round's own — `held-out-engine-1` for `engine-2`, `held-out-engine-lesson-1` for `engine-lesson-1` ([docs/architecture.md](docs/architecture.md), section 3.8): `just decisive engine runs/base-held-out.jsonl held-out-engine-1`, and the same with `CANDIDATE_ENGINE`. `sim judge` refuses held-out learners of another criterion, but not another round's set of the same one. The judgement file then names them under `"confirm": {"base": …, "candidate": …}`.
 5. **The bands.** A candidate confirmed goes into gate.json and go.mod, and `just gate record "<reason>"` records the bands anew in a pull request to this repository.
+
+**A rough look** goes the same way, on fewer learners a cell, before a candidate is ready for its decisive run: `just rough engine runs/base-300.jsonl` for the base and `CANDIDATE_ENGINE=<full SHA> just rough engine runs/engine-a-300.jsonl` for the candidate — 300 learners a cell unless a third argument names from 1 to 1,999, and only the working learners, since a look at held-out learners leaves them held out no longer. A judgement file of the two, without a confirmation, gives a report named a rough look, whose outcome decides nothing (R49).
 
 ## Taking a release
 
