@@ -43,9 +43,20 @@ type side struct {
 	rms, corridor, lag, unsettled, oracleRMS float64
 }
 
-// file builds a file of results of a rule on a set: learners of each population on the olympiad
-// maths, and of A-fading on the synthetic graph, their sums as a side says.
+// file builds a file of results as bare does, and under the engine with the cells of fairness by the
+// grade too, every grade at the reference's estimate from the first answer and its attempts at every
+// band alike: the base and a candidate run them, and the engine's ceiling does not (R55).
 func file(rule string, set seed.Set, s side, breach bool) *bench.File {
+	f := bare(rule, set, s, breach)
+	if rule != "engine" {
+		return f
+	}
+	return withFairness(f, olympiad, soon, even)
+}
+
+// bare builds a file of results of a rule on a set: learners of each population on the olympiad
+// maths, and of A-fading on the synthetic graph, their sums as a side says.
+func bare(rule string, set seed.Set, s side, breach bool) *bench.File {
 	f := &bench.File{Header: bench.Header{Set: set, Rule: rule, Libraries: maps.Clone(versions), Invariants: rule == "engine"}}
 	for _, p := range []string{"G0", "G0-skills1", "G2-half", "G3", "A-fading"} {
 		graph := olympiad
