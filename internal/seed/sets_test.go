@@ -4,6 +4,7 @@ import (
 	"maps"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -133,5 +134,56 @@ func TestNamed(t *testing.T) {
 	}
 	if _, err := Named("held-out-pair-1"); err != ErrNotRecorded {
 		t.Errorf("Named(held-out-pair-1): %v", err)
+	}
+}
+
+// A judgement's confirmation runs on its own held-out set (R52 in docs/decisions.md): model-2 on the
+// set model-1 left by its exit, engine-2 on the one kept for it, engine-lesson-1 on its own. A
+// judgement with no row — model-3 until its seed is recorded, and the rounds that ended in an exit
+// without a confirmation — has none. Every held-out set R04 has recorded is in exactly one row, of
+// its judgement's criterion, so a seed never comes in without its judgement.
+func TestConfirmation(t *testing.T) {
+	for judgement, want := range map[string]Set{
+		"model-2":         {Seed: 20261108, Experiment: "held-out-model-1"},
+		"engine-2":        {Seed: 20261109, Experiment: "held-out-engine-1"},
+		"engine-lesson-1": {Seed: 20261113, Experiment: "held-out-engine-lesson-1"},
+	} {
+		if s, err := Confirmation(judgement); err != nil || s != want {
+			t.Errorf("Confirmation(%s) = %v, %v; want %v", judgement, s, err, want)
+		}
+	}
+	for _, judgement := range []string{"model-3", "model-1", "engine-1", "pair-1"} {
+		if _, err := Confirmation(judgement); err != ErrNoConfirmation {
+			t.Errorf("Confirmation(%s): %v, want ErrNoConfirmation", judgement, err)
+		}
+	}
+	for _, experiment := range slices.Sorted(maps.Keys(heldOut)) {
+		judgement, ok := Judgement(experiment)
+		if !ok {
+			t.Errorf("the held-out set %s is no judgement's", experiment)
+			continue
+		}
+		rows := 0
+		for _, e := range confirmations {
+			if e == experiment {
+				rows++
+			}
+		}
+		criterion, _, _ := strings.Cut(judgement, "-")
+		if rows != 1 || !strings.HasPrefix(experiment, "held-out-"+criterion+"-") {
+			t.Errorf("the held-out set %s: %d rows, the judgement %s", experiment, rows, judgement)
+		}
+		if s, err := Confirmation(judgement); err != nil || s.Experiment != experiment {
+			t.Errorf("Confirmation(%s) = %v, %v; want %s", judgement, s, err, experiment)
+		}
+	}
+	if j, ok := Judgement("working"); ok {
+		t.Errorf("the working learners are the held-out set of %s", j)
+	}
+	// A row whose set R04 has not recorded gives no set.
+	t.Cleanup(func() { delete(confirmations, "model-3") })
+	confirmations["model-3"] = "held-out-model-2"
+	if _, err := Confirmation("model-3"); err != ErrNotRecorded {
+		t.Errorf("Confirmation of a set not recorded: %v", err)
 	}
 }

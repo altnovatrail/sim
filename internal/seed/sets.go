@@ -2,6 +2,8 @@ package seed
 
 import (
 	"errors"
+	"maps"
+	"slices"
 	"strconv"
 )
 
@@ -43,6 +45,42 @@ func Named(experiment string) (Set, error) {
 
 // ErrNotRecorded is a held-out set R04 has not recorded yet.
 var ErrNotRecorded = errors.New("seed: no such held-out set is recorded in R04")
+
+// confirmations are the held-out sets of the judgements' confirmations, by the name of the
+// judgement, its folder judgements/<name>/: each judgement confirms its choice on a set of its own,
+// so a set kept for another round or variant, or one another judgement has looked at, is none of
+// its (docs/architecture.md, section 3.8; R35, R52 in docs/decisions.md). A round takes the first
+// set of its criterion no confirmation has looked at — model-2 the one model-1 left by its exit
+// (R46) —, but engine-2 keeps held-out-engine-1, which engine-lesson-1 would take by that rule (the
+// 2026-11-13 amendment to R35). The row of each next judgement comes in with the amendment to R04
+// that records its seed, and no set is in two rows.
+var confirmations = map[string]string{
+	"model-2":         "held-out-model-1",
+	"engine-2":        "held-out-engine-1",
+	"engine-lesson-1": "held-out-engine-lesson-1",
+}
+
+// ErrNoConfirmation is a judgement whose held-out set is not recorded.
+var ErrNoConfirmation = errors.New("seed: no held-out set is recorded for the judgement")
+
+// Confirmation gives the held-out set a judgement's confirmation runs on, by the judgement's name.
+func Confirmation(judgement string) (Set, error) {
+	experiment, ok := confirmations[judgement]
+	if !ok {
+		return Set{}, ErrNoConfirmation
+	}
+	return Named(experiment)
+}
+
+// Judgement gives the judgement whose confirmation a held-out set is, if any.
+func Judgement(experiment string) (string, bool) {
+	for _, name := range slices.Sorted(maps.Keys(confirmations)) {
+		if confirmations[name] == experiment {
+			return name, true
+		}
+	}
+	return "", false
+}
 
 // The criteria whose choices take held-out sets of their own (docs/architecture.md, section 3.8).
 const (

@@ -16,6 +16,7 @@ import (
 
 	"github.com/altnovatrail/sim/internal/bench"
 	"github.com/altnovatrail/sim/internal/measure"
+	"github.com/altnovatrail/sim/internal/seed"
 )
 
 // The criteria.
@@ -62,9 +63,13 @@ type Confirm struct {
 	Base, Candidate *bench.File
 }
 
-// Input is a judgement: the criterion, the base's run, the candidates on the same learners, the
-// confirmation when it has run, and the libraries the base is fixed at.
+// Input is a judgement: its name, the criterion, the base's run, the candidates on the same
+// learners, the confirmation when it has run, and the libraries the base is fixed at.
 type Input struct {
+	// Judgement is the judgement's name, its folder judgements/<name>/: a confirmation runs only on
+	// its own held-out set (R52 in docs/decisions.md). A judgement with no confirmation may leave it
+	// empty.
+	Judgement  string
 	Criterion  string
 	Base       *bench.File
 	Candidates []Candidate
@@ -147,6 +152,7 @@ type Note struct {
 
 // Report is what a judgement gives.
 type Report struct {
+	Judgement string
 	Criterion string
 	Decisive  bool
 	Learners  int      // the fewest learners of a cell over the runs
@@ -156,6 +162,7 @@ type Report struct {
 	Chosen    string   // the candidate chosen, if any; on a rough look, the one a decisive run would choose
 	Equals    []string // the candidates equal to the best, the chosen among them
 	Confirmed *Verdict // the chosen on its held-out learners, when the confirmation has run
+	HeldOut   string   // the experiment of those held-out learners
 	Outcome   string
 }
 
@@ -195,7 +202,7 @@ func decide(in Input) (*Report, error) {
 	if in.Confirm != nil {
 		runs = append(runs, in.Confirm.Base, in.Confirm.Candidate)
 	}
-	r := &Report{Criterion: in.Criterion, Learners: fewest(runs)}
+	r := &Report{Judgement: in.Judgement, Criterion: in.Criterion, Learners: fewest(runs)}
 	r.Decisive = r.Learners >= Decisive
 	var scores [][]float64
 	var eligible []int
@@ -259,7 +266,7 @@ func decide(in Input) (*Report, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.Confirmed = &v
+	r.Confirmed, r.HeldOut = &v, in.Confirm.Base.Header.Set.Experiment
 	if v.Holds && v.Better {
 		r.Outcome = "Chosen and confirmed: " + r.Chosen
 	} else {
@@ -274,6 +281,9 @@ func (in Input) check() error {
 	case Model, Engine, Pair:
 	default:
 		return fmt.Errorf("%w: no criterion %q", ErrCriterion, in.Criterion)
+	}
+	if in.Judgement != "" && !strings.HasPrefix(in.Judgement, in.Criterion+"-") {
+		return fmt.Errorf("%w: the judgement %s is not of the criterion %s", ErrCriterion, in.Judgement, in.Criterion)
 	}
 	if in.Base == nil || in.Base.Header.Rule != "engine" {
 		return fmt.Errorf("%w: a judgement needs the base's run under the engine's rule", ErrCriterion)
@@ -302,11 +312,30 @@ func (in Input) check() error {
 		if f.Base.Header.Rule != "engine" || f.Candidate.Header.Rule != "engine" {
 			return fmt.Errorf("%w: the confirmation's base and candidate ran under %q and %q", ErrCriterion, f.Base.Header.Rule, f.Candidate.Header.Rule)
 		}
-		// The held-out sets of a criterion are its own (docs/architecture.md, section 3.8); which of
-		// them a round takes, its judgement file's folder does not say, and README names it.
-		if !strings.HasPrefix(f.Base.Header.Set.Experiment, "held-out-"+in.Criterion+"-") || f.Base.Header.Set == in.Base.Header.Set {
-			return fmt.Errorf("%w: the confirmation ran on %s, not on held-out learners of the criterion %s apart from the choice's", ErrCriterion, f.Base.Header.Set.Experiment, in.Criterion)
-		}
+		return in.heldOut()
+	}
+	return nil
+}
+
+// heldOut refuses a confirmation that is not on its judgement's own held-out set: a set kept for
+// another round or variant, or one another judgement has looked at, is held out from this one no
+// longer, nor is the set of the choice (docs/architecture.md, section 3.8; R52 in
+// docs/decisions.md). The candidate's run is held to the base's learners by their pairing.
+func (in Input) heldOut() error {
+	got := in.Confirm.Base.Header.Set
+	if in.Judgement == "" {
+		return fmt.Errorf("%w: a confirmation needs the name of its judgement, which names its held-out set", ErrCriterion)
+	}
+	if owner, ok := seed.Judgement(got.Experiment); ok && owner != in.Judgement {
+		return fmt.Errorf("%w: the confirmation ran on %s, the held-out learners of the judgement %s, not of %s", ErrCriterion, got.Experiment, owner, in.Judgement)
+	}
+	want, err := seed.Confirmation(in.Judgement)
+	if err != nil {
+		// The row of the judgement or the seed of its set is missing; the error of seed says which.
+		return fmt.Errorf("%w: the judgement %s has no held-out set: its row and its seed come by an amendment to R04 before its candidate first runs: %w", ErrCriterion, in.Judgement, err)
+	}
+	if got != want || got == in.Base.Header.Set {
+		return fmt.Errorf("%w: the confirmation ran on %s, not on %s, the held-out learners of the judgement %s apart from the choice's", ErrCriterion, got.Experiment, want.Experiment, in.Judgement)
 	}
 	return nil
 }

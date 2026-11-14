@@ -36,7 +36,7 @@ func (r *Report) Write(w io.Writer) error {
 		fmt.Fprintf(&b, "Equal to the best: %s; the simplest of them %s.\n\n", strings.Join(r.Equals, ", "), chosen)
 	}
 	if r.Confirmed != nil {
-		b.WriteString("The confirmation on the held-out learners:\n\n")
+		fmt.Fprintf(&b, "The confirmation on %s, the held-out learners of the judgement %s:\n\n", r.HeldOut, r.Judgement)
 		writeVerdict(&b, *r.Confirmed)
 	}
 	fmt.Fprintf(&b, "%s.\n", r.Outcome)
