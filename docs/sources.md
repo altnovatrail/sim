@@ -164,6 +164,8 @@ The branch `main`, commit d2d7ccd of 2026-11-14, 00:07 UTC — "Merge pull reque
 
 Read again 2026-11-14, 15:30 UTC, for T60 (`git ls-remote`, `gh release list`, `gh pr list`, RUN.md at `main`): `main` is still d2d7ccd, and `v0.1.9` is still the latest release. RUN.md, table 1, the same — «| [ ] | T52 | Разведка третьего круга | я + Claude | да | T51 |», and T53 and T54 not done. No pull request is open; the branch `e7-deploy` of the closed pull request #71 is left, 3 commits ahead of `main` and 9 behind.
 
+Read again 2026-11-14, 16:14 UTC, for the laying out of E9 (R54; `gh api` of the commit of `main` and of RUN.md at `main`, `gh pr list`): `main` is still d2d7ccd, and RUN.md, table 1, still has «| [ ] | T52 | Разведка третьего круга | я + Claude | да | T51 |»; no pull request is open.
+
 ## 4. `engine`
 
 ### 4.1. Commit 08bc48a, T02 and T03
@@ -327,3 +329,5 @@ Read 2026-11-14 for the move to `spec` v0.17.3 (R51; T56 in [docs/plan/E7.md](pl
 Read 2026-11-14 for T60, without a move (`gh release list`, `gh release verify`, `git -C spec diff v0.17.3 v0.17.5` after `git fetch --tags`): the releases [altnovatrail/spec](https://github.com/altnovatrail/spec) `v0.17.4` of 04:17 UTC, its tag on the commit 33149be — "Merge pull request #149 from altnovatrail/paper-mockup-home" —, and `v0.17.5` of 05:44 UTC on a14d383 — "Merge pull request #150 from altnovatrail/e12-tasks"; `gh release verify v0.17.5 -R altnovatrail/spec` — "Release v0.17.5 verified!".
 - Against v0.17.3 they change CLAUDE.md, COORDINATION.md, DEBT.md, RUN.md, `draft/README.md` and, of `docs/`, architecture, concepts, decisions, product, repositories, sources and the new `plan/E12.md`: the epic E12 of `spec`, «the app's interface by the mockup», the decision `R148`, the term "interface mockup" and the question `Т-41`, sign-in through Apple. These numbers are `spec`'s at v0.17.5, not at v0.17.3, which `spec/` holds, so they stand in code. `RULES.md`, `format/`, `types/`, `go.mod`, `tools/`, `repo-template/`, `.devcontainer/`, `.claude/` and `justfile` are the same, and of architecture the card 3.9 is the same.
 - T149 is still not done in RUN.md at v0.17.5 — «`tools/docs-check/budgets.mjs` — ключ `entries` в блоках `budgets.json` и в `docs-budgets.json`», and `tools/` is the same as at v0.17.3, so the key `entries` is in no tag up to v0.17.5.
+
+Read again 2026-11-14, 16:14 UTC, for the laying out of E9 (R54; `gh release list`, `git ls-remote`, RUN.md at `main` by `gh api`): `v0.17.5` is still the latest release, and `main` is its commit a14d383. T149 stands among «Задачи вне эпика» of RUN.md, whose done tasks go to an archive, with no «Сделано», and its body still asks for «`tools/docs-check/budgets.mjs` — ключ `entries` в блоках `budgets.json` и в `docs-budgets.json`», so neither a tag nor `main` has the key `entries`.
