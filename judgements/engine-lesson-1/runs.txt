@@ -1,0 +1,9 @@
+# The runs of the judgement engine-lesson-1: the SHA-256 of each file of results, and its header without the populations.
+# The files are no part of the repository: just decisive gives them again to the byte (R28, R34).
+# sim judge gives report.md again on 6f5151f, main at the tag v0.1.17, where the judgement ran (R53).
+
+2e53e18c08df5016a70d2759fa97cbc8df6a4b72422e952eb6db5aef495f9aad  runs/base-t55.jsonl
+{"set":{"Seed":20261107,"Experiment":"working"},"rule":"engine","libraries":{"github.com/altnovatrail/engine":"v0.1.6","github.com/altnovatrail/learner-model":"v0.1.8"},"learners":2000,"invariants":true}
+
+b5c2a736ec5e8bd065fc9ea3a204ad43898f277534877b7f7999469affe4a38d  runs/engine-lesson-1-e7.jsonl
+{"set":{"Seed":20261107,"Experiment":"working"},"rule":"engine","libraries":{"github.com/altnovatrail/engine":"0e4680f0631e113bf91f54846a0a4b1322c76219","github.com/altnovatrail/learner-model":"ab688b243f4ae511eec0a5e18e166f64b8148240"},"learners":2000,"invariants":true}
