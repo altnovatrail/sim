@@ -197,7 +197,7 @@ func TestJudge(t *testing.T) {
 	embedded := gateJSON
 	t.Cleanup(func() { gateJSON = embedded })
 	gateJSON = held.Bytes()
-	good := write("j.json", `{"criterion":"model","base":"base.jsonl",
+	good := write("j.json", `{"judgement":"model-2","criterion":"model","base":"base.jsonl",
 		"candidates":[{"name":"same","file":"base.jsonl","group":"still","constants":1,"equal_on":["novatrail/grade-3-math"]}],
 		"confirm":{"base":"held.jsonl","candidate":"held.jsonl"}}`)
 	stdout.Reset()
@@ -223,6 +223,22 @@ func TestJudge(t *testing.T) {
 	if got := run([]string{"judge", foreign}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "candidate beside ran on "+bench.Libraries[0]) {
 		t.Errorf("sim judge of a candidate beside another learner-model = %d: %s", got, stderr.String())
 	}
+	// A judgement file in the folder of one judgement that names another — a copy's leftover — is
+	// refused before its runs are read; in its own folder it goes on (R52).
+	for _, c := range []struct {
+		folder string
+		status int
+	}{{"model-3", 1}, {"model-2", 0}} {
+		if err := os.MkdirAll(filepath.Join(dir, "judgements", c.folder), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		copied := write(filepath.Join("judgements", c.folder, "judgement.json"), `{"judgement":"model-2","criterion":"model","base":"../../base.jsonl",
+			"candidates":[{"name":"same","file":"../../base.jsonl"}],"confirm":{"base":"../../held.jsonl","candidate":"../../held.jsonl"}}`)
+		stderr.Reset()
+		if got := run([]string{"judge", copied}, &stdout, &stderr); got != c.status || c.status == 1 && !strings.Contains(stderr.String(), "lies in the folder of model-3") {
+			t.Errorf("sim judge of a file naming model-2 in judgements/%s = %d: %s", c.folder, got, stderr.String())
+		}
+	}
 	prior := gateJSON
 	t.Cleanup(func() { gateJSON = prior })
 	gateJSON = []byte(`{"extra":1}`)
@@ -243,12 +259,80 @@ func TestJudge(t *testing.T) {
 		{[]string{"judge", write("nocand.json", `{"criterion":"model","base":"base.jsonl","candidates":[{"name":"x","file":"none.jsonl"}]}`)}, 1},
 		{[]string{"judge", write("noconf.json", `{"criterion":"model","base":"base.jsonl","confirm":{"base":"none.jsonl"}}`)}, 1},
 		{[]string{"judge", write("bad.json", `{"criterion":"model","base":"j.json"}`)}, 1},
+		{[]string{"judge", write("unnamed.json", `{"criterion":"model","base":"base.jsonl","confirm":{"base":"held.jsonl","candidate":"held.jsonl"}}`)}, 1},
 		{[]string{"judge", write("refused.json", `{"criterion":"taste","base":"base.jsonl"}`)}, 1},
 	} {
 		stderr.Reset()
 		if got := run(c.args, &stdout, &stderr); got != c.status {
 			t.Errorf("sim %q = %d, want %d: %s", c.args, got, c.status, stderr.String())
 		}
+	}
+}
+
+// The judgement files in judgements/ still read as sim judge reads them, a judgement that names
+// itself names its folder, and a confirmation ran on its judgement's own held-out set, as runs.txt
+// names the set of each run (R35, R52 in docs/decisions.md): model-2 on held-out-model-1. The
+// records are not edited: each gives its report again on its own commit.
+func TestJudgements(t *testing.T) {
+	dirs, err := filepath.Glob(filepath.Join("judgements", "*"))
+	if err != nil || len(dirs) == 0 {
+		t.Fatalf("judgements: %v, %v", dirs, err)
+	}
+	confirmed := 0
+	for _, dir := range dirs {
+		if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+			continue
+		}
+		name := filepath.Base(dir)
+		raw, err := os.ReadFile(filepath.Join(dir, "judgement.json"))
+		if err != nil {
+			t.Errorf("%s: %v", name, err)
+			continue
+		}
+		var j judgement
+		dec := json.NewDecoder(bytes.NewReader(raw))
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&j); err != nil {
+			t.Errorf("%s: %v", name, err)
+			continue
+		}
+		if j.Judgement != "" && j.Judgement != name {
+			t.Errorf("%s names the judgement %s", name, j.Judgement)
+		}
+		if j.Confirm == nil {
+			continue
+		}
+		runs, err := os.ReadFile(filepath.Join(dir, "runs.txt"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		sets := map[string]seed.Set{} // by the file's path from the root, from the header on the line after its SHA-256
+		lines := strings.Split(string(runs), "\n")
+		for i := 0; i+1 < len(lines); i++ {
+			if fields := strings.Fields(lines[i]); len(fields) == 2 && !strings.HasPrefix(lines[i], "#") && isSHA256(fields[0]) {
+				var h struct {
+					Set seed.Set `json:"set"`
+				}
+				if err := json.Unmarshal([]byte(lines[i+1]), &h); err != nil {
+					t.Fatalf("%s, runs.txt, %s: %v", name, fields[1], err)
+				}
+				sets[filepath.Clean(fields[1])] = h.Set
+			}
+		}
+		want, err := seed.Confirmation(name)
+		if err != nil {
+			t.Errorf("%s has a confirmation and no held-out set: %v", name, err)
+			continue
+		}
+		for _, file := range []string{j.Confirm.Base, j.Confirm.Candidate} {
+			if got, ok := sets[filepath.Clean(filepath.Join(dir, file))]; !ok || got != want {
+				t.Errorf("%s: the confirmation's %s ran on %v, and the judgement's set is %v", name, file, got, want)
+			}
+		}
+		confirmed++
+	}
+	if confirmed == 0 {
+		t.Error("no judgement in judgements/ has a confirmation")
 	}
 }
 
@@ -385,4 +469,10 @@ func relabel(t *testing.T, from, to string, libraries map[string]string) {
 	if err := os.WriteFile(to, append(append(first, '\n'), rest...), 0o600); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// isSHA256 tells whether a word is a SHA-256 in hex, as sha256sum writes it.
+func isSHA256(s string) bool {
+	b, err := hex.DecodeString(s)
+	return err == nil && len(b) == sha256.Size
 }

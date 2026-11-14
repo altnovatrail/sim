@@ -206,6 +206,7 @@ func TestConfirm(t *testing.T) {
 	}{{betterSide, "confirmed"}, {baseSide, "not confirmed"}} {
 		in := input(Model, Candidate{Name: "better", File: file("engine", seed.Working, betterSide, false)})
 		in.Confirm = &Confirm{Base: file("engine", held, baseSide, false), Candidate: file("engine", held, c.s, false)}
+		in.Judgement = "model-2"
 		r, err := Judge(in)
 		if err != nil {
 			t.Fatal(err)
@@ -346,6 +347,7 @@ func TestRefuses(t *testing.T) {
 		t.Errorf("a confirmation without its runs: %v", err)
 	}
 	in.Confirm = &Confirm{Base: good, Candidate: good}
+	in.Judgement = "model-2"
 	if _, err := Judge(in); !errors.Is(err, ErrCriterion) {
 		t.Errorf("a confirmation on the working learners: %v", err)
 	}
@@ -356,18 +358,59 @@ func TestRefuses(t *testing.T) {
 	same := input(Model, Candidate{Name: "x", File: other})
 	same.Base = file("engine", held, baseSide, false)
 	same.Confirm = &Confirm{Base: same.Base, Candidate: other}
+	same.Judgement = "model-2"
 	if _, err := Judge(same); !errors.Is(err, ErrCriterion) {
 		t.Errorf("a confirmation on the learners of the choice: %v", err)
 	}
 	conf := input(Model, Candidate{Name: "better", File: file("engine", seed.Working, betterSide, false)})
 	conf.Confirm = &Confirm{Base: file("engine", held, baseSide, false), Candidate: file("engine", seed.Working, betterSide, false)}
+	conf.Judgement = "model-2"
 	if _, err := Judge(conf); !errors.Is(err, ErrCriterion) {
 		t.Errorf("a confirmation whose candidate ran on other learners: %v", err)
 	}
 	theirs := input(Engine, Candidate{Name: "x", File: good, Group: "corridor"})
 	theirs.Confirm = &Confirm{Base: other, Candidate: other}
-	if _, err := Judge(theirs); !errors.Is(err, ErrCriterion) || !strings.Contains(err.Error(), "of the criterion engine") {
+	theirs.Judgement = "engine-2"
+	if _, err := Judge(theirs); !errors.Is(err, ErrCriterion) || !strings.Contains(err.Error(), "of the judgement model-2, not of engine-2") {
 		t.Errorf("a confirmation of the engine on the model's held-out learners: %v", err)
+	}
+	// A confirmation runs only on its judgement's own held-out set: not on the set kept for another
+	// round, nor on one another judgement has looked at, nor without the judgement's name (R52 in
+	// docs/decisions.md).
+	set := func(experiment string) seed.Set {
+		s, err := seed.Named(experiment)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+	for name, c := range map[string]struct {
+		criterion, judgement, set string
+		want                      string // a part of the refusal; empty, the judgement goes on
+	}{
+		"its own set":                                  {Engine, "engine-lesson-1", "held-out-engine-lesson-1", ""},
+		"the set kept for another round":               {Engine, "engine-lesson-1", "held-out-engine-1", "the held-out learners of the judgement engine-2"},
+		"a set another judgement looked at":            {Model, "model-3", "held-out-model-1", "the held-out learners of the judgement model-2"},
+		"another judgement's set, for one with no row": {Model, "model-3", "held-out-engine-lesson-1", "the judgement engine-lesson-1, not of model-3"},
+		"no judgement named":                           {Engine, "", "held-out-engine-lesson-1", "needs the name of its judgement"},
+		"a judgement of another criterion":             {Model, "engine-lesson-1", "held-out-engine-lesson-1", "not of the criterion model"},
+		"a round with no confirmation":                 {Engine, "engine-1", "held-out-engine-1", "the judgement engine-2, not of engine-1"},
+	} {
+		in := input(c.criterion, Candidate{Name: "x", File: good})
+		in.Judgement = c.judgement
+		in.Confirm = &Confirm{Base: file("engine", set(c.set), baseSide, false), Candidate: file("engine", set(c.set), betterSide, false)}
+		_, err := Judge(in)
+		if c.want == "" && err != nil || c.want != "" && (!errors.Is(err, ErrCriterion) || !strings.Contains(err.Error(), c.want)) {
+			t.Errorf("%s: %v, want %q", name, err, c.want)
+		}
+	}
+	// A judgement the table has no row for, on a held-out set no row names, is refused for the row.
+	unrecorded := input(Model, Candidate{Name: "x", File: good})
+	unrecorded.Judgement = "model-3"
+	unknown := seed.Set{Seed: 1, Experiment: "held-out-model-2"}
+	unrecorded.Confirm = &Confirm{Base: file("engine", unknown, baseSide, false), Candidate: file("engine", unknown, betterSide, false)}
+	if _, err := Judge(unrecorded); !errors.Is(err, ErrCriterion) || !strings.Contains(err.Error(), "the judgement model-3 has no held-out set") || !errors.Is(err, seed.ErrNoConfirmation) {
+		t.Errorf("a judgement with no row: %v", err)
 	}
 	// With no path fixed, or none to read, there is nothing to score by.
 	fixed = func() (*Paths, error) { return &Paths{}, nil }
@@ -416,6 +459,7 @@ func TestLibraries(t *testing.T) {
 		"the chosen on its held-out learners on another commit": {func() Input {
 			in := input(Model, Candidate{Name: "x", File: on(seed.Working, byCommits)})
 			in.Confirm = &Confirm{Base: file("engine", held, baseSide, false), Candidate: on(held, map[string]string{engine: foreign})}
+			in.Judgement = "model-2"
 			return in
 		}, "held-out learners, ran on " + engine},
 		"a base on other libraries than the paths": {func() Input {
@@ -426,6 +470,7 @@ func TestLibraries(t *testing.T) {
 		"a confirmation's base on other libraries than the paths": {func() Input {
 			in := input(Model, Candidate{Name: "x", File: on(seed.Working, byCommits)})
 			in.Confirm = &Confirm{Base: on(held, map[string]string{model: "v1.3.0"}), Candidate: on(held, byCommits)}
+			in.Judgement = "model-2"
 			return in
 		}, "the paths were read on"},
 		"a base off the tag of the gate file": {func() Input {
@@ -598,6 +643,7 @@ func TestReport(t *testing.T) {
 		Candidate{Name: "worse", File: file("engine", seed.Working, worseSide, false)},
 	)
 	in.Confirm = &Confirm{Base: file("engine", held, baseSide, false), Candidate: file("engine", held, betterSide, false)}
+	in.Judgement = "model-2"
 	r, err := Judge(in)
 	if err != nil {
 		t.Fatal(err)
@@ -606,7 +652,7 @@ func TestReport(t *testing.T) {
 	if err := r.Write(&b); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"a rough look", "novatrail/olympiad-math", "No graph", "### better", "### worse", "fails no worse", "Equal to the best: better, same; the simplest of them would be chosen by a decisive run.", "confirmation", "A rough look, which decides nothing: chosen and confirmed: better"} {
+	for _, want := range []string{"a rough look", "novatrail/olympiad-math", "No graph", "### better", "### worse", "fails no worse", "Equal to the best: better, same; the simplest of them would be chosen by a decisive run.", "The confirmation on held-out-model-1, the held-out learners of the judgement model-2:", "A rough look, which decides nothing: chosen and confirmed: better"} {
 		if !strings.Contains(b.String(), want) {
 			t.Errorf("the report does not say %q:\n%s", want, b.String())
 		}

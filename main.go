@@ -299,11 +299,13 @@ func compareCommand(args []string, stdout, stderr io.Writer) error {
 	return bench.Compare(bench.Side{File: files[0], Oracle: *aOracle}, bench.Side{File: files[1], Oracle: *bOracle}, stdout)
 }
 
-// judgement is a judgement file: the criterion, the files of results of the base and of each
+// judgement is a judgement file: the name of the judgement, as its folder judgements/<name>/, which
+// a confirmation needs (R52), the criterion, the files of results of the base and of each
 // candidate — with the graphs it claims to give the base's runs on, equal_on (R49) —, and of the
 // confirmation when it has run; a path is relative to the judgement file. The paths of the score
 // are those the criterion holds fixed, so no ceiling runs beside them (R28).
 type judgement struct {
+	Judgement  string `json:"judgement"`
 	Criterion  string `json:"criterion"`
 	Base       string `json:"base"`
 	Candidates []struct {
@@ -365,6 +367,11 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 		return fmt.Errorf("%s: %w", fs.Arg(0), err)
 	}
 	dir := filepath.Dir(fs.Arg(0))
+	// A judgement file in its judgement's folder, judgements/<name>/, names that judgement: a name
+	// left over from a copy would hold the confirmation to another judgement's set (R52).
+	if abs, err := filepath.Abs(dir); err == nil && filepath.Base(filepath.Dir(abs)) == "judgements" && j.Judgement != filepath.Base(abs) && j.Judgement != "" {
+		return fmt.Errorf("%s: the judgement file names the judgement %s, and lies in the folder of %s", fs.Arg(0), j.Judgement, filepath.Base(abs))
+	}
 	read := func(path string) (*bench.File, error) {
 		if path == "" {
 			return nil, nil
@@ -383,7 +390,7 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 		}
 		return file, nil
 	}
-	in := criterion.Input{Criterion: j.Criterion}
+	in := criterion.Input{Judgement: j.Judgement, Criterion: j.Criterion}
 	if in.Pins, err = pins(gateJSON); err != nil {
 		return fmt.Errorf("the embedded gate file: %w", err)
 	}
