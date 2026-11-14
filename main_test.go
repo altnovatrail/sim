@@ -106,8 +106,10 @@ func TestCommands(t *testing.T) {
 		t.Errorf("sim run with the default rule = %d", got)
 	}
 	stdout.Reset()
-	if got := run([]string{"run", "-learners", "1", "-populations", "all", "-out", filepath.Join(dir, "missing", "x")}, &stdout, &stderr); got != 1 {
-		t.Errorf("sim run into a folder that is not there = %d", got)
+	for _, rule := range []string{"engine", "ceiling"} {
+		if got := run([]string{"run", "-learners", "1", "-populations", "all", "-rule", rule, "-out", filepath.Join(dir, "missing", "x")}, &stdout, &stderr); got != 1 {
+			t.Errorf("sim run under %s into a folder that is not there = %d", rule, got)
+		}
 	}
 	for _, c := range []struct {
 		args   []string
@@ -469,10 +471,4 @@ func relabel(t *testing.T, from, to string, libraries map[string]string) {
 	if err := os.WriteFile(to, append(append(first, '\n'), rest...), 0o600); err != nil {
 		t.Fatal(err)
 	}
-}
-
-// isSHA256 tells whether a word is a SHA-256 in hex, as sha256sum writes it.
-func isSHA256(s string) bool {
-	b, err := hex.DecodeString(s)
-	return err == nil && len(b) == sha256.Size
 }

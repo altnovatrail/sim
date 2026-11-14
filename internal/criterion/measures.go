@@ -51,6 +51,9 @@ var defs = map[string]def{
 	"M9.hasFalse":     {plain, 0.02, true},
 	"M9.notFalse":     {plain, 0.02, true},
 	"M10.retention":   {plain, 0.002, false}, // Brier, as M2's
+	"M11.answers":     {plain, 1, false},     // the constraint fair alone reads M11 (R55)
+	"M11.same":        {shortfall, 0.01, false},
+	"M11.band":        {plain, 0.01, false},
 	"E1.corridor":     {shortfall, 0.01, false},
 	"E2.stuck":        {plain, 0.01, true},
 	"E2.nothing":      {plain, 0.01, true},
@@ -69,7 +72,7 @@ const resolution = 4.3
 
 // directed gives the numbers of names, each turned by its direction.
 func directed(names []string) []measure.Number {
-	all := slices.Concat(measure.ModelNumbers(), measure.EngineNumbers())
+	all := slices.Concat(measure.ModelNumbers(), measure.EngineNumbers(), measure.FairNumbers())
 	var out []measure.Number
 	for _, name := range names {
 		i := slices.IndexFunc(all, func(n measure.Number) bool { return n.Name == name })

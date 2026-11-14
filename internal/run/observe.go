@@ -16,6 +16,7 @@ type Obs struct {
 	At      int64     // when the attempt was given
 	Repeat  bool      // the task, not a template, had its solution seen before: a repeat (M8)
 	Answers int       // the learner's first answers of items with a verdict before the attempt
+	Band    int32     // the place of the band of the attempt's task (M11)
 	Items   []ItemObs // beside the attempt's items
 	Before  []SkillObs
 	After   []SkillObs
@@ -116,7 +117,7 @@ func (r *Run) observeBefore(m *pack.Module, t *pack.Task, at int64, seen bool, r
 	} else if ro, err = r.readAt(at); err != nil {
 		return nil, err
 	}
-	o := &Obs{At: at, Repeat: seen && !t.Candidate.Task.Template, Answers: r.rec.Answers}
+	o := &Obs{At: at, Repeat: seen && !t.Candidate.Task.Template, Answers: r.rec.Answers, Band: t.Candidate.Task.Band.Place}
 	if o.Before, err = r.skillsOf(ro, m, at); err != nil {
 		return nil, err
 	}

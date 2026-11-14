@@ -111,6 +111,14 @@ type Assumptions struct {
 	// LeaveChance is the chance that an attempt of a task with a rubric is left, closed "left", one
 	// fraction of the place attempts each such attempt (E-leave).
 	LeaveChance float64
+	// Grade fixes the learner's grade, the one the model starts by, among those its modules name, in
+	// place of the grade drawn from params; the draw is still made, so that params goes on in its
+	// order. Zero leaves the grade drawn (D-).
+	Grade int32
+	// TruthGrade is the grade whose start band shifts the truth's module level when it is not the
+	// learner's own: one truth under several grades, the model starting each by its own (D-). Zero
+	// shifts the level by the learner's own start band.
+	TruthGrade int32
 }
 
 // Base gives the assumptions of the base population: the model's own, but the author's miss

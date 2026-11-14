@@ -6,6 +6,7 @@ import (
 	"slices"
 	"testing"
 
+	learnermodel "github.com/altnovatrail/learner-model"
 	"github.com/altnovatrail/learner-model/detmath"
 	"github.com/altnovatrail/sim/internal/pack"
 	"github.com/altnovatrail/sim/internal/seed"
@@ -628,6 +629,59 @@ func TestLessonsAndEssays(t *testing.T) {
 		}
 		if tk.Rubric != (at.Closure == ClosedLeft) {
 			t.Fatalf("%s: rubric %v, closed %v", tk.Candidate.Task.ID, tk.Rubric, at.Closure)
+		}
+	}
+}
+
+// D-: under a fixed grade the model starts by it, while the truth's level is shifted by the truth's
+// grade; on one unit the learner of each grade has one truth, its draws in their order, and the
+// grade the population fixes moves nothing else. A grade the modules do not name, or a grade on
+// modules with none, is refused.
+func TestFixedGrade(t *testing.T) {
+	ms, err := synthetic.Modules()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sheet, essays := ms[synthetic.Sheet], ms[synthetic.Essays]
+	fixed := func(grade, truth int32) Assumptions {
+		a := Base()
+		a.Grade, a.TruthGrade = grade, truth
+		return a
+	}
+	for n := range 20 {
+		ref, err := New(seed.Working, "D-grade3", n, []*pack.Module{sheet}, fixed(3, 3))
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := ref.modules[synthetic.Sheet]
+		// The params of a learner of a fixed grade: the grade drawn, then the level, as any.
+		p, _ := seed.Working.Place(ref.Unit, seed.Params)
+		p.Below(6)
+		if level := float64(2.5) + p.Normal(); r.Level != level || r.StartBand != 2 || r.TrueBand != 2 || r.Grade.Value != 3 || ref.Age != "under_13" {
+			t.Fatalf("grade 3: %+v, age %q, want the level %v", r, ref.Age, level)
+		}
+		for _, g := range []struct{ grade, band int32 }{{1, 1}, {5, 3}} {
+			l, err := New(seed.Working, "D-grade3", n, []*pack.Module{sheet}, fixed(g.grade, 3))
+			if err != nil {
+				t.Fatal(err)
+			}
+			m := l.modules[synthetic.Sheet]
+			if m.Grade != (learnermodel.Grade{Value: g.grade, Known: true}) || m.StartBand != g.band || m.TrueBand != 2 || m.Level != r.Level || l.Age != ref.Age {
+				t.Fatalf("grade %d: %+v, against the reference %+v", g.grade, m, r)
+			}
+			for id, s := range l.skills {
+				if s.Offset != ref.skills[id].Offset {
+					t.Fatalf("grade %d: the offset of %s %v, the reference's %v", g.grade, id, s.Offset, ref.skills[id].Offset)
+				}
+			}
+		}
+	}
+	for _, c := range []struct {
+		a  Assumptions
+		on *pack.Module
+	}{{fixed(7, 0), sheet}, {fixed(0, 7), sheet}, {fixed(3, 0), essays}, {fixed(0, 3), essays}} {
+		if _, err := New(seed.Working, "X", 0, []*pack.Module{c.on}, c.a); !errors.Is(err, ErrAssumptions) {
+			t.Errorf("grade %d, the truth's %d on %s: %v", c.a.Grade, c.a.TruthGrade, c.on.ID, err)
 		}
 	}
 }
