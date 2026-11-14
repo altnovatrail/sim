@@ -162,6 +162,8 @@ Read 2026-11-14 for T49: the release [altnovatrail/learner-model](https://github
 
 The branch `main`, commit d2d7ccd of 2026-11-14, 00:07 UTC — "Merge pull request #73 from altnovatrail/t51-gate". `.github/workflows/ci.yml` — `SIM_TAG: v0.1.14`, `SIM_COMMIT: 9c8f782189a4d1d8c2fef59d496f324c03e3cb82`. RUN.md, table 1 — «Текущий эпик — E7. Третий круг кандидатов модели», T51 «Гейт на теге `sim` с базой на `v0.1.8`» done, T52 «Разведка третьего круга» not, nor «| [ ] | T53 | Кандидаты — черновые pull request | Claude, проверяю я | да | T52 |» and «| [ ] | T54 | Суд `model-3` и выпуск выбранного | я + Claude | — | T53; суд `model-3` RUN.md `sim` (В50) |»; table 3, В50 — «„В реестр spec“ — суд `model-3` и порядок кругов на `sim`. Задачи под суд `model-3` у `sim` нет», «тег с новым шагом посреди круга модели сдвинул бы все прогоны, и разведку пришлось бы повторить», with the recommendation «а: круг модели готов первым — разведке не нужно ничего, кроме тега, — а кандидатов `engine-2` ещё нет, и шага закрепления в уроке в `sim` тоже». No open pull requests.
 
+Read again 2026-11-14, 15:30 UTC, for T60 (`git ls-remote`, `gh release list`, `gh pr list`, RUN.md at `main`): `main` is still d2d7ccd, and `v0.1.9` is still the latest release. RUN.md, table 1, the same — «| [ ] | T52 | Разведка третьего круга | я + Claude | да | T51 |», and T53 and T54 not done. No pull request is open; the branch `e7-deploy` of the closed pull request #71 is left, 3 commits ahead of `main` and 9 behind.
+
 ## 4. `engine`
 
 ### 4.1. Commit 08bc48a, T02 and T03
@@ -219,6 +221,8 @@ Read 2026-11-14 for T58 (R53): the repository [altnovatrail/engine](https://gith
 - `refs/heads/e7-consolidation-in-lesson` is still `0e4680f0631e113bf91f54846a0a4b1322c76219`, and `refs/heads/main` still e0fdb3f. The commit has no check runs, and no pull request is open from the branch.
 - `docs/plan/E7.md`, T52, «Сделано» — «`just gate` на варианте красный только двумя полосами нулевой ширины — `E2.stuck` на `G2-half` олимпиадной, 0,016, и на `A-linked`, 0,008, — инварианты целы, `ErrRun` нет»; «грубый взгляд рецептом `sim` `v0.1.15`, 300 рабочих учеников на ячейку … «не хуже» не держит на трёх ячейках олимпиадной — `E2.stuck` на `G2-half` и `E4.given` на `G5` и `S-scale3.5`; `neutral` держит»; and of the review's fixes — «`just gate` после них дал те же 69 чисел до бита, а грубый взгляд шёл на коде до ревью».
 
+Read again 2026-11-14, 15:30 UTC, for T60 (`git ls-remote`, `gh release list`, `gh pr list`, RUN.md at `main` and at the branch): `refs/heads/e7-consolidation-in-lesson` is still 0e4680f and `main` still e0fdb3f, `v0.1.8` is still the latest release, and no pull request is open. RUN.md of the branch, table 1 — «| [ ] | T53 | Суд, выбор и релиз | я + Claude | да | T52; суд `sim` |»; table 2 — «| E5 | Второй круг коридора | Второй круг суда движка на нетронутом `held-out-engine-1` …», not laid out.
+
 ## 5. `.github`
 
 ### 5.1. Commit af40f94, T03
@@ -273,6 +277,15 @@ Read 2026-11-11 for T43 (R42): the releases [altnovatrail/modules](https://githu
 
 Read 2026-11-14 for T49: the repository [altnovatrail/modules](https://github.com/altnovatrail/modules), branch `main`, commit 8e36fbe of 02:22 UTC — "Merge pull request #102 from altnovatrail/t68-spec-v0.17.2". Its table 4 is in DEBT.md, and the row Д5 is open there — «Гейта `sim` в CI нет, и релизы выходят без него — от первого, `v0.1.0`, до `v0.2.5`», «Перевод `time` вышел в `sim` v0.1.9 …, новейший — v0.1.10 (2026-11-12): job ждёт только своей задачи».
 
+Read again 2026-11-14 for T60: `main` is the commit 6e4391f of 04:12 UTC — "Merge pull request #103 from altnovatrail/t69-check-board" —, and the row Д5 of its DEBT.md is still open — «Гейта `sim` в CI нет, и релизы выходят без него — от первого, `v0.1.0`, до `v0.2.5`».
+
+### 6.6. Releases v0.2.6 and v0.2.7, T60
+
+Read 2026-11-14 for T60: the releases [altnovatrail/modules](https://github.com/altnovatrail/modules) `v0.2.6` of 02:30 UTC and `v0.2.7` of 04:21 UTC (`gh release view`, `gh release download … -p module-index.json`).
+- The index of `v0.2.6` is byte for byte that of `v0.2.5`, SHA-256 `cebf23cf94456ef313ca00c97ca05db7fccb2575780f8dfd899623ea60aaec6a`; its notes — "T62: the samples page canvas v0.3.11 opens the eval set", "T62: two of the author's samples of grade-3-math", "T63: epic E8 done and archived", "Д5 and Д8: the gate of sim waits; the corridor of grade-3-math measured", "T64: move to spec v0.16.3 and rebuild the documents (R31)".
+- The index of `v0.2.7`, SHA-256 `6c46a1a902d96580c13ea75a37759ad7a2d043896c79d68116edc3851e02083a`, differs from it by one module alone — `"novatrail/check-board": {"0.1.0": {"module_format_version": "0.4", "package_digest": "sha256:28893a0f82709a2526d13950826ef8cb442608ad85d9c824f53a235122846f56", "release": "v0.2.7"}}`; the entries of `novatrail/english-essays` 0.2.0, `novatrail/grade-3-math` 0.3.0 and `novatrail/olympiad-math` 0.3.0 are the same. Its notes — "T69: the board module novatrail/check-board 0.1.0 (R33)".
+- R33 modules — "The module of the check board of `tutor` is `novatrail/check-board` 0.1.0 …: the eleven tasks of the board in its order, from the banks of `tutor` at `v0.1.35` …; three skills by the kinds of the banks and a fourth that is not assessed, 22 traps, one lesson of all eleven tasks and three synthetic samples. The explanation language is Russian, the audience `adult` alone, one band without grades".
+
 ## 7. `spec` and `module-kit`
 
 ### 7.1. The Go module `spec` v0.9.9: the generator
@@ -308,3 +321,9 @@ Read 2026-11-14 for the move to `spec` v0.17.3 (R51; T56 in [docs/plan/E7.md](pl
 - `just new-repo-draft sim go 3.9 v0.17.3`, on a clone of `spec` in a temporary directory: its `.devcontainer/` differs from `sim`'s by the name in the network alone, besides `sim`'s own comments (R11, R32); its `.claude/settings.json` and `AGENTS.md` are `sim`'s.
 - The key `entries` of the budgets is in no tag up to v0.17.3: `tools/docs-check/budgets.mjs` knows only `files`, `rule`, `entry`, `section`, `sections` and `rows`, and `spec`'s RUN.md at v0.17.3 holds T149 not done — «`tools/docs-check/budgets.mjs` — ключ `entries` в блоках `budgets.json` и в `docs-budgets.json`: предел записи по её номеру, `{"R18": 56}`». DEBT.md `spec`, Д236 — «`.github` и `sim` — своим переходом на тег с T149».
 - The rows of DEBT.md `spec` that name `sim` and are new since v0.16.3: Д236 and Д234 — «Догадка, не проверена: `~/.claude/plugins/known_marketplaces.json` на общем томе контейнеров держит один путь `novatrail` — `/workspaces/sim/spec/claude-plugins`, — а его видит только контейнер `sim`», a task of `spec`.
+
+### 7.7. `spec` v0.17.4 and v0.17.5, T60
+
+Read 2026-11-14 for T60, without a move (`gh release list`, `gh release verify`, `git -C spec diff v0.17.3 v0.17.5` after `git fetch --tags`): the releases [altnovatrail/spec](https://github.com/altnovatrail/spec) `v0.17.4` of 04:17 UTC, its tag on the commit 33149be — "Merge pull request #149 from altnovatrail/paper-mockup-home" —, and `v0.17.5` of 05:44 UTC on a14d383 — "Merge pull request #150 from altnovatrail/e12-tasks"; `gh release verify v0.17.5 -R altnovatrail/spec` — "Release v0.17.5 verified!".
+- Against v0.17.3 they change CLAUDE.md, COORDINATION.md, DEBT.md, RUN.md, `draft/README.md` and, of `docs/`, architecture, concepts, decisions, product, repositories, sources and the new `plan/E12.md`: the epic E12 of `spec`, «the app's interface by the mockup», the decision `R148`, the term "interface mockup" and the question `Т-41`, sign-in through Apple. These numbers are `spec`'s at v0.17.5, not at v0.17.3, which `spec/` holds, so they stand in code. `RULES.md`, `format/`, `types/`, `go.mod`, `tools/`, `repo-template/`, `.devcontainer/`, `.claude/` and `justfile` are the same, and of architecture the card 3.9 is the same.
+- T149 is still not done in RUN.md at v0.17.5 — «`tools/docs-check/budgets.mjs` — ключ `entries` в блоках `budgets.json` и в `docs-budgets.json`», and `tools/` is the same as at v0.17.3, so the key `entries` is in no tag up to v0.17.5.
