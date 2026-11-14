@@ -110,7 +110,7 @@ func TestEvaluate(t *testing.T) {
 }
 
 // Every evaluation of evaluations/ has its evaluation file, which names its folder, a run by its
-// SHA-256 and a date, and its report (R55). None is there before T64, and then nothing is held.
+// SHA-256 and a date, and its report (R55); the first is fairness-1, T64's evaluation of the base (R58).
 func TestEvaluations(t *testing.T) {
 	dirs, err := filepath.Glob(filepath.Join("evaluations", "*"))
 	if err != nil {
