@@ -2444,3 +2444,5 @@ Where it is written: RUN.md, T58 ([docs/plan/E7.md](plan/E7.md)), and table 3, �
 - a refusal of cells of fairness on a graph outside their population's, as `sim evaluate` refuses one with no published package — `sim run` gives the cells of a population only on its graphs, olympiad maths for `D-`, and the check names the cell it does not find.
 
 — *Consequence:* the 2026-11-14 amendments to R25 and R55. The merge releases a tag of `sim` (R29), the pin of the judgements `model-3` and `engine-2` (R54, R55). Where it is written: RUN.md, T63; [architecture.md](architecture.md), the status, sections 3 and 3.6; README, "Judging a candidate"; `internal/criterion/`.
+
+— *Amendment 2026-11-14 (T63):* the tag is `v0.1.19`, released on the merge commit 7553035 of pull request #69 and accepted by `gh release verify`; rows В16 and В20 of table 3 of RUN.md name it.
