@@ -67,9 +67,17 @@ func read(base, candidate *bench.File, paths *Paths) ([]cellData, error) {
 	return out, nil
 }
 
-// judge judges one candidate against the base on its criterion; a pair holds the constraints of
-// both, once each, and is scored by the library whose goal it names, the other's score beside.
-func judge(criterion string, base *bench.File, paths *Paths, c Candidate) (Verdict, error) {
+// judge judges one candidate against the base on its criterion, beside the base's cells of fairness
+// by the grade; a pair holds the constraints of both, once each, and is scored by the library whose
+// goal it names, the other's score beside.
+func judge(criterion string, base *bench.File, baseFair []bench.FairCell, paths *Paths, c Candidate) (Verdict, error) {
+	candFair, err := bench.Fair(c.File)
+	if err != nil {
+		return Verdict{}, fmt.Errorf("%w: candidate %s: %w", ErrCriterion, c.Name, err)
+	}
+	if a, b := fairCells(baseFair), fairCells(candFair); !slices.Equal(a, b) {
+		return Verdict{}, fmt.Errorf("%w: candidate %s has the cells of fairness by the grade [%s], and the base [%s]: both runs need the populations D-, which just decisive and just rough run (R55)", ErrCriterion, c.Name, strings.Join(b, ", "), strings.Join(a, ", "))
+	}
 	cells, err := read(base, c.File, paths)
 	if err != nil {
 		return Verdict{}, fmt.Errorf("%w: candidate %s: %w", ErrCriterion, c.Name, err)
@@ -100,6 +108,11 @@ func judge(criterion string, base *bench.File, paths *Paths, c Candidate) (Verdi
 		}
 	}
 	v.Checks = append(v.Checks, neutral(cells, c.EqualOn)...)
+	fc, err := fair(baseFair, candFair)
+	if err != nil {
+		return Verdict{}, fmt.Errorf("%w: candidate %s: %w", ErrCriterion, c.Name, err)
+	}
+	v.Checks = append(v.Checks, fc...)
 	v.Holds = !slices.ContainsFunc(v.Checks, func(k Check) bool { return !k.Met && !k.Skipped && !k.NoGraph })
 	if v.Note, err = note(cells); err != nil {
 		return Verdict{}, fmt.Errorf("%w: candidate %s: %w", ErrCriterion, c.Name, err)
@@ -157,22 +170,71 @@ func notWorseChecks(cells []cellData, nws []notWorse) []Check {
 				continue
 			}
 			for _, name := range nw.numbers {
-				p := d.pair[name]
-				k := Check{Kind: "no worse", Cell: d.cell, Number: name, NoGraph: d.noGraph}
-				switch {
-				case !p.A.Read:
-					k.Skipped, k.Detail = true, "the base reads none"
-				case !p.B.Read || !p.Diff.Read:
-					k.Detail = "the candidate's run does not read it"
-				default:
-					worst, tol := -p.Diff.Low, max(defs[name].tolerance, float64(resolution*p.Diff.SE))
-					k.Met = worst <= tol
-					k.Detail = fmt.Sprintf("worse by at most %.4g, the tolerance %.4g", worst, tol)
-				}
-				out = append(out, k)
+				out = append(out, notWorseCheck(Check{Kind: "no worse", Cell: d.cell, Number: name, NoGraph: d.noGraph}, d.pair[name]))
 			}
 		}
 	}
+	return out
+}
+
+// notWorseCheck completes a check of "no worse" of one number on one cell by its pair: a is the base
+// and b the candidate, both turned by the number's direction.
+func notWorseCheck(k Check, p measure.Pair) Check {
+	switch {
+	case !p.A.Read:
+		k.Skipped, k.Detail = true, "the base reads none"
+	case !p.B.Read || !p.Diff.Read:
+		k.Detail = "the candidate's run does not read it"
+	default:
+		worst, tol := -p.Diff.Low, max(defs[k.Number].tolerance, float64(resolution*p.Diff.SE))
+		k.Met = worst <= tol
+		k.Detail = fmt.Sprintf("worse by at most %.4g, the tolerance %.4g", worst, tol)
+	}
+	return k
+}
+
+// fair gives the constraint of fairness by the grade, one in the criteria of the model and of the
+// engine and in a pair (R55 in docs/decisions.md): on the cell of each grade but the reference's, the
+// pairs of the grade and the reference of the candidate against those of the base, learner by
+// learner, and each number of M11 — M11.same by its shortfall, M11.answers and M11.band as they are —
+// "no worse", as on any cell. The pairs read as a cell of the reference's name, so that both sides
+// and every grade resample the same learners, as the evaluation does. A grade whose cell the runs do
+// not have fails each number: olympiad maths is published, and a check never measured does not hold.
+// The two sides have the same cells of fairness, and read has held their learners to one another.
+func fair(base, candidate []bench.FairCell) ([]Check, error) {
+	var ns []string
+	for _, n := range measure.FairNumbers() {
+		ns = append(ns, n.Name)
+	}
+	numbers := directed(ns)
+	var out []Check
+	for _, g := range grades(base) {
+		cell, a := g.cell, g.pairs
+		if a == nil {
+			for _, name := range ns {
+				out = append(out, Check{Kind: "fair", Cell: cell, Number: name, Detail: "the runs have no cell " + cell + " beside its reference " + population.Reference})
+			}
+			continue
+		}
+		b := fairCell(candidate, cell)
+		ps, err := measure.ReadPair(a.Reference, a.Graph, a.Pairs, b.Pairs, numbers)
+		if err != nil {
+			return nil, err
+		}
+		for k, name := range ns {
+			out = append(out, notWorseCheck(Check{Kind: "fair", Cell: cell, Number: name}, ps[k]))
+		}
+	}
+	return out, nil
+}
+
+// fairCells names the cells of fairness by the grade read in pairs, sorted.
+func fairCells(cells []bench.FairCell) []string {
+	out := []string{}
+	for _, c := range cells {
+		out = append(out, c.Cell)
+	}
+	slices.Sort(out)
 	return out
 }
 

@@ -81,31 +81,55 @@ func Evaluate(e Evaluation) (*Fairness, error) {
 		return nil, fmt.Errorf("%w: %w", ErrCriterion, err)
 	}
 	f := &Fairness{Evaluation: e, Holds: true}
+	for _, g := range grades(cells) {
+		cell, c := g.cell, g.pairs
+		switch {
+		case c == nil:
+			return nil, fmt.Errorf("%w: the run has no cell %s, nor its pairs with %s: a run without the cells of fairness evaluates nothing", ErrCriterion, cell, population.Reference)
+		case noGraph(c.Graph):
+			return nil, fmt.Errorf("%w: cell %s is on a graph with no published package", ErrCriterion, cell)
+		case len(c.Pairs) < decisive:
+			return nil, fmt.Errorf("%w: cell %s has %d learners, and an evaluation reads a decisive run of %d", ErrCriterion, cell, len(c.Pairs), decisive)
+		}
+		vs := measure.Read(c.Reference, c.Graph, c.Pairs, measure.FairNumbers())
+		d := Grade{Cell: c.Cell, Reference: c.Reference, Answers: vs[0], Same: vs[1], Band: vs[2], Learners: len(c.Pairs)}
+		d.SameHolds = d.Same.Read && d.Same.Low >= sameFloor
+		d.BandHolds = d.Band.Read && d.Band.High <= bandCeiling
+		f.Holds = f.Holds && d.SameHolds && d.BandHolds
+		f.Grades = append(f.Grades, d)
+	}
+	return f, nil
+}
+
+// gradeCell is the cell of a grade that the evaluation and the constraint fair read: its name, and its
+// pairs, nil when a file has none.
+type gradeCell struct {
+	cell  string
+	pairs *bench.FairCell
+}
+
+// grades gives the cells of fairness by the grade that the evaluation and the constraint fair read:
+// the cell of each grade but the reference's on each of its graphs, with its pairs among cells (R55).
+func grades(cells []bench.FairCell) []gradeCell {
+	var out []gradeCell
 	for _, p := range population.Fairness {
 		if p.Name == p.Reference {
 			continue
 		}
 		for _, g := range p.Graphs {
 			cell := p.Name + "/" + strings.Join(g, "+")
-			i := slices.IndexFunc(cells, func(c bench.FairCell) bool { return c.Cell == cell })
-			switch {
-			case i < 0:
-				return nil, fmt.Errorf("%w: the run has no cell %s, nor its pairs with %s: a run without the cells of fairness evaluates nothing", ErrCriterion, cell, p.Reference)
-			case noGraph(cells[i].Graph):
-				return nil, fmt.Errorf("%w: cell %s is on a graph with no published package", ErrCriterion, cell)
-			case len(cells[i].Pairs) < decisive:
-				return nil, fmt.Errorf("%w: cell %s has %d learners, and an evaluation reads a decisive run of %d", ErrCriterion, cell, len(cells[i].Pairs), decisive)
-			}
-			c := cells[i]
-			vs := measure.Read(c.Reference, c.Graph, c.Pairs, measure.FairNumbers())
-			d := Grade{Cell: c.Cell, Reference: c.Reference, Answers: vs[0], Same: vs[1], Band: vs[2], Learners: len(c.Pairs)}
-			d.SameHolds = d.Same.Read && d.Same.Low >= sameFloor
-			d.BandHolds = d.Band.Read && d.Band.High <= bandCeiling
-			f.Holds = f.Holds && d.SameHolds && d.BandHolds
-			f.Grades = append(f.Grades, d)
+			out = append(out, gradeCell{cell, fairCell(cells, cell)})
 		}
 	}
-	return f, nil
+	return out
+}
+
+// fairCell gives the pairs of a cell of fairness by its name, nil when cells have none.
+func fairCell(cells []bench.FairCell, name string) *bench.FairCell {
+	if i := slices.IndexFunc(cells, func(c bench.FairCell) bool { return c.Cell == name }); i >= 0 {
+		return &cells[i]
+	}
+	return nil
 }
 
 // Write writes the report of the evaluation in Markdown: the criterion, the base and the run, each

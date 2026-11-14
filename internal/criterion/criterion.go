@@ -108,7 +108,7 @@ func (p Pin) String() string {
 
 // Check is one check of a candidate: a constraint on a cell and a number, or on its run.
 type Check struct {
-	Kind    string // invariants, floor, no worse, goal, neutral
+	Kind    string // invariants, floor, no worse, goal, neutral, fair
 	Cell    string
 	Number  string
 	Met     bool
@@ -204,10 +204,14 @@ func decide(in Input) (*Report, error) {
 	}
 	r := &Report{Judgement: in.Judgement, Criterion: in.Criterion, Learners: fewest(runs)}
 	r.Decisive = r.Learners >= Decisive
+	baseFair, err := bench.Fair(in.Base)
+	if err != nil {
+		return nil, fmt.Errorf("%w: the base: %w", ErrCriterion, err)
+	}
 	var scores [][]float64
 	var eligible []int
 	for k, c := range in.Candidates {
-		v, err := judge(in.Criterion, in.Base, paths, c)
+		v, err := judge(in.Criterion, in.Base, baseFair, paths, c)
 		if err != nil {
 			return nil, err
 		}
@@ -262,7 +266,11 @@ func decide(in Input) (*Report, error) {
 	}
 	c := in.Candidates[chosen]
 	c.File = in.Confirm.Candidate
-	v, err := judge(in.Criterion, in.Confirm.Base, paths, c)
+	confirmFair, err := bench.Fair(in.Confirm.Base)
+	if err != nil {
+		return nil, fmt.Errorf("%w: the confirmation's base: %w", ErrCriterion, err)
+	}
+	v, err := judge(in.Criterion, in.Confirm.Base, confirmFair, paths, c)
 	if err != nil {
 		return nil, err
 	}
