@@ -1,0 +1,8 @@
+{
+  "criterion": "engine",
+  "judgement": "engine-lesson-1",
+  "base": "../../runs/base-t55.jsonl",
+  "candidates": [
+    {"name": "E7", "file": "../../runs/engine-lesson-1-e7.jsonl", "group": "corridor", "constants": 0, "new_field": false, "distance": 1, "equal_on": ["novatrail/grade-3-math", "novatrail/english-essays"]}
+  ]
+}

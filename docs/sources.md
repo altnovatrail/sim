@@ -213,6 +213,12 @@ Read 2026-11-14 for the laying out of E7 (R50): the repository [altnovatrail/eng
 - RUN.md, table 1 — «| [x] | T52 | Вариант правила | …» and «| [ ] | T53 | Суд, выбор и релиз | я + Claude | да | T52; суд `sim` |»; «Решено автором (2026-11-12)» — «эпик идёт в одной ветке, `e7-consolidation-in-lesson`, без других веток и pull request; … вариант T52–T53 выходит вторым релизом».
 - `docs/plan/E7.md`, T52, «Открыто» — «кандидат суда `sim` — полный SHA этого коммита. Строка файла суда — `{"name": "E7", "group": "corridor", "constants": 0, "new_field": false, "distance": 1, "equal_on": ["novatrail/grade-3-math", "novatrail/english-essays"]}`» and «риск T53: по грубому взгляду выигрыша нет, и вероятен выход»; «Сделано» — the rough look on `sim` `v0.1.15`, 300 working learners a cell: «вариант не держит всех ограничений и не лучше базы. Группа «Коридор» +0,00002 [−0,0019; +0,0020], около нуля; «не хуже» не держит на трёх ячейках олимпиадной …; `neutral` держит».
 
+### 4.8. Commit 0e4680f again, T58
+
+Read 2026-11-14 for T58 (R53): the repository [altnovatrail/engine](https://github.com/altnovatrail/engine) (`git ls-remote`, `gh api …/commits/0e4680f…/check-runs`, and `docs/plan/E7.md` at the branch `e7-consolidation-in-lesson`).
+- `refs/heads/e7-consolidation-in-lesson` is still `0e4680f0631e113bf91f54846a0a4b1322c76219`, and `refs/heads/main` still e0fdb3f. The commit has no check runs, and no pull request is open from the branch.
+- `docs/plan/E7.md`, T52, «Сделано» — «`just gate` на варианте красный только двумя полосами нулевой ширины — `E2.stuck` на `G2-half` олимпиадной, 0,016, и на `A-linked`, 0,008, — инварианты целы, `ErrRun` нет»; «грубый взгляд рецептом `sim` `v0.1.15`, 300 рабочих учеников на ячейку … «не хуже» не держит на трёх ячейках олимпиадной — `E2.stuck` на `G2-half` и `E4.given` на `G5` и `S-scale3.5`; `neutral` держит»; and of the review's fixes — «`just gate` после них дал те же 69 чисел до бита, а грубый взгляд шёл на коде до ревью».
+
 ## 5. `.github`
 
 ### 5.1. Commit af40f94, T03
