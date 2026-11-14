@@ -67,6 +67,9 @@ type Line struct {
 	// Breaches are the breaches of the invariants I1–I4 on the run, under the engine; the ceiling of
 	// the engine is no branch of engine, and its runs are not checked (R25 in docs/decisions.md).
 	Breaches []string `json:"breaches,omitempty"`
+	// Fair is the trace of M11 of the learner's run, under the engine, in a cell of fairness by the grade
+	// alone: no other line has it, and theirs stay the bytes they were (R55).
+	Fair *measure.Trace `json:"fair,omitempty"`
 }
 
 // Config is what to run: the populations by name, the learners of each graph, the set and the rule;
@@ -187,6 +190,18 @@ func modules(graph []string, packages []Package) ([]*pack.Module, error) {
 	return out, nil
 }
 
+// Populations names every population a rule runs: under the ceiling of the engine, none of fairness
+// by the grade, since M11 has no path and the ceiling's file stays as it was (R55).
+func Populations(rule run.Rule) []string {
+	var out []string
+	for _, p := range population.All() {
+		if !p.Fair() || rule != run.Ceiling {
+			out = append(out, p.Name)
+		}
+	}
+	return out
+}
+
 // Run runs the cells of a config, every graph of every population — with packages in place of the
 // pinned ones, the graphs they cover —, and writes the file of results to w: the header, then one
 // line a learner of its part, in the order of the populations, their graphs and the learners.
@@ -211,6 +226,9 @@ func Run(c Config, w io.Writer) error {
 		}
 		if slices.Contains(c.Populations[:k], name) {
 			return fmt.Errorf("%w: population %s comes twice", ErrBench, name)
+		}
+		if p.Fair() && c.Rule == run.Ceiling {
+			return fmt.Errorf("%w: the ceiling of the engine does not run %s, a population of fairness: M11 has no path (R55)", ErrBench, name)
 		}
 		pops = append(pops, p)
 	}
@@ -276,7 +294,7 @@ func covers(packages []published.Package, graph []string) bool {
 
 // runOne runs the n-th learner of a population on the modules of a graph.
 func runOne(c Config, p population.Population, mods []*pack.Module, n int) (*run.Record, error) {
-	l, err := learner.New(c.Set, p.Name, n, mods, p.Assumptions(n))
+	l, err := learner.New(c.Set, p.Units(), n, mods, p.Assumptions(n))
 	if err != nil {
 		return nil, err
 	}
@@ -309,6 +327,9 @@ func one(c Config, p population.Population, graph []string, mods []*pack.Module,
 		// The note of consolidation in a lesson is read under the engine alone, as the breaches
 		// are: the ceiling of the engine does not consolidate, and its file stays as it was (R49).
 		maps.Copy(sums, measure.Note(rec))
+		if p.Fair() {
+			line.Fair = measure.Traced(rec)
+		}
 		for _, b := range checkOf(n)(rec) {
 			line.Breaches = append(line.Breaches, b.String())
 		}
@@ -489,13 +510,16 @@ type Cell struct {
 }
 
 // Cells reads two sides in pairs by learner: the same set, the same cells and the same learners in
-// the same order, or none.
+// the same order, or none. Against the ceiling of the engine, which does not run the populations of
+// fairness by the grade, their lines are left out of both sides (R55).
 func Cells(a, b Side) ([]Cell, error) {
 	if a.File.Header.Set != b.File.Header.Set {
 		return nil, fmt.Errorf("%w: the sides ran on different sets of learners, %v and %v", ErrBench, a.File.Header.Set, b.File.Header.Set)
 	}
-	if len(a.File.Lines) != len(b.File.Lines) {
-		return nil, fmt.Errorf("%w: %d learners on one side and %d on the other", ErrBench, len(a.File.Lines), len(b.File.Lines))
+	ceiling := a.File.Header.Rule == rules[run.Ceiling] || b.File.Header.Rule == rules[run.Ceiling]
+	la, lb := linesOf(a.File, ceiling), linesOf(b.File, ceiling)
+	if len(la) != len(lb) {
+		return nil, fmt.Errorf("%w: %d learners on one side and %d on the other", ErrBench, len(la), len(lb))
 	}
 	sums := func(s Side, l Line) measure.Sums {
 		if s.Oracle {
@@ -504,17 +528,84 @@ func Cells(a, b Side) ([]Cell, error) {
 		return l.Sums
 	}
 	var out []Cell
-	for k, la := range a.File.Lines {
-		lb := b.File.Lines[k]
-		cell := cellOf(la)
-		if cellOf(lb) != cell || la.N != lb.N {
-			return nil, fmt.Errorf("%w: learner %s/%d against %s/%d: the sides are not the same learners", ErrBench, cell, la.N, cellOf(lb), lb.N)
+	for k, x := range la {
+		y := lb[k]
+		cell := cellOf(x)
+		if cellOf(y) != cell || x.N != y.N {
+			return nil, fmt.Errorf("%w: learner %s/%d against %s/%d: the sides are not the same learners", ErrBench, cell, x.N, cellOf(y), y.N)
 		}
 		if len(out) == 0 || out[len(out)-1].Cell != cell {
-			out = append(out, Cell{Cell: cell, Population: la.Population, Graph: la.Graph})
+			out = append(out, Cell{Cell: cell, Population: x.Population, Graph: x.Graph})
 		}
 		c := &out[len(out)-1]
-		c.A, c.B, c.N = append(c.A, sums(a, la)), append(c.B, sums(b, lb)), append(c.N, la.N)
+		c.A, c.B, c.N = append(c.A, sums(a, x)), append(c.B, sums(b, y)), append(c.N, x.N)
+	}
+	return out, nil
+}
+
+// linesOf gives the lines of a file, without those of the populations of fairness when it is read
+// against the ceiling of the engine.
+func linesOf(f *File, ceiling bool) []Line {
+	if !ceiling {
+		return f.Lines
+	}
+	return slices.DeleteFunc(slices.Clone(f.Lines), func(l Line) bool {
+		p, _ := population.Named(l.Population)
+		return p.Fair()
+	})
+}
+
+// FairCell is a cell of fairness by the grade read in pairs: the learner n of a grade against the
+// learner n of the reference, one learner under two grades, each pair the sums of M11 (R55).
+type FairCell struct {
+	// Cell and Population are the grade's; Reference is the reference's cell, whose name the
+	// resamples of every grade are drawn by, so that they resample the same n in all the cells.
+	Cell, Population, Reference string
+	Graph                       []string
+	Pairs                       []measure.Sums
+	N                           []int
+}
+
+// Fair reads the cells of fairness by the grade of a file in pairs, each grade's but the
+// reference's, in the order of the file: each against its reference's cell on the same graph, the
+// same learners in the same order, every line with its trace. A file with none gives none.
+func Fair(f *File) ([]FairCell, error) {
+	cells := map[string][]Line{}
+	var order []string
+	for _, l := range f.Lines {
+		p, _ := population.Named(l.Population)
+		if !p.Fair() {
+			continue
+		}
+		if l.Fair == nil {
+			return nil, fmt.Errorf("%w: learner %s/%d of fairness has no trace of M11", ErrBench, cellOf(l), l.N)
+		}
+		cell := cellOf(l)
+		if _, ok := cells[cell]; !ok {
+			order = append(order, cell)
+		}
+		cells[cell] = append(cells[cell], l)
+	}
+	var out []FairCell
+	for _, cell := range order {
+		lines := cells[cell]
+		p, _ := population.Named(lines[0].Population)
+		if p.Name == p.Reference {
+			continue
+		}
+		ref := p.Reference + "/" + strings.Join(lines[0].Graph, "+")
+		refs := cells[ref]
+		if len(refs) != len(lines) {
+			return nil, fmt.Errorf("%w: cell %s has %d learners, and its reference %s %d", ErrBench, cell, len(lines), ref, len(refs))
+		}
+		c := FairCell{Cell: cell, Population: p.Name, Reference: ref, Graph: lines[0].Graph}
+		for k, l := range lines {
+			if refs[k].N != l.N {
+				return nil, fmt.Errorf("%w: learner %s/%d against %s/%d: not the same learner", ErrBench, cell, l.N, ref, refs[k].N)
+			}
+			c.Pairs, c.N = append(c.Pairs, measure.Fair(l.Fair, refs[k].Fair)), append(c.N, l.N)
+		}
+		out = append(out, c)
 	}
 	return out, nil
 }

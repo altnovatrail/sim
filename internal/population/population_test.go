@@ -4,7 +4,6 @@ import (
 	"maps"
 	"reflect"
 	"slices"
-	"strconv"
 	"testing"
 
 	"github.com/altnovatrail/sim/internal/invariant"
@@ -101,6 +100,11 @@ func TestPopulationsRun(t *testing.T) {
 	techniques := 0
 	for _, p := range All() {
 		for _, g := range p.Graphs {
+			// The populations of fairness run on the synthetic sheet, which has the three bands of grades
+			// 1–6: not on a published package before their first run, the decisive run of T64 (R55).
+			if p.Fair() {
+				g = []string{synthetic.Sheet}
+			}
 			var mods []*pack.Module
 			for _, id := range g {
 				mods = append(mods, ms[id])
@@ -116,7 +120,7 @@ func TestPopulationsRun(t *testing.T) {
 				learners = 1
 			}
 			for n := range learners {
-				l, err := learner.New(seed.Working, p.Name, n, mods, p.Assumptions(n))
+				l, err := learner.New(seed.Working, p.Units(), n, mods, p.Assumptions(n))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -166,13 +170,16 @@ func TestSetsApart(t *testing.T) {
 	seen := map[uint64]string{}
 	for _, s := range sets {
 		for _, p := range All() {
+			if p.Fair() && p.Name != p.Reference {
+				continue // it takes the reference's unit, the one learner under another grade
+			}
 			for n := range 300 {
-				st, err := s.Place(seed.Learner(p.Name, n), seed.Params)
+				st, err := s.Place(seed.Learner(p.Units(), n), seed.Params)
 				if err != nil {
 					t.Fatal(err)
 				}
 				first := st.Integer()
-				where := s.Experiment + " " + p.Name + "/" + strconv.Itoa(n)
+				where := s.Experiment + " " + seed.Learner(p.Units(), n)
 				if prior, ok := seen[first]; ok {
 					t.Fatalf("%s draws first what %s does", where, prior)
 				}
@@ -239,7 +246,38 @@ func TestOwn(t *testing.T) {
 			t.Errorf("%s changes %v; want %v", p.Name, got, order(w.fields))
 		}
 	}
-	if len(All()) != len(Standalone)+len(Own) {
+	if len(All()) != len(Standalone)+len(Own)+len(Fairness) {
 		t.Errorf("All has %d populations", len(All()))
+	}
+}
+
+// The populations of fairness by the grade: G0 with the grade fixed at 1, 3 or 5 and the truth of
+// grade 3, on olympiad maths, all three on the reference's units (docs/architecture.md, section
+// 3.2; R55); no other population is one of fairness.
+func TestFairness(t *testing.T) {
+	want := []struct {
+		name  string
+		grade int32
+	}{{"D-grade1", 1}, {"D-grade3", 3}, {"D-grade5", 5}}
+	if len(Fairness) != len(want) {
+		t.Fatalf("%d populations of fairness, want %d", len(Fairness), len(want))
+	}
+	for i, w := range want {
+		p := Fairness[i]
+		a := p.Assumptions(i)
+		if p.Name != w.name || !reflect.DeepEqual(p.Graphs, olympiad) || p.Limit != run.Maths || !p.Fair() || p.Units() != Reference {
+			t.Errorf("population %d: %s on %v, limit %+v, units of %s", i, p.Name, p.Graphs, p.Limit, p.Units())
+		}
+		if got := changed(a); !slices.Equal(got, []string{"Grade", "TruthGrade"}) || a.Grade != w.grade || a.TruthGrade != 3 {
+			t.Errorf("%s changes %v: grade %d, the truth's %d", p.Name, got, a.Grade, a.TruthGrade)
+		}
+		if got, ok := Named(p.Name); !ok || got.Name != p.Name {
+			t.Errorf("Named(%q) = %v, %v", p.Name, got.Name, ok)
+		}
+	}
+	for _, p := range slices.Concat(Standalone, Own) {
+		if p.Fair() || p.Units() != p.Name {
+			t.Errorf("%s is of fairness, or takes the units of %s", p.Name, p.Units())
+		}
 	}
 }

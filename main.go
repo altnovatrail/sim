@@ -30,7 +30,6 @@ import (
 	"github.com/altnovatrail/sim/internal/bench"
 	"github.com/altnovatrail/sim/internal/criterion"
 	"github.com/altnovatrail/sim/internal/gate"
-	"github.com/altnovatrail/sim/internal/population"
 	runpkg "github.com/altnovatrail/sim/internal/run"
 	"github.com/altnovatrail/sim/internal/seed"
 )
@@ -46,6 +45,8 @@ sim is NovaTrail's learner simulator. Its commands:
            number of each cell, a, b and a-b with its 95 % interval
   judge    judge candidates against the base by a criterion, as a judgement
            file names them, and write the report
+  evaluate evaluate the base by the criterion of fairness by the grade, as
+           an evaluation file names its run, and write the report
   merge    merge the files of the parts of a run into the file of the whole
   paths    read the paths of the score off the decisive runs of the base and
            of the ceiling into the file the criterion holds, and write
@@ -82,6 +83,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = compareCommand(args[1:], stdout, stderr)
 	case "judge":
 		err = judgeCommand(args[1:], stdout, stderr)
+	case "evaluate":
+		err = evaluateCommand(args[1:], stdout, stderr)
 	case "merge":
 		err = mergeCommand(args[1:], stdout, stderr)
 	case "paths":
@@ -149,17 +152,6 @@ func runCommand(args []string, stdout, stderr io.Writer) error {
 		return err
 	}
 	c := bench.Config{Learners: *learners, Commits: commits, Part: *part}
-	if *pops == "all" {
-		for _, p := range population.All() {
-			c.Populations = append(c.Populations, p.Name)
-		}
-	} else {
-		c.Populations = strings.Split(*pops, ",")
-	}
-	var err error
-	if c.Set, err = seed.Named(*set); err != nil {
-		return fmt.Errorf("-set %s: %w", *set, err)
-	}
 	switch *rule {
 	case "engine":
 		c.Rule = runpkg.Engine
@@ -167,6 +159,15 @@ func runCommand(args []string, stdout, stderr io.Writer) error {
 		c.Rule = runpkg.Ceiling
 	default:
 		return fmt.Errorf("no rule %q: engine or ceiling", *rule)
+	}
+	if *pops == "all" {
+		c.Populations = bench.Populations(c.Rule)
+	} else {
+		c.Populations = strings.Split(*pops, ",")
+	}
+	var err error
+	if c.Set, err = seed.Named(*set); err != nil {
+		return fmt.Errorf("-set %s: %w", *set, err)
 	}
 	if *learners <= 0 {
 		return fmt.Errorf("-learners %d: want at least one", *learners)
@@ -356,15 +357,10 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 		fmt.Fprintln(stderr, "usage: sim judge <judgement file>")
 		return errUsage
 	}
-	raw, err := os.ReadFile(fs.Arg(0))
+	var j judgement
+	err := decodeFile(fs.Arg(0), &j)
 	if err != nil {
 		return err
-	}
-	var j judgement
-	dec := json.NewDecoder(bytes.NewReader(raw))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&j); err != nil {
-		return fmt.Errorf("%s: %w", fs.Arg(0), err)
 	}
 	dir := filepath.Dir(fs.Arg(0))
 	// A judgement file in its judgement's folder, judgements/<name>/, names that judgement: a name
@@ -474,4 +470,115 @@ func readDigest(path string) (*bench.File, string, error) {
 		return nil, "", fmt.Errorf("%s: %w", path, err)
 	}
 	return file, hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// evaluation is an evaluation file: the name of the evaluation, as its folder evaluations/<name>/,
+// the file of results of the decisive run of the base, relative to the evaluation file, its SHA-256
+// and the date the evaluation is made on, as YYYY-MM-DD (R55 in docs/decisions.md).
+type evaluation struct {
+	Evaluation string `json:"evaluation"`
+	Run        string `json:"run"`
+	SHA256     string `json:"sha256"`
+	Date       string `json:"date"`
+}
+
+// evaluateCommand is "sim evaluate": it evaluates the base by the criterion of fairness by the grade
+// on the run an evaluation file names, once the run is the file of the SHA-256 it names, and writes
+// the report.
+func evaluateCommand(args []string, stdout, stderr io.Writer) error {
+	fs := flag.NewFlagSet("evaluate", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	if err := parse(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(stderr, "usage: sim evaluate <evaluation file>")
+		return errUsage
+	}
+	e, err := readEvaluation(fs.Arg(0))
+	if err != nil {
+		return err
+	}
+	path := e.Run
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(filepath.Dir(fs.Arg(0)), path)
+	}
+	base, digest, err := readDigest(path)
+	if err != nil {
+		return err
+	}
+	if digest != e.SHA256 {
+		return fmt.Errorf("%s: the run %s has the SHA-256 %s, and the evaluation file names %s", fs.Arg(0), e.Run, digest, e.SHA256)
+	}
+	in := criterion.Evaluation{Name: e.Evaluation, Digest: digest, Date: e.Date, Run: base, Version: "(unknown)"}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
+		in.Version = info.Main.Version
+	}
+	if in.Pins, err = pins(gateJSON); err != nil {
+		return fmt.Errorf("the embedded gate file: %w", err)
+	}
+	f, err := criterion.Evaluate(in)
+	if err != nil {
+		return err
+	}
+	return f.Write(stdout)
+}
+
+// decodeFile reads a file of JSON into v, refusing a field v does not know.
+func decodeFile(name string, v any) error {
+	raw, err := os.ReadFile(name)
+	if err != nil {
+		return err
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(v); err != nil {
+		return fmt.Errorf("%s: %w", name, err)
+	}
+	return nil
+}
+
+// readEvaluation reads an evaluation file: no field it does not know, a SHA-256 in hex, a date
+// YYYY-MM-DD, and in a folder of evaluations/ the name of that folder, so that a copy left over names
+// no other evaluation.
+func readEvaluation(name string) (evaluation, error) {
+	var e evaluation
+	if err := decodeFile(name, &e); err != nil {
+		return e, err
+	}
+	if !isSHA256(e.SHA256) {
+		return e, fmt.Errorf("%s: the SHA-256 %q, not 64 digits of hex", name, e.SHA256)
+	}
+	if abs, err := filepath.Abs(filepath.Dir(name)); err == nil && filepath.Base(filepath.Dir(abs)) == "evaluations" && e.Evaluation != filepath.Base(abs) {
+		return e, fmt.Errorf("%s: the evaluation file names the evaluation %q, and lies in the folder of %s", name, e.Evaluation, filepath.Base(abs))
+	}
+	if !isDate(e.Date) {
+		return e, fmt.Errorf("%s: the date %q, not YYYY-MM-DD", name, e.Date)
+	}
+	return e, nil
+}
+
+// isSHA256 tells whether a word is a SHA-256 in hex, as sha256sum writes it.
+func isSHA256(s string) bool {
+	b, err := hex.DecodeString(s)
+	return err == nil && len(b) == sha256.Size
+}
+
+// isDate tells whether a text is a date of the form YYYY-MM-DD that exists: a month of the year and
+// a day of that month, February of a leap year with 29.
+func isDate(s string) bool {
+	if len(s) != 10 || s[4] != '-' || s[7] != '-' || strings.ContainsAny(s, "+ ") {
+		return false
+	}
+	y, ey := strconv.Atoi(s[:4])
+	m, em := strconv.Atoi(s[5:7])
+	d, ed := strconv.Atoi(s[8:])
+	if ey != nil || em != nil || ed != nil || y < 1 || m < 1 || m > 12 {
+		return false
+	}
+	days := [...]int{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}[m-1]
+	if m == 2 && y%4 == 0 && (y%100 != 0 || y%400 == 0) {
+		days = 29
+	}
+	return d >= 1 && d <= days
 }

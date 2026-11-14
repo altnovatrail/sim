@@ -46,7 +46,8 @@ type Learner struct {
 type Module struct {
 	Pack      *pack.Module
 	Grade     learnermodel.Grade
-	StartBand int32   // the place of the band the learner starts in
+	StartBand int32   // the place of the band the learner, and so the model, starts in
+	TrueBand  int32   // the place of the band whose shift the level has: StartBand, or TruthGrade's
 	Level     float64 // θ*, the module's level; it is not forgotten
 	JumpAt    int     // the answer of the module at which its level jumps, when the population jumps
 	Answered  int     // first answers of items with a verdict in the module so far
@@ -108,7 +109,8 @@ func (a Assumptions) validate() error {
 // New draws the n-th learner of a population of the set, in the given modules, from its places
 // (docs/architecture.md, sections 3.1 and 3.4). A learner has one grade and one age category, as a
 // profile has (R107 spec). Its truth comes from the place params, in a fixed order: the grade,
-// among those every module with grades names, when they are more than one; for each module by ID,
+// among those every module with grades names, when they are more than one — drawn even where the
+// population fixes it —; for each module by ID,
 // the level and the offset of each skill with a verdict in the order of the graph; then, when no
 // module gives a grade, the age category, among those every module names; and last what only some
 // populations draw, for each module by ID — the answer of the jump, the band that is harder —, so
@@ -162,18 +164,35 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 		if len(grades) > 1 {
 			g = grades[params.Below(uint64(len(grades)))]
 		}
+		for _, fixed := range []int32{a.Grade, a.TruthGrade} {
+			if fixed != 0 && !slices.Contains(grades, fixed) {
+				return nil, fmt.Errorf("%w: grade %d, which its modules do not name in common", ErrAssumptions, fixed)
+			}
+		}
+		if a.Grade != 0 {
+			g = a.Grade
+		}
 		grade = learnermodel.Grade{Value: g, Known: true}
+	} else if a.Grade != 0 || a.TruthGrade != 0 {
+		return nil, fmt.Errorf("%w: grade %d and the truth's grade %d, and no module names a grade", ErrAssumptions, a.Grade, a.TruthGrade)
 	}
 	var first *float64 // the first module's z, which A-linked ties the others to
 	for _, pm := range sorted {
-		m := &Module{Pack: pm, StartBand: 1}
+		m := &Module{Pack: pm, StartBand: 1, TrueBand: 1}
 		if len(gradesOf(pm)) > 0 && !a.Adult {
 			m.Grade = grade
 			band, err := learnermodel.BandByGrade(m.Grade, pm.Graph.Bands)
 			if err != nil {
 				return nil, fmt.Errorf("learner: %s: %w", pm.ID, err)
 			}
-			m.StartBand = band.Place
+			m.StartBand, m.TrueBand = band.Place, band.Place
+			if a.TruthGrade != 0 {
+				truth, err := learnermodel.BandByGrade(learnermodel.Grade{Value: a.TruthGrade, Known: true}, pm.Graph.Bands)
+				if err != nil {
+					return nil, fmt.Errorf("learner: %s: %w", pm.ID, err)
+				}
+				m.TrueBand = truth.Place
+			}
 		}
 		z := params.Normal()
 		if a.LevelCorrelation != 0 {
@@ -183,7 +202,7 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 				z = float64(a.LevelCorrelation**first) + float64(math.Sqrt(1-float64(a.LevelCorrelation*a.LevelCorrelation))*z)
 			}
 		}
-		m.Level = float64(a.BandStep*float64(m.StartBand-1)) + float64(a.StartSpread*z) + a.LevelShift
+		m.Level = float64(a.BandStep*float64(m.TrueBand-1)) + float64(a.StartSpread*z) + a.LevelShift
 		var verdict []string
 		for _, sk := range pm.Graph.Skills {
 			if sk.Assessability == learnermodel.AssessabilityVerdict {

@@ -26,9 +26,31 @@ type Population struct {
 	// and one of school maths are two graphs; a learner of both is one graph of two modules.
 	Graphs [][]string
 	Limit  run.Limit
+	// Reference is the reference population of a family of fairness by the grade, D-: its learner n
+	// is the learner n of every population of the family, which takes the reference's unit for every
+	// purpose, and the measure M11 reads each against it (R55 in docs/decisions.md). Empty for any
+	// other population.
+	Reference string
 	// sides change the base population's assumptions, the first for the even learners and the
 	// second, when there is one, for the odd.
 	sides []func(*learner.Assumptions)
+}
+
+// Units gives the population whose units its learners take, the names of their places of randomness,
+// <population>/<n>: its own, or the reference's for a population of fairness (docs/architecture.md,
+// section 3.4).
+func (p Population) Units() string {
+	if p.Reference != "" {
+		return p.Reference
+	}
+	return p.Name
+}
+
+// Fair says whether the population is one of fairness by the grade: the engine's ceiling does not
+// run it, its lines carry the trace of M11, and only the constraint of fairness reads its cells, no
+// other check of a criterion (R55).
+func (p Population) Fair() bool {
+	return p.Reference != ""
 }
 
 // Assumptions gives the assumptions of the n-th learner of the population: the base population's,
@@ -166,16 +188,30 @@ var Own = []Population{
 	{Name: "E-leave", Graphs: essays, Limit: run.Essays, sides: one(func(a *learner.Assumptions) { a.LeaveChance = 1.0 / 3 })},
 }
 
+// Reference is the reference population of fairness by the grade, D-grade3 (R55).
+const Reference = "D-grade3"
+
+// Fairness are the populations of fairness by the grade, on olympiad maths, the one published
+// package that names more than one grade: the assumptions of G0, the learner's grade fixed at 1, 3
+// or 5, a grade a start band, and the truth of grade 3 under each, so that the model starts 2.5
+// below the truth's band, at it and 2.5 above it (docs/architecture.md, section 3.2; R55).
+var Fairness = []Population{
+	{Name: "D-grade1", Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade = 1, 3 })},
+	{Name: Reference, Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade = 3, 3 })},
+	{Name: "D-grade5", Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade = 5, 3 })},
+}
+
 // All gives the populations the bench has, a copy, so that no caller changes them for another.
 func All() []Population {
-	return slices.Concat(Standalone, Own)
+	return slices.Concat(Standalone, Own, Fairness)
 }
 
 // Named gives a population by its name.
 func Named(name string) (Population, bool) {
-	for _, p := range All() {
-		if p.Name == name {
-			return p, true
+	// The lists one by one, not All(): a bench reads a population by the name of each line.
+	for _, ps := range [...][]Population{Standalone, Own, Fairness} {
+		if i := slices.IndexFunc(ps, func(p Population) bool { return p.Name == name }); i >= 0 {
+			return ps[i], true
 		}
 	}
 	return Population{}, false

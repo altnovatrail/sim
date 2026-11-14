@@ -153,7 +153,13 @@ func RecordPaths(base, ceiling *bench.File, baseDigest, ceilingDigest string) (*
 		return nil, fmt.Errorf("%w: the oracle against the base: %w", ErrCriterion, err)
 	}
 	p := &Paths{Libraries: b.Libraries, Set: b.Set, Base: baseDigest, Ceiling: ceilingDigest}
-	for k, cell := range againstCeiling {
+	// The base against the ceiling leaves out the cells of fairness, and the base against its oracle
+	// keeps them, so a cell finds its oracle by its name, not by its place.
+	oracleOf := map[string]bench.Cell{}
+	for _, cell := range againstOracle {
+		oracleOf[cell.Cell] = cell
+	}
+	for _, cell := range againstCeiling {
 		if p.Learners == 0 || len(cell.A) < p.Learners {
 			p.Learners = len(cell.A)
 		}
@@ -167,7 +173,7 @@ func RecordPaths(base, ceiling *bench.File, baseDigest, ceilingDigest string) (*
 		numbers := directed(ns)
 		bases := measure.Read(cell.Cell, cell.Graph, cell.A, numbers)
 		ceilings := measure.Read(cell.Cell, cell.Graph, cell.B, numbers)
-		oracles := measure.Read(cell.Cell, cell.Graph, againstOracle[k].B, numbers)
+		oracles := measure.Read(cell.Cell, cell.Graph, oracleOf[cell.Cell].B, numbers)
 		for i, name := range ns {
 			ceil := oracles[i]
 			if strings.HasPrefix(name, "E") {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/altnovatrail/sim/internal/bench"
 	"github.com/altnovatrail/sim/internal/measure"
+	"github.com/altnovatrail/sim/internal/population"
 	"github.com/altnovatrail/sim/internal/synthetic"
 )
 
@@ -28,12 +29,18 @@ func noGraph(graph []string) bool {
 	return slices.ContainsFunc(graph, synthetic.IsSynthetic)
 }
 
-// names are the numbers a judgement reads, in a fixed order.
+// names are the numbers a judgement reads off each cell, in a fixed order: not those of fairness by
+// the grade, which no cell of its own gives and the constraint of fairness reads in pairs of grades
+// (R55).
 func names() []string {
-	return slices.Sorted(maps.Keys(defs))
+	return slices.DeleteFunc(slices.Sorted(maps.Keys(defs)), func(name string) bool {
+		return slices.ContainsFunc(measure.FairNumbers(), func(n measure.Number) bool { return n.Name == name })
+	})
 }
 
-// read reads the cells of a candidate against the base, each beside its fixed paths.
+// read reads the cells of a candidate against the base, each beside its fixed paths. The cells of
+// fairness by the grade are left out: the constraint of fairness alone reads them, in pairs of
+// grades, and no other check, path or note does (R55; the 2026-11-14 amendment to R04).
 func read(base, candidate *bench.File, paths *Paths) ([]cellData, error) {
 	pairs, err := bench.Cells(bench.Side{File: base}, bench.Side{File: candidate})
 	if err != nil {
@@ -41,17 +48,21 @@ func read(base, candidate *bench.File, paths *Paths) ([]cellData, error) {
 	}
 	ns := names()
 	numbers := directed(ns)
-	out := make([]cellData, len(pairs))
-	for k, c := range pairs {
+	var out []cellData
+	for _, c := range pairs {
+		if p, _ := population.Named(c.Population); p.Fair() {
+			continue
+		}
 		ps, err := measure.ReadPair(c.Cell, c.Graph, c.A, c.B, numbers)
 		if err != nil {
 			return nil, err
 		}
-		out[k] = cellData{cell: c.Cell, population: c.Population, graph: c.Graph, noGraph: noGraph(c.Graph),
+		d := cellData{cell: c.Cell, population: c.Population, graph: c.Graph, noGraph: noGraph(c.Graph),
 			pair: map[string]measure.Pair{}, path: paths.on(c.Cell), base: c.A, candidate: c.B, learners: c.N}
 		for i, name := range ns {
-			out[k].pair[name] = ps[i]
+			d.pair[name] = ps[i]
 		}
+		out = append(out, d)
 	}
 	return out, nil
 }
