@@ -206,6 +206,13 @@ Read 2026-11-14 for T49: the repository [altnovatrail/engine](https://github.com
 - `v0.1.7` of 2026-11-11, 22:59 UTC, its tag on the commit `68218a9675f83e349a2a567d420fbfee8d402b33`, and `v0.1.8` of 2026-11-12, 00:36 UTC, on `d8a35a4baed9639b7cf60e95c09f22ec70371e0f`. Against v0.1.6, the commit 57e0ab8 that `gate.json` names, v0.1.7 changes `.claude/settings.json`, `.devcontainer/`, `.github/workflows/ci.yml`, CLAUDE.md, README.md, RUN.md, `docs/` and `spec`, and v0.1.8 then RUN.md, `docs/`, `go.mod` and `go.sum` alone: no Go file, so their code is that of v0.1.6.
 - The branch `main`, commit e0fdb3f of 2026-11-13, 17:52 UTC — "Merge pull request #67 from altnovatrail/e7-consolidation-in-lesson", the pull request "Record the planning of T52: it waits for sim's tag with the step". Against v0.1.8 it changes, of the Go files, only `bench_internal_test.go` and `release_internal_test.go`. Its RUN.md, table 1 — «| [ ] | T52 | Вариант правила | Claude, проверяю я | да | T50; тег `sim` с шагом и критерием T50 |»; T52, «Решено автором (2026-11-13)» — «T52 ждёт тега `sim` строки 4.15 целиком: кода до тега нет», and «Выяснилось при планировании» — «„Gate“ `engine` стоит на `sim` `v0.1.6`».
 
+### 4.7. Branch `e7-consolidation-in-lesson`, commit 0e4680f, R50
+
+Read 2026-11-14 for the laying out of E7 (R50): the repository [altnovatrail/engine](https://github.com/altnovatrail/engine) (`git ls-remote`, `gh api …/compare/main...e7-consolidation-in-lesson`, and RUN.md and `docs/plan/E7.md` at that branch).
+- The branch `e7-consolidation-in-lesson` is one commit ahead of `main` e0fdb3f: `0e4680f0631e113bf91f54846a0a4b1322c76219` of 2026-11-14, 03:33 UTC, "Put the variant of consolidation in a lesson into code (T52)", with `rule.go`, `lessons.go`, `skills.go`, their tests and documents. No pull request is open.
+- RUN.md, table 1 — «| [x] | T52 | Вариант правила | …» and «| [ ] | T53 | Суд, выбор и релиз | я + Claude | да | T52; суд `sim` |»; «Решено автором (2026-11-12)» — «эпик идёт в одной ветке, `e7-consolidation-in-lesson`, без других веток и pull request; … вариант T52–T53 выходит вторым релизом».
+- `docs/plan/E7.md`, T52, «Открыто» — «кандидат суда `sim` — полный SHA этого коммита. Строка файла суда — `{"name": "E7", "group": "corridor", "constants": 0, "new_field": false, "distance": 1, "equal_on": ["novatrail/grade-3-math", "novatrail/english-essays"]}`» and «риск T53: по грубому взгляду выигрыша нет, и вероятен выход»; «Сделано» — the rough look on `sim` `v0.1.15`, 300 working learners a cell: «вариант не держит всех ограничений и не лучше базы. Группа «Коридор» +0,00002 [−0,0019; +0,0020], около нуля; «не хуже» не держит на трёх ячейках олимпиадной …; `neutral` держит».
+
 ## 5. `.github`
 
 ### 5.1. Commit af40f94, T03
