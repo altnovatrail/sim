@@ -322,25 +322,48 @@ workspace dir prefix clean from:
     printf '%s\n' "${lines[@]}"
 
 # The decisive run of a rule (docs/architecture.md, sections 3.6, 3.8 and 3.9; R09, R28, R33, R34 in
-# docs/decisions.md): 2,000 learners of a set — working, or held-out-<criterion>-<n> for a
-# confirmation — of every cell of every population, as processes, one part of the learners each, as
-# many as the processors, merged into one file of results, whose SHA-256 it prints. Without a
-# candidate it builds the bench on the libraries go.mod names, the base while it names the releases
-# gate.json does, so that the base's file is the one paths.json names to the byte. A candidate is
-# CANDIDATE_LEARNER_MODEL or CANDIDATE_ENGINE, a commit by its full SHA or a folder with nothing
-# uncommitted; a pair is both with CANDIDATE_PAIR=yes, so that a variable left set from another run
-# does not make a pair unseen. The bench is then built through the workspace of the gate, with the
-# other library at the commit of gate.json, the build is held to gate.json as the gate holds it before
-# anything runs, and the file names both libraries by commit. A set is checked before the run. The
-# file is no part of the repository: its seeds and the same bits on every build give it again to the
-# byte, and runs/, which git ignores, keeps it between judgements. rule is engine, for the base or a
-# candidate and the oracle on its answers, or ceiling, for the ceiling of the engine; a relative out
-# or folder is of the caller's folder: `CANDIDATE_ENGINE=<sha> just decisive engine runs/engine-a.jsonl`.
+# docs/decisions.md): 2,000 learners of a set — working, or held-out-<criterion>-<n> or
+# held-out-<criterion>-<variant>-<n> for a confirmation — of every cell of every population, as
+# processes, one part of the learners each, as many as the processors, merged into one file of
+# results, whose SHA-256 it prints. Without a candidate it builds the bench on the libraries go.mod
+# names, the base while it names the releases gate.json does, so that the base's file is the one
+# paths.json names to the byte. A candidate is CANDIDATE_LEARNER_MODEL or CANDIDATE_ENGINE, a commit
+# by its full SHA or a folder with nothing uncommitted; a pair is both with CANDIDATE_PAIR=yes, so
+# that a variable left set from another run does not make a pair unseen. The bench is then built
+# through the workspace of the gate, with the other library at the commit of gate.json, the build is
+# held to gate.json as the gate holds it before anything runs, and the file names both libraries by
+# commit. A set is checked before the run. The file is no part of the repository: its seeds and the
+# same bits on every build give it again to the byte, and runs/, which git ignores, keeps it between
+# judgements. rule is engine, for the base or a candidate and the oracle on its answers, or ceiling,
+# for the ceiling of the engine; a relative out or folder is of the caller's folder:
+# `CANDIDATE_ENGINE=<sha> just decisive engine runs/engine-a.jsonl`.
 # Run the decisive run of a rule into a file of results: rule engine or ceiling, set working or held-out-….
-decisive rule out set="working":
+decisive rule out set="working": (cells "decisive" rule out set "2000")
+
+# A rough look (docs/architecture.md, sections 3.6 and 3.8; R49 in docs/decisions.md): the run of
+# just decisive, the same build and the same candidates, on fewer learners a cell — from 1 to 1,999,
+# 300 unless named, as engine's rough looks ran — and on the working learners alone: a look at
+# held-out learners would leave them held out no longer. sim judge names its report a rough look,
+# and it decides nothing. The base's rough look runs the same way, without a candidate, on as many
+# learners: `just rough engine runs/base-300.jsonl` and
+# `CANDIDATE_ENGINE=<sha> just rough engine runs/engine-a-300.jsonl`.
+# Run a rough look of a rule on fewer working learners than a decisive run: rule engine or ceiling.
+rough rule out learners="300": (cells "rough" rule out "working" learners)
+
+# The body of just decisive and just rough: the runs of a rule on so many learners a cell of a set,
+# a rough look only of fewer than a decisive run's 2,000 and only on the working learners.
+[private]
+cells kind rule out set learners:
     #!/usr/bin/env bash
     set -euo pipefail
-    case {{ quote(rule) }} in engine|ceiling) ;; *) echo "decisive: rule {{ rule }}: engine or ceiling" >&2; exit 2 ;; esac
+    kind={{ quote(kind) }}
+    case {{ quote(rule) }} in engine|ceiling) ;; *) echo "$kind: rule {{ rule }}: engine or ceiling" >&2; exit 2 ;; esac
+    learners={{ quote(learners) }}
+    case "$learners" in ''|*[!0-9]*|0*) echo "$kind: learners $learners: a whole number above zero" >&2; exit 2 ;; esac
+    if [ "$kind" = rough ] && { [ "$learners" -ge 2000 ] || [ {{ quote(set) }} != working ]; }; then
+        echo "rough: $learners learners of {{ set }}: a rough look is fewer than 2,000 working learners a cell, and 2,000 a decisive run, just decisive" >&2
+        exit 2
+    fi
     out={{ quote(out) }}
     case "$out" in /*) ;; *) out={{ quote(invocation_directory()) }}/"$out" ;; esac
     mkdir -p "$(dirname "$out")"
@@ -352,7 +375,7 @@ decisive rule out set="working":
         [ "$var" = CANDIDATE_PAIR ] || named+=("$var")
     done < <(env | grep -E '^CANDIDATE_[A-Z_]+=.' || true)
     if [ "${#named[@]}" -gt 1 ] && [ "${CANDIDATE_PAIR:-}" != yes ]; then
-        echo "decisive: ${named[*]} name a pair; set CANDIDATE_PAIR=yes to run it" >&2
+        echo "$kind: ${named[*]} name a pair; set CANDIDATE_PAIR=yes to run it" >&2
         exit 2
     fi
     commits=()
@@ -366,26 +389,26 @@ decisive rule out set="working":
             [ "$from" = - ] || taken=$((taken + 1))
         done <<< "$libraries"
         if [ "$taken" != "${#named[@]}" ]; then
-            echo "decisive: ${named[*]}: a variable names no library of gate.json" >&2
+            echo "$kind: ${named[*]}: a variable names no library of gate.json" >&2
             exit 2
         fi
         GOWORK="$tmp/go.work" go build -o "$tmp/sim" .
         "$tmp/sim" gate verify -file gate.json "${gomods[@]}"
     else
-        echo "decisive: the libraries go.mod names" >&2
+        echo "$kind: the libraries go.mod names" >&2
         GOWORK=off go build -o "$tmp/sim" .
     fi
     "$tmp/sim" run -populations G7 -learners 1 -set {{ quote(set) }} ${commits[@]+"${commits[@]}"} > /dev/null
     n="$(nproc)"
     for k in $(seq 0 $((n - 1))); do
-        "$tmp/sim" run -populations all -learners 2000 -set {{ quote(set) }} -rule {{ quote(rule) }} ${commits[@]+"${commits[@]}"} -part "$k/$n" -out "$tmp/part-$k.jsonl" &
+        "$tmp/sim" run -populations all -learners "$learners" -set {{ quote(set) }} -rule {{ quote(rule) }} ${commits[@]+"${commits[@]}"} -part "$k/$n" -out "$tmp/part-$k.jsonl" &
         pids+=("$!")
     done
     failed=0
     for p in "${pids[@]}"; do wait "$p" || failed=1; done
     pids=()
     if [ "$failed" != 0 ]; then
-        echo "decisive: a part of the run failed" >&2
+        echo "$kind: a part of the run failed" >&2
         exit 1
     fi
     "$tmp/sim" merge -out "$out" "$tmp"/part-*.jsonl

@@ -198,14 +198,21 @@ func TestJudge(t *testing.T) {
 	t.Cleanup(func() { gateJSON = embedded })
 	gateJSON = held.Bytes()
 	good := write("j.json", `{"criterion":"model","base":"base.jsonl",
-		"candidates":[{"name":"same","file":"base.jsonl","group":"still","constants":1}],
+		"candidates":[{"name":"same","file":"base.jsonl","group":"still","constants":1,"equal_on":["novatrail/grade-3-math"]}],
 		"confirm":{"base":"held.jsonl","candidate":"held.jsonl"}}`)
 	stdout.Reset()
 	if got := run([]string{"judge", good}, &stdout, &stderr); got != 0 {
 		t.Fatalf("sim judge = %d: %s", got, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "# The criterion of the model") || !strings.Contains(stdout.String(), "the base stays") {
+	if !strings.Contains(stdout.String(), "# The criterion of the model") || !strings.Contains(stdout.String(), "the base stays") || strings.Contains(stdout.String(), "fails neutral") {
 		t.Errorf("the report:\n%s", stdout.String())
+	}
+	// A graph the candidate names in equal_on and the runs have no cell of fails the check "neutral"
+	// (R49).
+	stdout.Reset()
+	absent := write("absent.json", `{"criterion":"model","base":"base.jsonl","candidates":[{"name":"same","file":"base.jsonl","equal_on":["novatrail/english-essays"]}]}`)
+	if got := run([]string{"judge", absent}, &stdout, &stderr); got != 0 || !strings.Contains(stdout.String(), "fails neutral novatrail/english-essays all") {
+		t.Errorf("sim judge of a graph the runs do not have = %d:\n%s", got, stdout.String())
 	}
 	// A candidate of the engine built beside another commit of learner-model is no candidate of this
 	// judgement: the judge holds it to the base's learner-model, by the embedded gate file (R40).

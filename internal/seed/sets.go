@@ -23,6 +23,10 @@ var Working = Set{Seed: 20261107, Experiment: "working"}
 var heldOut = map[string]uint64{
 	"held-out-model-1":  20261108,
 	"held-out-engine-1": 20261109,
+	// The judgement of one variant apart from the rounds of its criterion takes a set of its own,
+	// held-out-<criterion>-<variant>-<n>: consolidation in a lesson, epic E7 (R49 in
+	// docs/decisions.md).
+	"held-out-engine-lesson-1": 20261113,
 }
 
 // Named gives a set by the name of its experiment: working, or a held-out set R04 has recorded.

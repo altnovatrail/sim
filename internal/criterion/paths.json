@@ -8,7 +8,7 @@
     "Experiment": "working"
   },
   "learners": 2000,
-  "base": "7d3cb52e72cf4c55d28dc11a16e8ed2330a9f06e78ccd9ab3ae01027fae7bf16",
+  "base": "2e53e18c08df5016a70d2759fa97cbc8df6a4b72422e952eb6db5aef495f9aad",
   "ceiling": "00ad8bb7e82fb45542b7c2807f1541ce603663459f3629b24a65832f64043218",
   "paths": [
     {

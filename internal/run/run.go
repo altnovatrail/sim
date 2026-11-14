@@ -44,7 +44,7 @@ var Forgetting = Limit{Days: 180}
 // within 60 days.
 var Essays = Limit{Days: 60, Rubrics: true}
 
-// Step is one choice of the run and what came of it. Evidence and Instances stand beside
+// Step is one choice of the run and what came of it. Evidence, Instances and Results stand beside
 // Attempts, one for each. A lesson with a task of consolidation is several steps, in the order of
 // time: the lesson up to the consolidation, the consolidation — a choice of a task —, and the
 // lesson after it, Resumed (R48).
@@ -58,6 +58,9 @@ type Step struct {
 	// Instances is the number of the instance of each attempt's template, chosen by the attempt's
 	// seed as the platform chooses it; -1 for a task that is no template.
 	Instances []int
+	// Results are the results of each attempt on its primary skills, as the engine reads them in the
+	// last closed attempt (Last.Results).
+	Results [][]engine.SkillResult
 	// Obs is what the measures read of each attempt with a verdict: the model and the truth before
 	// and after it; nil for an attempt of a task with a rubric (R22 in docs/decisions.md).
 	Obs  []*Obs
@@ -295,6 +298,7 @@ func (r *Run) give(step *Step, at int64) (int64, error) {
 		return 0, err
 	}
 	step.Attempts, step.Evidence, step.Instances = []learner.Attempt{a}, []*learnermodel.Evidence{e}, []int{n}
+	step.Results = [][]engine.SkillResult{r.last.Results}
 	r.choices[m.ID]++
 	return a.End, nil
 }
@@ -318,7 +322,7 @@ func (r *Run) passLesson(step Step, at int64) ([]Step, int64, error) {
 	r.choices[m.ID]++
 	r.issue(lesson.Lesson.Skills, at)
 	r.open(lesson, at)
-	consolidates := r.rule == Engine && verdicts(m, lesson)
+	consolidates := r.rule == Engine && Verdicts(m.Graph, lesson.Lesson.Skills)
 	var steps []Step
 	cur := &step
 	// Each task of the lesson is closed as it is answered, so that the model and the truth are read
@@ -343,6 +347,7 @@ func (r *Run) passLesson(step Step, at int64) ([]Step, int64, error) {
 				return err
 			}
 			cur.Attempts, cur.Evidence, cur.Instances, cur.Obs = append(cur.Attempts, a), append(cur.Evidence, e), append(cur.Instances, n), append(cur.Obs, o)
+			cur.Results = append(cur.Results, r.last.Results)
 			return nil
 		},
 		End: func(_ *pack.Task, a learner.Attempt) (int64, error) {
@@ -427,18 +432,10 @@ func further(c engine.Choice, lesson *pack.Lesson) bool {
 	return c.Kind == engine.ChoiceLesson && c.ID == lesson.Lesson.ID && c.Reason == engine.ReasonOpenRun
 }
 
-// verdicts tells whether a lesson has skills and every one has a verdict: only then is the engine
-// called within it (concepts 5 spec; R48).
-func verdicts(m *pack.Module, lesson *pack.Lesson) bool {
-	if len(lesson.Lesson.Skills) == 0 {
-		return false
-	}
-	for _, id := range lesson.Lesson.Skills {
-		if !verdict(m, id) {
-			return false
-		}
-	}
-	return true
+// Verdicts tells whether a lesson has skills and every one has a verdict in its module's graph: only
+// then is the engine called within it (concepts 5 spec; R48), and the note E6 reads it (R49).
+func Verdicts(g learnermodel.Graph, skills []string) bool {
+	return len(skills) > 0 && !slices.ContainsFunc(skills, func(id string) bool { return !verdictIn(g, id) })
 }
 
 // issue hands out skills at a time: the time of their last issue does not go back, so that a lesson

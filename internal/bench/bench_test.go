@@ -65,8 +65,19 @@ func TestRun(t *testing.T) {
 	if strings.Join(cells, " ") != strings.Join(want, " ") || len(f.Lines) != 6 {
 		t.Errorf("cells %v of %d lines", cells, len(f.Lines))
 	}
-	if ceil := runTo(t, Config{Populations: []string{"G7"}, Learners: 1, Set: seed.Working, Rule: run.Ceiling}); ceil.Header.Rule != "ceiling" {
+	// The note of consolidation in a lesson is read under the engine alone: the lessons of school maths
+	// give its sums, and the ceiling's file has none (R49).
+	if l := f.Lines[0]; l.Sums["E6.passes"] <= 0 || l.Sums["E6.lesson.items"] <= 0 {
+		t.Errorf("no note on %s/%d: %v", cellOf(l), l.N, l.Sums)
+	}
+	ceil := runTo(t, Config{Populations: []string{"G7"}, Learners: 1, Set: seed.Working, Rule: run.Ceiling})
+	if ceil.Header.Rule != "ceiling" {
 		t.Errorf("the ceiling's rule %q", ceil.Header.Rule)
+	}
+	for key := range ceil.Lines[0].Sums {
+		if strings.HasPrefix(key, "E6.") {
+			t.Errorf("the ceiling's line has %s", key)
+		}
 	}
 }
 

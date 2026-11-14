@@ -323,7 +323,7 @@ func TestConsolidationFaults(t *testing.T) {
 // A lesson with no skills has none with a verdict: the engine is not called within it.
 func TestVerdictsOfNoSkills(t *testing.T) {
 	c := newConsolidation(t)
-	if verdicts(c.m, &pack.Lesson{}) || !verdicts(c.m, c.lesson) {
+	if Verdicts(c.m.Graph, nil) || !Verdicts(c.m.Graph, c.lesson.Lesson.Skills) {
 		t.Error("a lesson with no skills is one of skills with a verdict, or the sheet's is not")
 	}
 }

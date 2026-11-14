@@ -56,7 +56,8 @@ type Header struct {
 }
 
 // Line is one learner of a cell: its population, graph and number, and the sums of its run — of the
-// measures of the model and of the engine — and the oracle's on the same answers.
+// measures of the model and of the engine, and under the engine of the note E6 too (R49) — and the
+// oracle's on the same answers.
 type Line struct {
 	Population string       `json:"population"`
 	Graph      []string     `json:"graph"`
@@ -305,6 +306,9 @@ func one(c Config, p population.Population, graph []string, mods []*pack.Module,
 	maps.Copy(sums, measure.Engine(rec)) // the keys of the two are apart, but for learners, 1 in both
 	line := Line{Population: p.Name, Graph: graph, N: n, Sums: sums, Oracle: measure.Oracle(rec)}
 	if c.Rule == run.Engine {
+		// The note of consolidation in a lesson is read under the engine alone, as the breaches
+		// are: the ceiling of the engine does not consolidate, and its file stays as it was (R49).
+		maps.Copy(sums, measure.Note(rec))
 		for _, b := range checkOf(n)(rec) {
 			line.Breaches = append(line.Breaches, b.String())
 		}
@@ -475,11 +479,13 @@ func Compare(a, b Side, w io.Writer) error {
 	return nil
 }
 
-// Cell is a cell of two sides, its learners in pairs: the n-th of A and of B the same learner.
+// Cell is a cell of two sides, its learners in pairs: the n-th of A and of B the same learner, whose
+// number in the cell is the n-th of N.
 type Cell struct {
 	Cell, Population string
 	Graph            []string
 	A, B             []measure.Sums
+	N                []int
 }
 
 // Cells reads two sides in pairs by learner: the same set, the same cells and the same learners in
@@ -508,7 +514,7 @@ func Cells(a, b Side) ([]Cell, error) {
 			out = append(out, Cell{Cell: cell, Population: la.Population, Graph: la.Graph})
 		}
 		c := &out[len(out)-1]
-		c.A, c.B = append(c.A, sums(a, la)), append(c.B, sums(b, lb))
+		c.A, c.B, c.N = append(c.A, sums(a, la)), append(c.B, sums(b, lb)), append(c.N, la.N)
 	}
 	return out, nil
 }

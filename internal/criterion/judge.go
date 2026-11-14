@@ -19,6 +19,8 @@ type cellData struct {
 	noGraph          bool
 	pair             map[string]measure.Pair // a is the base, b the candidate: Diff is base − candidate
 	path             map[string]Path         // the fixed paths of the cell, by number
+	base, candidate  []measure.Sums          // the sums of each learner, the n-th of both the same learner
+	learners         []int                   // the number of the n-th learner in the cell
 }
 
 // noGraph tells whether a graph has a module with no published package (R19).
@@ -46,7 +48,7 @@ func read(base, candidate *bench.File, paths *Paths) ([]cellData, error) {
 			return nil, err
 		}
 		out[k] = cellData{cell: c.Cell, population: c.Population, graph: c.Graph, noGraph: noGraph(c.Graph),
-			pair: map[string]measure.Pair{}, path: paths.on(c.Cell)}
+			pair: map[string]measure.Pair{}, path: paths.on(c.Cell), base: c.A, candidate: c.B, learners: c.N}
 		for i, name := range ns {
 			out[k].pair[name] = ps[i]
 		}
@@ -86,7 +88,11 @@ func judge(criterion string, base *bench.File, paths *Paths, c Candidate) (Verdi
 			}
 		}
 	}
+	v.Checks = append(v.Checks, neutral(cells, c.EqualOn)...)
 	v.Holds = !slices.ContainsFunc(v.Checks, func(k Check) bool { return !k.Met && !k.Skipped && !k.NoGraph })
+	if v.Note, err = note(cells); err != nil {
+		return Verdict{}, fmt.Errorf("%w: candidate %s: %w", ErrCriterion, c.Name, err)
+	}
 	own, other := criterion, ""
 	if criterion == Pair {
 		own, other = c.Library, Model
@@ -203,6 +209,74 @@ func goals(cells []cellData, goal string) []Check {
 		}
 	}
 	return out
+}
+
+// neutral gives the checks that a candidate gives the base's runs on the graphs it names: on each cell
+// of each graph, every learner's sums are the base's to the bit, so every paired difference is zero —
+// on the graphs where no skill of a lesson has a task outside it, a variant of consolidation in a
+// lesson has nothing to give (R49 in docs/decisions.md). A graph the runs have no cell of is not
+// met: a check that is never measured does not hold.
+func neutral(cells []cellData, graphs []string) []Check {
+	var out []Check
+	for _, g := range graphs {
+		found := false
+		for _, d := range cells {
+			if strings.Join(d.graph, "+") != g {
+				continue
+			}
+			found = true
+			k := Check{Kind: "neutral", Cell: d.cell, Number: "all", NoGraph: d.noGraph, Met: true,
+				Detail: "every learner's sums are the base's"}
+			for n := range d.base {
+				if key, ok := differs(d.base[n], d.candidate[n]); ok {
+					k.Met = false
+					k.Detail = fmt.Sprintf("learner %d differs first in %s: the base %v, the candidate %v", d.learners[n], key, d.base[n][key], d.candidate[n][key])
+					break
+				}
+			}
+			out = append(out, k)
+		}
+		if !found {
+			out = append(out, Check{Kind: "neutral", Cell: g, Number: "all", Detail: "the runs have no cell on the graph " + g})
+		}
+	}
+	return out
+}
+
+// differs gives the first key, in their order, whose sums two learners do not share, a key one of
+// them lacks reading as zero, as the measures read it.
+func differs(a, b measure.Sums) (string, bool) {
+	keys := append(slices.Collect(maps.Keys(a)), slices.Collect(maps.Keys(b))...)
+	slices.Sort(keys)
+	for _, k := range slices.Compact(keys) {
+		if a[k] != b[k] {
+			return k, true
+		}
+	}
+	return "", false
+}
+
+// note gives the note of consolidation in a lesson: the numbers of E6 on each cell of a published
+// graph where the base or the candidate consolidated at least once, base and candidate paired by
+// learner. It decides nothing (docs/architecture.md, section 3.6; R49).
+func note(cells []cellData) ([]Note, error) {
+	consolidated := func(ls []measure.Sums) bool {
+		return slices.ContainsFunc(ls, func(s measure.Sums) bool { return s["E6.consolidations"] > 0 })
+	}
+	var out []Note
+	for _, d := range cells {
+		if d.noGraph || !consolidated(d.base) && !consolidated(d.candidate) {
+			continue
+		}
+		ps, err := measure.ReadPair(d.cell, d.graph, d.base, d.candidate, measure.NoteNumbers())
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range ps {
+			out = append(out, Note{Cell: d.cell, Pair: p})
+		}
+	}
+	return out, nil
 }
 
 // missing gives a failed check for each population a check needs that the runs do not have: a check

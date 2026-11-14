@@ -167,10 +167,11 @@ func viewOf(in engine.Input, id string) (view, bool) {
 	return v, found
 }
 
-// failed is a failure on a skill by the facts of a result, as the engine and the model read it: of
+// Failed is a failure on a skill by the facts of a result, as the engine and the model read it: of
 // the items answered, fewer than half right at the first verdict, or the solution shown with none
-// right (architecture 3.6 engine; R06 learner-model).
-func failed(r engine.SkillResult) bool {
+// right (architecture 3.1 engine, the rule "Failure"; R06 learner-model). I2 holds the engine to it,
+// and the note E6 reads by it (R49 in docs/decisions.md).
+func Failed(r engine.SkillResult) bool {
 	return 2*r.FirstRight < r.Answered || r.SolutionShown && r.FirstRight == 0
 }
 
@@ -220,7 +221,7 @@ func reasonCode(s run.Step) []string {
 			if !v.module.TrialOver || v.module.LastInTrial {
 				return false
 			}
-			return slices.ContainsFunc(in.Last.Results, func(r engine.SkillResult) bool { return r.Skill == v.skill.ID && failed(r) })
+			return slices.ContainsFunc(in.Last.Results, func(r engine.SkillResult) bool { return r.Skill == v.skill.ID && Failed(r) })
 		})
 	case engine.ReasonNewSkill:
 		meaning = "a skill not given before"

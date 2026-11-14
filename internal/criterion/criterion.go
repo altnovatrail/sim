@@ -41,7 +41,9 @@ var ErrCriterion = errors.New("criterion")
 // score it names its own, its goal, if it names one of the model's, and what the choice among equals
 // reads — the constants it changes, whether it adds a field to the model's state or the engine's
 // input, and its distance from the base, in the author's order. In a pair it names the library whose
-// goal it is.
+// goal it is. EqualOn are the graphs, by the IDs of their modules joined by "+", on which it claims to
+// give the same runs as the base: there every learner's sums are the base's, or it fails the check
+// "neutral" (R49 in docs/decisions.md).
 type Candidate struct {
 	Name      string
 	File      *bench.File
@@ -51,6 +53,7 @@ type Candidate struct {
 	NewField  bool
 	Distance  int
 	Library   string
+	EqualOn   []string
 }
 
 // Confirm are the runs of the confirmation on the held-out learners of the choice: the base and the
@@ -100,7 +103,7 @@ func (p Pin) String() string {
 
 // Check is one check of a candidate: a constraint on a cell and a number, or on its run.
 type Check struct {
-	Kind    string // invariants, floor, no worse, goal
+	Kind    string // invariants, floor, no worse, goal, neutral
 	Cell    string
 	Number  string
 	Met     bool
@@ -120,7 +123,8 @@ type Score struct {
 }
 
 // Verdict is how a candidate stands: its checks, whether it holds them all, its score, its group's,
-// and in a pair the other library's score; and whether it is better than the base.
+// and in a pair the other library's score; whether it is better than the base; and the note of
+// consolidation in a lesson, which decides nothing.
 type Verdict struct {
 	Candidate string
 	Checks    []Check
@@ -129,6 +133,16 @@ type Verdict struct {
 	Group     *Score // the score of the group it names, if it names one
 	Other     *Score
 	Better    bool
+	Note      []Note
+}
+
+// Note is a number of the note of consolidation in a lesson, E6, on a cell where the base or the
+// candidate consolidated: the base's value, the candidate's and their difference, base − candidate,
+// with the interval from the same resamples (docs/architecture.md, section 3.6; R49). No check,
+// path or weight reads it.
+type Note struct {
+	Cell string
+	measure.Pair
 }
 
 // Report is what a judgement gives.
@@ -139,14 +153,31 @@ type Report struct {
 	Graphs    []string // the graphs the choice is made on: those of published packages
 	NoGraph   []string // the cells on a graph with no published package
 	Verdicts  []Verdict
-	Chosen    string   // the candidate chosen, if any
+	Chosen    string   // the candidate chosen, if any; on a rough look, the one a decisive run would choose
 	Equals    []string // the candidates equal to the best, the chosen among them
 	Confirmed *Verdict // the chosen on its held-out learners, when the confirmation has run
 	Outcome   string
 }
 
-// Judge judges the candidates of an input.
+// Judge judges the candidates of an input. A rough look — fewer learners a cell than a decisive run
+// takes — decides nothing, and its outcome says so first (docs/architecture.md, section 3.6).
 func Judge(in Input) (*Report, error) {
+	r, err := decide(in)
+	if err != nil {
+		return nil, err
+	}
+	if !r.Decisive {
+		o := []byte(r.Outcome) // the outcomes are the criterion's own, each opening with a capital letter of ASCII
+		if len(o) > 0 && 'A' <= o[0] && o[0] <= 'Z' {
+			o[0] += 'a' - 'A'
+		}
+		r.Outcome = "A rough look, which decides nothing: " + string(o)
+	}
+	return r, nil
+}
+
+// decide judges the candidates of an input as a decisive run would.
+func decide(in Input) (*Report, error) {
 	if err := in.check(); err != nil {
 		return nil, err
 	}
@@ -271,8 +302,10 @@ func (in Input) check() error {
 		if f.Base.Header.Rule != "engine" || f.Candidate.Header.Rule != "engine" {
 			return fmt.Errorf("%w: the confirmation's base and candidate ran under %q and %q", ErrCriterion, f.Base.Header.Rule, f.Candidate.Header.Rule)
 		}
-		if !strings.HasPrefix(f.Base.Header.Set.Experiment, "held-out-") || f.Base.Header.Set == in.Base.Header.Set {
-			return fmt.Errorf("%w: the confirmation ran on %s, not on held-out learners apart from the choice's", ErrCriterion, f.Base.Header.Set.Experiment)
+		// The held-out sets of a criterion are its own (docs/architecture.md, section 3.8); which of
+		// them a round takes, its judgement file's folder does not say, and README names it.
+		if !strings.HasPrefix(f.Base.Header.Set.Experiment, "held-out-"+in.Criterion+"-") || f.Base.Header.Set == in.Base.Header.Set {
+			return fmt.Errorf("%w: the confirmation ran on %s, not on held-out learners of the criterion %s apart from the choice's", ErrCriterion, f.Base.Header.Set.Experiment, in.Criterion)
 		}
 	}
 	return nil
