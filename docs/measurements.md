@@ -67,9 +67,11 @@ How `sim` keeps what row 7.10 of `spec`'s COORDINATION.md saved, by the pattern 
 |---|---|---|---|---|---|---|
 | `-workspaces-sim` — before, the row of measurements 1.9 spec | 2026-10-13T00:00 … 2026-11-12T14:27 | 10 | 3,275 / 1,195 | 325.5 / 79.5 | 6 | $397.59 |
 | `-workspaces-sim` — T50–T53, row 7.10 of COORDINATION.md `spec` | 2026-11-12T20:41 … 2026-11-13T05:18 | 7 | 564 / 454 | 180.3 / 105.0 | 2 | $60.56 |
+| `-workspaces-sim` — epic E5: T46–T49, T54, T55, and T50–T53 outside it | 2026-11-11T23:07 … 2026-11-14T02:34 | 16 | 1,557 / 634 | 179.4 / 97.4 | 3 | $142.28 |
 
 - The context of a main call fell from 325.5 to 180.3 thousand, −45%; by session it was 178.0 in T50, 153.4 in T51, 128.8 in T52 and 109.5 in T53, while the documents a session reads became English, one task at a time. A subagent's rose from 79.5 to 105.0: here the subagents were translators and blind readers, each of which reads the glossary, concepts 15 spec, and the rules of translation. Three of the seven sessions, of one, one and five calls, ran no task.
 - The windows differ in work: E2–E5 with code, runs and judgements against the move to a tag and the translation of `docs/`. The comparison by sessions after the task is T124 spec.
+- The window of E5, measured in T49, opens after the commit of T45 and before 4113692, which laid E5 out, and ends at 02:34, while T49 still ran: its last calls are not in the row. It holds the window of T50–T53 above: the same report run again on that window gives 7 sessions and $60.32, so the tasks of the epic itself took 9 sessions and about $82. The context of a main call, 179.4 thousand, is the same as in T50–T53, 180.3, against 325.5 before them.
 
 ## 3. The paths of the targets
 
