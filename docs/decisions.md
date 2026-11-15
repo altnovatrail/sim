@@ -2455,6 +2455,8 @@ Where it is written: RUN.md, T58 ([docs/plan/E7.md](plan/E7.md)), and table 3, �
 
 — *Amendment 2026-11-14 (T64; R58), the author's answer in the planning of T64:* the judgements `model-3` and `engine-2` pin the tag of T64, not `v0.1.19`. The merge of T64 changes `paths.json`, which names the base's file of 68 cells, and so releases a tag (R29): on it `just decisive engine` gives the file that `paths.json` names, as step 1 of "Judging a candidate" in README says, while on `v0.1.19` it gives a file that `paths.json` there does not name. The code, the bits and `fair` of the two tags are the same. Rejected: `v0.1.19` as the pin — for the reason above. Rows В16 and В20 of table 3 of RUN.md say so.
 
+— *Amendment 2026-11-15 (T64):* the tag of T64 is `v0.1.20`, released on the merge commit 63288d7 of pull request #71 and accepted by `gh release verify`; `model-3` and `engine-2` pin it, and rows В16 and В20 of table 3 of RUN.md name it.
+
 ## The evaluation `fairness-1`
 
 **R58. The base — `learner-model` v0.1.8 and `engine` v0.1.6 — does not hold the criterion of fairness by the grade of R55. In the evaluation `evaluations/fairness-1/`, on `sim` v0.1.19, grades 1 and 5 come to the estimate of grade 3 by the 50th answer for 0.812 [0.795; 0.829] and 0.5525 [0.53; 0.5735] of the learners, below the bound 0.90; the bands of their tasks after the 50th answer differ from grade 3's by at most 0.0067 [0.0041; 0.0102] and 0.0127 [0.0073; 0.0180], within the bound 0.05. The result is recorded as it is and goes to dpia 10.2 spec; the criterion does not change. The base's file of 68 cells is the base of `model-3` and `engine-2`, and `paths.json` names it.** The executor's record 2026-11-14 in T64, by R55 (RUN.md, T64); the pin is the author's answer in its planning (the 2026-11-14 amendment to R57); what follows from the result is the author's, row В22 of table 3 of RUN.md.
@@ -2481,3 +2483,5 @@ Where it is written: RUN.md, T58 ([docs/plan/E7.md](plan/E7.md)), and table 3, �
 - the run and the report built on `main` with the task's edits — the report would name no tag.
 
 — *Consequence:* the 2026-11-14 amendments to R28, R54, R55 and R57. Row В21 of table 3 of RUN.md carries the result «в реестр spec» for item 10 of dpia 10.2 spec and row 4.16 of `spec`'s COORDINATION.md, and row В22 asks what follows. Where it is written: RUN.md, T64; [architecture.md](architecture.md), the status, subsection 2.6, sections 3 and 3.6; [measurements.md](measurements.md), 1.3 and 3.2; README; `evaluations/fairness-1/`; `internal/criterion/paths.json`; `.claude/rules/gate.md`.
+
+— *Amendment 2026-11-15 (T64):* the tag of T64 is `v0.1.20`, released on the merge commit 63288d7 of pull request #71 and accepted by `gh release verify`; the 2026-11-14 amendment to R57 and rows В16, В20 and В21 of table 3 of RUN.md name it.
