@@ -6,6 +6,7 @@ paths:
   - "internal/gate/**"
   - "internal/criterion/**"
   - "judgements/**"
+  - "evaluations/**"
 ---
 
 # The gate, the paths and the judgements
@@ -18,3 +19,4 @@ paths:
 - A task that moves the base's numbers runs the decisive runs of the base and of the ceiling anew, writes the paths with `sim paths` — new values by an amendment to R04 that cites their table, `sim paths -table`, as a new subsection of section 3 of [docs/measurements.md](../../docs/measurements.md), which the test of the paths reads (the 2026-11-13 amendment to R28) — and the bands with `just gate record` (section 3.7 of the architecture).
 - `sim judge` holds the base and the candidates to the libraries of the paths and of the base (R40), and a confirmation to the held-out set that `internal/seed/sets.go` records for the judgement its file names by `"judgement"` (R52); a judgement is recorded as a decision of the log, as R36 and R37.
 - The time of a decisive run is written with the host's load average; a measurement that chooses a size runs on a free machine (RUN.md, epic E5).
+- An evaluation of fairness by the grade is `evaluations/fairness-<n>/`: its `evaluation.json` names the decisive run of the base by its SHA-256, and `sim evaluate` writes `report.md`, which names the version of sim from its build — so both are made from a clean clone at a tag (R55, R56, R58).
