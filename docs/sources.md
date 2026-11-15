@@ -166,6 +166,8 @@ Read again 2026-11-14, 15:30 UTC, for T60 (`git ls-remote`, `gh release list`, `
 
 Read again 2026-11-14, 16:14 UTC, for the laying out of E9 (R54; `gh api` of the commit of `main` and of RUN.md at `main`, `gh pr list`): `main` is still d2d7ccd, and RUN.md, table 1, still has «| [ ] | T52 | Разведка третьего круга | я + Claude | да | T51 |»; no pull request is open.
 
+Read again 2026-11-15, 00:30 UTC, for T65 (`gh release list`, `git ls-remote`, `gh pr list`, RUN.md and `.github/workflows/ci.yml` at `main` by `gh api`): `main` is still d2d7ccd, `v0.1.9` is still the latest release, and no pull request is open; the branch `e7-deploy` is still there. RUN.md, table 1, still has «| [ ] | T52 | Разведка третьего круга | я + Claude | да | T51 |», and T53–T55 not done; `ci.yml` — still `SIM_TAG: v0.1.14`.
+
 ## 4. `engine`
 
 ### 4.1. Commit 08bc48a, T02 and T03
@@ -225,6 +227,14 @@ Read 2026-11-14 for T58 (R53): the repository [altnovatrail/engine](https://gith
 
 Read again 2026-11-14, 15:30 UTC, for T60 (`git ls-remote`, `gh release list`, `gh pr list`, RUN.md at `main` and at the branch): `refs/heads/e7-consolidation-in-lesson` is still 0e4680f and `main` still e0fdb3f, `v0.1.8` is still the latest release, and no pull request is open. RUN.md of the branch, table 1 — «| [ ] | T53 | Суд, выбор и релиз | я + Claude | да | T52; суд `sim` |»; table 2 — «| E5 | Второй круг коридора | Второй круг суда движка на нетронутом `held-out-engine-1` …», not laid out.
 
+### 4.9. Epic E5 of `engine`: the candidates D, E and F, T65
+
+Read 2026-11-15, 00:35 UTC, for T65: the repository [altnovatrail/engine](https://github.com/altnovatrail/engine) (`git ls-remote`, `gh release list`, `gh pr list`, `gh api` of `compare/…` and of RUN.md, `docs/measurements.md` and `.github/workflows/ci.yml` at `main`).
+- `main` is the commit 77ee605 of 2026-11-14, 22:23 UTC — "Merge pull request #71 from altnovatrail/e5-corridor-round-2" —, and it is the only branch; `v0.1.8` is still the latest release, and no pull request is open. Against v0.1.6, the commit 57e0ab8 that `gate.json` names, `main` changes, of the Go files, only `bench_internal_test.go` and `release_internal_test.go`. `ci.yml` — `SIM_TAG: v0.1.17`, `SIM_COMMIT: 6f5151f5eb241b5b44b11b71296a0e3cd2c201a1`.
+- RUN.md, table 1 — «Текущий эпик — E5. Второй круг коридора»: «| [x] | T57 | Разбор коридора на новой базе | …», «| [x] | T58 | Варианты кандидата коридора | …», «| [ ] | T59 | Суд `engine-2`, выбор и релиз | я + Claude | да | T58; E6 `sim` («Второй круг движка») |»; its order — «Суд — когда до него дойдёт очередь `sim`: E6 `sim` идёт после его E9 и E8 и судит на базе после суда `model-3`».
+- T59, «Из T58 (2026-11-14)» — «кандидаты суда — полные SHA коммитов ветки `e5-corridor-round-2`: D 29e205a15f5a05a443851a255f00cffbcbd3d5b2, E e9832fca943b7ee457ddc759396e225a5114033a, F 389798ba6bce0035356b73f42baed39ab16bf833; голова ветки — код базы. Строки файла суда — все `"group": "corridor"`, `"new_field": false`, `"equal_on": ["novatrail/grade-3-math", "novatrail/english-essays"]`: E — `"constants": 0, "distance": 1`, D — `0` и `2`, F — `1` и `3`». `compare/<commit>...main` gives all three as ancestors of `main` — 4, 3 and 2 commits behind it.
+- Table 3, В46 — «Грубый взгляд T58: все три кандидата, D, E и F, не держат «не хуже» по олимпиадному `M3.settle` на `G3-drop` — на 0,3–2,8 сверх допуска», with the recommendation «(а): грубый взгляд на 300 учениках ничего не решает»; `docs/measurements.md`, section 6 — the rough look on «A clone of `sim` `v0.1.17` (6f5151f; `gh release verify` accepts it)».
+
 ## 5. `.github`
 
 ### 5.1. Commit af40f94, T03
@@ -281,6 +291,8 @@ Read 2026-11-14 for T49: the repository [altnovatrail/modules](https://github.co
 
 Read again 2026-11-14 for T60: `main` is the commit 6e4391f of 04:12 UTC — "Merge pull request #103 from altnovatrail/t69-check-board" —, and the row Д5 of its DEBT.md is still open — «Гейта `sim` в CI нет, и релизы выходят без него — от первого, `v0.1.0`, до `v0.2.5`».
 
+Read again 2026-11-15, 00:30 UTC, for T65 (`gh release list`, `gh api` of the commit of `main`, of `compare/v0.2.7...main` and of DEBT.md at `main`): `main` is the commit 7e99049 of 2026-11-14, 19:58 UTC, and `v0.2.7` is still the latest release; against it `main` changes README.md, RUN.md, `docs/architecture.md`, `docs/measurements.md` and `docs/plan/E9.md` alone, no module. The row Д5 of its DEBT.md is still open — «Гейта `sim` в CI нет, и релизы выходят без него — от первого, `v0.1.0`, до `v0.2.5`».
+
 ### 6.6. Releases v0.2.6 and v0.2.7, T60
 
 Read 2026-11-14 for T60: the releases [altnovatrail/modules](https://github.com/altnovatrail/modules) `v0.2.6` of 02:30 UTC and `v0.2.7` of 04:21 UTC (`gh release view`, `gh release download … -p module-index.json`).
@@ -331,3 +343,10 @@ Read 2026-11-14 for T60, without a move (`gh release list`, `gh release verify`,
 - T149 is still not done in RUN.md at v0.17.5 — «`tools/docs-check/budgets.mjs` — ключ `entries` в блоках `budgets.json` и в `docs-budgets.json`», and `tools/` is the same as at v0.17.3, so the key `entries` is in no tag up to v0.17.5.
 
 Read again 2026-11-14, 16:14 UTC, for the laying out of E9 (R54; `gh release list`, `git ls-remote`, RUN.md at `main` by `gh api`): `v0.17.5` is still the latest release, and `main` is its commit a14d383. T149 stands among «Задачи вне эпика» of RUN.md, whose done tasks go to an archive, with no «Сделано», and its body still asks for «`tools/docs-check/budgets.mjs` — ключ `entries` в блоках `budgets.json` и в `docs-budgets.json`», so neither a tag nor `main` has the key `entries`.
+
+### 7.8. `spec` v0.17.6–v0.17.11, T65
+
+Read 2026-11-15, 00:30 UTC, for T65, without a move (`gh release list`, `gh release verify`, `git -C spec diff v0.17.3 v0.17.11` after `git fetch --tags`): the releases [altnovatrail/spec](https://github.com/altnovatrail/spec) `v0.17.6` of 2026-11-14, 16:34 UTC, its tag on the commit 9b94c0a — "Merge pull request #151 from altnovatrail/t153-mockup" —, up to `v0.17.11` of 2026-11-15, 00:07 UTC, on 3080b49 — "Merge pull request #156 from altnovatrail/t157-coordination-rows"; `main` is that commit. `gh release verify v0.17.11 -R altnovatrail/spec` — "Release v0.17.11 verified!".
+- Against v0.17.5 they change `.claude/rules/tools.md`, CLAUDE.md, COORDINATION.md, DEBT.md, RUN.md, `justfile`, of `docs/` architecture, decisions, product and `plan/E12.md`, `draft/` with the new `draft/mockup/`, the new `tools/mockup/`, and `tools/docs-check/budgets.json` alone in `tools/docs-check/`, where `spec`'s own budget of its DEBT.md goes from 128 to 132: the interface mockup of `spec`'s epic E12. Against v0.17.3, `RULES.md`, `format/`, `types/`, `go.mod`, `spec.go`, `repo-template/`, `.devcontainer/`, `tools/session/`, `claude-plugins/` and `.claude/settings.json` are the same, and so is the card 3.9 of architecture.
+- T149 is still not done in RUN.md at v0.17.11: its body has no «Сделано», and `tools/docs-check/budgets.mjs` is as at v0.17.3, so the key `entries` is in no tag up to v0.17.11.
+- COORDINATION.md at v0.17.11 — «| [ ] | 4.15 | `sim` | задачи ещё нет: её записывает сессия `sim` по предложению T50 `engine` | …» and «| [ ] | 4.16 | `sim` | задачи ещё нет: её записывает сессия `sim` …»; table 5 of RUN.md, the rows of other repositories recorded in `spec`, holds one row of `sim` — «| `sim` | В13 | `e99dec9dd7a0` | закрытая строка 7.10 …».
