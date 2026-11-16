@@ -43,10 +43,6 @@ on:
 permissions:
   contents: read
 
-# The jobs of the parts, the parts of the matrix below; the check refuses a part of n missing.
-env:
-  PARTS: 4
-
 jobs:
   part:
     name: ${{ inputs.name }} / part ${{ matrix.part }}
@@ -57,6 +53,19 @@ jobs:
       matrix:
         part: [0, 1, 2, 3]
     steps:
+      - name: Inputs
+        env:
+          SIM_TAG: ${{ inputs.sim-tag }}
+          SIM_COMMIT: ${{ inputs.sim-commit }}
+          LIBRARY: ${{ inputs.library }}
+        run: |
+          # sim's own CI names none of the three, a caller all three: sim, its tag, and the library its
+          # checkout replaces.
+          if [ -n "$SIM_TAG$SIM_COMMIT$LIBRARY" ] && { [ -z "$SIM_TAG" ] || ! [[ "$SIM_COMMIT" =~ ^[0-9a-f]{40}$ ]] || ! [[ "$LIBRARY" =~ ^GATE_[A-Z_]+$ ]]; }; then
+              echo "::error::sim-tag, sim-commit by its full SHA and library, as GATE_ENGINE, come together, or none of them: they are '$SIM_TAG', '$SIM_COMMIT' and '$LIBRARY'"
+              exit 1
+          fi
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -94,6 +103,8 @@ jobs:
           key: toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('sim/.devcontainer/Dockerfile') }}
 
       - name: Toolchain image
+        env:
+          PART: ${{ matrix.part }}
         run: |
           tar=$RUNNER_TEMP/toolchain.tar
           restored=false
@@ -108,8 +119,9 @@ jobs:
               rm -f -- "$tar"
           fi
           docker build --target toolchain --tag toolchain - < sim/.devcontainer/Dockerfile
-          # A file the cache gave has its entry already, which no save replaces.
-          if [ "$restored" = false ] && ! docker save --output "$tar" toolchain; then
+          # A file the cache gave has its entry already, which no save replaces; only the first part
+          # saves one.
+          if [ "$restored" = false ] && [ "$PART" = 0 ] && ! docker save --output "$tar" toolchain; then
               echo "::warning::The image of the toolchain stage could not be saved for the cache: the next run builds it again."
               rm -f -- "$tar"
           fi
@@ -124,14 +136,11 @@ jobs:
       - name: gate-part
         env:
           PART: ${{ matrix.part }}
+          PARTS: ${{ strategy.job-total }}
           LIBRARY: ${{ inputs.library }}
         run: |
           library=()
           if [ -n "$LIBRARY" ]; then
-              if ! [[ "$LIBRARY" =~ ^GATE_[A-Z_]+$ ]]; then
-                  echo "::error::library is $LIBRARY, not the variable of a library, as GATE_ENGINE"
-                  exit 1
-              fi
               library=(--env "$LIBRARY=/work/caller")
           fi
           mkdir -p "$RUNNER_TEMP/go" "$RUNNER_TEMP/parts"
@@ -145,7 +154,7 @@ jobs:
         with:
           name: gate-${{ inputs.name }}-part-${{ matrix.part }}
           path: ${{ runner.temp }}/parts
-          retention-days: 1
+          retention-days: 7
           if-no-files-found: error
 
       - name: Go cache into the cache
@@ -173,6 +182,19 @@ jobs:
               exit 1
           fi
 
+      - name: Inputs
+        env:
+          SIM_TAG: ${{ inputs.sim-tag }}
+          SIM_COMMIT: ${{ inputs.sim-commit }}
+          LIBRARY: ${{ inputs.library }}
+        run: |
+          # sim's own CI names none of the three, a caller all three: sim, its tag, and the library its
+          # checkout replaces.
+          if [ -n "$SIM_TAG$SIM_COMMIT$LIBRARY" ] && { [ -z "$SIM_TAG" ] || ! [[ "$SIM_COMMIT" =~ ^[0-9a-f]{40}$ ]] || ! [[ "$LIBRARY" =~ ^GATE_[A-Z_]+$ ]]; }; then
+              echo "::error::sim-tag, sim-commit by its full SHA and library, as GATE_ENGINE, come together, or none of them: they are '$SIM_TAG', '$SIM_COMMIT' and '$LIBRARY'"
+              exit 1
+          fi
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -187,17 +209,18 @@ jobs:
           path: caller
 
       # A caller's sim is the commit its tag is on, as the workspace holds a library's tag to the
-      # commit gate.json names; an annotated tag points at its commit through ^{}.
+      # commit gate.json names — an annotated tag points at its commit through ^{} —, and the commit
+      # the caller's uses of this workflow names, so that a move of one by Dependabot, which does not
+      # move the inputs, is not a workflow of one tag running the sim of another. The caller's
+      # workflow is that of github.workflow_ref, which in a called workflow is the caller's.
       - name: sim's tag
-        if: inputs.sim-commit != '' || inputs.sim-tag != ''
+        if: inputs.sim-commit != ''
         env:
           SIM_TAG: ${{ inputs.sim-tag }}
           SIM_COMMIT: ${{ inputs.sim-commit }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          if ! [[ "$SIM_COMMIT" =~ ^[0-9a-f]{40}$ ]] || [ -z "$SIM_TAG" ]; then
-              echo "::error::sim-tag and sim-commit come together, the commit by its full SHA: they are $SIM_TAG and $SIM_COMMIT"
-              exit 1
-          fi
           tags="$(git ls-remote https://github.com/altnovatrail/sim "refs/tags/$SIM_TAG" "refs/tags/$SIM_TAG^{}")"
           tagged="$(printf '%s\n' "$tags" | awk -v ref="refs/tags/$SIM_TAG^{}" '$2 == ref { print $1 }')"
           if [ -z "$tagged" ]; then
@@ -205,6 +228,13 @@ jobs:
           fi
           if [ "$tagged" != "$SIM_COMMIT" ]; then
               echo "::error::sim $SIM_TAG is on ${tagged:-no commit}, and sim-commit is $SIM_COMMIT"
+              exit 1
+          fi
+          file="${WORKFLOW_REF#"$REPOSITORY"/}"
+          file="caller/${file%%@*}"
+          uses="$(sed -n 's|^[[:space:]]*uses:[[:space:]]*altnovatrail/sim/\.github/workflows/gate\.yml@\([0-9a-f]\{40\}\).*$|\1|p' "$file" | sort -u)"
+          if [ "$uses" != "$SIM_COMMIT" ]; then
+              echo "::error::$file calls gate.yml of sim at $(printf '%s' "${uses:-no commit}" | tr '\n' ' '), and sim-commit is $SIM_COMMIT: the two move together"
               exit 1
           fi
 
@@ -248,10 +278,6 @@ jobs:
         run: |
           library=()
           if [ -n "$LIBRARY" ]; then
-              if ! [[ "$LIBRARY" =~ ^GATE_[A-Z_]+$ ]]; then
-                  echo "::error::library is $LIBRARY, not the variable of a library, as GATE_ENGINE"
-                  exit 1
-              fi
               library=(--env "$LIBRARY=/work/caller")
           fi
           mkdir -p "$RUNNER_TEMP/go"

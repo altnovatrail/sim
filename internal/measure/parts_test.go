@@ -2,6 +2,7 @@ package measure
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,9 +26,10 @@ const partEnv = "SIM_MEASURE_PART"
 func engineSumsOn(t *testing.T, name string, g, n int) ([]Sums, []string) {
 	t.Helper()
 	if v, ok := os.LookupEnv(partEnv); ok {
+		// The file is all after the first space, so that a folder with a space in its name is whole.
+		part, file, _ := strings.Cut(v, " ")
 		var k, of int
-		var file string
-		if _, err := fmt.Sscanf(v, "%d/%d %s", &k, &of, &file); err != nil || of < 1 || k < 0 || k >= of {
+		if _, err := fmt.Sscanf(part, "%d/%d", &k, &of); err != nil || of < 1 || k < 0 || k >= of || file == "" {
 			t.Fatalf("%s is %q, not <k>/<n> <file>", partEnv, v)
 		}
 		var ks []int
@@ -57,10 +59,19 @@ func engineSumsOn(t *testing.T, name string, g, n int) ([]Sums, []string) {
 		}
 		return sums, graph
 	}
-	// The pattern of -test.run that matches this test alone: each level of its name, anchored.
+	// The pattern of -test.run that matches this test alone: each level of its name, anchored, which
+	// holds only for a name with no character a regular expression reads.
 	levels := strings.Split(t.Name(), "/")
 	for i, l := range levels {
+		if strings.ContainsAny(l, `\.+*?()|[]{}^$`) {
+			t.Fatalf("the name %q is read as a pattern by -test.run", t.Name())
+		}
 		levels[i] = "^" + l + "$"
+	}
+	// The processes stop at the test binary's own time limit, so that none outlives it.
+	timeout := "0"
+	if f := flag.Lookup("test.timeout"); f != nil {
+		timeout = f.Value.String()
 	}
 	dir := t.TempDir()
 	file := func(k int, ext string) string { return filepath.Join(dir, fmt.Sprintf("part-%d.%s", k, ext)) }
@@ -72,7 +83,7 @@ func engineSumsOn(t *testing.T, name string, g, n int) ([]Sums, []string) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		cmd := exec.Command(os.Args[0], "-test.run="+strings.Join(levels, "/"), "-test.count=1")
+		cmd := exec.Command(os.Args[0], "-test.run="+strings.Join(levels, "/"), "-test.count=1", "-test.timeout="+timeout)
 		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%d/%d %s", partEnv, k, procs, file(k, "json")))
 		cmd.Stdout = out
 		cmd.Stderr = out

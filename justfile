@@ -566,8 +566,8 @@ gate-bench from mode job jobs parts *args:
         exit 1
     fi
     case "$mode" in
-        bands) "$tmp/sim" gate check -file gate.json "${gomods[@]}" "${files[@]}" ;;
-        exact) "$tmp/sim" gate check -exact -file gate.json "${gomods[@]}" "${files[@]}" ;;
-        record) "$tmp/sim" gate record -reason "$1" -file gate.json "${gomods[@]}" "${files[@]}" ;;
-        modules) "$tmp/sim" gate thresholds -file gate.json "${gomods[@]}" "${files[@]}" ;;
+        bands) "$tmp/sim" gate check -file gate.json "${gomods[@]}" "${commits[@]}" "${files[@]}" ;;
+        exact) "$tmp/sim" gate check -exact -file gate.json "${gomods[@]}" "${commits[@]}" "${files[@]}" ;;
+        record) "$tmp/sim" gate record -reason "$1" -file gate.json "${gomods[@]}" "${commits[@]}" "${files[@]}" ;;
+        modules) "$tmp/sim" gate thresholds -file gate.json "${gomods[@]}" "${commits[@]}" "${files[@]}" ;;
     esac

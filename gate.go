@@ -50,10 +50,10 @@ func gateCommand(args []string, stdout, stderr io.Writer) error {
 
 const gateUsage = `usage: sim gate libraries <gate file>
        sim gate run -part k/n -commit <path>=<sha>… [-package <folder>…] [-out <file>]
-       sim gate check [-exact] -file <gate file> -go <module dir>… <part>…
-       sim gate record -reason <why> -file <gate file> -go <module dir>… <part>…
+       sim gate check [-exact] -file <gate file> -go <module dir>… [-commit <path>=<sha>…] <part>…
+       sim gate record -reason <why> -file <gate file> -go <module dir>… [-commit <path>=<sha>…] <part>…
        sim gate changed (-index <module-index.json> | -first) [-published <folder>]… [-all] <package folder>…
-       sim gate thresholds -file <gate file> -go <module dir>… <part>…
+       sim gate thresholds -file <gate file> -go <module dir>… [-commit <path>=<sha>…] <part>…
        sim gate verify -file <gate file> -go <module dir>…`
 
 // gateLibraries writes the libraries of the gate file, one a line: the module path, the repository,
@@ -222,13 +222,15 @@ func gateChanged(args []string, stdout, stderr io.Writer) error {
 
 // gateCheck checks the run of the gate, its parts merged, against the gate file and writes the
 // report; or records its bands into the gate file; or checks the run of the gate of modules against
-// its thresholds and writes that report. Each first holds the build to the file.
+// its thresholds and writes that report. Each first holds the build to the file, and, given the
+// build's commits, the parts to the build.
 func gateCheck(cmd string, args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("gate "+cmd, flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	file := fs.String("file", "gate.json", "the gate file")
 	exact := fs.Bool("exact", false, "hold the numbers to the recorded ones to the last bit, not to their bands")
 	reason := fs.String("reason", "", "why the bands are recorded anew")
+	commits := commitFlag(fs)
 	var dirs []string
 	fs.Func("go", "the folder of a module of the workspace, whose go.mod the gate reads; repeatable", func(v string) error {
 		dirs = append(dirs, v)
@@ -256,6 +258,11 @@ func gateCheck(cmd string, args []string, stdout, stderr io.Writer) error {
 	results, err := bench.Merge(parts)
 	if err != nil {
 		return err
+	}
+	// The parts are the run of this build: with -commit, the libraries their header names are those
+	// the build is on, so that parts run on other code are not judged by the build held to the file.
+	if len(commits) > 0 && !maps.Equal(results.Header.Libraries, commits) {
+		return fmt.Errorf("the parts ran on %v, and the build is on %v", results.Header.Libraries, commits)
 	}
 	switch cmd {
 	case "record":
