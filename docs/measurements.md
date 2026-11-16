@@ -64,7 +64,7 @@ How `sim` keeps what row 7.10 of `spec`'s COORDINATION.md saved, by the pattern 
 
 ### 2.2. The measurement of sessions
 
-`just -f spec/justfile tokens-report --since … --until … --row` prints one row of the table below. It runs at the archive of each epic, for the epic's window (RUN.md, «Как устроен план: эпики»), and once a month from `spec` (measurements 1.9 spec).
+`just -f spec/justfile tokens-report --since … --until … --row` prints one row of the table below. It runs at the archive of each epic, for the epic's window (RUN.md, Epics), and once a month from `spec` (measurements 1.9 spec).
 
 | Project | Window, UTC | Sessions | Calls, main / subagents | Context of a call, k, main / subagents | Compactions | Cost at API prices |
 |---|---|---|---|---|---|---|
@@ -73,12 +73,14 @@ How `sim` keeps what row 7.10 of `spec`'s COORDINATION.md saved, by the pattern 
 | `-workspaces-sim` — epic E5: T46–T49, T54, T55, and T50–T53 outside it | 2026-11-11T23:07 … 2026-11-14T02:34 | 16 | 1,557 / 634 | 179.4 / 97.4 | 3 | $142.28 |
 | `-workspaces-sim` — epic E7: T56–T60, and the end of T49 with the laying out of E7 | 2026-11-14T02:34 … 2026-11-14T15:27 | 6 | 421 / 50 | 172.5 / 75.0 | 1 | $30.30 |
 | `-workspaces-sim` — epic E9: T61–T65, and the end of T60 with the laying out of E9 | 2026-11-14T15:27 … 2026-11-15T00:31 | 7 | 685 / 227 | 182.2 / 81.8 | 1 | $57.76 |
+| `-workspaces-sim` — epic E11: T66, T67, and the end of T65 | 2026-11-15T00:31 … 2026-11-16T01:33 | 5 | 238 / 71 | 152.5 / 72.6 | 0 | $16.97 |
 
 - The context of a main call fell from 325.5 to 180.3 thousand, −45%; by session it was 178.0 in T50, 153.4 in T51, 128.8 in T52 and 109.5 in T53, while the documents a session reads became English, one task at a time. A subagent's rose from 79.5 to 105.0: here the subagents were translators and blind readers, each of which reads the glossary, concepts 15 spec, and the rules of translation. Three of the seven sessions, of one, one and five calls, ran no task.
 - The windows differ in work: E2–E5 with code, runs and judgements against the move to a tag and the translation of `docs/`. The comparison by sessions after the task is T124 spec.
 - The window of E5, measured in T49, opens after the commit of T45 and before 4113692, which laid E5 out, and ends at 02:34, while T49 still ran: its last calls are not in the row. It holds the window of T50–T53 above: the same report run again on that window gives 7 sessions and $60.32, so the tasks of the epic itself took 9 sessions and about $82. The context of a main call, 179.4 thousand, is the same as in T50–T53, 180.3, against 325.5 before them.
 - The window of E7, measured in T60, opens where that of E5 ended, so it holds the end of T49 and the laying out of E7 (R50), which ran in T49's session; it ends at 15:27, while T60 still ran, and T60's last calls are not in it. The context of a main call, 172.5 thousand, is near that of E5, 179.4; the cost is about $5 a session, against about $9 in E5. E7 had less to read and write: one change of code, T57, one decisive run, that of T58 (measurements 1.3; R53), and T59 not done, `[-]`.
 - The window of E9, measured in T65, opens where that of E7 ended, so it holds the end of T60, $5.77, and the laying out of E9 (R54), a session of its own, $6.28; it ends at 00:31, while T65 still ran, and T65's last calls are not in it. By session: T61 $9.55, T62 $18.13, T63 $7.76, T64 $8.20, so the four tasks took $43.64. T62, the populations, the measure and the evaluation in code with their tests (R56), took the most — 201 calls and 77 of subagents —, and the context of a main call, 182.2 thousand, is near that of E5 and E7.
+- The window of E11, measured in T67, opens where that of E9 ended, so it holds the end of T65 with the discussion of R59, $7.29, and two short sessions of `spec`'s orchestrator, T169 and T170, $0.45; it ends at 01:33, while T67 still ran, and T67's last calls are not in it. By session: T66 $6.62, T67 $2.65 up to then. No compaction; the context of a main call, 152.5 thousand, is the lowest of the epics, since neither task ran code or long runs.
 
 ## 3. The paths of the targets
 
