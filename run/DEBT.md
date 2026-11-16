@@ -8,8 +8,9 @@ Table 4 of [RUN.md](../RUN.md): what was put off on purpose, its risk, when to r
 
 ## Table 4. Technical debt
 
-Numbers are not reused: next — Д11.
+Numbers are not reused: next — Д12.
 
 | ID | Debt | From | Risk while open | When to return |
 |---|---|---|---|---|
 | Д3 | No check of the simulator's numbers against live learners: the populations are its assumptions, their speeds, laws of forgetting and shares not measured (R03). Standalone checked two tables of its service's report against live children, and its simulator computed the same numbers for its own (sources 1.1) | T01 | The simulator may choose a rule good on its assumptions and worse on live learners, unseen | Stage 2, when `api` holds live learners' data (architecture 1 spec; repositories 2.1 spec): read the path against privacy spec first, propose it as a row of [QUESTIONS.md](QUESTIONS.md) «В реестр spec» |
+| Д11 | The short run of the three rules of R157 spec against the base, row 4.21 of COORDINATION.md spec, which card 3.9 spec names from v0.18.6: grade 5's `M11.same` by the 50th answer above 0.5525, no cell worse by `fair` (R57), the guard's false triggers in the cell of grade 3 at most 5 % of its learners, the adult's correction as a cell `sim` chooses; its criterion written before the run, its numbers a row «в реестр spec» for dpia 10.2 spec (R71) | T78 | The first child waits for the three rules checked by this run (R157 spec; dpia 8 spec) | A task of its own, once row 4.20 — the three rules in `learner-model` — is done; the orchestrator gives it from «Порядок» |
