@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"slices"
 	"strings"
@@ -91,6 +92,11 @@ func TestGate(t *testing.T) {
 	}
 }
 
+// fileModes says whether the build keeps a file's mode: WASI preview1 has none, and Go's Chmod on
+// wasip1 only checks that the file is there, so in node:wasi, where "Go / targets" and "Go / arm64"
+// of .github v0.1.24 run the tests, a file has the mode the host gave it (sources 5.3).
+var fileModes = runtime.GOOS != "wasip1"
+
 // "sim run -part" runs a part, and "sim merge" merges the parts into the whole, to the byte.
 func TestMerge(t *testing.T) {
 	dir := t.TempDir()
@@ -116,8 +122,10 @@ func TestMerge(t *testing.T) {
 	if !bytes.Equal(a, b) {
 		t.Error("the merged parts are not the whole")
 	}
-	if st, err := os.Stat(merged); err != nil || st.Mode().Perm() != 0o644 {
-		t.Errorf("a new file of results has the mode %v: %v", st.Mode().Perm(), err)
+	if st, err := os.Stat(merged); err != nil {
+		t.Error(err)
+	} else if fileModes && st.Mode().Perm() != 0o644 {
+		t.Errorf("a new file of results has the mode %v", st.Mode().Perm())
 	}
 	for _, c := range []struct {
 		args   []string
@@ -200,8 +208,10 @@ func TestGateWhole(t *testing.T) {
 	if got := run(append([]string{"gate", "record", "-reason", "a test"}, args...), &stdout, &stderr); got != 0 {
 		t.Fatalf("sim gate record = %d: %s", got, stderr.String())
 	}
-	if st, err := os.Stat(gateFile); err != nil || st.Mode().Perm() != 0o600 {
-		t.Errorf("the record changed the mode of the gate file: %v", err)
+	if st, err := os.Stat(gateFile); err != nil {
+		t.Error(err)
+	} else if fileModes && st.Mode().Perm() != 0o600 {
+		t.Errorf("the record changed the mode of the gate file to %v", st.Mode().Perm())
 	}
 	stdout.Reset()
 	if got := run(append([]string{"gate", "check", "-exact"}, args...), &stdout, &stderr); got != 0 || !strings.Contains(stdout.String(), "The gate is green") {
