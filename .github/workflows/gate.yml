@@ -81,7 +81,8 @@ jobs:
 
       # The caches of Go between runs, by the module sums and the toolchain of sim, not by the
       # commits gate.json names: a new pin builds its libraries on the cache of the one before,
-      # restore-keys. A pull request only reads it, and the first part of a push saves it.
+      # restore-keys. Only a push to main saves it, by the first part, as the image (R68); every
+      # other event reads it.
       - name: Go cache
         id: go
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -161,7 +162,7 @@ jobs:
           if-no-files-found: error
 
       - name: Go cache into the cache
-        if: github.event_name != 'pull_request' && matrix.part == 0 && steps.go.outputs.cache-hit != 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.part == 0 && steps.go.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/go

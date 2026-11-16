@@ -62,7 +62,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [ ] | T72 | Суд `model-fair-1` | я + Claude | да | T71; кандидаты — черновые pull request T62 `learner-model` (строка 4.17 COORDINATION.md spec), не их релиз |
 | [ ] | T73 | База — на релиз выбранного, архив эпика | я + Claude | да | T72; при выборе — релиз выбранного, T63 `learner-model` |
 | [x] | T74 | Скорость CI: строка 7.19 | Claude | — | — |
-| [ ] | T75 | Переход на релиз `.github` строки 7.13 | Claude | да | T74; релиз `.github` строки 7.13 COORDINATION.md spec |
+| [x] | T75 | Переход на релиз `.github` строки 7.13 | Claude | да | T74; релиз `.github` строки 7.13 COORDINATION.md spec |
 | [ ] | T76 | Переход на тег `spec` строки 7.14: стадия `toolchain-core` | я + Claude | да | T75; тег `spec` строки 7.14 COORDINATION.md spec; релиз `.github` с T66 `.github` |
 
 **Почему такой порядок.**
@@ -115,22 +115,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
   - в обоих исходах: раздел 3 [docs/architecture.md](docs/architecture.md) сверить с построенным; что меняет карточку architecture 3.9 spec — строкой «в реестр spec»; таблицы 2–4; эпик — в архив `docs/plan/E10.md`, замер токенов его сессий — строкой measurements 2.2; следующий эпик предложить (R59).
 - **Как проверить:** при выборе — `just gate exact`, `just ci-test`, `just ci-lint`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
 - **Разделы:** R04, R26, R29, R40, R55, R58, R59; [docs/architecture.md](docs/architecture.md), разделы 3, 3.6 и 3.9; architecture 3.9 spec; dpia 10.2 spec.
-
-#### T75. Переход на релиз `.github` строки 7.13
-
-- **Цель:** CI `sim` — на релизе общих workflow `.github` строки 7.13 COORDINATION.md spec: кеш Go в `go.yml`, «Go / targets» матрицей по цели, «Go / fma-diff» — цели параллельно, образ `toolchain` без сохранения из pull request и при промахе — сборкой в одном job, сверка и подписи релиза параллельно; что проверки доказывают, не меняется. Остаток строки 7.19 после T74 (R67).
-- **Почему:** строка 7.19 COORDINATION.md spec: без этого релиза `v0.1.24` удлиняет «Go / targets» тестами wasip1; «Go / targets» — самый долгий job после гейта частями (measurements 3.1 spec; R67).
-- **Ждёт:** релиза `.github` строки 7.13 — оркестратор запустит задачу, когда он выйдет. Dependabot может открыть pull request группы `shared-workflows` раньше (R63): тогда задача берёт его изменение в свою ветку и закрывает его.
-- **Сделать:**
-  - каждый `uses:` `.github` в `.github/workflows/` — на SHA тега релиза (R63);
-  - копию шагов образа в `gate.yml` свести с `go.yml` релиза — тот же файл, путь и ключ, его правила сохранения (R63, R67);
-  - рецепты `github`, `script`, `test-targets` и `fma-diff` читают скрипты job `go.yml`: сверить с его новым видом, чтобы контейнер гонял то, что CI;
-  - число частей гейта, `matrix.part` в `gate.yml`, — заново по времени job, когда «Go / targets» станет короче: T74 взяла четыре, две на медленном x64 подходили к «Go / arm64» (R67; measurements 1.1);
-  - новые входы и проверки релиза — по его описанию, запись источника — `docs/sources.md`; решение журнала — поправкой к R63 и R67 или новым.
-- **Решить при планировании:** если релиз гоняет проверки без Go-тестов в стадии `toolchain-core`, которой в Dockerfile `sim` нет до T76, — взять его без неё, если он даёт выбор, или нести стадию в T76 и тогда ждать её; спросить автора строкой [run/QUESTIONS.md](run/QUESTIONS.md), если ни то ни другое.
-- **Не делать:** `.devcontainer/` — его меняет T76.
-- **Как проверить:** `just ci-lint`, `just ci-test`, `just same-bits`; `just -f spec/justfile docs-check-repo`; CI pull request зелёный; время изменённых job до и после — в отчёте, по прогонам `main` и pull request, строкой [docs/measurements.md](docs/measurements.md), раздел 1.1; `/code-review high`, один круг.
-- **Разделы:** строки 7.13 и 7.19 COORDINATION.md spec; measurements 3.1 spec; R76 spec, R156 spec; R63, R67.
 
 #### T76. Переход на тег `spec` строки 7.14: стадия `toolchain-core`
 
