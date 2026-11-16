@@ -118,15 +118,35 @@ script job:
         END { if (!done) exit 1 }
     ' "$file" || { echo "same-bits: the job {{ job }} of $file has no script SCRIPT" >&2; exit 1; }
 
-# The tests on the builds where the bits are most at risk, by the script of the job targets: on an
-# amd64 host GOAMD64 v3, v1 with GODEBUG=cpu.all=off and 386, on another its own build with
-# cpu.all=off, and on both js/wasm and wasip1 in the container's Node, wasip1 vetted too.
+# The tests on the builds where the bits are most at risk, by the script of the jobs target and
+# arm64, which runs the targets TARGETS names: on an amd64 host those of the matrix of target —
+# GOAMD64 v3, v1 with GODEBUG=cpu.all=off, 386, js/wasm and wasip1 in the container's Node, wasip1
+# vetted too —, on another those of arm64, its own build with cpu.all=off, js/wasm and wasip1. CI
+# runs a job a target at once (R43 .github); here they run in order, in one container, as in arm64.
 # Run the tests on the builds the same bits are held on, as "Go / targets" does.
 test-targets:
     #!/usr/bin/env bash
     set -euo pipefail
-    script="$({{ just_executable() }} script targets)"
-    bash -c "$script"
+    file="$({{ just_executable() }} github)/.github/workflows/go.yml"
+    script="$({{ just_executable() }} script target)"
+    if [ "$(go env GOHOSTARCH)" = amd64 ]; then
+        targets="$(awk '
+            $0 == "  target:" { injob = 1; next }
+            injob && /^  [a-z0-9-]+:$/ { exit }
+            injob && /^ +target: \[.*\]$/ { sub(/^ +target: \[/, ""); sub(/\]$/, ""); gsub(/[",]/, " "); print; exit }
+        ' "$file")"
+    else
+        targets="$(awk '
+            $0 == "  arm64:" { injob = 1; next }
+            injob && /^  [a-z0-9-]+:$/ { exit }
+            injob && /^ +TARGETS: / { sub(/^ +TARGETS: /, ""); print; exit }
+        ' "$file")"
+    fi
+    if [ -z "${targets//[[:space:]]/}" ]; then
+        echo "same-bits: $file names no targets for a host $(go env GOHOSTARCH): neither the matrix of the job target nor TARGETS of arm64" >&2
+        exit 1
+    fi
+    TARGETS="$targets" bash -c "$script"
 
 # The assembler of each package with fusion and without it on six targets, with the job's own
 # control, by the script of the job fma-diff.

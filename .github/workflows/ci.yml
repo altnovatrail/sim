@@ -18,32 +18,34 @@ concurrency:
 jobs:
   secrets:
     name: Secrets
-    uses: altnovatrail/.github/.github/workflows/secrets.yml@fab102d8bbb4659575e107ee488e072aaaa71821 # v0.1.24
+    uses: altnovatrail/.github/.github/workflows/secrets.yml@8311cbfc01082e9b196c0af8d7b49192115cc84c # v0.1.30
 
   # A pull request's commits are what it checks; a push to main has been checked as one.
   dco:
     name: DCO
     if: github.event_name == 'pull_request'
-    uses: altnovatrail/.github/.github/workflows/dco.yml@fab102d8bbb4659575e107ee488e072aaaa71821 # v0.1.24
+    uses: altnovatrail/.github/.github/workflows/dco.yml@8311cbfc01082e9b196c0af8d7b49192115cc84c # v0.1.30
 
   documents:
     name: Documents
-    uses: altnovatrail/.github/.github/workflows/documents.yml@fab102d8bbb4659575e107ee488e072aaaa71821 # v0.1.24
+    uses: altnovatrail/.github/.github/workflows/documents.yml@8311cbfc01082e9b196c0af8d7b49192115cc84c # v0.1.30
 
   # The repository's Go code, by its own ci- recipes in its toolchain stage, and the coverage of
   # its tests, which the shared workflow sends to Codecov (R16 .github; R10). id-token: write is
   # for its coverage job alone, which asks for an OIDC token: a called workflow can only lower what
   # this job gives it. With same-bits it holds the bits the same on every build too (R09;
-  # docs/architecture.md, section 3.9): "Go / targets", "Go / fma-diff", "Go / arm64" on arm64
-  # hardware, and "Go / rules", the rules of code by the tool of .github and the lists of
-  # .github/coderules.json. The gate is not among them: it builds the bench on the commits of its
-  # gate file and comes with a job of its own (R09).
+  # docs/architecture.md, section 3.9): "Go / targets", the check after a job "Go / target (…)" for
+  # each target (R43 .github), "Go / fma-diff", "Go / arm64" on arm64 hardware, and "Go / rules",
+  # the rules of code by the tool of .github and the lists of .github/coderules.json. Its jobs take
+  # the image of the toolchain stage and the caches of Go from this repository's cache of GitHub
+  # Actions, which a push to main alone saves (R41, R42 .github; R68). The gate is not among them:
+  # it builds the bench on the commits of its gate file and comes with a job of its own (R09).
   go:
     name: Go
     permissions:
       contents: read
       id-token: write
-    uses: altnovatrail/.github/.github/workflows/go.yml@fab102d8bbb4659575e107ee488e072aaaa71821 # v0.1.24
+    uses: altnovatrail/.github/.github/workflows/go.yml@8311cbfc01082e9b196c0af8d7b49192115cc84c # v0.1.30
     with:
       same-bits: true
 
