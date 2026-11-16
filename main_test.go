@@ -216,6 +216,18 @@ func TestJudge(t *testing.T) {
 	if got := run([]string{"judge", absent}, &stdout, &stderr); got != 0 || !strings.Contains(stdout.String(), "fails neutral novatrail/english-essays all") {
 		t.Errorf("sim judge of a graph the runs do not have = %d:\n%s", got, stdout.String())
 	}
+	// The judgement model-fair-1 goes by the target its file names, M11.same, and no other judgement
+	// names one (R65).
+	stdout.Reset()
+	targeted := write("target.json", `{"judgement":"model-fair-1","criterion":"model","target":"M11.same","base":"base.jsonl","candidates":[{"name":"same","file":"base.jsonl"}]}`)
+	if got := run([]string{"judge", targeted}, &stdout, &stderr); got != 0 || !strings.Contains(stdout.String(), "The judgement model-fair-1 goes by its target, M11.same") || !strings.Contains(stdout.String(), "- the target, M11.same pooled: ") {
+		t.Errorf("sim judge of model-fair-1 = %d:\n%s", got, stdout.String())
+	}
+	stderr.Reset()
+	untargeted := write("untargeted.json", `{"judgement":"model-2","criterion":"model","target":"M11.same","base":"base.jsonl","candidates":[{"name":"same","file":"base.jsonl"}]}`)
+	if got := run([]string{"judge", untargeted}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "which only model-fair-1 wrote down") {
+		t.Errorf("sim judge of model-2 with a target = %d: %s", got, stderr.String())
+	}
 	// A candidate of the engine built beside another commit of learner-model is no candidate of this
 	// judgement: the judge holds it to the base's learner-model, by the embedded gate file (R40).
 	beside := map[string]string{bench.Libraries[0]: strings.Repeat("f", 40), bench.Libraries[1]: p.Libraries[bench.Libraries[1]]}

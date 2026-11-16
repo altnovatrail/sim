@@ -301,13 +301,15 @@ func compareCommand(args []string, stdout, stderr io.Writer) error {
 }
 
 // judgement is a judgement file: the name of the judgement, as its folder judgements/<name>/, which
-// a confirmation needs (R52), the criterion, the files of results of the base and of each
+// a confirmation needs (R52), the criterion, the target its criterion wrote down, if any — M11.same
+// for model-fair-1 (R65) —, the files of results of the base and of each
 // candidate — with the graphs it claims to give the base's runs on, equal_on (R49) —, and of the
 // confirmation when it has run; a path is relative to the judgement file. The paths of the score
 // are those the criterion holds fixed, so no ceiling runs beside them (R28).
 type judgement struct {
 	Judgement  string `json:"judgement"`
 	Criterion  string `json:"criterion"`
+	Target     string `json:"target"`
 	Base       string `json:"base"`
 	Candidates []struct {
 		Name      string   `json:"name"`
@@ -386,7 +388,7 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 		}
 		return file, nil
 	}
-	in := criterion.Input{Judgement: j.Judgement, Criterion: j.Criterion}
+	in := criterion.Input{Judgement: j.Judgement, Criterion: j.Criterion, Target: j.Target}
 	if in.Pins, err = pins(gateJSON); err != nil {
 		return fmt.Errorf("the embedded gate file: %w", err)
 	}

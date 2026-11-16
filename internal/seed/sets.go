@@ -29,6 +29,9 @@ var heldOut = map[string]uint64{
 	// held-out-<criterion>-<variant>-<n>: consolidation in a lesson, epic E7 (R49 in
 	// docs/decisions.md).
 	"held-out-engine-lesson-1": 20261113,
+	// The judgement of the round of fairness by the grade, apart from the rounds of the model's
+	// criterion (R65 in docs/decisions.md).
+	"held-out-model-fair-1": 20261116,
 }
 
 // Named gives a set by the name of its experiment: working, or a held-out set R04 has recorded.
@@ -58,6 +61,7 @@ var confirmations = map[string]string{
 	"model-2":         "held-out-model-1",
 	"engine-2":        "held-out-engine-1",
 	"engine-lesson-1": "held-out-engine-lesson-1",
+	"model-fair-1":    "held-out-model-fair-1",
 }
 
 // ErrNoConfirmation is a judgement whose held-out set is not recorded.

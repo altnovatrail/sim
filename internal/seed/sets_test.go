@@ -44,10 +44,10 @@ func TestUnits(t *testing.T) {
 
 // No learner is drawn alike in two sets (docs/architecture.md, section 3.8): the low word of a
 // place is its set's seed, so places of different sets never share a state, and their first draws
-// part. Checked across all the recorded sets — the working one, held-out-model-1, held-out-engine-1
-// and held-out-engine-lesson-1 — for the first 300 learners of one population of each
-// family of section 3.2, every purpose of a learner, and the miss of tasks of each module; the
-// test of every population comes with the populations (T16–T19 in RUN.md).
+// part. Checked across all the recorded sets — the working one, held-out-model-1, held-out-engine-1,
+// held-out-engine-lesson-1 and held-out-model-fair-1 — for the first 300 learners of one population
+// of each family of section 3.2, every purpose of a learner, and the miss of tasks of each module;
+// the test of every population comes with the populations (T16–T19 in RUN.md).
 func TestSetsApart(t *testing.T) {
 	sets := []Set{Working}
 	for _, name := range slices.Sorted(maps.Keys(heldOut)) {
@@ -57,7 +57,7 @@ func TestSetsApart(t *testing.T) {
 		}
 		sets = append(sets, s)
 	}
-	if len(sets) != 4 {
+	if len(sets) != 5 {
 		t.Errorf("the recorded sets %v", sets)
 	}
 	type place struct{ unit, purpose string }
@@ -138,15 +138,16 @@ func TestNamed(t *testing.T) {
 }
 
 // A judgement's confirmation runs on its own held-out set (R52 in docs/decisions.md): model-2 on the
-// set model-1 left by its exit, engine-2 on the one kept for it, engine-lesson-1 on its own. A
-// judgement with no row — model-3 until its seed is recorded, and the rounds that ended in an exit
-// without a confirmation — has none. Every held-out set R04 has recorded is in exactly one row, of
-// its judgement's criterion, so a seed never comes in without its judgement.
+// set model-1 left by its exit, engine-2 on the one kept for it, engine-lesson-1 and model-fair-1 on
+// their own (R49, R65). A judgement with no row — model-3 until its seed is recorded, and the rounds
+// that ended in an exit without a confirmation — has none. Every held-out set R04 has recorded is in
+// exactly one row, of its judgement's criterion, so a seed never comes in without its judgement.
 func TestConfirmation(t *testing.T) {
 	for judgement, want := range map[string]Set{
 		"model-2":         {Seed: 20261108, Experiment: "held-out-model-1"},
 		"engine-2":        {Seed: 20261109, Experiment: "held-out-engine-1"},
 		"engine-lesson-1": {Seed: 20261113, Experiment: "held-out-engine-lesson-1"},
+		"model-fair-1":    {Seed: 20261116, Experiment: "held-out-model-fair-1"},
 	} {
 		if s, err := Confirmation(judgement); err != nil || s != want {
 			t.Errorf("Confirmation(%s) = %v, %v; want %v", judgement, s, err, want)

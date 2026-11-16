@@ -93,12 +93,17 @@ func Evaluate(e Evaluation) (*Fairness, error) {
 		}
 		vs := measure.Read(c.Reference, c.Graph, c.Pairs, measure.FairNumbers())
 		d := Grade{Cell: c.Cell, Reference: c.Reference, Answers: vs[0], Same: vs[1], Band: vs[2], Learners: len(c.Pairs)}
-		d.SameHolds = d.Same.Read && d.Same.Low >= sameFloor
-		d.BandHolds = d.Band.Read && d.Band.High <= bandCeiling
+		d.SameHolds, d.BandHolds = bounds(d.Same, d.Band)
 		f.Holds = f.Holds && d.SameHolds && d.BandHolds
 		f.Grades = append(f.Grades, d)
 	}
 	return f, nil
+}
+
+// bounds tells whether a grade's M11.same and M11.band hold the bounds of R55: M11.same at least
+// sameFloor at the low end of its interval, M11.band at most bandCeiling at the high end.
+func bounds(same, band measure.Value) (bool, bool) {
+	return same.Read && same.Low >= sameFloor, band.Read && band.High <= bandCeiling
 }
 
 // gradeCell is the cell of a grade that the evaluation and the constraint fair read: its name, and its
@@ -208,7 +213,15 @@ func gradeList() string {
 	for _, name := range fairnessNames() {
 		out = append(out, gradeOf(name))
 	}
-	return strings.Join(out[:len(out)-1], ", ") + " and " + out[len(out)-1]
+	return joinAnd(out)
+}
+
+// joinAnd lists names as "a, b and c": one alone as it is, none as nothing.
+func joinAnd(names []string) string {
+	if len(names) < 2 {
+		return strings.Join(names, "")
+	}
+	return strings.Join(names[:len(names)-1], ", ") + " and " + names[len(names)-1]
 }
 
 // showInterval writes a value with its interval, or "unread".
