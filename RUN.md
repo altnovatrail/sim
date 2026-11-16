@@ -47,4 +47,4 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 
 ## Table 1. Current epic — none
 
-Last done epic: E11, [docs/plan/E11.md](docs/plan/E11.md). Next by [run/EPICS.md](run/EPICS.md): E10, once `learner-model` takes its round (row 4.18 of COORDINATION.md spec); proposed as its first task — Д10 of [run/DEBT.md](run/DEBT.md), the move of CI to the latest `.github` (R61).
+Last done epic: E11, [docs/plan/E11.md](docs/plan/E11.md). Next by [run/EPICS.md](run/EPICS.md): E10, once `learner-model` takes its round (row 4.18 of COORDINATION.md spec). When Д10 of [run/DEBT.md](run/DEBT.md), the move of CI to the latest `.github`, runs — row В25 of [run/QUESTIONS.md](run/QUESTIONS.md) (R61).
