@@ -25,6 +25,21 @@ Detailing is done, and so is the code epic, E2 ([RUN.md](RUN.md)). The first epi
 
 `just gate` builds the simulator on the commits of the libraries that [gate.json](gate.json) names, through a `go.work` it writes in a temporary folder, runs the gate and holds its numbers to their bands; `just gate exact` holds them to the recorded numbers to the last bit, as this repository's CI does on amd64 and arm64, and `just gate record "<reason>"` records the bands anew. A caller puts its own code in place of a library with `GATE_LEARNER_MODEL` or `GATE_ENGINE`: a folder, or a commit by its full SHA.
 
+The same gate runs as jobs (R67 in [docs/decisions.md](docs/decisions.md)): `just gate-part <k> <n> <folder>` runs part k of n of the learners, as one job of n, into the folder, and `just gate-check <bands|exact> <folder>` holds the build and the merged parts as `just gate` does, refusing a part missing, repeated or of another run. The jobs of one gate run on one kind of machine, since each splits its part by its processors. [.github/workflows/gate.yml](.github/workflows/gate.yml) is that, four jobs and the check, and this repository's CI calls it on amd64 and arm64. A caller calls it by the SHA of a tag of sim:
+
+```yaml
+  gate:
+    name: Gate
+    uses: altnovatrail/sim/.github/workflows/gate.yml@<SHA of the tag> # <tag>
+    with:
+      name: amd64
+      sim-tag: <tag>
+      sim-commit: <SHA of the tag>
+      library: GATE_ENGINE
+```
+
+It checks out sim at `sim-commit`, which `sim-tag` must be on, and the caller's own commit in place of the library `library` names, and holds the numbers to their bands; the check is "Gate / amd64".
+
 ### Gate in the CI of modules
 
 The CI of modules judges content, not a library, so its gate holds invariants and thresholds rather than bands, and runs only where what the simulator reads of a package changed ([docs/architecture.md](docs/architecture.md), section 3.9). Its job checks out sim by the tag and the SHA of its commit and runs, from the root of that checkout:

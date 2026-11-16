@@ -136,7 +136,8 @@ func TestE4E5(t *testing.T) {
 }
 
 // The measures of the engine read off real runs: G0 on school maths, F-model on olympiad maths,
-// E-base.
+// E-base. Each is a subtest, its learners in processes of their own where the build starts them
+// (engineSumsOn).
 func TestEngineOnRuns(t *testing.T) {
 	for _, c := range []struct {
 		population string
@@ -148,25 +149,23 @@ func TestEngineOnRuns(t *testing.T) {
 		{"F-model", 0, 24, []string{"E3.retention", "E3.late", "E3.week1"}},
 		{"E-base", 0, 12, []string{"E5.written", "E5.again", "E4.given"}},
 	} {
-		recs, graph := recordsOn(t, c.population, c.graph, c.n)
-		var sums []Sums
-		for _, r := range recs {
-			sums = append(sums, Engine(r))
-		}
-		vs := Read(c.population, graph, sums, EngineNumbers())
-		for _, name := range c.numbers {
-			if v := value(t, vs, name); !v.Read || v.Low > v.Value || v.High < v.Value || v.Value < 0 {
-				t.Errorf("%s %s: %+v", c.population, name, v)
+		t.Run(c.population, func(t *testing.T) {
+			sums, graph := engineSumsOn(t, c.population, c.graph, c.n)
+			vs := Read(c.population, graph, sums, EngineNumbers())
+			for _, name := range c.numbers {
+				if v := value(t, vs, name); !v.Read || v.Low > v.Value || v.High < v.Value || v.Value < 0 {
+					t.Errorf("%s %s: %+v", c.population, name, v)
+				}
 			}
-		}
-		if c.population == "G0" {
-			corridor, ceiling := value(t, vs, "E1.corridor"), value(t, vs, "E1.ceiling")
-			if ceiling.Value <= 0 || ceiling.Value > 1 || corridor.Value > 1 {
-				t.Errorf("E1: corridor %v, ceiling %v", corridor.Value, ceiling.Value)
+			if c.population == "G0" {
+				corridor, ceiling := value(t, vs, "E1.corridor"), value(t, vs, "E1.ceiling")
+				if ceiling.Value <= 0 || ceiling.Value > 1 || corridor.Value > 1 {
+					t.Errorf("E1: corridor %v, ceiling %v", corridor.Value, ceiling.Value)
+				}
 			}
-		}
-		if c.population == "E-base" && value(t, vs, "E5.written").Value <= 0 {
-			t.Error("E-base writes no task with a rubric")
-		}
+			if c.population == "E-base" && value(t, vs, "E5.written").Value <= 0 {
+				t.Error("E-base writes no task with a rubric")
+			}
+		})
 	}
 }

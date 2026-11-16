@@ -176,6 +176,17 @@ func records(t *testing.T, name string, n int) ([]*run.Record, []string) {
 // recordsOn runs n learners of a population on its g-th graph and gives their records and the graph.
 func recordsOn(t *testing.T, name string, g, n int) ([]*run.Record, []string) {
 	t.Helper()
+	ks := make([]int, n)
+	for k := range n {
+		ks[k] = k
+	}
+	return recordsOf(t, name, g, ks)
+}
+
+// recordsOf runs the learners of a population on its g-th graph whose numbers ks gives, in that
+// order, and gives their records and the graph.
+func recordsOf(t *testing.T, name string, g int, ks []int) ([]*run.Record, []string) {
+	t.Helper()
 	ms, err := published.Modules()
 	if err != nil {
 		t.Fatal(err)
@@ -198,7 +209,7 @@ func recordsOn(t *testing.T, name string, g, n int) ([]*run.Record, []string) {
 		}
 	}
 	var recs []*run.Record
-	for k := range n {
+	for _, k := range ks {
 		l, err := learner.New(seed.Working, p.Name, k, mods, p.Assumptions(k))
 		if err != nil {
 			t.Fatal(err)

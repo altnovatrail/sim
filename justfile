@@ -152,12 +152,13 @@ same-bits: test-targets fma-diff rules
 
 # The release's one file (R29): sim-<version>.tar.gz, a folder of that name with what builds the
 # bench and runs the gate — the Go code but its tests and testdata/, the packages and the paths it
-# embeds, go.mod, go.sum, LICENSE, .gitattributes, gate.json, this justfile and the Dockerfile of
-# its toolchain —, the paths that give a release but the release workflow itself. The tar is
-# written the same by every build: names in order, no times or owners, mode 0644, and gzip with no
-# name or time. .github's shared release runs it in a tree git archive made, with no git to ask, so
-# the files come from the tree. The callers of the gate take sim from git by the tag and the SHA of
-# its commit; this file binds the tag to the signed release (R77 spec).
+# embeds, go.mod, go.sum, LICENSE, .gitattributes, gate.json, this justfile, the Dockerfile of its
+# toolchain and the workflow gate.yml, which runs the gate as jobs (R67) —, the paths that give a
+# release but the release workflow itself. The tar is written the same by every build: names in
+# order, no times or owners, mode 0644, and gzip with no name or time. .github's shared release
+# runs it in a tree git archive made, with no git to ask, so the files come from the tree. The
+# callers of the gate take sim from git by the tag and the SHA of its commit; this file binds the
+# tag to the signed release (R77 spec).
 # Build the release's file into dist/.
 release-files version:
     #!/usr/bin/env bash
@@ -170,7 +171,7 @@ release-files version:
     name="sim-${version}"
     rm -rf dist
     mkdir dist
-    (printf '%s\n' LICENSE go.mod go.sum .gitattributes gate.json justfile .devcontainer/Dockerfile internal/criterion/paths.json
+    (printf '%s\n' LICENSE go.mod go.sum .gitattributes gate.json justfile .devcontainer/Dockerfile internal/criterion/paths.json .github/workflows/gate.yml
         find internal/published -path 'internal/published/v*' -type f ! -name '*.go' -print
         find . -name testdata -prune -o -path './.*' -prune -o -path ./spec -prune -o \
             -type f -name '*.go' ! -name '*_test.go' -print | sed 's|^\./||') |
@@ -214,7 +215,7 @@ ci-release:
     # the tree: a new file before git add, or one removed before git rm, is the tree's as the release
     # sees it.
     want="$(git ls-files --cached --others --exclude-standard -- LICENSE go.mod go.sum .gitattributes gate.json justfile \
-        .devcontainer/Dockerfile internal/criterion/paths.json 'internal/published/v*' '*.go' \
+        .devcontainer/Dockerfile internal/criterion/paths.json .github/workflows/gate.yml 'internal/published/v*' '*.go' \
         ':(exclude)*_test.go' ':(exclude,glob)**/testdata/**' |
         while IFS= read -r file; do if [ -e "$file" ]; then printf '%s\n' "$file"; fi; done | LC_ALL=C sort -u)"
     if [ "$got" != "$want" ]; then
@@ -427,7 +428,7 @@ cells kind rule out set learners:
 # CI of modules, whose arguments are those of `sim gate changed` (README.md): it asks sim what
 # changed of what the bench reads, before it fetches anything, runs the gate on the packages of the
 # changed modules alone, and holds the numbers to thresholds, not bands. Relative paths among those
-# arguments are of the caller's folder.
+# arguments are of the caller's folder. gate-part and gate-check below run the same gate as jobs.
 # Run the gate on the commits of gate.json: mode bands, exact, record or modules.
 [positional-arguments]
 gate mode="bands" *args:
@@ -441,6 +442,62 @@ gate mode="bands" *args:
         modules) [ "$#" -gt 0 ] || { echo "gate: mode modules takes the arguments of sim gate changed" >&2; exit 2; } ;;
         *) echo "gate: mode $mode: bands, exact, record or modules" >&2; exit 2 ;;
     esac
+    {{ just_executable() }} -f {{ quote(justfile()) }} gate-bench {{ quote(invocation_directory()) }} "$mode" 0 1 - "$@"
+
+# The gate as jobs of CI, as the workflow gate.yml runs it (R67 in docs/decisions.md): n jobs, each
+# its part of the learners, those whose number gives k mod n, and one check after them. It is the
+# run of just gate, cut along the same line its processes are: job k runs, as processes, the parts
+# k + n·j of n·p, j below p, with p its processors, so the parts of all n jobs are each part of n·p
+# once, as long as every job has as many processors — the jobs of one gate run on one kind of
+# runner. Each part is a file part-<number>.jsonl in dir, of the caller's folder when relative,
+# which the jobs of one machine share. It holds the numbers to nothing; gate-check does, and refuses
+# a part missing or a part of another run — other learners, libraries or number of parts —, by sim
+# merge's own check. The gate of modules stays one job.
+# Run part k of n of the gate into a folder, as one job of n.
+[positional-arguments]
+gate-part k n dir:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    k="$1"
+    n="$2"
+    dir="$3"
+    if ! [[ "$n" =~ ^[1-9][0-9]*$ ]] || ! [[ "$k" =~ ^(0|[1-9][0-9]*)$ ]] || [ "$k" -ge "$n" ]; then
+        echo "gate-part: part $k of $n: k and n whole numbers, 0 ≤ k < n" >&2
+        exit 2
+    fi
+    case "$dir" in /*) ;; *) dir={{ quote(invocation_directory()) }}/"$dir" ;; esac
+    mkdir -p "$dir"
+    {{ just_executable() }} -f {{ quote(justfile()) }} gate-bench {{ quote(invocation_directory()) }} part "$k" "$n" "$dir"
+
+# The check after the jobs of gate-part: the build of just gate, held to gate.json, and the numbers
+# of the parts in dir, of the caller's folder when relative, merged, held to their bands — mode
+# bands — or to the recorded numbers to the last bit — mode exact —, with the same table and exit.
+# Check the parts of the gate in a folder: mode bands or exact.
+[positional-arguments]
+gate-check mode dir:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mode="$1"
+    dir="$2"
+    case "$mode" in bands|exact) ;; *) echo "gate-check: mode $mode: bands or exact" >&2; exit 2 ;; esac
+    case "$dir" in /*) ;; *) dir={{ quote(invocation_directory()) }}/"$dir" ;; esac
+    {{ just_executable() }} -f {{ quote(justfile()) }} gate-bench {{ quote(invocation_directory()) }} "$mode" - - "$dir"
+
+# The body of gate, gate-part and gate-check. from is the caller's folder; mode is a mode of gate,
+# or part, which runs and checks nothing; job and jobs are the part of the learners this run takes,
+# 0 and 1 for all of them, or - and -, which runs none and checks the parts already in parts; parts
+# is the folder of the parts, or - for a temporary one; the rest are gate's arguments.
+[private]
+[positional-arguments]
+gate-bench from mode job jobs parts *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    from="$1"
+    mode="$2"
+    job="$3"
+    jobs="$4"
+    parts="$5"
+    shift 5
     root="$PWD"
     tmp="$(mktemp -d)"
     pids=()
@@ -453,9 +510,9 @@ gate mode="bands" *args:
         for a in "$@"; do
             case "$a" in
                 -*=/*|-*=) changed+=("$a") ;;
-                -*=*) changed+=("${a%%=*}="{{ quote(invocation_directory()) }}/"${a#*=}") ;;
+                -*=*) changed+=("${a%%=*}=$from/${a#*=}") ;;
                 -*|/*) changed+=("$a") ;;
-                *) changed+=({{ quote(invocation_directory()) }}/"$a") ;;
+                *) changed+=("$from/$a") ;;
             esac
         done
         run="$("$tmp/plain" gate changed "${changed[@]}")"
@@ -472,7 +529,7 @@ gate mode="bands" *args:
             esac
         done <<< "$run"
     fi
-    libraries="$({{ just_executable() }} -f {{ quote(justfile()) }} workspace "$tmp" GATE no {{ quote(invocation_directory()) }})"
+    libraries="$({{ just_executable() }} -f {{ quote(justfile()) }} workspace "$tmp" GATE no "$from")"
     gomods=(-go "$root")
     commits=()
     while IFS=$'\t' read -r path dir head _; do
@@ -481,21 +538,36 @@ gate mode="bands" *args:
     done <<< "$libraries"
     export GOWORK="$tmp/go.work"
     go build -o "$tmp/sim" .
-    n="$(nproc)"
-    for k in $(seq 0 $((n - 1))); do
-        "$tmp/sim" gate run -part "$k/$n" "${commits[@]}" ${packages[@]+"${packages[@]}"} -out "$tmp/part-$k.jsonl" &
-        pids+=("$!")
-    done
-    failed=0
-    for p in "${pids[@]}"; do wait "$p" || failed=1; done
-    pids=()
-    if [ "$failed" != 0 ]; then
-        echo "gate: a part of the run failed" >&2
+    if [ "$parts" = - ]; then
+        parts="$tmp/parts"
+        mkdir "$parts"
+    fi
+    if [ "$job" != - ]; then
+        n="$(nproc)"
+        for j in $(seq 0 $((n - 1))); do
+            k=$((job + jobs * j))
+            "$tmp/sim" gate run -part "$k/$((jobs * n))" "${commits[@]}" ${packages[@]+"${packages[@]}"} -out "$parts/part-$k.jsonl" &
+            pids+=("$!")
+        done
+        failed=0
+        for p in "${pids[@]}"; do wait "$p" || failed=1; done
+        pids=()
+        if [ "$failed" != 0 ]; then
+            echo "gate: a part of the run failed" >&2
+            exit 1
+        fi
+    fi
+    if [ "$mode" = part ]; then
+        exit 0
+    fi
+    files=("$parts"/part-*.jsonl)
+    if [ ! -f "${files[0]}" ]; then
+        echo "gate-check: $parts holds no part-*.jsonl of gate-part" >&2
         exit 1
     fi
     case "$mode" in
-        bands) "$tmp/sim" gate check -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
-        exact) "$tmp/sim" gate check -exact -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
-        record) "$tmp/sim" gate record -reason "$1" -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
-        modules) "$tmp/sim" gate thresholds -file gate.json "${gomods[@]}" "$tmp"/part-*.jsonl ;;
+        bands) "$tmp/sim" gate check -file gate.json "${gomods[@]}" "${files[@]}" ;;
+        exact) "$tmp/sim" gate check -exact -file gate.json "${gomods[@]}" "${files[@]}" ;;
+        record) "$tmp/sim" gate record -reason "$1" -file gate.json "${gomods[@]}" "${files[@]}" ;;
+        modules) "$tmp/sim" gate thresholds -file gate.json "${gomods[@]}" "${files[@]}" ;;
     esac
