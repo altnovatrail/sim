@@ -1,5 +1,5 @@
 # The gate of sim as jobs (R67 in docs/decisions.md; docs/architecture.md, sections 3.7 and 3.9):
-# two jobs, each a part of the learners by just gate-part, and one check after them by just
+# four jobs, each a part of the learners by just gate-part, and one check after them by just
 # gate-check, which merges the parts and holds the build to gate.json and the numbers to their bands
 # or, mode exact, to the recorded numbers to the last bit. It is the run of just gate cut along the
 # line its processes already are, so the numbers are its numbers to the bit, and the check refuses a
@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        part: [0, 1]
+        part: [0, 1, 2, 3]
     steps:
       - name: Inputs
         env:
