@@ -10,4 +10,3 @@ Table 2 of [RUN.md](../RUN.md) (R153 spec, R154 spec).
 
 | ID | Epic | Result | Basis |
 |---|---|---|---|
-| E10 | «Суд круга справедливости модели» — the judgement of `learner-model`'s round of fairness | A judgement of `learner-model`'s candidates aimed at fairness by the grade — `M11.same` of `D-grade1` and `D-grade5` —, modelled on `engine-lesson-1` (R49): its own folder and held-out set, the model's criterion as is, written down before the first candidate. The chosen one is released and the base stands on it — or the exit is recorded | R59 — option (a) of row В22; R58 — the base does not hold it, and `fair` does not reward better; R55. Waits for `learner-model` to take the round: rows 4.17 and 4.18 of COORDINATION.md spec. Tag — `v0.1.20` or later (amendment to R57) |
