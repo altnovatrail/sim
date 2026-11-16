@@ -12,4 +12,3 @@ Numbers are not reused: next — В26.
 
 | ID | Question | From | Options | Recommendation |
 |---|---|---|---|---|
-| В25 | When does Д10 of [DEBT.md](DEBT.md) run — the move of CI to the latest `.github` release with the Dependabot group? E10 waits for `learner-model` with no date, and between epics no task runs (R50) | T67 | (a) an epic of its own now, one task, as R60 laid out E11 for the move to a tag; (b) the first task of E10, whenever it is laid out; (c) wait for the next CI task | (a): Д10's «when» is before the next CI task, and while it waits every job builds its image from the network |

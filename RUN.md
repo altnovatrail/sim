@@ -45,6 +45,27 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic. Measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 2.2 (R145 spec). No task «итог эпика»: the epic's last task archives it, measures it and proposes the next (R59).
 - Never read an archive whole: find a task by heading — `grep -n '^#### T03\.' RUN.md docs/plan/*.md`; from another repository — «T03 sim». Task numbers are global, never reused, and taken free at the moment of writing.
 
-## Table 1. Current epic — none
+## Table 1. Current epic — E12. Переход CI на последний релиз `.github`
 
-Last done epic: E11, [docs/plan/E11.md](docs/plan/E11.md). Next by [run/EPICS.md](run/EPICS.md): E10, once `learner-model` takes its round (row 4.18 of COORDINATION.md spec). When Д10 of [run/DEBT.md](run/DEBT.md), the move of CI to the latest `.github`, runs — row В25 of [run/QUESTIONS.md](run/QUESTIONS.md) (R61).
+Развёрнут 2026-11-16 (R62) по ответу автора на В25, вариант (а): своим эпиком сейчас, одна задача, как E11 для перехода на тег. Последний сделанный эпик — E11, [docs/plan/E11.md](docs/plan/E11.md); E10 из [run/EPICS.md](run/EPICS.md) ждёт, пока `learner-model` возьмёт круг (строка 4.18 COORDINATION.md spec).
+
+**Результат:** CI `sim` вызывает общие проверки `.github` на его последнем релизе, с кешем образа `toolchain`, а Dependabot ведёт ссылки на `.github` одной группой `shared-workflows`; Д10 закрыт.
+
+| Статус | ID | Задача | Кто | План | Зависит от |
+|---|---|---|---|---|---|
+| [ ] | T68 | Переход CI на последний релиз `.github` | Claude | — | — |
+
+## Epic E12. Переход CI на последний релиз `.github`
+
+#### T68. Переход CI на последний релиз `.github`
+
+- **Цель:** Д10 [run/DEBT.md](run/DEBT.md) закрыт: общие проверки `.github` — на его последнем релизе, с кешем образа `toolchain` (Д146 spec), а в `.github/dependabot.yml` — группа `shared-workflows` (Д88 spec).
+- **Почему:** ответ автора на В25, вариант (а) (R62): «когда вернуться» Д10 — до следующей задачи CI, а пока он открыт, каждая job собирает образ из сети, и сбой nodejs.org, GitHub или снимка Ubuntu роняет проверки. Тега `spec` задача не ждёт (sources 7.9).
+- **Сделать:**
+  1. Последний релиз `.github`: `gh release list -R altnovatrail/.github`, `gh release verify <тег> -R altnovatrail/.github`; что общие workflow меняют от `v0.1.21` — входы, кеш `toolchain` — запись [docs/sources.md](docs/sources.md).
+  2. `.github/workflows/` — каждое `uses: altnovatrail/.github/…@<SHA> # v0.1.21` — на SHA коммита последнего тега с его именем в комментарии; входы, которые новая версия требует или меняет.
+  3. `.github/dependabot.yml` — группа `shared-workflows`, `patterns: ["altnovatrail/.github/*"]` (Д88 spec).
+  4. Решение журнала; Д10 — закрыт в [run/DEBT.md](run/DEBT.md); где документы называют `.github` v0.1.21 — [docs/architecture.md](docs/architecture.md), раздел 3 и «What stays open», README — новый тег.
+  5. T68 — последняя задача E12: архив эпика, замер токенов строкой measurements 2.2, предложение следующего (R59).
+- **Как проверить:** проверки CI pull request — зелёные, «Gate» на amd64 и arm64 — с кешем образа; правило [.claude/rules/ci.md](.claude/rules/ci.md); `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
+- **Разделы:** Д10 [run/DEBT.md](run/DEBT.md); Д146 spec, Д88 spec; R30 spec; R60, R62; sources 7.9.
