@@ -1,6 +1,6 @@
 # RUN.md — work plan of sim
 
-What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.18.3: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
+What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.18.4: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
 
 Language (R154 spec): rules and tables in English, terse, for the session; the epic's description, table 1 and the bodies of tasks in Russian — the author writes and reviews them.
 
@@ -65,7 +65,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [?] | T73 | База — на релиз выбранного, архив эпика | я + Claude | да | T72; при выборе — релиз выбранного, T63 `learner-model` |
 | [x] | T74 | Скорость CI: строка 7.19 | Claude | — | — |
 | [x] | T75 | Переход на релиз `.github` строки 7.13 | Claude | да | T74; релиз `.github` строки 7.13 COORDINATION.md spec |
-| [ ] | T76 | Переход на тег `spec` строки 7.14: стадия `toolchain-core` | я + Claude | да | T75; тег `spec` строки 7.14 COORDINATION.md spec; релиз `.github` с T66 `.github` |
+| [x] | T76 | Переход на тег `spec` строки 7.14: стадия `toolchain-core` | я + Claude | да | T75; тег `spec` строки 7.14 COORDINATION.md spec; релиз `.github` с T66 `.github` |
 | [x] | T77 | Суд круга справедливости — до 100 детей | Claude | — | — |
 
 **Почему такой порядок.**
@@ -122,13 +122,3 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Как проверить:** при выборе — `just gate exact`, `just ci-test`, `just ci-lint`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
 - **Отложено (2026-11-16):** `[?]` — вслед за T72, по тому же решению автора (R69): суда нет, и базе не на что переходить; эпик не уходит в архив, пока таблица 1 не вся отмечена (правила RUN.md, «Epics»). Вернуться вместе с T72.
 - **Разделы:** R04, R26, R29, R40, R55, R58, R59; [docs/architecture.md](docs/architecture.md), разделы 3, 3.6 и 3.9; architecture 3.9 spec; dpia 10.2 spec.
-
-#### T76. Переход на тег `spec` строки 7.14: стадия `toolchain-core`
-
-- **Цель:** `sim` — на теге `spec` строки 7.14 COORDINATION.md spec, со стадией `toolchain-core` в `.devcontainer/Dockerfile` и apt шаблона только из источников снимка; проверки и релиз, которые общий `go.yml` релиза строки 7.13 гоняет в `toolchain-core`, идут в ней; те же биты. Последняя задача строки 7.19: она одна меняет `.devcontainer/`.
-- **Почему:** строки 7.13, 7.14 и 7.19 COORDINATION.md spec; переход на тег `spec` — своей задачей и решением журнала (RULES.md, Across repositories), как E11 (R60).
-- **Ждёт:** T75; тега `spec` строки 7.14; релиза `.github` с T66 `.github` — последней частью строки 7.13: стадия `toolchain-core` в релизе и проверках, «`release.yml` строит стадию `toolchain-core` Dockerfile вызывающего, без кеша, а проверки без браузера и Go-тестов — lint, vuln, licenses и документы — идут в ней; у Dockerfile без этой стадии — как прежде» (sources 5.4). T66 ждёт перехода `.github` на тот же тег `spec`, а он меняет `.devcontainer/` `.github`, и по решению координатора `spec` (T171 spec) ночью `.devcontainer/` не меняется, поэтому T75 взяла `v0.1.30` без T66 (R68). По правилу «одно закрепление» эпика E10 тег `spec` до выбора суда берётся, только если биты те же (R45): `just gate exact` зелёный и пути прежние; иначе — после T73. С T77, пока суд отложен, это правило не действует (R69): тег берётся и при сдвиге бит — тогда по правилу гейта, решающие прогоны, пути и полосы заново, что решает планирование задачи.
-- **Сделать:** как переход E11 (R60): подмодуль `spec/` — на тег; `.devcontainer/` — по шаблону вида `go` этого тега, со стадией `toolchain-core`; каждый `uses:` `.github` в `.github/workflows/` — на SHA релиза с T66, как T75 (R63, R68); шаги образа в `gate.yml` — по `go.yml` этого релиза: если T66 меняет путь файла образа или его стадию, «A change to how either builds the image — `toolchain-core` … — takes a new path in all of them at once» (R42 .github), — тот же путь и ключ; рецепты `test-targets`, `fma-diff` и `rules` — сверить с job его `go.yml`; модуль Go `spec` в `go.mod` и в `gate.json` — на тег, если он его выпускает, и `just gate exact` — те же 69 чисел; что тег меняет в правилах и документах — по его журналу; решение журнала о переходе.
-- **Мой шаг:** пересобрать контейнер после мержа — «Rebuild Container»: в прогоне оркестратора ночью пересобрать его некому, поэтому `.devcontainer/` меняет только эта задача.
-- **Как проверить:** `just gate exact`; `just ci-lint`, `just ci-test`, `just same-bits`; `just -f spec/justfile docs-check-repo`; сборка стадий `toolchain` и `toolchain-core` из Dockerfile; CI pull request зелёный; время изменённых job до и после — в отчёте; `/code-review high`, один круг.
-- **Разделы:** строки 7.13, 7.14 и 7.19 COORDINATION.md spec; measurements 3.1 spec; R76 spec, R156 spec; R45, R60, R63, R67, R68; sources 5.4.
