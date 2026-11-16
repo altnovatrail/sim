@@ -112,9 +112,7 @@ ENV PATH="/usr/local/node/bin:/usr/local/go/bin:/home/vscode/.local/bin:${PATH}"
 # adds at the end of this stage, if it adds any. What they install, a release never builds, and
 # neither do the checks that run no browser: what the release and those ci- recipes call belongs in
 # toolchain-core. sim's tests need nothing the core lacks, and the kind go adds none here, so the
-# shared checks keep one image of both stages (R47 .github). A tool sim's release or its ci-lint,
-# ci-vuln or ci-licenses comes to need goes into the core; one only its tests need, here (R70 in
-# docs/decisions.md).
+# shared checks keep one image of both stages (R47 .github; R70 in docs/decisions.md).
 
 FROM toolchain-core AS toolchain
 
