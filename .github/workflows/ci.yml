@@ -49,7 +49,7 @@ jobs:
 
   # The gate (R09, R26; docs/architecture.md, sections 3.7 and 3.9): the bench built on the commits
   # of gate.json through go.work, in the toolchain stage of sim's devcontainer, on amd64 and arm64,
-  # each by gate.yml — four jobs of a part of the learners each and the check after them, whose name
+  # each by gate.yml — two jobs of a part of the learners each and the check after them, whose name
   # is the gate's, "Gate / amd64" and "Gate / arm64" (R67). Its own CI holds the numbers to the
   # recorded ones to the last bit, so that the two architectures give the same bits as each other
   # and as the record; a caller holds them to their bands.
