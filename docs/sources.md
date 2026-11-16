@@ -257,6 +257,21 @@ Read 2026-11-08 for the frame of T10 (R10, R11).
 
 The repository [altnovatrail/.github](https://github.com/altnovatrail/.github), the release v0.1.21 (706f406): `tools/coderules/lists.go` — the fields `code-imports`, `test-imports`, `test-math`, `requires`, `nested-modules`, "A field it does not know is a mistake"; `tools/coderules/check.go` — the rules `import`, `cgo`, `asm`, `linkname`, `buildtag`, `require`, `replace`, `nested`, `math`, `fused`, `assignop`, `complex`, `typeparam`, `maprange`, `unicode`, `goroutine`; `go.yml`, the job `targets` — `run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./...`, and `ALLOWED_LICENSES` — "0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC0-1.0,ISC,MIT,MIT-0,Unlicense".
 
+### 5.3. Release v0.1.24, T68
+
+Read 2026-11-16 for T68 (R63), from a clone of [altnovatrail/.github](https://github.com/altnovatrail/.github) in a temporary directory.
+
+`gh release list -R altnovatrail/.github` — `v0.1.24`, «Latest», of 2026-11-13, 05:34 UTC; then `v0.1.23` of 2026-11-12 and `v0.1.22` of 2026-11-10. `gh release verify v0.1.24 -R altnovatrail/.github` — "Resolved tag v0.1.24 to sha1:fab102d8bbb4659575e107ee488e072aaaa71821", "Release v0.1.24 verified!". The notes: v0.1.22 — "E17: cache of the toolchain image"; v0.1.23 — the archive of E17, the move to `spec` v0.16.3, the sources and measurements in their own files; v0.1.24 — the translation of its documents and "E19, T58: wasip1 tests in node:wasi in go.yml".
+
+`git diff v0.1.21 v0.1.24 -- .github/workflows/`, of the workflows `sim` calls:
+- `go.yml` — no input changes; each of the jobs `check`, `targets`, `fma-diff`, `arm64` and `rules` takes the stage's image from the cache: «Each job that runs in the toolchain stage takes its image from the caller's cache of GitHub Actions and builds it from the Dockerfile only on a miss, so that an outage of what the Dockerfile downloads from does not fail the checks while the Dockerfile stays the same (R36)»; the steps «Toolchain image from the cache» — `actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0`, `path: ${{ runner.temp }}/toolchain.tar`, `key: toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.devcontainer/Dockerfile') }}` —, «Toolchain image», with `docker load --quiet --input "$tar" && docker image inspect toolchain`, the build on a miss and `docker save --output "$tar" toolchain`, and «Toolchain image into the cache» — `actions/cache/save`, `if: steps.toolchain.outputs.cache-hit != 'true'`, `key: ${{ steps.toolchain.outputs.cache-primary-key }}`; «The caches are the caller's: one a pull request saves is "restored by re-runs of the pull request" alone, and the one of main, which every pull request reads, its CI on a push to main saves». In `targets` and `arm64`, `run GOOS=wasip1 GOARCH=wasm go build ./...` became `run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...`, by an executor that runs the test binary in `node:wasi` — «wasip1 in node:wasi, by an executor written outside the checkout»;
+- `documents.yml` — the image from the cache by the same key, in `${{ runner.temp }}/novatrail-toolchain.tar`, through `TOOLCHAIN_IMAGE_FILE` of `spec/tools/toolchain/toolchain.sh`, which «spec ships … from v0.13.0»;
+- `release.yml` and `scorecard.yml` — comments alone; `secrets.yml`, `dco.yml` and `codeql.yml` — unchanged; `tools/coderules/` — unchanged.
+
+`docs/architecture.md` of v0.1.24, the template of `.github/dependabot.yml`: «# Every reference to a shared workflow of .github in one pull request, to one release: / # Dependabot names each altnovatrail/.github/.github/workflows/<file>.yml. / shared-workflows: / patterns: ["altnovatrail/.github/*"]».
+
+Go 1.27.4 of the container, `src/syscall/fs_wasip1.go`: `func Fchmod(fd int, mode uint32) error { var stat Stat_t; return Fstat(fd, &stat) }` — on wasip1 a change of a file's mode only checks that the file is there. `GOOS=wasip1 GOARCH=wasm go test` by the executor of `go.yml` v0.1.24, in Node v24.21.0 of the container, on `sim` at `main` c5e9a4c: every package `ok` but the root, `TestMerge` — "a new file of results has the mode -rw-------".
+
 ## 6. `modules`
 
 ### 6.1. Commit 1a28f4a, T03

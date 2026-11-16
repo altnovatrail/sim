@@ -74,6 +74,7 @@ How `sim` keeps what row 7.10 of `spec`'s COORDINATION.md saved, by the pattern 
 | `-workspaces-sim` — epic E7: T56–T60, and the end of T49 with the laying out of E7 | 2026-11-14T02:34 … 2026-11-14T15:27 | 6 | 421 / 50 | 172.5 / 75.0 | 1 | $30.30 |
 | `-workspaces-sim` — epic E9: T61–T65, and the end of T60 with the laying out of E9 | 2026-11-14T15:27 … 2026-11-15T00:31 | 7 | 685 / 227 | 182.2 / 81.8 | 1 | $57.76 |
 | `-workspaces-sim` — epic E11: T66, T67, and the end of T65 | 2026-11-15T00:31 … 2026-11-16T01:37 | 5 | 255 / 87 | 153.3 / 70.3 | 0 | $18.71 |
+| `-workspaces-sim` — epic E12: T68 up to its archive, and the end of T67 with the laying out of E12 | 2026-11-16T01:37 … 2026-11-16T02:11 | 2 | 75 / 0 | 112.0 / — | 0 | $3.69 |
 
 - The context of a main call fell from 325.5 to 180.3 thousand, −45%; by session it was 178.0 in T50, 153.4 in T51, 128.8 in T52 and 109.5 in T53, while the documents a session reads became English, one task at a time. A subagent's rose from 79.5 to 105.0: here the subagents were translators and blind readers, each of which reads the glossary, concepts 15 spec, and the rules of translation. Three of the seven sessions, of one, one and five calls, ran no task.
 - The windows differ in work: E2–E5 with code, runs and judgements against the move to a tag and the translation of `docs/`. The comparison by sessions after the task is T124 spec.
