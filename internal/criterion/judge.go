@@ -69,8 +69,9 @@ func read(base, candidate *bench.File, paths *Paths) ([]cellData, error) {
 
 // judge judges one candidate against the base on its criterion, beside the base's cells of fairness
 // by the grade; a pair holds the constraints of both, once each, and is scored by the library whose
-// goal it names, the other's score beside.
-func judge(criterion string, base *bench.File, baseFair []bench.FairCell, paths *Paths, c Candidate) (Verdict, error) {
+// goal it names, the other's score beside. A judgement with a target reads it too, and the target
+// alone decides whether the candidate is better, the score standing beside as a reference (R65).
+func judge(criterion, tgt string, base *bench.File, baseFair []bench.FairCell, paths *Paths, c Candidate) (Verdict, error) {
 	candFair, err := bench.Fair(c.File)
 	if err != nil {
 		return Verdict{}, fmt.Errorf("%w: candidate %s: %w", ErrCriterion, c.Name, err)
@@ -135,6 +136,15 @@ func judge(criterion string, base *bench.File, baseFair []bench.FairCell, paths 
 		o := score(cells, groupsOf(other, other), "")
 		v.Other = &o
 		v.Better = v.Better && o.Read && o.High >= 0
+	}
+	if tgt != "" {
+		if v.Target, err = target(baseFair, candFair); err != nil {
+			return Verdict{}, fmt.Errorf("%w: candidate %s: %w", ErrCriterion, c.Name, err)
+		}
+		for _, g := range groups {
+			v.Target.Groups = append(v.Target.Groups, GroupScore{g.id, score(cells, groups, g.id)})
+		}
+		v.Better = v.Target.Score.Read && v.Target.Score.Low > 0
 	}
 	return v, nil
 }

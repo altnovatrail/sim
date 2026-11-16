@@ -69,8 +69,12 @@ type Input struct {
 	// Judgement is the judgement's name, its folder judgements/<name>/: a confirmation runs only on
 	// its own held-out set (R52 in docs/decisions.md). A judgement with no confirmation may leave it
 	// empty.
-	Judgement  string
-	Criterion  string
+	Judgement string
+	Criterion string
+	// Target is the target the judgement goes by, when its criterion wrote one down before its
+	// first candidate: M11.same of the grades pooled for model-fair-1, which alone decides "better"
+	// and the choice there (R65 in docs/decisions.md).
+	Target     string
 	Base       *bench.File
 	Candidates []Candidate
 	Confirm    *Confirm
@@ -137,6 +141,7 @@ type Verdict struct {
 	Score     Score
 	Group     *Score // the score of the group it names, if it names one
 	Other     *Score
+	Target    *Target // the judgement's target, when it names one: it, not the score, decides "better"
 	Better    bool
 	Note      []Note
 }
@@ -154,6 +159,7 @@ type Note struct {
 type Report struct {
 	Judgement string
 	Criterion string
+	Target    string // the target the judgement goes by, if any (R65)
 	Decisive  bool
 	Learners  int      // the fewest learners of a cell over the runs
 	Graphs    []string // the graphs the choice is made on: those of published packages
@@ -202,7 +208,7 @@ func decide(in Input) (*Report, error) {
 	if in.Confirm != nil {
 		runs = append(runs, in.Confirm.Base, in.Confirm.Candidate)
 	}
-	r := &Report{Judgement: in.Judgement, Criterion: in.Criterion, Learners: fewest(runs)}
+	r := &Report{Judgement: in.Judgement, Criterion: in.Criterion, Target: in.Target, Learners: fewest(runs)}
 	r.Decisive = r.Learners >= Decisive
 	baseFair, err := bench.Fair(in.Base)
 	if err != nil {
@@ -211,12 +217,12 @@ func decide(in Input) (*Report, error) {
 	var scores [][]float64
 	var eligible []int
 	for k, c := range in.Candidates {
-		v, err := judge(in.Criterion, in.Base, baseFair, paths, c)
+		v, err := judge(in.Criterion, in.Target, in.Base, baseFair, paths, c)
 		if err != nil {
 			return nil, err
 		}
 		r.Verdicts = append(r.Verdicts, v)
-		scores = append(scores, v.Score.Resampled)
+		scores = append(scores, v.deciding().Resampled)
 		if v.Holds && v.Better {
 			eligible = append(eligible, k)
 		}
@@ -237,7 +243,7 @@ func decide(in Input) (*Report, error) {
 		r.Outcome = "No candidate holds every constraint and is better than the base: the base stays as it is"
 		return r, nil
 	}
-	best := slices.MaxFunc(eligible, func(a, b int) int { return cmp.Compare(r.Verdicts[a].Score.Value, r.Verdicts[b].Score.Value) })
+	best := slices.MaxFunc(eligible, func(a, b int) int { return cmp.Compare(r.Verdicts[a].deciding().Value, r.Verdicts[b].deciding().Value) })
 	var equals []int
 	for _, k := range eligible {
 		if k == best {
@@ -270,7 +276,7 @@ func decide(in Input) (*Report, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: the confirmation's base: %w", ErrCriterion, err)
 	}
-	v, err := judge(in.Criterion, in.Confirm.Base, confirmFair, paths, c)
+	v, err := judge(in.Criterion, in.Target, in.Confirm.Base, confirmFair, paths, c)
 	if err != nil {
 		return nil, err
 	}
@@ -312,6 +318,9 @@ func (in Input) check() error {
 		if in.Criterion == Pair && c.Library != Model && c.Library != Engine {
 			return fmt.Errorf("%w: candidate %s of a pair names library %q: model or engine", ErrCriterion, c.Name, c.Library)
 		}
+	}
+	if err := in.checkTarget(); err != nil {
+		return err
 	}
 	if f := in.Confirm; f != nil {
 		if f.Base == nil || f.Candidate == nil {

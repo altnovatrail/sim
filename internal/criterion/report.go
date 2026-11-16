@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/altnovatrail/sim/internal/measure"
+	"github.com/altnovatrail/sim/internal/population"
 )
 
 // Write writes the report in Markdown: whether the run decides or is a rough look, the graphs of
@@ -19,6 +20,10 @@ func (r *Report) Write(w io.Writer) error {
 	}
 	fmt.Fprintf(&b, "# The criterion of the %s\n\n", r.Criterion)
 	fmt.Fprintf(&b, "This is %s: the fewest learners of a cell is %d, and a decisive run takes %d.\n\n", kind, r.Learners, Decisive)
+	if r.Target != "" {
+		fmt.Fprintf(&b, "The judgement %s goes by its target, %s of %s pooled: the mean of the grades' Δ, each the candidate's %s against %s less the base's, with its 95 %% interval. The target alone decides \"better\" and the choice; the score of the criterion is a reference, which decides nothing; the bounds of R55 are written for the confirmation and decide nothing either (R65).\n\n",
+			r.Judgement, r.Target, gradeNames(), r.Target, population.Reference)
+	}
 	fmt.Fprintf(&b, "The choice is made on the graphs %s.", strings.Join(r.Graphs, ", "))
 	if len(r.NoGraph) > 0 {
 		fmt.Fprintf(&b, " No graph — a module with no published package, its checks neither met nor failed: %s.", strings.Join(r.NoGraph, ", "))
@@ -38,6 +43,9 @@ func (r *Report) Write(w io.Writer) error {
 	if r.Confirmed != nil {
 		fmt.Fprintf(&b, "The confirmation on %s, the held-out learners of the judgement %s:\n\n", r.HeldOut, r.Judgement)
 		writeVerdict(&b, *r.Confirmed)
+		if t := r.Confirmed.Target; t != nil {
+			writeBounds(&b, *t)
+		}
 	}
 	fmt.Fprintf(&b, "%s.\n", r.Outcome)
 	_, err := io.WriteString(w, b.String())
@@ -48,7 +56,17 @@ func (r *Report) Write(w io.Writer) error {
 func writeVerdict(b *strings.Builder, v Verdict) {
 	fmt.Fprintf(b, "### %s\n\n", v.Candidate)
 	fmt.Fprintf(b, "- holds every constraint: %v; better than the base: %v\n", v.Holds, v.Better)
-	fmt.Fprintf(b, "- score: %s\n", showScore(v.Score))
+	if t := v.Target; t != nil {
+		fmt.Fprintf(b, "- the target, %s pooled: %s\n", t.Name, showScore(t.Score))
+		fmt.Fprintf(b, "- score, a reference that decides nothing: %s\n", showScore(v.Score))
+		var gs []string
+		for _, g := range t.Groups {
+			gs = append(gs, g.Group+" "+showScore(g.Score))
+		}
+		fmt.Fprintf(b, "- the score of each group, a reference too: %s\n", strings.Join(gs, "; "))
+	} else {
+		fmt.Fprintf(b, "- score: %s\n", showScore(v.Score))
+	}
 	if v.Group != nil {
 		fmt.Fprintf(b, "- its group: %s\n", showScore(*v.Group))
 	}
@@ -76,7 +94,55 @@ func writeVerdict(b *strings.Builder, v Verdict) {
 		fmt.Fprintf(b, "- nothing to hold, the base reads none: %s\n", strings.Join(skipped, "; "))
 	}
 	b.WriteString("\n")
+	if v.Target != nil {
+		writeTarget(b, *v.Target)
+	}
 	writeNote(b, v.Note)
+}
+
+// writeTarget writes the numbers of M11 of each grade of the target, the base's and the candidate's
+// as they are, with their intervals, and their difference, the candidate's less the base's: that of
+// M11.same is the grade's Δ (R65).
+func writeTarget(b *strings.Builder, t Target) {
+	fmt.Fprintf(b, "#### The target: %s of the grades\n\n", t.Name)
+	b.WriteString("| cell | number | base | candidate | candidate − base |\n|---|---|---|---|---|\n")
+	for _, g := range t.Grades {
+		if g.Numbers == nil {
+			fmt.Fprintf(b, "| `%s` | — | the runs have no such cell | — | — |\n", g.Cell)
+			continue
+		}
+		for _, p := range g.Numbers {
+			fmt.Fprintf(b, "| `%s` | `%s` | %s | %s | %s |\n", g.Cell, p.Diff.Name, showWith(p.A), showWith(p.B), showWith(negated(p.Diff)))
+		}
+	}
+	b.WriteString("\n")
+}
+
+// writeBounds writes whether the chosen candidate holds the bounds of R55 on its held-out learners:
+// on every grade, M11.same at least sameFloor at the low end of its interval and M11.band at most
+// bandCeiling at the high end. They decide nothing in a judgement with a target; the outcome goes to
+// dpia 10.2 spec (R65).
+func writeBounds(b *strings.Builder, t Target) {
+	fmt.Fprintf(b, "#### The bounds of R55 on the held-out learners, which decide nothing here\n\n")
+	fmt.Fprintf(b, "| cell | M11.same at least %.2f at its low end | M11.band at most %.2f at its high end |\n|---|---|---|\n", sameFloor, bandCeiling)
+	holds := true
+	for _, g := range t.Grades {
+		fmt.Fprintf(b, "| `%s` | %s: %s | %s: %s |\n", g.Cell, yesNo(g.SameHolds), showWith(g.Same.B), yesNo(g.BandHolds), showWith(g.Band.B))
+		holds = holds && g.SameHolds && g.BandHolds
+	}
+	verdict := "holds"
+	if !holds {
+		verdict = "does not hold"
+	}
+	fmt.Fprintf(b, "\nThe chosen one on its held-out learners %s the bounds of R55.\n\n", verdict)
+}
+
+// yesNo writes whether a bound holds.
+func yesNo(ok bool) string {
+	if ok {
+		return "yes"
+	}
+	return "no"
 }
 
 // writeNote writes the note of consolidation in a lesson, E6, on the cells where the base or the
@@ -89,12 +155,17 @@ func writeNote(b *strings.Builder, note []Note) {
 	b.WriteString("| cell | number | base | candidate | candidate − base |\n|---|---|---|---|---|\n")
 	for _, n := range note {
 		diff := "—"
-		if d := n.Diff; d.Read { // 0 − x, not −x, so that no difference is written −0
-			diff = fmt.Sprintf("%.4g [%.4g, %.4g]", 0-d.Value, 0-d.High, 0-d.Low)
+		if n.Diff.Read {
+			diff = showWith(negated(n.Diff))
 		}
 		fmt.Fprintf(b, "| `%s` | `%s` | %s | %s | %s |\n", n.Cell, n.Diff.Name, showValue(n.A), showValue(n.B), diff)
 	}
 	b.WriteString("\n")
+}
+
+// showWith writes a value with its interval as a score is written, or says it is not read.
+func showWith(v measure.Value) string {
+	return showScore(Score{Value: v.Value, Low: v.Low, High: v.High, Read: v.Read})
 }
 
 // showValue writes a value of the note, or a dash when it is not read.
