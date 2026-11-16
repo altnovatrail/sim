@@ -48,79 +48,23 @@ jobs:
       same-bits: true
 
   # The gate (R09, R26; docs/architecture.md, sections 3.7 and 3.9): the bench built on the commits
-  # of gate.json through go.work, in the toolchain stage of sim's devcontainer, on amd64 and arm64.
-  # Its own CI holds the numbers to the recorded ones to the last bit, so that the two architectures
-  # give the same bits as each other and as the record; a caller holds them to their bands. The
-  # caches of Go are kept between runs by the commits the gate builds on; the steps' times show the
-  # gate cold and with the cache.
-  gate:
-    name: Gate / ${{ matrix.arch }}
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-24.04
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+  # of gate.json through go.work, in the toolchain stage of sim's devcontainer, on amd64 and arm64,
+  # each by gate.yml — four jobs of a part of the learners each and the check after them, whose name
+  # is the gate's, "Gate / amd64" and "Gate / arm64" (R67). Its own CI holds the numbers to the
+  # recorded ones to the last bit, so that the two architectures give the same bits as each other
+  # and as the record; a caller holds them to their bands.
+  gate-amd64:
+    name: Gate
+    uses: ./.github/workflows/gate.yml
+    with:
+      name: amd64
+      runner: ubuntu-24.04
+      mode: exact
 
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/go
-          key: gate-${{ matrix.arch }}-${{ hashFiles('go.sum', 'gate.json', '.devcontainer/Dockerfile') }}
-
-      # The toolchain stage from the cache of GitHub Actions, by the steps of the shared go.yml of
-      # v0.1.24 (R36 .github; the 2026-11-09 amendment to R31 spec; R63): the same file, path and
-      # key, so the entry is the one go.yml's jobs fill and read on the same runner, and the image
-      # is built from the Dockerfile only on a miss. The entry of main is filled by CI on a push to
-      # main, and a pull request reads it.
-      - name: Toolchain image from the cache
-        id: toolchain
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/toolchain.tar
-          key: toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.devcontainer/Dockerfile') }}
-
-      - name: Toolchain image
-        run: |
-          tar=$RUNNER_TEMP/toolchain.tar
-          restored=false
-          if [ -f "$tar" ]; then
-              restored=true
-              if docker load --quiet --input "$tar" && docker image inspect toolchain > /dev/null; then
-                  rm -f -- "$tar"
-                  echo "Toolchain image: loaded from the cache."
-                  exit 0
-              fi
-              echo "::warning::The cache's file of the toolchain stage does not load as the image toolchain: the image is built from the Dockerfile, on every run until the entry is deleted (gh cache delete) or the Dockerfile changes."
-              rm -f -- "$tar"
-          fi
-          docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
-          # A file the cache gave has its entry already, which no save replaces.
-          if [ "$restored" = false ] && ! docker save --output "$tar" toolchain; then
-              echo "::warning::The image of the toolchain stage could not be saved for the cache: the next run builds it again."
-              rm -f -- "$tar"
-          fi
-
-      - name: Toolchain image into the cache
-        if: steps.toolchain.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/toolchain.tar
-          key: ${{ steps.toolchain.outputs.cache-primary-key }}
-
-      - name: gate
-        run: |
-          mkdir -p "$RUNNER_TEMP/go"
-          set -o pipefail
-          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
-              --env GOCACHE=/go/build --env GOMODCACHE=/go/mod \
-              --volume "$RUNNER_TEMP/go:/go" \
-              --volume "$PWD:/work" --workdir /work \
-              toolchain just gate exact | tee -a "$GITHUB_STEP_SUMMARY"
+  gate-arm64:
+    name: Gate
+    uses: ./.github/workflows/gate.yml
+    with:
+      name: arm64
+      runner: ubuntu-24.04-arm
+      mode: exact

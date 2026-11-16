@@ -217,6 +217,17 @@ func TestGateWhole(t *testing.T) {
 	if got := run(append([]string{"gate", "check", "-exact"}, args...), &stdout, &stderr); got != 0 || !strings.Contains(stdout.String(), "The gate is green") {
 		t.Errorf("sim gate check -exact = %d:\n%.400s", got, stdout.String())
 	}
+	// The parts held to the build's commits: their own pass, another's refuses them.
+	same := []string{"-commit", "github.com/altnovatrail/engine=57e0ab8852e65bb56724d08fc2e9cdb6a839d959",
+		"-commit", "github.com/altnovatrail/learner-model=ab688b243f4ae511eec0a5e18e166f64b8148240"}
+	if got := run(append(append([]string{"gate", "check", "-exact"}, same...), args...), &stdout, &stderr); got != 0 {
+		t.Errorf("sim gate check -exact on the parts' commits = %d: %s", got, stderr.String())
+	}
+	stderr.Reset()
+	other := []string{"-commit", "github.com/altnovatrail/engine=" + strings.Repeat("1", 40), same[2], same[3]}
+	if got := run(append(append([]string{"gate", "check", "-exact"}, other...), args...), &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "the parts ran on") {
+		t.Errorf("sim gate check -exact on another commit = %d: %s", got, stderr.String())
+	}
 	f, err := readGate(gateFile)
 	if err != nil {
 		t.Fatal(err)

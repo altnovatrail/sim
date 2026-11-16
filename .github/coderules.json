@@ -41,6 +41,7 @@
     "io/fs",
     "maps",
     "os",
+    "os/exec",
     "path",
     "reflect",
     "slices",

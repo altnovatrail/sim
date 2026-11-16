@@ -1,0 +1,289 @@
+# The gate of sim as jobs (R67 in docs/decisions.md; docs/architecture.md, sections 3.7 and 3.9):
+# four jobs, each a part of the learners by just gate-part, and one check after them by just
+# gate-check, which merges the parts and holds the build to gate.json and the numbers to their bands
+# or, mode exact, to the recorded numbers to the last bit. It is the run of just gate cut along the
+# line its processes already are, so the numbers are its numbers to the bit, and the check refuses a
+# part missing, repeated or of another run, by sim merge's check. Every job runs on one runner, in
+# the toolchain stage of sim's devcontainer at the commit of sim it checks out.
+#
+# sim's own CI calls it from ci.yml, once an architecture, with no sim-commit: sim is then the
+# commit the event checks out. A caller — learner-model or engine — calls it by the SHA of a tag of
+# sim, with that tag and SHA as sim-tag and sim-commit, and its own library's variable, so that its
+# code takes that library's place (README.md, "Gate").
+name: Gate
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: The name of the check after the parts, as amd64; a part's is "<name> / part <k>".
+        type: string
+        required: true
+      runner:
+        description: The runner of every job; the parts must run on one kind, with as many processors each.
+        type: string
+        default: ubuntu-24.04
+      mode:
+        description: bands, the numbers held to their bands, as a caller holds them; or exact, to the recorded numbers to the last bit, as sim's own CI holds them.
+        type: string
+        default: bands
+      sim-tag:
+        description: A caller's tag of sim, which must be on sim-commit; empty in sim's own CI.
+        type: string
+        default: ""
+      sim-commit:
+        description: A caller's commit of sim, by its full SHA, the one its uses names; empty in sim's own CI.
+        type: string
+        default: ""
+      library:
+        description: The variable of the library the caller's code takes the place of, GATE_LEARNER_MODEL or GATE_ENGINE; empty in sim's own CI.
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  part:
+    name: ${{ inputs.name }} / part ${{ matrix.part }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: true
+      matrix:
+        part: [0, 1, 2, 3]
+    steps:
+      - name: Inputs
+        env:
+          SIM_TAG: ${{ inputs.sim-tag }}
+          SIM_COMMIT: ${{ inputs.sim-commit }}
+          LIBRARY: ${{ inputs.library }}
+        run: |
+          # sim's own CI names none of the three, a caller all three: sim, its tag, and the library its
+          # checkout replaces.
+          if [ -n "$SIM_TAG$SIM_COMMIT$LIBRARY" ] && { [ -z "$SIM_TAG" ] || ! [[ "$SIM_COMMIT" =~ ^[0-9a-f]{40}$ ]] || ! [[ "$LIBRARY" =~ ^GATE_[A-Z_]+$ ]]; }; then
+              echo "::error::sim-tag, sim-commit by its full SHA and library, as GATE_ENGINE, come together, or none of them: they are '$SIM_TAG', '$SIM_COMMIT' and '$LIBRARY'"
+              exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          repository: ${{ inputs.sim-commit != '' && 'altnovatrail/sim' || github.repository }}
+          ref: ${{ inputs.sim-commit }}
+          path: sim
+
+      - if: inputs.library != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          path: caller
+
+      # The caches of Go between runs, by the module sums and the toolchain of sim, not by the
+      # commits gate.json names: a new pin builds its libraries on the cache of the one before,
+      # restore-keys. A pull request only reads it, and the first part of a push saves it.
+      - name: Go cache
+        id: go
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go
+          key: gate-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('sim/go.sum', 'sim/.devcontainer/Dockerfile') }}
+          restore-keys: gate-${{ runner.os }}-${{ runner.arch }}-
+
+      # The toolchain stage from the cache of GitHub Actions, by the steps of the shared go.yml of
+      # v0.1.24 (R36 .github; the 2026-11-09 amendment to R31 spec; R63): the same file, path and
+      # key, so in sim's own CI the entry is the one go.yml's jobs fill and read on the same runner,
+      # and the image is built from the Dockerfile only on a miss. On a miss only the first part
+      # saves it, so that the parts do not save one key.
+      - name: Toolchain image from the cache
+        id: toolchain
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/toolchain.tar
+          key: toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('sim/.devcontainer/Dockerfile') }}
+
+      - name: Toolchain image
+        env:
+          PART: ${{ matrix.part }}
+        run: |
+          tar=$RUNNER_TEMP/toolchain.tar
+          restored=false
+          if [ -f "$tar" ]; then
+              restored=true
+              if docker load --quiet --input "$tar" && docker image inspect toolchain > /dev/null; then
+                  rm -f -- "$tar"
+                  echo "Toolchain image: loaded from the cache."
+                  exit 0
+              fi
+              echo "::warning::The cache's file of the toolchain stage does not load as the image toolchain: the image is built from the Dockerfile, on every run until the entry is deleted (gh cache delete) or the Dockerfile changes."
+              rm -f -- "$tar"
+          fi
+          docker build --target toolchain --tag toolchain - < sim/.devcontainer/Dockerfile
+          # A file the cache gave has its entry already, which no save replaces; only the first part
+          # saves one.
+          if [ "$restored" = false ] && [ "$PART" = 0 ] && ! docker save --output "$tar" toolchain; then
+              echo "::warning::The image of the toolchain stage could not be saved for the cache: the next run builds it again."
+              rm -f -- "$tar"
+          fi
+
+      - name: Toolchain image into the cache
+        if: steps.toolchain.outputs.cache-hit != 'true' && matrix.part == 0
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/toolchain.tar
+          key: ${{ steps.toolchain.outputs.cache-primary-key }}
+
+      - name: gate-part
+        env:
+          PART: ${{ matrix.part }}
+          PARTS: ${{ strategy.job-total }}
+          LIBRARY: ${{ inputs.library }}
+        run: |
+          library=()
+          if [ -n "$LIBRARY" ]; then
+              library=(--env "$LIBRARY=/work/caller")
+          fi
+          mkdir -p "$RUNNER_TEMP/go" "$RUNNER_TEMP/parts"
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOCACHE=/go/build --env GOMODCACHE=/go/mod ${library[@]+"${library[@]}"} \
+              --volume "$RUNNER_TEMP/go:/go" --volume "$RUNNER_TEMP/parts:/parts" \
+              --volume "$PWD:/work" --workdir /work/sim \
+              toolchain just gate-part "$PART" "$PARTS" /parts
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: gate-${{ inputs.name }}-part-${{ matrix.part }}
+          path: ${{ runner.temp }}/parts
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Go cache into the cache
+        if: github.event_name != 'pull_request' && matrix.part == 0 && steps.go.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go
+          key: ${{ steps.go.outputs.cache-primary-key }}
+
+  # The check: its name is the gate's, the check a ruleset requires. It runs when a part failed too,
+  # and then fails, since a check skipped would pass as green.
+  check:
+    name: ${{ inputs.name }}
+    needs: part
+    if: ${{ !cancelled() }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 15
+    steps:
+      - name: Parts
+        env:
+          PARTS_RESULT: ${{ needs.part.result }}
+        run: |
+          if [ "$PARTS_RESULT" != success ]; then
+              echo "::error::The parts of the gate did not all pass: $PARTS_RESULT. Their jobs say why."
+              exit 1
+          fi
+
+      - name: Inputs
+        env:
+          SIM_TAG: ${{ inputs.sim-tag }}
+          SIM_COMMIT: ${{ inputs.sim-commit }}
+          LIBRARY: ${{ inputs.library }}
+        run: |
+          # sim's own CI names none of the three, a caller all three: sim, its tag, and the library its
+          # checkout replaces.
+          if [ -n "$SIM_TAG$SIM_COMMIT$LIBRARY" ] && { [ -z "$SIM_TAG" ] || ! [[ "$SIM_COMMIT" =~ ^[0-9a-f]{40}$ ]] || ! [[ "$LIBRARY" =~ ^GATE_[A-Z_]+$ ]]; }; then
+              echo "::error::sim-tag, sim-commit by its full SHA and library, as GATE_ENGINE, come together, or none of them: they are '$SIM_TAG', '$SIM_COMMIT' and '$LIBRARY'"
+              exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          repository: ${{ inputs.sim-commit != '' && 'altnovatrail/sim' || github.repository }}
+          ref: ${{ inputs.sim-commit }}
+          path: sim
+
+      - if: inputs.library != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          path: caller
+
+      # A caller's sim is the commit its tag is on, as the workspace holds a library's tag to the
+      # commit gate.json names — an annotated tag points at its commit through ^{} —, and the commit
+      # the caller's uses of this workflow names, so that a move of one by Dependabot, which does not
+      # move the inputs, is not a workflow of one tag running the sim of another. The caller's
+      # workflow is that of github.workflow_ref, which in a called workflow is the caller's.
+      - name: sim's tag
+        if: inputs.sim-commit != ''
+        env:
+          SIM_TAG: ${{ inputs.sim-tag }}
+          SIM_COMMIT: ${{ inputs.sim-commit }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          tags="$(git ls-remote https://github.com/altnovatrail/sim "refs/tags/$SIM_TAG" "refs/tags/$SIM_TAG^{}")"
+          tagged="$(printf '%s\n' "$tags" | awk -v ref="refs/tags/$SIM_TAG^{}" '$2 == ref { print $1 }')"
+          if [ -z "$tagged" ]; then
+              tagged="$(printf '%s\n' "$tags" | awk '{ print $1 }')"
+          fi
+          if [ "$tagged" != "$SIM_COMMIT" ]; then
+              echo "::error::sim $SIM_TAG is on ${tagged:-no commit}, and sim-commit is $SIM_COMMIT"
+              exit 1
+          fi
+          file="${WORKFLOW_REF#"$REPOSITORY"/}"
+          file="caller/${file%%@*}"
+          uses="$(sed -n 's|^[[:space:]]*uses:[[:space:]]*altnovatrail/sim/\.github/workflows/gate\.yml@\([0-9a-f]\{40\}\).*$|\1|p' "$file" | sort -u)"
+          if [ "$uses" != "$SIM_COMMIT" ]; then
+              echo "::error::$file calls gate.yml of sim at $(printf '%s' "${uses:-no commit}" | tr '\n' ' '), and sim-commit is $SIM_COMMIT: the two move together"
+              exit 1
+          fi
+
+      - name: Go cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go
+          key: gate-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('sim/go.sum', 'sim/.devcontainer/Dockerfile') }}
+          restore-keys: gate-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Toolchain image from the cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/toolchain.tar
+          key: toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('sim/.devcontainer/Dockerfile') }}
+
+      - name: Toolchain image
+        run: |
+          tar=$RUNNER_TEMP/toolchain.tar
+          if [ -f "$tar" ]; then
+              if docker load --quiet --input "$tar" && docker image inspect toolchain > /dev/null; then
+                  rm -f -- "$tar"
+                  echo "Toolchain image: loaded from the cache."
+                  exit 0
+              fi
+              echo "::warning::The cache's file of the toolchain stage does not load as the image toolchain: the image is built from the Dockerfile."
+              rm -f -- "$tar"
+          fi
+          docker build --target toolchain --tag toolchain - < sim/.devcontainer/Dockerfile
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: gate-${{ inputs.name }}-part-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/parts
+
+      - name: gate-check
+        env:
+          MODE: ${{ inputs.mode }}
+          LIBRARY: ${{ inputs.library }}
+        run: |
+          library=()
+          if [ -n "$LIBRARY" ]; then
+              library=(--env "$LIBRARY=/work/caller")
+          fi
+          mkdir -p "$RUNNER_TEMP/go"
+          set -o pipefail
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOCACHE=/go/build --env GOMODCACHE=/go/mod ${library[@]+"${library[@]}"} \
+              --volume "$RUNNER_TEMP/go:/go" --volume "$RUNNER_TEMP/parts:/parts" \
+              --volume "$PWD:/work" --workdir /work/sim \
+              toolchain just gate-check "$MODE" /parts | tee -a "$GITHUB_STEP_SUMMARY"

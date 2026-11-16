@@ -61,12 +61,16 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T71 | Цель `M11.same` и набор суда в коде, тег | Claude | да | T70 |
 | [ ] | T72 | Суд `model-fair-1` | я + Claude | да | T71; кандидаты — черновые pull request T62 `learner-model` (строка 4.17 COORDINATION.md spec), не их релиз |
 | [ ] | T73 | База — на релиз выбранного, архив эпика | я + Claude | да | T72; при выборе — релиз выбранного, T63 `learner-model` |
+| [x] | T74 | Скорость CI: строка 7.19 | Claude | — | — |
+| [ ] | T75 | Переход на релиз `.github` строки 7.13 | Claude | да | T74; релиз `.github` строки 7.13 COORDINATION.md spec |
+| [ ] | T76 | Переход на тег `spec` строки 7.14: стадия `toolchain-core` | я + Claude | да | T75; тег `spec` строки 7.14 COORDINATION.md spec |
 
 **Почему такой порядок.**
 - Критерий — первым и отдельно от кода, как T61 в [docs/plan/E9.md](docs/plan/E9.md): я вычитываю его, пока ничто его не гоняет, и он ничего не ждёт в `learner-model`. Документы тега не выпускают (R29): тег с критерием — тег T71, и его ждут T60 `learner-model` — «Gate» на теге суда — и разведка T61 `learner-model`, которая читает наборы `sim judge` критерием E10 (sources 3.10).
 - Код и тег — своей задачей: `M11` нет ни в одной группе счёта, у него нет пути и цели (R55), так что `sim judge` цели `M11.same` сейчас не считает; строка набора суда — в `internal/seed/sets.go` (R52). Мерж выпускает тег (R29), и с него до выбора закрепление не меняется.
 - Суд — по коммитам черновых pull request кандидатов, не по их релизу: `sim` гонит кандидата из его коммита (R34), а релиз выбранного ждёт полос `sim` (R103 spec).
 - База на релиз — после суда, как T59 в [docs/plan/E7.md](docs/plan/E7.md) и T48 в [docs/plan/E5.md](docs/plan/E5.md); при выходе задача только архивирует эпик. Отдельной задачи итога нет: последняя архивирует (R59).
+- T74–T76 — вне эпика: скорость CI по строке 7.19 COORDINATION.md spec, слово автора 2026-11-16 (R61, R67). Ни бит, ни закрепления они не двигают; T76 переводит `spec` на тег и меняет `.devcontainer/`, и до выбора суда — только с теми же битами (R45).
 
 ## Epic E10. Суд круга справедливости модели
 
@@ -111,3 +115,29 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
   - в обоих исходах: раздел 3 [docs/architecture.md](docs/architecture.md) сверить с построенным; что меняет карточку architecture 3.9 spec — строкой «в реестр spec»; таблицы 2–4; эпик — в архив `docs/plan/E10.md`, замер токенов его сессий — строкой measurements 2.2; следующий эпик предложить (R59).
 - **Как проверить:** при выборе — `just gate exact`, `just ci-test`, `just ci-lint`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
 - **Разделы:** R04, R26, R29, R40, R55, R58, R59; [docs/architecture.md](docs/architecture.md), разделы 3, 3.6 и 3.9; architecture 3.9 spec; dpia 10.2 spec.
+
+#### T75. Переход на релиз `.github` строки 7.13
+
+- **Цель:** CI `sim` — на релизе общих workflow `.github` строки 7.13 COORDINATION.md spec: кеш Go в `go.yml`, «Go / targets» матрицей по цели, «Go / fma-diff» — цели параллельно, образ `toolchain` без сохранения из pull request и при промахе — сборкой в одном job, сверка и подписи релиза параллельно; что проверки доказывают, не меняется. Остаток строки 7.19 после T74 (R67).
+- **Почему:** строка 7.19 COORDINATION.md spec: без этого релиза `v0.1.24` удлиняет «Go / targets» тестами wasip1; «Go / targets» — самый долгий job после гейта частями (measurements 3.1 spec; R67).
+- **Ждёт:** релиза `.github` строки 7.13 — оркестратор запустит задачу, когда он выйдет. Dependabot может открыть pull request группы `shared-workflows` раньше (R63): тогда задача берёт его изменение в свою ветку и закрывает его.
+- **Сделать:**
+  - каждый `uses:` `.github` в `.github/workflows/` — на SHA тега релиза (R63);
+  - копию шагов образа в `gate.yml` свести с `go.yml` релиза — тот же файл, путь и ключ, его правила сохранения (R63, R67);
+  - рецепты `github`, `script`, `test-targets` и `fma-diff` читают скрипты job `go.yml`: сверить с его новым видом, чтобы контейнер гонял то, что CI;
+  - число частей гейта, `matrix.part` в `gate.yml`, — заново по времени job, когда «Go / targets» станет короче: T74 взяла четыре, две на медленном x64 подходили к «Go / arm64» (R67; measurements 1.1);
+  - новые входы и проверки релиза — по его описанию, запись источника — `docs/sources.md`; решение журнала — поправкой к R63 и R67 или новым.
+- **Решить при планировании:** если релиз гоняет проверки без Go-тестов в стадии `toolchain-core`, которой в Dockerfile `sim` нет до T76, — взять его без неё, если он даёт выбор, или нести стадию в T76 и тогда ждать её; спросить автора строкой [run/QUESTIONS.md](run/QUESTIONS.md), если ни то ни другое.
+- **Не делать:** `.devcontainer/` — его меняет T76.
+- **Как проверить:** `just ci-lint`, `just ci-test`, `just same-bits`; `just -f spec/justfile docs-check-repo`; CI pull request зелёный; время изменённых job до и после — в отчёте, по прогонам `main` и pull request, строкой [docs/measurements.md](docs/measurements.md), раздел 1.1; `/code-review high`, один круг.
+- **Разделы:** строки 7.13 и 7.19 COORDINATION.md spec; measurements 3.1 spec; R76 spec, R156 spec; R63, R67.
+
+#### T76. Переход на тег `spec` строки 7.14: стадия `toolchain-core`
+
+- **Цель:** `sim` — на теге `spec` строки 7.14 COORDINATION.md spec, со стадией `toolchain-core` в `.devcontainer/Dockerfile` и apt шаблона только из источников снимка; проверки и релиз, которые общий `go.yml` релиза строки 7.13 гоняет в `toolchain-core`, идут в ней; те же биты. Последняя задача строки 7.19: она одна меняет `.devcontainer/`.
+- **Почему:** строки 7.13, 7.14 и 7.19 COORDINATION.md spec; переход на тег `spec` — своей задачей и решением журнала (RULES.md, Across repositories), как E11 (R60).
+- **Ждёт:** T75 и тега `spec` строки 7.14. По правилу «одно закрепление» эпика E10 тег `spec` до выбора суда берётся, только если биты те же (R45): `just gate exact` зелёный и пути прежние; иначе — после T73.
+- **Сделать:** как переход E11 (R60): подмодуль `spec/` — на тег; `.devcontainer/` — по шаблону вида `go` этого тега, со стадией `toolchain-core`; модуль Go `spec` в `go.mod` и в `gate.json` — на тег, если он его выпускает, и `just gate exact` — те же 69 чисел; что тег меняет в правилах и документах — по его журналу; решение журнала о переходе.
+- **Мой шаг:** пересобрать контейнер после мержа — «Rebuild Container»: в прогоне оркестратора ночью пересобрать его некому, поэтому `.devcontainer/` меняет только эта задача.
+- **Как проверить:** `just gate exact`; `just ci-lint`, `just ci-test`, `just same-bits`; `just -f spec/justfile docs-check-repo`; сборка стадий `toolchain` и `toolchain-core` из Dockerfile; CI pull request зелёный; время изменённых job до и после — в отчёте; `/code-review high`, один круг.
+- **Разделы:** строки 7.13, 7.14 и 7.19 COORDINATION.md spec; measurements 3.1 spec; R76 spec, R156 spec; R45, R60, R63, R67.

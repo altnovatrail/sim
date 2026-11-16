@@ -31,8 +31,8 @@ jobs:
     with:
       # What builds the bench and runs the gate, and what builds the release's file: the code but
       # its tests and their data, the packages and the paths it embeds, go.mod and go.sum, the
-      # license, the gate file, the recipes, the toolchain and this workflow. Tests, their data and
-      # the documents change no release.
+      # license, the gate file, the recipes, the toolchain, the gate's workflow gate.yml and this
+      # workflow. Tests, their data and the documents change no release.
       paths: |
         *.go
         :(exclude)*_test.go
@@ -46,4 +46,5 @@ jobs:
         .devcontainer/Dockerfile
         internal/published/v*
         internal/criterion/paths.json
+        .github/workflows/gate.yml
         .github/workflows/release.yml
