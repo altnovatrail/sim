@@ -93,6 +93,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
   - общий счёт критерия модели — рядом в отчёте, как справка, или не пишется;
   - имена — по правилу R49, `<criterion>-<variant>-<n>`: `judgements/model-fair-1/` и `held-out-model-fair-1`; seed — дата записи, по правилу раздела 3.8, поправкой к R04;
   - что из этого строит T71 и что `sim judge` уже умеет.
+- **Выяснилось при планировании (2026-11-16):** имена, seed и что строит T71 — по правилам R49 и раздела 3.8 [docs/architecture.md](docs/architecture.md), их решает исполнитель: `judgements/model-fair-1/`, `held-out-model-fair-1`, seed 20261116 — он свободен; `fair` остаётся как есть, критерием модели как есть: он держит каждый класс «не хуже» базы и при цели (R57). Как цель читает два класса, что такое «лучше» и граница 0,90 — вопросы автору, В26–В28 [run/QUESTIONS.md](run/QUESTIONS.md); задача ждёт ответов.
 - **Сделать:** решение журнала со следующим свободным R; поправки к R04 (seed набора), R55 (`M11.same` — цель этого суда) и R57, если меняет `fair`; [docs/architecture.md](docs/architecture.md), разделы 3.6 и 3.8 и «What stays open»; README, «Judging a candidate», если меняется то, что он говорит.
 - **Не делать:** кода и прогонов кандидатов.
 - **Как проверить:** `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
