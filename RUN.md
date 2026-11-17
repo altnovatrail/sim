@@ -1,8 +1,8 @@
 # RUN.md — work plan of sim
 
-What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.18.6: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
+What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.18.14: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
 
-Language (R154 spec): rules and tables in English, terse, for the session; the epic's description, table 1 and the bodies of tasks in Russian — the author writes and reviews them.
+Language (R154 spec): rules and tables in English, terse, for the session; the epic's description, table 1 and the bodies of tasks in Russian — the author writes and reviews them. Commit messages and a pull request's title and description in English and terse, for the session, never a copy of the report (the 2026-11-17 amendment to R14 spec; R75).
 
 ## Rules
 
@@ -70,6 +70,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T78 | Переход на тег `spec` v0.18.6 | Claude | — | — |
 | [x] | T79 | Короткий прогон трёх правил R157 spec | Claude | да | T78; pull request #84 `learner-model` (строка 4.20 COORDINATION.md spec) — его коммит, не релиз |
 | [x] | T80 | README без «Status», «License», фразы о языках и версии spec | Claude | — | — |
+| [x] | T81 | Переход на тег `spec` v0.18.14 | Claude | — | — |
 
 **Почему такой порядок.**
 - Критерий — первым и отдельно от кода, как T61 в [docs/plan/E9.md](docs/plan/E9.md): я вычитываю его, пока ничто его не гоняет, и он ничего не ждёт в `learner-model`. Документы тега не выпускают (R29): тег с критерием — тег T71, и его ждут T60 `learner-model` — «Gate» на теге суда — и разведка T61 `learner-model`, которая читает наборы `sim judge` критерием E10 (sources 3.10).
@@ -81,6 +82,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - T78 — вне эпика: волна 0 прогона «Сделай эпик E…» оркестратора `spec`, слово автора 2026-11-16 — первым каждый репозиторий эпика переходит на последний тег `spec` (R156 spec; R71). Задачи `sim` из «Порядка» COORDINATION.md spec идут после неё.
 - T79 — вне эпика: строка 4.21 «Порядка» COORDINATION.md spec в прогоне оркестратора (R156 spec; слово автора 2026-11-16), записана по тексту оркестратора (правило 6 COORDINATION.md spec); номер T79 был свободен. Идёт на коммите pull request #84 `learner-model`, не на его релизе, — ответ автора 2026-11-16 на строку В54 `learner-model`; порядок R103 spec: критерий решением журнала до первого прогона, прогон, полосы гейта на этом коммите и тег `sim`, по которому `learner-model` смержит #84 и выпустит релиз.
 - T80 — вне эпика: README.md всех репозиториев по слову автора 2026-11-17 в прогоне оркестратора `spec` (R156 spec), записана по тексту оркестратора (правило 6 COORDINATION.md spec); номер T80 был свободен.
+- T81 — вне эпика: переход на последний тег `spec`, v0.18.14, в параллельной работе волны 4 прогона оркестратора `spec`, пока `app` идёт эпиком E5, — слово автора 2026-11-17 (R156 spec; R75); записана по тексту оркестратора (правило 6 COORDINATION.md spec); номер T81 был свободен.
 
 ## Epic E10. Суд круга справедливости модели
 
