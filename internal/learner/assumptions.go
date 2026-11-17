@@ -119,6 +119,11 @@ type Assumptions struct {
 	// learner's own: one truth under several grades, the model starting each by its own (D-). Zero
 	// shifts the level by the learner's own start band.
 	TruthGrade int32
+	// CorrectAfter makes an adult correct the module level once, to the band of the truth, by the
+	// evidence of a correction of learner-model, right after the attempt that brings the learner's
+	// first answers of items with a verdict to this many (C-; R72 in docs/decisions.md). Zero leaves the
+	// level to the model.
+	CorrectAfter int
 }
 
 // Base gives the assumptions of the base population: the model's own, but the author's miss

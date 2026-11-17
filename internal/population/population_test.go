@@ -281,3 +281,25 @@ func TestFairness(t *testing.T) {
 		}
 	}
 }
+
+// C-grade1 is D-grade1 with an adult who corrects the level after CorrectAfter answers: of fairness,
+// on the reference's units, found by its name, and in no run of all the populations (R72).
+func TestRules(t *testing.T) {
+	if len(Rules) != 1 {
+		t.Fatalf("%d populations of the rules, want 1", len(Rules))
+	}
+	p := Rules[0]
+	a := p.Assumptions(0)
+	if p.Name != "C-grade1" || !reflect.DeepEqual(p.Graphs, olympiad) || p.Limit != run.Maths || !p.Fair() || p.Units() != Reference {
+		t.Errorf("%s on %v, limit %+v, units of %s", p.Name, p.Graphs, p.Limit, p.Units())
+	}
+	if got := changed(a); !slices.Equal(got, []string{"Grade", "TruthGrade", "CorrectAfter"}) || a.Grade != 1 || a.TruthGrade != 3 || a.CorrectAfter != CorrectAfter {
+		t.Errorf("%s changes %v: grade %d, the truth's %d, the correction after %d", p.Name, got, a.Grade, a.TruthGrade, a.CorrectAfter)
+	}
+	if got, ok := Named(p.Name); !ok || got.Name != p.Name {
+		t.Errorf("Named(%q) = %v, %v", p.Name, got.Name, ok)
+	}
+	if slices.ContainsFunc(All(), func(q Population) bool { return q.Name == p.Name }) {
+		t.Errorf("All() has %s", p.Name)
+	}
+}

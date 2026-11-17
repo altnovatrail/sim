@@ -201,6 +201,19 @@ var Fairness = []Population{
 	{Name: "D-grade5", Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade = 5, 3 })},
 }
 
+// Rules are the populations of the short run of the three rules of R157 spec beside those of
+// fairness, run only by name, so that no run of all the populations has them: C-grade1 is D-grade1
+// — grade 1, the truth of grade 3 and the unit of the reference — with an adult who corrects the
+// module level to the truth's band after the learner's tenth answer (docs/architecture.md, section
+// 3.2; R72).
+var Rules = []Population{
+	{Name: "C-grade1", Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade, a.CorrectAfter = 1, 3, CorrectAfter })},
+}
+
+// CorrectAfter is the answers after which the adult of C-grade1 corrects the level: about one
+// session, as R55 counts fifty answers five sessions (R72).
+const CorrectAfter = 10
+
 // All gives the populations the bench has, a copy, so that no caller changes them for another.
 func All() []Population {
 	return slices.Concat(Standalone, Own, Fairness)
@@ -209,7 +222,7 @@ func All() []Population {
 // Named gives a population by its name.
 func Named(name string) (Population, bool) {
 	// The lists one by one, not All(): a bench reads a population by the name of each line.
-	for _, ps := range [...][]Population{Standalone, Own, Fairness} {
+	for _, ps := range [...][]Population{Standalone, Own, Fairness, Rules} {
 		if i := slices.IndexFunc(ps, func(p Population) bool { return p.Name == name }); i >= 0 {
 			return ps[i], true
 		}

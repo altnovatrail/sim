@@ -476,11 +476,17 @@ func readDigest(path string) (*bench.File, string, error) {
 
 // evaluation is an evaluation file: the name of the evaluation, as its folder evaluations/<name>/,
 // the file of results of the decisive run of the base, relative to the evaluation file, its SHA-256
-// and the date the evaluation is made on, as YYYY-MM-DD (R55 in docs/decisions.md).
+// and the date the evaluation is made on, as YYYY-MM-DD (R55 in docs/decisions.md). An evaluation of
+// the three rules of R157 spec names its criterion, "rules", and beside its run the base's run with
+// its SHA-256 (R72); one of the adult's correction against the truth, "correction", its run alone
+// (R73); one of fairness by the grade names neither.
 type evaluation struct {
 	Evaluation string `json:"evaluation"`
+	Criterion  string `json:"criterion,omitempty"`
 	Run        string `json:"run"`
 	SHA256     string `json:"sha256"`
+	Base       string `json:"base,omitempty"`
+	BaseSHA256 string `json:"base_sha256,omitempty"`
 	Date       string `json:"date"`
 }
 
@@ -501,24 +507,51 @@ func evaluateCommand(args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	path := e.Run
-	if !filepath.IsAbs(path) {
-		path = filepath.Join(filepath.Dir(fs.Arg(0)), path)
+	read := func(name, digest string) (*bench.File, error) {
+		path := name
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(filepath.Dir(fs.Arg(0)), path)
+		}
+		f, got, err := readDigest(path)
+		if err != nil {
+			return nil, err
+		}
+		if got != digest {
+			return nil, fmt.Errorf("%s: the run %s has the SHA-256 %s, and the evaluation file names %s", fs.Arg(0), name, got, digest)
+		}
+		return f, nil
 	}
-	base, digest, err := readDigest(path)
+	base, err := read(e.Run, e.SHA256)
 	if err != nil {
 		return err
 	}
-	if digest != e.SHA256 {
-		return fmt.Errorf("%s: the run %s has the SHA-256 %s, and the evaluation file names %s", fs.Arg(0), e.Run, digest, e.SHA256)
-	}
-	in := criterion.Evaluation{Name: e.Evaluation, Digest: digest, Date: e.Date, Run: base, Version: "(unknown)"}
+	version := "(unknown)"
 	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
-		in.Version = info.Main.Version
+		version = info.Main.Version
 	}
-	if in.Pins, err = pins(gateJSON); err != nil {
+	pinned, err := pins(gateJSON)
+	if err != nil {
 		return fmt.Errorf("the embedded gate file: %w", err)
 	}
+	if e.Criterion == "correction" {
+		r, err := criterion.EvaluateCorrection(criterion.Correction{Name: e.Evaluation, Date: e.Date, Version: version, Digest: e.SHA256, Run: base, Pins: pinned})
+		if err != nil {
+			return err
+		}
+		return r.Write(stdout)
+	}
+	if e.Criterion == "rules" {
+		in := criterion.Rules{Name: e.Evaluation, Date: e.Date, Version: version, Run: base, RunDigest: e.SHA256, BaseDigest: e.BaseSHA256, Pins: pinned}
+		if in.Base, err = read(e.Base, e.BaseSHA256); err != nil {
+			return err
+		}
+		r, err := criterion.EvaluateRules(in)
+		if err != nil {
+			return err
+		}
+		return r.Write(stdout)
+	}
+	in := criterion.Evaluation{Name: e.Evaluation, Digest: e.SHA256, Date: e.Date, Run: base, Version: version, Pins: pinned}
 	f, err := criterion.Evaluate(in)
 	if err != nil {
 		return err
@@ -550,6 +583,14 @@ func readEvaluation(name string) (evaluation, error) {
 	}
 	if !isSHA256(e.SHA256) {
 		return e, fmt.Errorf("%s: the SHA-256 %q, not 64 digits of hex", name, e.SHA256)
+	}
+	switch {
+	case e.Criterion == "rules" && (e.Base == "" || !isSHA256(e.BaseSHA256)):
+		return e, fmt.Errorf("%s: an evaluation of the rules names the base's run %q by the SHA-256 %q", name, e.Base, e.BaseSHA256)
+	case e.Criterion != "rules" && e.Criterion != "correction" && e.Criterion != "":
+		return e, fmt.Errorf("%s: no criterion %q of an evaluation: rules, correction, or none for fairness by the grade", name, e.Criterion)
+	case e.Criterion != "rules" && (e.Base != "" || e.BaseSHA256 != ""):
+		return e, fmt.Errorf("%s: only an evaluation of the rules names a base's run beside its own", name)
 	}
 	if abs, err := filepath.Abs(filepath.Dir(name)); err == nil && filepath.Base(filepath.Dir(abs)) == "evaluations" && e.Evaluation != filepath.Base(abs) {
 		return e, fmt.Errorf("%s: the evaluation file names the evaluation %q, and lies in the folder of %s", name, e.Evaluation, filepath.Base(abs))

@@ -1,0 +1,7 @@
+{
+  "evaluation": "rules-2",
+  "criterion": "correction",
+  "run": "../../runs/rules2-t79.jsonl",
+  "sha256": "552eaff7f98c8c792e3a49e3c899288e240cfebf4222278ce4baf3a6e92723c0",
+  "date": "2026-11-17"
+}
