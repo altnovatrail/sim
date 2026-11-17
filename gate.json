@@ -41,7 +41,7 @@
     "github.com/altnovatrail/sim": "1.27.3"
   },
   "bands": {
-    "reason": "T82: the base of the gate moves to the release of the three rules, learner-model v0.1.13 (49a73d6), the code of df338e5; the numbers are those T79 recorded (R74)",
+    "reason": "T82: the base of the gate moves to the release of the three rules, learner-model v0.1.13 (49a73d6), the code of df338e5; the numbers are those T79 recorded (R74, R76)",
     "numbers": [
       {
         "cell": "G0/novatrail/olympiad-math",
