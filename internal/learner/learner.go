@@ -127,6 +127,9 @@ func New(set seed.Set, population string, n int, modules []*pack.Module, a Assum
 	if err := a.validate(); err != nil {
 		return nil, err
 	}
+	if a.CorrectAfter > 0 && len(modules) > 1 {
+		return nil, fmt.Errorf("%w: an adult corrects the level of one module, and the learner has %d", ErrAssumptions, len(modules))
+	}
 	unit := seed.Learner(population, n)
 	place := func(purpose string) *seed.Stream {
 		s, err := set.Place(unit, purpose)

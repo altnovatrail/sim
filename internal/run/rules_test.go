@@ -87,7 +87,27 @@ func TestCorrection(t *testing.T) {
 	if plain.State.Modules[0].Level == corrected.State.Modules[0].Level {
 		t.Errorf("the correction left the level at the end %v", plain.State.Modules[0].Level)
 	}
+	for _, c := range []struct {
+		rec  *Record
+		want int
+	}{{plain, 0}, {corrected, 1}} {
+		steps := 0
+		for _, s := range c.rec.Steps {
+			if s.Correction != nil {
+				steps++
+				if !s.Correction.LevelSetByAdult {
+					t.Errorf("the step records evidence %+v as the correction", *s.Correction)
+				}
+			}
+		}
+		if steps != c.want {
+			t.Errorf("%d steps record a correction, want %d", steps, c.want)
+		}
+	}
 	if _, err := learner.New(seed.Working, "D-grade3", 0, mods, learner.Assumptions{CorrectAfter: -1}); err == nil {
 		t.Error("a correction after -1 answers is taken")
+	}
+	if _, err := learner.New(seed.Working, "D-grade3", 0, modules(t, olympiad, grade3), learner.Assumptions{CorrectAfter: 10}); err == nil {
+		t.Error("a correction of a learner of two modules is taken")
 	}
 }

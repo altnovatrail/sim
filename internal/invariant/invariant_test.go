@@ -169,6 +169,12 @@ func TestBreaches(t *testing.T) {
 		if len(Same(rec, &ev)) == 0 {
 			t.Fatal("a run with other evidence is the same")
 		}
+		co := *rec
+		co.Steps = append([]run.Step(nil), rec.Steps...)
+		co.Steps[k].Correction = &e
+		if len(Same(rec, &co)) == 0 {
+			t.Fatal("a run with an adult's correction is the same")
+		}
 		st := *rec
 		st.State = learnermodel.State{}
 		if len(Same(rec, &st)) == 0 {

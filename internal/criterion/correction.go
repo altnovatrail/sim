@@ -3,6 +3,7 @@ package criterion
 import (
 	"fmt"
 	"io"
+	"maps"
 	"slices"
 	"strings"
 
@@ -82,13 +83,17 @@ func EvaluateCorrection(c Correction) (*CorrectionResult, error) {
 // onCandidate holds a run of the rules to the libraries R72 names: learner-model at RulesCandidate,
 // the engine at the gate file's pin.
 func onCandidate(name string, f *bench.File, pins map[string]Pin) error {
+	pins = maps.Clone(pins)
+	pins["github.com/altnovatrail/learner-model"] = Pin{Commit: RulesCandidate}
+	return onPins(name, f, pins)
+}
+
+// onPins holds a run to the points of its libraries: by the tag, or by the pseudo-version of the
+// commit while there is none.
+func onPins(name string, f *bench.File, pins map[string]Pin) error {
 	for _, lib := range bench.Libraries {
-		pin := pins[lib]
-		if lib == "github.com/altnovatrail/learner-model" {
-			pin = Pin{Commit: RulesCandidate}
-		}
-		if got := f.Header.Libraries[lib]; !pin.names(got) {
-			return fmt.Errorf("%w: %s is on %s %q, and R72 names %v", ErrCriterion, name, lib, got, pin)
+		if pin, got := pins[lib], f.Header.Libraries[lib]; !pin.names(got) {
+			return fmt.Errorf("%w: %s is on %s %q, and it is fixed at %v", ErrCriterion, name, lib, got, pin)
 		}
 	}
 	return nil

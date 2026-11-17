@@ -71,6 +71,9 @@ type Step struct {
 	// Further are the calls of the engine at the end of the step's task links answered with the
 	// lesson of the same run: further through the lesson, no new choice (R48).
 	Further []Call
+	// Correction is the adult's correction of the module level right after one of the step's
+	// attempts, as Append gave it back; nil on every other step (C-; R72 in docs/decisions.md).
+	Correction *learnermodel.Evidence
 	// Resumed tells that the step is a lesson going on after a task of consolidation: its choice is
 	// the engine's answer after the consolidation, the lesson of the same run, and no new choice.
 	Resumed bool
@@ -300,7 +303,7 @@ func (r *Run) give(step *Step, at int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if err := r.correct(m, a.End); err != nil {
+	if err := r.correct(m, a.End, step); err != nil {
 		return 0, err
 	}
 	step.Obs = []*Obs{o}
@@ -357,7 +360,7 @@ func (r *Run) passLesson(step Step, at int64) ([]Step, int64, error) {
 			if err != nil {
 				return err
 			}
-			if err := r.correct(m, a.End); err != nil {
+			if err := r.correct(m, a.End, cur); err != nil {
 				return err
 			}
 			cur.Attempts, cur.Evidence, cur.Instances, cur.Obs = append(cur.Attempts, a), append(cur.Evidence, e), append(cur.Instances, n), append(cur.Obs, o)
@@ -610,8 +613,9 @@ func guardOf(s learnermodel.State, module string) int32 {
 // correct is the adult's correction of a learner of C- (R72 in docs/decisions.md): once the
 // learner's first answers with a verdict reach CorrectAfter, right after the attempt that brings
 // them there, the module level is set to the band of the truth, at the time of the attempt's last
-// action, by the evidence of a correction of learner-model. Every other learner it leaves as it is.
-func (r *Run) correct(m *pack.Module, at int64) error {
+// action, by the evidence of a correction of learner-model, which the step records. Every other
+// learner it leaves as it is.
+func (r *Run) correct(m *pack.Module, at int64, step *Step) error {
 	after := r.l.CorrectAfter()
 	if after == 0 || r.corrected || r.rec.Answers < after {
 		return nil
@@ -623,11 +627,11 @@ func (r *Run) correct(m *pack.Module, at int64) error {
 	ref := func(place int32) learnermodel.BandRef {
 		return learnermodel.BandRef{Place: place, ID: m.Graph.Bands[place-1].ID}
 	}
-	state, _, err := learnermodel.Append(r.state, learnermodel.LevelCorrection(m.ID, ref(lm.TrueBand), ref(lm.StartBand), at), r.graphs)
+	state, got, err := learnermodel.Append(r.state, learnermodel.LevelCorrection(m.ID, ref(lm.TrueBand), ref(lm.StartBand), at), r.graphs)
 	if err != nil {
 		return fmt.Errorf("%w: the model refuses the adult's correction of %s: %w", ErrRun, m.ID, err)
 	}
-	r.state, r.corrected, r.rec.Corrected = state, true, r.rec.Answers
+	r.state, r.corrected, r.rec.Corrected, step.Correction = state, true, r.rec.Answers, &got
 	return nil
 }
 

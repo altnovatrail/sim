@@ -53,9 +53,9 @@ type RulesResult struct {
 	Guard    measure.Value
 	Learners int
 	// Correction is M11 of the cell of the correction against the same learners without it, each
-	// number by name; Corrected is how many of its learners the adult corrected.
-	Correction []measure.Pair
-	Corrected  int
+	// number by name; Corrected is how many of its CorrectionLearners the adult corrected.
+	Correction                    []measure.Pair
+	Corrected, CorrectionLearners int
 	// Holds are the four conditions in their order, and All whether every one holds.
 	Holds [4]bool
 	All   bool
@@ -122,14 +122,11 @@ func EvaluateRules(r Rules) (*RulesResult, error) {
 		return nil, fmt.Errorf("%w: cell %s is not of the learners of %s", ErrCriterion, correctionCell, uncorrectedCell)
 	}
 	out := &RulesResult{Rules: r}
-	b := cells[betterCell]
-	out.Better = measure.Read(b.Reference, b.Graph, b.Pairs, measure.FairNumbers())[1]
-	bb := fairCell(base, betterCell)
-	out.BaseSame = measure.Read(bb.Reference, bb.Graph, bb.Pairs, measure.FairNumbers())[1]
 	for _, name := range []string{uncorrectedCell, betterCell} {
 		c, cb := cells[name], fairCell(base, name)
 		out.Grades = append(out.Grades, RulesGrade{Cell: name, Rules: measure.Read(c.Reference, c.Graph, c.Pairs, measure.FairNumbers()), Base: measure.Read(cb.Reference, cb.Graph, cb.Pairs, measure.FairNumbers())})
 	}
+	out.Better, out.BaseSame = out.Grades[1].Rules[1], out.Grades[1].Base[1]
 	out.Holds[0] = out.Better.Read && out.BaseSame.Read && out.Better.Low > out.BaseSame.Value
 	if out.Fair, err = fair(base, run); err != nil {
 		return nil, err
@@ -141,9 +138,10 @@ func EvaluateRules(r Rules) (*RulesResult, error) {
 			guard = append(guard, measure.Guarded(l.Fair))
 		}
 	}
-	out.Guard, out.Learners = measure.Read(referenceCell, b.Graph, guard, measure.GuardNumbers())[0], len(guard)
+	out.Guard, out.Learners = measure.Read(referenceCell, cells[betterCell].Graph, guard, measure.GuardNumbers())[0], len(guard)
 	out.Holds[2] = out.Guard.Read && out.Guard.High <= guardCeiling
 	c, u := cells[correctionCell], cells[uncorrectedCell]
+	out.CorrectionLearners = len(c.Pairs)
 	if out.Correction, err = measure.ReadPair(c.Reference, c.Graph, c.Pairs, u.Pairs, measure.FairNumbers()); err != nil {
 		return nil, err
 	}
@@ -225,7 +223,7 @@ func (r *RulesResult) Write(w io.Writer) error {
 	for _, k := range r.Fair {
 		fmt.Fprintf(&b, "- %s %s: %s, %s\n", k.Cell, k.Number, yes(k.Met), k.Detail)
 	}
-	fmt.Fprintf(&b, "\nThe cell of the correction, %d of whose %d learners the adult corrected:\n\n| Number | %s | %s | Difference |\n|---|---|---|---|\n", r.Corrected, r.Learners, correctionCell, uncorrectedCell)
+	fmt.Fprintf(&b, "\nThe cell of the correction, %d of whose %d learners the adult corrected:\n\n| Number | %s | %s | Difference |\n|---|---|---|---|\n", r.Corrected, r.CorrectionLearners, correctionCell, uncorrectedCell)
 	for _, p := range r.Correction {
 		fmt.Fprintf(&b, "| %s | %s | %s | %s |\n", p.A.Name, showInterval(p.A), showInterval(p.B), showInterval(p.Diff))
 	}

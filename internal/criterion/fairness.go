@@ -9,7 +9,6 @@ import (
 	"github.com/altnovatrail/sim/internal/bench"
 	"github.com/altnovatrail/sim/internal/measure"
 	"github.com/altnovatrail/sim/internal/population"
-	"github.com/altnovatrail/sim/internal/seed"
 )
 
 // The bounds the base holds the criterion of fairness by the grade to, for every grade alike: M11.same
@@ -53,28 +52,17 @@ type Grade struct {
 // reference's is read against the reference in pairs by learner, the resamples drawn by the
 // reference's cell, so that every grade resamples the same learners (R55).
 func Evaluate(e Evaluation) (*Fairness, error) {
-	h := e.Run.Header
 	switch {
 	case e.Name == "" || e.Date == "" || e.Digest == "":
 		return nil, fmt.Errorf("%w: an evaluation needs its name, its date and the SHA-256 of its run", ErrCriterion)
-	case h.Rule != "engine" || h.Set != seed.Working:
-		return nil, fmt.Errorf("%w: an evaluation reads the base under the engine on the working learners, not under %q on %s", ErrCriterion, h.Rule, h.Set.Experiment)
-	case h.Part != (bench.Part{}) || len(h.Packages) > 0:
-		return nil, fmt.Errorf("%w: an evaluation reads a whole run on the pinned packages", ErrCriterion)
-	case !h.Invariants:
-		return nil, fmt.Errorf("%w: the file of results did not record the invariants, and an evaluation reads a base with no breach", ErrCriterion)
 	case len(e.Pins) == 0:
 		return nil, fmt.Errorf("%w: an evaluation needs the libraries the base is fixed at, those of the gate file", ErrCriterion)
 	}
-	for _, path := range bench.Libraries {
-		if pin, got := e.Pins[path], h.Libraries[path]; !pin.names(got) {
-			return nil, fmt.Errorf("%w: the gate file names %s at %v, and the run is on %q", ErrCriterion, path, pin, got)
-		}
+	if err := whole("the base", e.Run); err != nil {
+		return nil, err
 	}
-	for _, l := range e.Run.Lines {
-		if len(l.Breaches) > 0 {
-			return nil, fmt.Errorf("%w: the base breaks an invariant: %s", ErrCriterion, l.Breaches[0])
-		}
+	if err := onPins("the base", e.Run, e.Pins); err != nil {
+		return nil, err
 	}
 	cells, err := bench.Fair(e.Run)
 	if err != nil {

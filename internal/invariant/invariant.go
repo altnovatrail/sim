@@ -114,6 +114,9 @@ func Same(a, b *run.Record) []Breach {
 				return breach(k, "the evidence of attempt %d differs", i)
 			}
 		}
+		if !bytes.Equal(encode(sa.Correction), encode(sb.Correction)) {
+			return breach(k, "the adult's correction differs")
+		}
 	}
 	sa, errA := learnermodel.EncodeState(a.State)
 	sb, errB := learnermodel.EncodeState(b.State)
