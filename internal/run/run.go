@@ -90,6 +90,13 @@ type Record struct {
 	State   learnermodel.State // the model's state at the end
 	Answers int                // first answers of items with a verdict
 	Days    int                // the day of the calendar of the last choice, from 1
+	// Guard counts the pieces of evidence after which the count of the guard of their module,
+	// FailuresInARow of the model's state, stood at guardFailures, having stood one below it: where
+	// learner-model lowers the level by a band (R45 learner-model; R72 in docs/decisions.md).
+	Guard int
+	// Corrected is the first answers before the adult corrected the module level, 0 when no adult
+	// did (C-).
+	Corrected int
 }
 
 // Run is a learner's run in progress: the model's state and what api keeps of the learner.
@@ -114,6 +121,7 @@ type Run struct {
 	rubricDone []engine.RubricDone
 	last       engine.Last
 	hasLast    bool
+	corrected  bool // the adult has corrected the module level (C-)
 	issued     map[string]engine.SkillIssue
 	choices    map[string]int64
 
@@ -292,6 +300,9 @@ func (r *Run) give(step *Step, at int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	if err := r.correct(m, a.End); err != nil {
+		return 0, err
+	}
 	step.Obs = []*Obs{o}
 	n, err := instance(m, t, a)
 	if err != nil {
@@ -344,6 +355,9 @@ func (r *Run) passLesson(step Step, at int64) ([]Step, int64, error) {
 			}
 			o, err := r.observeAfter(m, t, a, before)
 			if err != nil {
+				return err
+			}
+			if err := r.correct(m, a.End); err != nil {
 				return err
 			}
 			cur.Attempts, cur.Evidence, cur.Instances, cur.Obs = append(cur.Attempts, a), append(cur.Evidence, e), append(cur.Instances, n), append(cur.Obs, o)
@@ -565,11 +579,56 @@ func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine
 	if err != nil {
 		return nil, fmt.Errorf("%w: the model refuses the evidence of %s: %w", ErrRun, task.ID, err)
 	}
+	if fired(r.state, state, m.ID) {
+		r.rec.Guard++
+	}
 	r.state = state
 	for _, res := range a.Items {
 		r.rec.Answers += b2i(res.Place > 0)
 	}
 	return &got, nil
+}
+
+// guardFailures is the count of the guard of learner-model at which it lowers a module's level by
+// a band: three failures in a row (R45 learner-model; R157 spec).
+const guardFailures = 3
+
+// fired tells whether the guard lowered a module's level between two states: its count stands at
+// guardFailures after, and stood one below before.
+func fired(before, after learnermodel.State, module string) bool {
+	return guardOf(after, module) == guardFailures && guardOf(before, module) == guardFailures-1
+}
+
+// guardOf gives the count of the guard of a module in a state, 0 for a module it does not hold.
+func guardOf(s learnermodel.State, module string) int32 {
+	if i := slices.IndexFunc(s.Modules, func(ms learnermodel.ModuleState) bool { return ms.Module == module }); i >= 0 {
+		return s.Modules[i].FailuresInARow
+	}
+	return 0
+}
+
+// correct is the adult's correction of a learner of C- (R72 in docs/decisions.md): once the
+// learner's first answers with a verdict reach CorrectAfter, right after the attempt that brings
+// them there, the module level is set to the band of the truth, at the time of the attempt's last
+// action, by the evidence of a correction of learner-model. Every other learner it leaves as it is.
+func (r *Run) correct(m *pack.Module, at int64) error {
+	after := r.l.CorrectAfter()
+	if after == 0 || r.corrected || r.rec.Answers < after {
+		return nil
+	}
+	lm, err := r.l.Module(m.ID)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrRun, err)
+	}
+	ref := func(place int32) learnermodel.BandRef {
+		return learnermodel.BandRef{Place: place, ID: m.Graph.Bands[place-1].ID}
+	}
+	state, _, err := learnermodel.Append(r.state, learnermodel.LevelCorrection(m.ID, ref(lm.TrueBand), ref(lm.StartBand), at), r.graphs)
+	if err != nil {
+		return fmt.Errorf("%w: the model refuses the adult's correction of %s: %w", ErrRun, m.ID, err)
+	}
+	r.state, r.corrected, r.rec.Corrected = state, true, r.rec.Answers
+	return nil
 }
 
 // evidence gives the evidence of an attempt on a task with a verdict (R82 spec; concepts 11 spec):

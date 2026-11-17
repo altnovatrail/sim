@@ -29,12 +29,19 @@ type Trace struct {
 	// the run, those of lessons and consolidations among them, by the place of their task's band:
 	// Bands[p-1] for the place p.
 	Bands []int `json:"bands"`
+	// Guard is how often the guard of learner-model lowered the module level on the whole run, as
+	// run.Record counts it; read by M12 on the reference's cell alone (R72 in docs/decisions.md). A file
+	// of a model with no guard has none.
+	Guard int `json:"guard,omitempty"`
+	// Corrected is the first answers before the adult corrected the module level, as run.Record
+	// gives it, 0 when no adult did (C-).
+	Corrected int `json:"corrected,omitempty"`
 }
 
 // Traced gives the trace of M11 of one learner's run.
 func Traced(rec *run.Record) *Trace {
 	obs, _ := attempts(rec)
-	t := &Trace{Levels: []float64{}, Bands: []int{}}
+	t := &Trace{Levels: []float64{}, Bands: []int{}, Guard: rec.Guard, Corrected: rec.Corrected}
 	for _, o := range obs {
 		for k := o.Answers; k < o.Answers+len(o.Items) && k < FairLength; k++ {
 			t.Levels = append(t.Levels, o.Level)
@@ -118,4 +125,21 @@ func FairNumbers() []Number {
 		{"M11.same", ratio("M11.same", "M11.pairs")},
 		{"M11.band", band},
 	}
+}
+
+// Guarded gives the sums of M12 of one learner, read on the reference's cell, whose truth is the
+// band of its grade (R72 in docs/decisions.md): whether the guard of learner-model lowered its
+// module level at least once on the run, a false firing there by construction.
+func Guarded(t *Trace) Sums {
+	s := Sums{"M12.learners": 1}
+	if t.Guard > 0 {
+		s.add("M12.false", 1)
+	}
+	return s
+}
+
+// GuardNumbers are the numbers of M12, read off a cell of learners by their sums of Guarded: the
+// share of them whose level the guard lowered (R72).
+func GuardNumbers() []Number {
+	return []Number{{"M12.false", ratio("M12.false", "M12.learners")}}
 }

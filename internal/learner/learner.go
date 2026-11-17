@@ -100,6 +100,9 @@ func (a Assumptions) validate() error {
 	if a.UnreadableEvery < 0 || a.RepeatDays < 0 || a.AttemptShock < 0 {
 		return fmt.Errorf("%w: unreadable every %d, a repeat within %d days, a shock of %v", ErrAssumptions, a.UnreadableEvery, a.RepeatDays, a.AttemptShock)
 	}
+	if a.CorrectAfter < 0 {
+		return fmt.Errorf("%w: a correction after %d answers", ErrAssumptions, a.CorrectAfter)
+	}
 	if !(a.TechniqueChance >= 0 && a.TechniqueChance <= 1) || a.LearnFade < 0 {
 		return fmt.Errorf("%w: the technique with the chance %v, a fade of %v", ErrAssumptions, a.TechniqueChance, a.LearnFade)
 	}
@@ -280,6 +283,12 @@ func (l *Learner) Module(id string) (*Module, error) {
 		return nil, fmt.Errorf("%w: %s", ErrNoModule, id)
 	}
 	return m, nil
+}
+
+// CorrectAfter gives the answers after which an adult corrects the learner's module level, 0 for
+// none (C-).
+func (l *Learner) CorrectAfter() int {
+	return l.a.CorrectAfter
 }
 
 // Skill gives the learner's truth of a skill with a verdict, or nil.

@@ -8,6 +8,7 @@ import (
 	"github.com/altnovatrail/sim/internal/learner"
 	"github.com/altnovatrail/sim/internal/pack"
 	"github.com/altnovatrail/sim/internal/population"
+	"github.com/altnovatrail/sim/internal/published"
 	"github.com/altnovatrail/sim/internal/run"
 	"github.com/altnovatrail/sim/internal/seed"
 	"github.com/altnovatrail/sim/internal/synthetic"
@@ -173,5 +174,47 @@ func TestFairOnRuns(t *testing.T) {
 		if math.Abs(low.Levels[0]-ref.Levels[0]) < FairGap {
 			t.Errorf("learner %d: grade 1 starts at %v and grade 3 at %v", n, low.Levels[0], ref.Levels[0])
 		}
+	}
+}
+
+// The trace of a learner of C-grade1 carries the answers before the adult's correction, and is
+// that of the same learner of D-grade1 up to them; M12 reads the share of learners whose level the
+// guard lowered, each counted once (R72).
+func TestRulesOnRuns(t *testing.T) {
+	ms, err := published.Modules()
+	if err != nil {
+		t.Fatal(err)
+	}
+	mods := []*pack.Module{ms[population.Olympiad]}
+	trace := func(name string) *Trace {
+		p, _ := population.Named(name)
+		l, err := learner.New(seed.Working, p.Units(), 0, mods, p.Assumptions(0))
+		if err != nil {
+			t.Fatal(err)
+		}
+		r, err := run.New(l, mods, p.Limit)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rec, err := r.All()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return Traced(rec)
+	}
+	low, corrected := trace("D-grade1"), trace("C-grade1")
+	if low.Corrected != 0 || corrected.Corrected < population.CorrectAfter {
+		t.Fatalf("corrected after %d and %d answers", low.Corrected, corrected.Corrected)
+	}
+	k := corrected.Corrected
+	if !slices.Equal(low.Levels[:k], corrected.Levels[:k]) || slices.Equal(low.Levels[k:], corrected.Levels[k:]) {
+		t.Errorf("the levels of grade 1 with the correction after %d answers: %v, without: %v", k, corrected.Levels[:k+1], low.Levels[:k+1])
+	}
+	var sums []Sums
+	for _, g := range []int{0, 2, 0, 1} {
+		sums = append(sums, Guarded(&Trace{Guard: g}))
+	}
+	if v := Read("D-grade3/x", nil, sums, GuardNumbers())[0]; !v.Read || v.Value != 0.5 || v.Low > v.Value || v.High < v.Value {
+		t.Errorf("M12.false of two learners of four fired = %+v", v)
 	}
 }
