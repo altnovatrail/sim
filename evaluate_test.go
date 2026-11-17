@@ -133,3 +133,40 @@ func TestEvaluations(t *testing.T) {
 		}
 	}
 }
+
+// An evaluation file of the three rules names its criterion and the base's run beside its own, and
+// one of fairness neither; sim evaluate reads both runs by their SHA-256 and holds the base to the
+// paths' (R72).
+func TestEvaluateRules(t *testing.T) {
+	dir := t.TempDir()
+	folder := filepath.Join(dir, "evaluations", "rules-1")
+	if err := os.MkdirAll(folder, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	digest := fairRun(t, filepath.Join(dir, "run.jsonl"))
+	write := func(e evaluation) string {
+		body, _ := json.Marshal(e)
+		path := filepath.Join(folder, "evaluation.json")
+		if err := os.WriteFile(path, body, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	rules := func(base, sha string) evaluation {
+		return evaluation{Evaluation: "rules-1", Criterion: "rules", Run: "../../run.jsonl", SHA256: digest, Base: base, BaseSHA256: sha, Date: "2026-11-17"}
+	}
+	for name, e := range map[string]evaluation{
+		"no base":              rules("", ""),
+		"a short base digest":  rules("../../run.jsonl", "abc"),
+		"another base digest":  rules("../../run.jsonl", strings.Repeat("0", 64)),
+		"no base file":         rules("../../none.jsonl", digest),
+		"the base not paths'":  rules("../../run.jsonl", digest),
+		"another criterion":    {Evaluation: "rules-1", Criterion: "model", Run: "../../run.jsonl", SHA256: digest, Date: "2026-11-17"},
+		"fairness with a base": {Evaluation: "rules-1", Run: "../../run.jsonl", SHA256: digest, Base: "../../run.jsonl", BaseSHA256: digest, Date: "2026-11-17"},
+	} {
+		var stdout, stderr bytes.Buffer
+		if got := run([]string{"evaluate", write(e)}, &stdout, &stderr); got != 1 {
+			t.Errorf("%s: sim evaluate = %d: %s", name, got, stderr.String())
+		}
+	}
+}

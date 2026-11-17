@@ -1,0 +1,9 @@
+{
+  "evaluation": "rules-1",
+  "criterion": "rules",
+  "run": "../../runs/rules-t79.jsonl",
+  "sha256": "8b1d9dcdd33de9216f7dec883e9bad6a0ef5ed63827f4d5ed44a405f876b2c16",
+  "base": "../../runs/base-t64.jsonl",
+  "base_sha256": "9e89cb7cfd0f1f0c00bb69c057a273aff0071e11b97450859d7b268e48c07763",
+  "date": "2026-11-17"
+}

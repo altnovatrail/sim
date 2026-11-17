@@ -45,6 +45,8 @@ type RulesResult struct {
 	Rules
 	// Better is M11.same of grade 5 under the rules, BaseSame the same of the base's run.
 	Better, BaseSame measure.Value
+	// Grades are M11 of grades 1 and 5 under the rules and under the base, each number by name.
+	Grades []RulesGrade
 	// Fair are the checks of the constraint fair, the rules against the base.
 	Fair []Check
 	// Guard is M12.false of the reference's cell, of Learners learners.
@@ -57,6 +59,12 @@ type RulesResult struct {
 	// Holds are the four conditions in their order, and All whether every one holds.
 	Holds [4]bool
 	All   bool
+}
+
+// RulesGrade is M11 of one grade's cell under the rules and under the base.
+type RulesGrade struct {
+	Cell        string
+	Rules, Base []measure.Value
 }
 
 // EvaluateRules reads the evaluation of the three rules (R72): the run of the rules — under the
@@ -124,6 +132,10 @@ func EvaluateRules(r Rules) (*RulesResult, error) {
 	out.Better = measure.Read(b.Reference, b.Graph, b.Pairs, measure.FairNumbers())[1]
 	bb := fairCell(base, betterCell)
 	out.BaseSame = measure.Read(bb.Reference, bb.Graph, bb.Pairs, measure.FairNumbers())[1]
+	for _, name := range []string{uncorrectedCell, betterCell} {
+		c, cb := cells[name], fairCell(base, name)
+		out.Grades = append(out.Grades, RulesGrade{Cell: name, Rules: measure.Read(c.Reference, c.Graph, c.Pairs, measure.FairNumbers()), Base: measure.Read(cb.Reference, cb.Graph, cb.Pairs, measure.FairNumbers())})
+	}
 	out.Holds[0] = out.Better.Read && out.BaseSame.Read && out.Better.Low > out.BaseSame.Value
 	if out.Fair, err = fair(base, run); err != nil {
 		return nil, err
@@ -205,6 +217,16 @@ func (r *RulesResult) Write(w io.Writer) error {
 	fmt.Fprintf(&b, "| 2. fair, %d checks | %d failed | the base | %s |\n", len(r.Fair), failed, yes(r.Holds[1]))
 	fmt.Fprintf(&b, "| 3. M12.false of %s, %d learners | %s | at most %.2f | %s |\n", referenceCell, r.Learners, showInterval(r.Guard), guardCeiling, yes(r.Holds[2]))
 	fmt.Fprintf(&b, "| 4. M11.same of %s less %s | %s | above 0 | %s |\n\n", correctionCell, uncorrectedCell, showInterval(r.Correction[1].Diff), yes(r.Holds[3]))
+	b.WriteString("M11 of the grades against grade 3:\n\n| Cell | Side | M11.answers | M11.same | M11.band |\n|---|---|---|---|---|\n")
+	for _, g := range r.Grades {
+		for _, side := range []struct {
+			name string
+			vs   []measure.Value
+		}{{"the rules", g.Rules}, {"the base", g.Base}} {
+			fmt.Fprintf(&b, "| %s | %s | %s | %s | %s |\n", g.Cell, side.name, showInterval(side.vs[0]), showInterval(side.vs[1]), showInterval(side.vs[2]))
+		}
+	}
+	b.WriteString("\n")
 	b.WriteString("The checks of fair:\n\n")
 	for _, k := range r.Fair {
 		fmt.Fprintf(&b, "- %s %s: %s, %s\n", k.Cell, k.Number, yes(k.Met), k.Detail)
@@ -218,8 +240,8 @@ func (r *RulesResult) Write(w io.Writer) error {
 		verdict = "are not checked: not every condition holds"
 	}
 	fmt.Fprintf(&b, "\nThe rules %s.\n\n## For dpia 10.2 spec\n\n", verdict)
-	fmt.Fprintf(&b, "On %s, sim ran the three rules of R157 spec — %s — on virtual learners of one skill under grades 1, 3 and 5 of olympiad maths, %d a grade, against the base — %s —, by a criterion written down before the run (R72 sim). Grade 5 came within %.1f of the estimate under grade 3 after at most %d answers for a share of %s of the learners, against %s under the base. The constraint fair held %d of its %d checks of grades 1 and 5. The guard lowered the level of a share of %s of the learners of grade 3, whose truth is the band of their grade. An adult's correction to the band of the truth after the %dth answer changed the share of grade 1 that came to the estimate under grade 3 by %s. The rules %s. The numbers are given with their 95 %% intervals.\n",
-		r.Date, libraries(r.Run.Header), r.Learners, libraries(r.Base.Header), measure.FairGap, measure.FairBy, showInterval(r.Better), showInterval(r.BaseSame), len(r.Fair)-failed, len(r.Fair), showInterval(r.Guard), population.CorrectAfter, showInterval(r.Correction[1].Diff), verdict)
+	fmt.Fprintf(&b, "On %s, sim ran the three rules of R157 spec — %s — on virtual learners of one skill under grades 1, 3 and 5 of olympiad maths, %d a grade, against the base — %s —, by a criterion written down before the run (R72 sim). Grade 5 came within %.1f of the estimate under grade 3 after at most %d answers for a share of %s of the learners, against %s under the base, and grade 1 for %s, against %s. The constraint fair held %d of its %d checks of grades 1 and 5. The guard lowered the level of a share of %s of the learners of grade 3, whose truth is the band of their grade. An adult's correction to the band of the truth after the %dth answer changed the share of grade 1 that came to the estimate under grade 3 by %s. The rules %s. The numbers are given with their 95 %% intervals.\n",
+		r.Date, libraries(r.Run.Header), r.Learners, libraries(r.Base.Header), measure.FairGap, measure.FairBy, showInterval(r.Better), showInterval(r.BaseSame), showInterval(r.Grades[0].Rules[1]), showInterval(r.Grades[0].Base[1]), len(r.Fair)-failed, len(r.Fair), showInterval(r.Guard), population.CorrectAfter, showInterval(r.Correction[1].Diff), verdict)
 	_, err := io.WriteString(w, b.String())
 	return err
 }
