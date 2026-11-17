@@ -25,6 +25,9 @@ type Trace struct {
 	// Levels are θ of the model after each of the first FairLength answers — the first answers of
 	// items with a verdict —, in their order: each answer of an attempt has the level after it.
 	Levels []float64 `json:"levels"`
+	// Truth is θ* of the truth's module level after each of the same answers, as run.Obs gives it,
+	// for M13 (R73 in docs/decisions.md). A file written before it has none.
+	Truth []float64 `json:"truth,omitempty"`
 	// Bands count the attempts with a verdict whose first answer is the 51st or later, to the end of
 	// the run, those of lessons and consolidations among them, by the place of their task's band:
 	// Bands[p-1] for the place p.
@@ -44,7 +47,7 @@ func Traced(rec *run.Record) *Trace {
 	t := &Trace{Levels: []float64{}, Bands: []int{}, Guard: rec.Guard, Corrected: rec.Corrected}
 	for _, o := range obs {
 		for k := o.Answers; k < o.Answers+len(o.Items) && k < FairLength; k++ {
-			t.Levels = append(t.Levels, o.Level)
+			t.Levels, t.Truth = append(t.Levels, o.Level), append(t.Truth, o.TrueLevel)
 		}
 		if o.Answers >= FairBy && o.Band > 0 {
 			for len(t.Bands) < int(o.Band) {
@@ -64,21 +67,7 @@ func Traced(rec *run.Record) *Trace {
 // reads as a cell of learners, its resamples of n those of both sides at once.
 func Fair(grade, reference *Trace) Sums {
 	s := Sums{"M11.pairs": 1}
-	k := FairLength
-	streak, from := 0, 0
-	for i := range min(len(grade.Levels), len(reference.Levels)) {
-		if math.Abs(grade.Levels[i]-reference.Levels[i]) >= FairGap {
-			streak = 0
-			continue
-		}
-		if streak == 0 {
-			from = i
-		}
-		if streak++; streak >= FairAnswers {
-			k = from
-			break
-		}
-	}
+	k := settled(grade.Levels, reference.Levels)
 	s.add("M11.answers.sum", float64(k))
 	if k <= FairBy {
 		s.add("M11.same", 1)
@@ -97,6 +86,26 @@ func Fair(grade, reference *Trace) Sums {
 		}
 	}
 	return s
+}
+
+// settled gives the answers k before the first of FairAnswers in a row at which two series of
+// levels lie within FairGap, as M3 counts catching up: 0 when it holds from the first answer, and
+// FairLength when it never holds.
+func settled(a, b []float64) int {
+	streak, from := 0, 0
+	for i := range min(len(a), len(b)) {
+		if math.Abs(a[i]-b[i]) >= FairGap {
+			streak = 0
+			continue
+		}
+		if streak == 0 {
+			from = i
+		}
+		if streak++; streak >= FairAnswers {
+			return from
+		}
+	}
+	return FairLength
 }
 
 // band is M11.band: the largest absolute difference, over the bands, between the grade's share of
@@ -142,4 +151,27 @@ func Guarded(t *Trace) Sums {
 // share of them whose level the guard lowered (R72).
 func GuardNumbers() []Number {
 	return []Number{{"M12.false", ratio("M12.false", "M12.learners")}}
+}
+
+// Caught gives the sums of M13 of one learner, against its own truth (R73 in docs/decisions.md): the
+// answers k before the first of FairAnswers in a row at which the model's module level lies within
+// FairGap of the truth's, counted as Fair counts them — FairLength when it never holds —, and whether
+// k is at most FairBy.
+func Caught(t *Trace) Sums {
+	s := Sums{"M13.learners": 1}
+	k := settled(t.Levels, t.Truth)
+	s.add("M13.answers.sum", float64(k))
+	if k <= FairBy {
+		s.add("M13.same", 1)
+	}
+	return s
+}
+
+// TruthNumbers are the numbers of M13, read off a cell of learners by their sums of Caught: the mean
+// answers until the estimate holds at the truth, and the share for whom it does by FairBy (R73).
+func TruthNumbers() []Number {
+	return []Number{
+		{"M13.answers", ratio("M13.answers.sum", "M13.learners")},
+		{"M13.same", ratio("M13.same", "M13.learners")},
+	}
 }

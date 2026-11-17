@@ -478,7 +478,8 @@ func readDigest(path string) (*bench.File, string, error) {
 // the file of results of the decisive run of the base, relative to the evaluation file, its SHA-256
 // and the date the evaluation is made on, as YYYY-MM-DD (R55 in docs/decisions.md). An evaluation of
 // the three rules of R157 spec names its criterion, "rules", and beside its run the base's run with
-// its SHA-256 (R72); one of fairness by the grade names neither.
+// its SHA-256 (R72); one of the adult's correction against the truth, "correction", its run alone
+// (R73); one of fairness by the grade names neither.
 type evaluation struct {
 	Evaluation string `json:"evaluation"`
 	Criterion  string `json:"criterion,omitempty"`
@@ -532,6 +533,13 @@ func evaluateCommand(args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("the embedded gate file: %w", err)
 	}
+	if e.Criterion == "correction" {
+		r, err := criterion.EvaluateCorrection(criterion.Correction{Name: e.Evaluation, Date: e.Date, Version: version, Digest: e.SHA256, Run: base, Pins: pinned})
+		if err != nil {
+			return err
+		}
+		return r.Write(stdout)
+	}
 	if e.Criterion == "rules" {
 		in := criterion.Rules{Name: e.Evaluation, Date: e.Date, Version: version, Run: base, RunDigest: e.SHA256, BaseDigest: e.BaseSHA256, Pins: pinned}
 		if in.Base, err = read(e.Base, e.BaseSHA256); err != nil {
@@ -579,10 +587,10 @@ func readEvaluation(name string) (evaluation, error) {
 	switch {
 	case e.Criterion == "rules" && (e.Base == "" || !isSHA256(e.BaseSHA256)):
 		return e, fmt.Errorf("%s: an evaluation of the rules names the base's run %q by the SHA-256 %q", name, e.Base, e.BaseSHA256)
-	case e.Criterion != "rules" && e.Criterion != "":
-		return e, fmt.Errorf("%s: no criterion %q of an evaluation: rules, or none for fairness by the grade", name, e.Criterion)
-	case e.Criterion == "" && (e.Base != "" || e.BaseSHA256 != ""):
-		return e, fmt.Errorf("%s: an evaluation of fairness by the grade names no base's run beside its own", name)
+	case e.Criterion != "rules" && e.Criterion != "correction" && e.Criterion != "":
+		return e, fmt.Errorf("%s: no criterion %q of an evaluation: rules, correction, or none for fairness by the grade", name, e.Criterion)
+	case e.Criterion != "rules" && (e.Base != "" || e.BaseSHA256 != ""):
+		return e, fmt.Errorf("%s: only an evaluation of the rules names a base's run beside its own", name)
 	}
 	if abs, err := filepath.Abs(filepath.Dir(name)); err == nil && filepath.Base(filepath.Dir(abs)) == "evaluations" && e.Evaluation != filepath.Base(abs) {
 		return e, fmt.Errorf("%s: the evaluation file names the evaluation %q, and lies in the folder of %s", name, e.Evaluation, filepath.Base(abs))

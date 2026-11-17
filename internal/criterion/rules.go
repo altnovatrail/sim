@@ -91,14 +91,8 @@ func EvaluateRules(r Rules) (*RulesResult, error) {
 			return nil, err
 		}
 	}
-	for _, lib := range bench.Libraries {
-		pin := r.Pins[lib]
-		if lib == "github.com/altnovatrail/learner-model" {
-			pin = Pin{Commit: RulesCandidate}
-		}
-		if got := r.Run.Header.Libraries[lib]; !pin.names(got) {
-			return nil, fmt.Errorf("%w: the run of the rules is on %s %q, and R72 names %v", ErrCriterion, lib, got, pin)
-		}
+	if err := onCandidate("the run of the rules", r.Run, r.Pins); err != nil {
+		return nil, err
 	}
 	run, err := bench.Fair(r.Run)
 	if err != nil {
