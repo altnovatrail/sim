@@ -30,7 +30,7 @@ func TestGate(t *testing.T) {
 		t.Fatalf("sim gate libraries = %d: %s", got, stderr.String())
 	}
 	want := "github.com/altnovatrail/engine altnovatrail/engine 57e0ab8852e65bb56724d08fc2e9cdb6a839d959 v0.1.6\n" +
-		"github.com/altnovatrail/learner-model altnovatrail/learner-model df338e58e35f97c51eca49be0064f19d0fcfc0a2\n"
+		"github.com/altnovatrail/learner-model altnovatrail/learner-model 49a73d6d179bb97673ac6039e97d25a3558ee18b v0.1.13\n"
 	if stdout.String() != want {
 		t.Errorf("sim gate libraries wrote\n%s", stdout.String())
 	}
@@ -162,7 +162,7 @@ func TestGateWhole(t *testing.T) {
 		f := &bench.File{Header: bench.Header{Set: seed.Working, Rule: "engine", Invariants: true, Part: bench.Part{K: k, N: 2},
 			Populations: gate.Populations, Learners: gate.Learners, Repeat: true, Libraries: map[string]string{
 				"github.com/altnovatrail/engine":        "57e0ab8852e65bb56724d08fc2e9cdb6a839d959",
-				"github.com/altnovatrail/learner-model": "df338e58e35f97c51eca49be0064f19d0fcfc0a2",
+				"github.com/altnovatrail/learner-model": "49a73d6d179bb97673ac6039e97d25a3558ee18b",
 			}}}
 		for _, cell := range gate.Cells() {
 			pop, graph, _ := strings.Cut(cell, "/")
@@ -219,7 +219,7 @@ func TestGateWhole(t *testing.T) {
 	}
 	// The parts held to the build's commits: their own pass, another's refuses them.
 	same := []string{"-commit", "github.com/altnovatrail/engine=57e0ab8852e65bb56724d08fc2e9cdb6a839d959",
-		"-commit", "github.com/altnovatrail/learner-model=df338e58e35f97c51eca49be0064f19d0fcfc0a2"}
+		"-commit", "github.com/altnovatrail/learner-model=49a73d6d179bb97673ac6039e97d25a3558ee18b"}
 	if got := run(append(append([]string{"gate", "check", "-exact"}, same...), args...), &stdout, &stderr); got != 0 {
 		t.Errorf("sim gate check -exact on the parts' commits = %d: %s", got, stderr.String())
 	}
@@ -256,7 +256,7 @@ func TestGateWhole(t *testing.T) {
 	modules := &bench.File{Header: bench.Header{Set: seed.Working, Rule: "engine", Invariants: true, Populations: gate.Populations, Learners: gate.Learners, Repeat: true, Packages: pins,
 		Libraries: map[string]string{
 			"github.com/altnovatrail/engine":        "57e0ab8852e65bb56724d08fc2e9cdb6a839d959",
-			"github.com/altnovatrail/learner-model": "df338e58e35f97c51eca49be0064f19d0fcfc0a2",
+			"github.com/altnovatrail/learner-model": "49a73d6d179bb97673ac6039e97d25a3558ee18b",
 		}}}
 	for _, cell := range bench.CellsOn(gate.Populations, pins) {
 		pop, graph, _ := strings.Cut(cell, "/")

@@ -184,6 +184,12 @@ Read 2026-11-16 for the deferral of the judgement of E10 (R69; `gh api` of the c
 - R42 learner-model, further: «no more long runs of fitting constants on `sim` while there are fewer than 100 children; the fast gate in CI stays, and so do one-off analyses of how the model works and rules in place of calibration — the estimate starts from below, an adult corrects the level, a guard lowers the level after N failures in a row. `spec` is to record it in its log on closing its task T171, and a task of `spec` then rewrites dpia 7 spec and dpia 8 spec; until then this entry is where it is written. Rejected by the author: carrying the round E8 to the bound 0.90.»
 - RUN.md, table 1: «| [x] | T61 | Разведка круга |», «| [?] | T62 | Кандидаты — черновые pull request |», «| [?] | T63 | Суд и выпуск выбранного |», «| [ ] | T64 | Итог круга и архив эпика |»; T62 and T63, «Отложено (2026-11-16)»: «Вернуться, когда детей будет 100, или по решению `spec` о правилах вместо калибровки, если оно вернёт сюда кандидата.»
 
+### 3.12. Release v0.1.13, the three rules, T82
+
+Read 2026-11-17 for T82 (R76; `gh release view`, `gh api` of the tag and of `…/compare/df338e5...49a73d6`): the release [altnovatrail/learner-model](https://github.com/altnovatrail/learner-model) `v0.1.13` of 2026-11-17, 01:43 UTC, immutable, its tag on the commit `49a73d6d179bb97673ac6039e97d25a3558ee18b` of 01:39 UTC — "Merge pull request #84 from altnovatrail/t68-three-rules"; the notes — «T68: три правила R157 spec — старт ниже, поправка взрослого, предохранитель (R45)». It is the latest release.
+- The merge's second parent, 89eb50d, — "Raise the gate to sim v0.1.28, which recorded the bands on this pull request's commit, and archive T68 (T68, R20, R45)", whose parent is df338e5. Between df338e5 and the tag only `.github/workflows/ci.yml`, README.md, `docs/architecture.md`, `docs/decisions.md`, `docs/plan/E8.md`, `run/QUESTIONS.md` and `run/TASKS.md` changed — no Go file and no `go.mod`.
+- `just -f spec/justfile release-verify learner-model v0.1.13 learner-model-proto-v0.1.13.tar.gz` accepted it — "learner-model v0.1.13, signed by the shared release.yml of .github v0.1.31".
+
 ## 4. `engine`
 
 ### 4.1. Commit 08bc48a, T02 and T03
