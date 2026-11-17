@@ -2621,6 +2621,8 @@ Where it is written: RUN.md, T58 ([docs/plan/E7.md](plan/E7.md)), and table 3, �
 
 — *Amendment 2026-11-16 (R64):* E10 is no longer in table 2: `learner-model` took its round, and E10 is the current epic, laid out by T69.
 
+— *Amendment 2026-11-17 (T80):* README.md, Documents, no longer says which languages the documents and the plan are in, by the author's word of 2026-11-17 for the README of every repository; this entry and CLAUDE.md, Documents, say it.
+
 ## Epic E12
 
 **R62. Epic E12 is «Переход CI на последний релиз `.github`»: one task, T68, which carries out Д10 — the shared checks of `.github` on its latest release, with the cached `toolchain` image (Д146 spec), and the Dependabot group `shared-workflows` (Д88 spec). It is laid out now, while E10 waits for `learner-model`, and it is the current epic.** The author's answer 2026-11-16 to row В25, option (a), «своим эпиком сейчас — одна задача, как E11 для перехода на тег», given through the run «Сделай эпик» of `spec` (T171 spec) and recorded in T67.
@@ -2869,6 +2871,8 @@ Where it is written: RUN.md, T58 ([docs/plan/E7.md](plan/E7.md)), and table 3, �
 - the Dockerfile's comments left as at v0.18.4, to spare the cached image the miss its new hash gives — the copy would drift from the template, and the next draft would show the same difference again; `go.mod` misses the Go caches all the same.
 
 — *Consequence:* the 2026-11-16 amendments to R60, R67, R68 and R70. The run of row 4.21 is Д11 of [run/DEBT.md](../run/DEBT.md) until its task. The merge changes `go.mod`, `gate.json` and the Dockerfile, paths of the release, and so releases a tag of `sim` with the same numbers (R29). The Dockerfile's hash changes, so the first runs of CI miss the image and the Go caches until the merge's push to `main` saves them (R68). A rebuild of the container takes `shutdownAction` — the author's step, «Rebuild Container»; the orchestrator waits for it before the next task. Where it is written: RUN.md, T78 ([docs/plan/E10.md](plan/E10.md)); `.devcontainer/`; CLAUDE.md; README.md; [architecture.md](architecture.md); [sources.md](sources.md), record 7.11.
+
+— *Amendment 2026-11-17 (T80):* README.md no longer names the tag of `spec`: its links lead to `https://github.com/altnovatrail/spec`, and it says only that `spec` is checked out as a git submodule; the sections "Status" and "License" are gone, by the author's word of 2026-11-17 for the README of every repository (a task of `spec` records it as an amendment to R21 spec). A move to a tag names it in CLAUDE.md, the opening of RUN.md and the status of [architecture.md](architecture.md), not in README.md.
 
 ## The criterion of the short run of the three rules
 
