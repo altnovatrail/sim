@@ -28,8 +28,12 @@ func fairRun(t *testing.T, path string) string {
 		t.Fatal(err)
 	}
 	f := &bench.File{Header: bench.Header{Set: seed.Working, Rule: "engine", Libraries: map[string]string{}, Learners: criterion.Decisive, Invariants: true}}
+	// A library in no release is named by a pseudo-version of its commit, as go.mod names it then.
 	for p, lib := range g.Libraries {
 		f.Header.Libraries[p] = lib.Version
+		if lib.Version == "" {
+			f.Header.Libraries[p] = "v0.0.0-20261117000000-" + lib.Commit[:12]
+		}
 	}
 	for _, p := range population.Fairness {
 		f.Header.Populations = append(f.Header.Populations, p.Name)
@@ -168,5 +172,65 @@ func TestEvaluateRules(t *testing.T) {
 		if got := run([]string{"evaluate", write(e)}, &stdout, &stderr); got != 1 {
 			t.Errorf("%s: sim evaluate = %d: %s", name, got, stderr.String())
 		}
+	}
+}
+
+// An evaluation file of the correction names its run alone, and sim evaluate writes its report
+// (R73).
+func TestEvaluateCorrection(t *testing.T) {
+	dir := t.TempDir()
+	folder := filepath.Join(dir, "evaluations", "rules-2")
+	if err := os.MkdirAll(folder, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	f := &bench.File{Header: bench.Header{Set: seed.Working, Rule: "engine", Learners: criterion.Decisive, Invariants: true, Populations: []string{"D-grade1", "C-grade1"},
+		Libraries: map[string]string{"github.com/altnovatrail/engine": "v0.1.6", "github.com/altnovatrail/learner-model": "v0.1.13-0.20261116235821-" + criterion.RulesCandidate[:12]}}}
+	for _, p := range f.Header.Populations {
+		for n := range criterion.Decisive {
+			tr := &measure.Trace{Levels: make([]float64, measure.FairLength), Truth: make([]float64, measure.FairLength), Bands: []int{1}}
+			f.Lines = append(f.Lines, bench.Line{Population: p, Graph: []string{population.Olympiad}, N: n, Sums: measure.Sums{"learners": 1}, Fair: tr})
+		}
+	}
+	var b bytes.Buffer
+	if err := bench.Write(f, &b); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "run.jsonl"), b.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(b.Bytes())
+	write := func(e evaluation) string {
+		body, _ := json.Marshal(e)
+		path := filepath.Join(folder, "evaluation.json")
+		if err := os.WriteFile(path, body, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	e := evaluation{Evaluation: "rules-2", Criterion: "correction", Run: "../../run.jsonl", SHA256: hex.EncodeToString(sum[:]), Date: "2026-11-17"}
+	var stdout, stderr bytes.Buffer
+	if got := run([]string{"evaluate", write(e)}, &stdout, &stderr); got != 0 {
+		t.Fatalf("sim evaluate = %d: %s", got, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "# The adult's correction against the truth: rules-2") {
+		t.Errorf("the report:\n%s", stdout.String())
+	}
+	e.Base, e.BaseSHA256 = "../../run.jsonl", e.SHA256
+	if got := run([]string{"evaluate", write(e)}, &stdout, &stderr); got != 1 {
+		t.Errorf("a correction with a base: sim evaluate = %d", got)
+	}
+	e.Base, e.BaseSHA256, e.Date = "", "", "2026-11-17"
+	f.Lines = f.Lines[1:]
+	b.Reset()
+	if err := bench.Write(f, &b); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "run.jsonl"), b.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	sum = sha256.Sum256(b.Bytes())
+	e.SHA256 = hex.EncodeToString(sum[:])
+	if got := run([]string{"evaluate", write(e)}, &stdout, &stderr); got != 1 {
+		t.Errorf("a run short of a learner: sim evaluate = %d", got)
 	}
 }

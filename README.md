@@ -128,7 +128,7 @@ The target is the candidate's `M11.same` less the base's, on `D-grade1` and `D-g
 {"evaluation": "rules-1", "criterion": "rules", "run": "../../runs/rules.jsonl", "sha256": "<sha256sum of the run>", "base": "../../runs/base-t64.jsonl", "base_sha256": "<sha256sum of the base>", "date": "YYYY-MM-DD"}
 ```
 
-`sim evaluate evaluations/rules-1/evaluation.json > evaluations/rules-1/report.md` writes the report: the four conditions of R72 with their numbers, M11 of grades 1 and 5 under the rules and the base, and the paragraph for spec's DPIA.
+`sim evaluate evaluations/rules-1/evaluation.json > evaluations/rules-1/report.md` writes the report: the four conditions of R72 with their numbers, M11 of grades 1 and 5 under the rules and the base, and the paragraph for spec's DPIA. The adult's correction against the truth, R73, is an evaluation file of the criterion `correction`, which names its run alone — `sim run -populations D-grade1,C-grade1 -learners 2000` — and its report is `evaluations/rules-2/report.md`.
 
 ## Taking a release
 

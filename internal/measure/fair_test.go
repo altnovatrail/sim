@@ -206,6 +206,9 @@ func TestRulesOnRuns(t *testing.T) {
 	if low.Corrected != 0 || corrected.Corrected < population.CorrectAfter {
 		t.Fatalf("corrected after %d and %d answers", low.Corrected, corrected.Corrected)
 	}
+	if len(corrected.Truth) != len(corrected.Levels) || corrected.Truth[0] == 0 {
+		t.Errorf("the truth beside %d levels: %d, from %v", len(corrected.Levels), len(corrected.Truth), corrected.Truth[:1])
+	}
 	k := corrected.Corrected
 	if !slices.Equal(low.Levels[:k], corrected.Levels[:k]) || slices.Equal(low.Levels[k:], corrected.Levels[k:]) {
 		t.Errorf("the levels of grade 1 with the correction after %d answers: %v, without: %v", k, corrected.Levels[:k+1], low.Levels[:k+1])
@@ -216,5 +219,35 @@ func TestRulesOnRuns(t *testing.T) {
 	}
 	if v := Read("D-grade3/x", nil, sums, GuardNumbers())[0]; !v.Read || v.Value != 0.5 || v.Low > v.Value || v.High < v.Value {
 		t.Errorf("M12.false of two learners of four fired = %+v", v)
+	}
+}
+
+// M13 counts the answers before the model's level holds within FairGap of the truth's for
+// FairAnswers in a row, FairLength when it never does, and the share of learners by FairBy; the
+// trace carries the truth beside each level (R73).
+func TestCaught(t *testing.T) {
+	trace := func(from int) *Trace {
+		tr := &Trace{}
+		for k := range FairLength {
+			x := 2.0
+			if k >= from {
+				x = 0.1
+			}
+			tr.Levels, tr.Truth = append(tr.Levels, x), append(tr.Truth, 0)
+		}
+		return tr
+	}
+	for _, c := range []struct {
+		from    int
+		k, same float64
+	}{{0, 0, 1}, {FairBy, FairBy, 1}, {FairBy + 1, FairBy + 1, 0}, {FairLength, FairLength, 0}} {
+		s := Caught(trace(c.from))
+		if s["M13.answers.sum"] != c.k || s["M13.same"] != c.same || s["M13.learners"] != 1 {
+			t.Errorf("caught from answer %d: %v", c.from, s)
+		}
+	}
+	v := Read("D-grade3/x", nil, []Sums{Caught(trace(0)), Caught(trace(FairLength))}, TruthNumbers())
+	if v[0].Value != FairLength/2 || v[1].Value != 0.5 {
+		t.Errorf("M13 of two learners = %+v", v)
 	}
 }
