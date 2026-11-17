@@ -122,6 +122,14 @@ The target is the candidate's `M11.same` less the base's, on `D-grade1` and `D-g
 
 `sim evaluate evaluations/fairness-1/evaluation.json > evaluations/fairness-1/report.md` writes the report: each grade against grade 3, whether the base holds the bounds of R55, and the paragraph for spec's DPIA. It refuses a run of another SHA-256, a rough look, held-out learners, a run that did not record the invariants, and a run on other libraries than the gate file names. The report names the version of sim from its build, so the run and the report are made from a clean clone at a tag, as `fairness-1` was at v0.1.19 (R58). A judgement reads those cells by the constraint of fairness alone.
 
+**The evaluation of the three rules** of R157 spec reads a run of the populations `D-grade1`, `D-grade3`, `D-grade5` and `C-grade1`, 2,000 working learners a cell, on the commit of `learner-model` that R72 names, against the base's decisive run that `paths.json` names ([docs/architecture.md](docs/architecture.md), section 3.6; R72 in [docs/decisions.md](docs/decisions.md)). The run is `sim run -populations D-grade1,D-grade3,D-grade5,C-grade1 -learners 2000`, in parts with `-part k/n` and `sim merge`, and its evaluation file names its criterion and both runs:
+
+```json
+{"evaluation": "rules-1", "criterion": "rules", "run": "../../runs/rules.jsonl", "sha256": "<sha256sum of the run>", "base": "../../runs/base-t64.jsonl", "base_sha256": "<sha256sum of the base>", "date": "YYYY-MM-DD"}
+```
+
+`sim evaluate evaluations/rules-1/evaluation.json > evaluations/rules-1/report.md` writes the report: the four conditions of R72 with their numbers, M11 of grades 1 and 5 under the rules and the base, and the paragraph for spec's DPIA.
+
 ## Taking a release
 
 A release comes out by itself once CI passes on main and something the gate is built from has changed: the next patch of the line `0.1`, from `v0.1.0`. Releases are immutable, and the tags `v*` are under a ruleset, so a tag stays on its commit for good.

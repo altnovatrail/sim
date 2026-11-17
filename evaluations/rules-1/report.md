@@ -8,7 +8,7 @@ Written down before the run, by R72 of docs/decisions.md of sim. The rules — t
 
 - the rules: github.com/altnovatrail/learner-model v0.1.13-0.20261116235821-df338e58e35f and github.com/altnovatrail/engine v0.1.6, 2000 learners a cell, SHA-256 8b1d9dcdd33de9216f7dec883e9bad6a0ef5ed63827f4d5ed44a405f876b2c16
 - the base: github.com/altnovatrail/learner-model v0.1.8 and github.com/altnovatrail/engine v0.1.6, 2000 learners a cell, SHA-256 9e89cb7cfd0f1f0c00bb69c057a273aff0071e11b97450859d7b268e48c07763
-- sim v0.1.28-0.20261117001238-4f6453432d3c
+- sim v0.1.28-0.20261117002128-502c93a90aaa
 - the date: 2026-11-17
 
 ## The numbers
@@ -19,6 +19,15 @@ Written down before the run, by R72 of docs/decisions.md of sim. The rules — t
 | 2. fair, 6 checks | 1 failed | the base | no |
 | 3. M12.false of D-grade3/novatrail/olympiad-math, 2000 learners | 0.0005 [0; 0.0015] | at most 0.05 | yes |
 | 4. M11.same of C-grade1/novatrail/olympiad-math less D-grade1/novatrail/olympiad-math | -0.497 [-0.519; -0.475] | above 0 | no |
+
+M11 of the grades against grade 3:
+
+| Cell | Side | M11.answers | M11.same | M11.band |
+|---|---|---|---|---|
+| D-grade1/novatrail/olympiad-math | the rules | 17.1 [15.76; 18.44] | 0.909 [0.8965; 0.9215] | 0.01773 [0.0146; 0.021] |
+| D-grade1/novatrail/olympiad-math | the base | 32.52 [30.62; 34.36] | 0.812 [0.795; 0.829] | 0.006742 [0.00411; 0.01023] |
+| D-grade5/novatrail/olympiad-math | the rules | 32.52 [30.62; 34.36] | 0.812 [0.795; 0.829] | 0.006615 [0.003917; 0.01007] |
+| D-grade5/novatrail/olympiad-math | the base | 83.33 [79.72; 87.23] | 0.5525 [0.53; 0.5735] | 0.0127 [0.007317; 0.01804] |
 
 The checks of fair:
 
@@ -41,4 +50,4 @@ The rules are not checked: not every condition holds.
 
 ## For dpia 10.2 spec
 
-On 2026-11-17, sim ran the three rules of R157 spec — github.com/altnovatrail/learner-model v0.1.13-0.20261116235821-df338e58e35f and github.com/altnovatrail/engine v0.1.6 — on virtual learners of one skill under grades 1, 3 and 5 of olympiad maths, 2000 a grade, against the base — github.com/altnovatrail/learner-model v0.1.8 and github.com/altnovatrail/engine v0.1.6 —, by a criterion written down before the run (R72 sim). Grade 5 came within 0.5 of the estimate under grade 3 after at most 50 answers for a share of 0.812 [0.795; 0.829] of the learners, against 0.5525 [0.53; 0.5735] under the base. The constraint fair held 5 of its 6 checks of grades 1 and 5. The guard lowered the level of a share of 0.0005 [0; 0.0015] of the learners of grade 3, whose truth is the band of their grade. An adult's correction to the band of the truth after the 10th answer changed the share of grade 1 that came to the estimate under grade 3 by -0.497 [-0.519; -0.475]. The rules are not checked: not every condition holds. The numbers are given with their 95 % intervals.
+On 2026-11-17, sim ran the three rules of R157 spec — github.com/altnovatrail/learner-model v0.1.13-0.20261116235821-df338e58e35f and github.com/altnovatrail/engine v0.1.6 — on virtual learners of one skill under grades 1, 3 and 5 of olympiad maths, 2000 a grade, against the base — github.com/altnovatrail/learner-model v0.1.8 and github.com/altnovatrail/engine v0.1.6 —, by a criterion written down before the run (R72 sim). Grade 5 came within 0.5 of the estimate under grade 3 after at most 50 answers for a share of 0.812 [0.795; 0.829] of the learners, against 0.5525 [0.53; 0.5735] under the base, and grade 1 for 0.909 [0.8965; 0.9215], against 0.812 [0.795; 0.829]. The constraint fair held 5 of its 6 checks of grades 1 and 5. The guard lowered the level of a share of 0.0005 [0; 0.0015] of the learners of grade 3, whose truth is the band of their grade. An adult's correction to the band of the truth after the 10th answer changed the share of grade 1 that came to the estimate under grade 3 by -0.497 [-0.519; -0.475]. The rules are not checked: not every condition holds. The numbers are given with their 95 % intervals.
