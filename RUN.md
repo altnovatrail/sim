@@ -1,8 +1,8 @@
 # RUN.md — work plan of sim
 
-What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.18.14: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
+What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.18.27: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
 
-Language (R154 spec): rules and tables in English, terse, for the session; the epic's description, table 1 and the bodies of tasks in Russian — the author writes and reviews them. Commit messages and a pull request's title and description in English and terse, for the session, never a copy of the report (the 2026-11-17 amendment to R14 spec; R75).
+Language (R154 spec): rules and tables in English, terse, for the session; the epic's description, table 1 and the bodies of tasks in Russian — the author writes and reviews them. Commit messages, issues and a pull request's title and description in English, a person's too; a session's terse, for the session, never a copy of the report (the 2026-11-17 amendments to R14 spec; R75, R77).
 
 ## Rules
 
@@ -72,6 +72,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T80 | README без «Status», «License», фразы о языках и версии spec | Claude | — | — |
 | [x] | T81 | Переход на тег `spec` v0.18.14 | Claude | — | — |
 | [x] | T82 | База гейта — релиз `learner-model` v0.1.13 (Д12) | Claude | — | релиз `learner-model` v0.1.13 с #84 |
+| [x] | T83 | Переход на тег `spec` v0.18.27 и релиз `.github` v0.1.33 | Claude | — | — |
 
 **Почему такой порядок.**
 - Критерий — первым и отдельно от кода, как T61 в [docs/plan/E9.md](docs/plan/E9.md): я вычитываю его, пока ничто его не гоняет, и он ничего не ждёт в `learner-model`. Документы тега не выпускают (R29): тег с критерием — тег T71, и его ждут T60 `learner-model` — «Gate» на теге суда — и разведка T61 `learner-model`, которая читает наборы `sim judge` критерием E10 (sources 3.10).
@@ -85,6 +86,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - T80 — вне эпика: README.md всех репозиториев по слову автора 2026-11-17 в прогоне оркестратора `spec` (R156 spec), записана по тексту оркестратора (правило 6 COORDINATION.md spec); номер T80 был свободен.
 - T81 — вне эпика: переход на последний тег `spec`, v0.18.14, в параллельной работе волны 4 прогона оркестратора `spec`, пока `app` идёт эпиком E5, — слово автора 2026-11-17 (R156 spec; R75); записана по тексту оркестратора (правило 6 COORDINATION.md spec); номер T81 был свободен.
 - T82 — вне эпика: база гейта — на релиз `learner-model` v0.1.13 после разбора «в реестр spec» 2026-11-17 (строки `sim` В31, В33 и `learner-model` В54), в прогоне оркестратора `spec` (R156 spec; R76); записана по тексту оркестратора (правило 6 COORDINATION.md spec); номер T82 был свободен.
+- T83 — вне эпика: переход на последний тег `spec`, v0.18.27, и CI — на релиз `.github` v0.1.33 в параллельной работе волны 4 прогона оркестратора `spec`, пока `app` идёт эпиком E5, — слово автора 2026-11-18 (R156 spec; R77); записана по тексту оркестратора (правило 6 COORDINATION.md spec); номер T83 был свободен.
 
 ## Epic E10. Суд круга справедливости модели
 
@@ -118,7 +120,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Мой шаг:** решения; чтение отчёта суда; свободная машина на время решающих прогонов.
 - **Отложено (2026-11-16):** `[?]` — решение автора 2026-11-16 через координатора `spec` (T171 spec), долгие прогоны — после 100 детей (R69): разведка T61 `learner-model` кандидатов не дала — порог 0,90 подбором констант не берётся, его T62 и T63 — `[?]` (R42 `learner-model`; sources 3.11), а долгих прогонов подбора констант на `sim` нет, пока детей меньше 100. Не `[-]` строкой таблицы 3, как предвидел «Ждёт»: суд вернётся. Критерий R65, цель R66, имя папки `judgements/model-fair-1/` (её ещё нет) и нетронутый набор `held-out-model-fair-1` — как есть; тег и базу суда называет поправка к R65 до первого кандидата. Итог для dpia 10.2 spec несёт T64 `learner-model`. Вернуться, когда детей будет 100, или когда решение `spec` о правилах вместо калибровки вернёт кандидата в T62 `learner-model` — по R59.
 - **Как проверить:** часть прогона кандидата воспроизводится до байта на том же коммите (R28); `sim judge` не отказывает (R40); `just gate exact`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
-- **Разделы:** строка 4.18 COORDINATION.md spec; R28, R34, R35, R40, R46, R52, R53, R55, R58; R65; [docs/architecture.md](docs/architecture.md), разделы 3.6–3.9; README, «Judging a candidate»; dpia 10.2 spec; sources 3.10.
+- **Разделы:** строка 4.18 COORDINATION.md spec; R28, R34, R35, R40, R46, R52, R53, R55, R58; R65; [docs/architecture.md](docs/architecture.md), разделы 3.6–3.9; [docs/README.md](docs/README.md), «Judging a candidate»; dpia 10.2 spec; sources 3.10.
 
 #### T73. База — на релиз выбранного, архив эпика
 

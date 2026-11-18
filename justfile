@@ -445,7 +445,7 @@ cells kind rule out set learners:
 # their bands, and writes the table. mode is bands, as the callers hold them; exact, the recorded
 # numbers to the last bit, as sim's own CI holds them on amd64 and arm64; record, which writes the
 # bands into gate.json anew, for the reason given as the one argument; or modules, the gate of the
-# CI of modules, whose arguments are those of `sim gate changed` (README.md): it asks sim what
+# CI of modules, whose arguments are those of `sim gate changed` (docs/README.md): it asks sim what
 # changed of what the bench reads, before it fetches anything, runs the gate on the packages of the
 # changed modules alone, and holds the numbers to thresholds, not bands. Relative paths among those
 # arguments are of the caller's folder. gate-part and gate-check below run the same gate as jobs.
