@@ -12,13 +12,12 @@ import (
 )
 
 // Same is the target M11.same: the share of the learners of each grade but the reference's who come
-// to the reference's estimate, the candidate's less the base's, pooled over the grades
-// (docs/architecture.md, section 3.6; R65 in docs/decisions.md).
+// to the reference's estimate, the candidate's less the base's, pooled over the grades (R65).
 const Same = "M11.same"
 
 // targets are the judgements written down with a target of their own, by name, and their target: the
 // judgement file names it, and no other judgement may, so that a judgement goes by the target its
-// criterion wrote down before its first candidate and by no other (R65, R66 in docs/decisions.md).
+// criterion wrote down before its first candidate and by no other (R65, R66).
 var targets = map[string]string{
 	"model-fair-1": Same,
 }

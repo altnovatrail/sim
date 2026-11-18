@@ -20,9 +20,7 @@ import (
 
 // The gate of the CI of modules judges content, not a library, and a change of content moves the
 // numbers by design: it holds the invariants and thresholds, not bands, on the packages a pull
-// request built, and only on the modules where what the bench reads changed (docs/architecture.md,
-// section 3.9; the amendment of 2026-11-07 to R04, the amendments to R05 and R27 in
-// docs/decisions.md).
+// request built, and only on the modules where what the bench reads changed (R04, R05, R27).
 
 // State is what a package of a pull request is against the published versions of its module.
 type State string
@@ -36,8 +34,7 @@ const (
 	// Same is a package the bench reads the same of as the newest published version.
 	Same State = "same"
 	// Transition is a package of another version of the format than the newest published version:
-	// a transition of the format, where the bench does not run (the amendment of 2026-11-07 to R103
-	// spec).
+	// a transition of the format, where the bench does not run (R103 spec).
 	Transition State = "transition"
 )
 
@@ -150,8 +147,7 @@ func readOne(p Package) (*bench.Package, *formatv0.Inventory, error) {
 }
 
 // newest gives the newest version of a module in an index that is not withdrawn, by Semantic
-// Versioning — X.Y.Z, with no pre-release, as the format writes a version (the text of the format,
-// section 11).
+// Versioning — X.Y.Z, with no pre-release, as the format writes a version.
 func newest(idx *formatv0.ModuleIndex, id formatv0.ModuleID) (formatv0.ModuleVersion, formatv0.Entry, bool) {
 	var best formatv0.ModuleVersion
 	var entry formatv0.Entry
@@ -219,8 +215,7 @@ func ModulesConfig(part bench.Part, commits map[string]string, packages []bench.
 	return c
 }
 
-// tolerance is the author's tolerance of the shares of E1 and E2, one percentage point
-// (docs/architecture.md, section 3.6).
+// tolerance is the author's tolerance of the shares of E1 and E2, one percentage point (R04).
 const tolerance = 0.01
 
 // threshold is a threshold of the gate of modules: a number, on the cells of populations — every
@@ -235,11 +230,11 @@ type threshold struct {
 	from        string // "largest", "smallest", or "" for a limit of its own
 }
 
-// thresholds are the thresholds of the gate of modules (docs/architecture.md, section 3.9): the
-// learners stuck and the choices of nothing no more than on the published graphs; on G0 and
-// G2-half, the share of items with P* below 0.50 no more, and the share in the corridor no less,
-// than on the published graphs (the amendment of 2026-11-09 to R05); no more than 20 % false
-// "mastered" on G0, the floor of the model's criterion; no task with a rubric given again.
+// thresholds are the thresholds of the gate of modules (R05, R27): the learners stuck and the
+// choices of nothing no more than on the published graphs; on G0 and G2-half, the share of items
+// with P* below 0.50 no more, and the share in the corridor no less, than on the published graphs;
+// no more than 20 % false "mastered" on G0, the floor of the model's criterion; no task with a
+// rubric given again.
 var thresholds = []threshold{
 	{number: "E2.stuck", most: true, from: "largest"},
 	{number: "E2.nothing", most: true, from: "largest"},
@@ -249,7 +244,6 @@ var thresholds = []threshold{
 	{number: "E5.again", populations: []string{"E-base"}, most: true, limit: 0},
 }
 
-// on tells whether a threshold stands on a cell.
 func (t threshold) on(cell string) bool {
 	pop, _, _ := strings.Cut(cell, "/")
 	return len(t.populations) == 0 || slices.Contains(t.populations, pop)
@@ -376,7 +370,6 @@ func Thresholds(f *File, results *bench.File) (*ThresholdReport, error) {
 	return r, nil
 }
 
-// bound writes which way a threshold holds.
 func bound(most bool) string {
 	if most {
 		return "at most"
@@ -418,7 +411,7 @@ func (r *ThresholdReport) Write(w io.Writer) error {
 // and new ones, or with all every one but a transition of the format; and with them each package
 // that did not change but shares a graph of a population of the gate with one that runs, so that
 // the graph runs on the packages of the pull request — A-linked on both maths when either changed
-// (docs/architecture.md, section 3.9). Such a package names in With the module that brings it.
+// (R31). Such a package names in With the module that brings it.
 func Runs(changes []Change, all bool) []Change {
 	runs := func(c Change) bool { return c.State == Changed || c.State == New || all && c.State == Same }
 	with := map[string]string{}

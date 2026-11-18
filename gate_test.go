@@ -36,8 +36,8 @@ func TestGate(t *testing.T) {
 	}
 	dir := t.TempDir()
 	part := filepath.Join(dir, "part.jsonl")
-	// The part Learners of Learners+1 holds no learner of a cell: the gate on the learners of olympiad
-	// maths 0.1.1 takes minutes, and what is checked here is a part that is not the whole.
+	// The part Learners of Learners+1 holds no learner of a cell: the whole gate takes minutes, and
+	// what is checked here is a part that is not the whole.
 	if got := run([]string{"gate", "run", "-part", fmt.Sprintf("%d/%d", gate.Learners, gate.Learners+1), "-out", part}, &stdout, &stderr); got != 0 {
 		t.Fatalf("sim gate run = %d: %s", got, stderr.String())
 	}
@@ -94,7 +94,7 @@ func TestGate(t *testing.T) {
 
 // fileModes says whether the build keeps a file's mode: WASI preview1 has none, and Go's Chmod on
 // wasip1 only checks that the file is there, so in node:wasi, where "Go / targets" and "Go / arm64"
-// of .github v0.1.24 run the tests, a file has the mode the host gave it (sources 5.3).
+// run the tests, a file has the mode the host gave it (R63).
 var fileModes = runtime.GOOS != "wasip1"
 
 // "sim run -part" runs a part, and "sim merge" merges the parts into the whole, to the byte.

@@ -13,7 +13,7 @@ import (
 
 // The bounds the base holds the criterion of fairness by the grade to, for every grade alike: M11.same
 // at least sameFloor at the low end of its interval and M11.band at most bandCeiling at the high end
-// (docs/architecture.md, section 3.6; R55 in docs/decisions.md).
+// (R55).
 const (
 	sameFloor   = 0.90
 	bandCeiling = 0.05
@@ -161,7 +161,6 @@ func (f *Fairness) Write(w io.Writer) error {
 	return err
 }
 
-// fairnessNames gives the names of the populations of fairness.
 func fairnessNames() []string {
 	var out []string
 	for _, p := range population.Fairness {
@@ -170,7 +169,6 @@ func fairnessNames() []string {
 	return out
 }
 
-// minLearners gives the fewest learners of a grade.
 func (f *Fairness) minLearners() int {
 	least := 0
 	for _, g := range f.Grades {
@@ -181,7 +179,6 @@ func (f *Fairness) minLearners() int {
 	return least
 }
 
-// libraries names the libraries of a run.
 func libraries(h bench.Header) string {
 	var out []string
 	for _, path := range bench.Libraries {
@@ -190,7 +187,6 @@ func libraries(h bench.Header) string {
 	return strings.Join(out, " and ")
 }
 
-// gradeOf gives the grade of a population of fairness, by its name.
 func gradeOf(name string) string {
 	return strings.TrimPrefix(name, "D-grade")
 }
@@ -220,7 +216,6 @@ func showInterval(v measure.Value) string {
 	return fmt.Sprintf("%.4g [%.4g; %.4g]", v.Value, v.Low, v.High)
 }
 
-// holds says which bounds a grade holds.
 func holds(g Grade) string {
 	switch {
 	case g.SameHolds && g.BandHolds:

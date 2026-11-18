@@ -40,7 +40,7 @@ func names() []string {
 
 // read reads the cells of a candidate against the base, each beside its fixed paths. The cells of
 // fairness by the grade are left out: the constraint of fairness alone reads them, in pairs of
-// grades, and no other check, path or note does (R55; the 2026-11-14 amendment to R04).
+// grades, and no other check, path or note does (R04, R55).
 func read(base, candidate *bench.File, paths *Paths) ([]cellData, error) {
 	pairs, err := bench.Cells(bench.Side{File: base}, bench.Side{File: candidate})
 	if err != nil {
@@ -170,8 +170,8 @@ func invariants(f *bench.File) Check {
 
 // notWorseChecks gives the checks of "no worse": on each cell a check holds on, the worst end of the
 // 95 % interval of the paired difference, the candidate's less the base's, is within the tolerance —
-// the larger of the author's and 4.3 standard errors of the difference (docs/architecture.md,
-// section 3.6). Where the base reads no such number, the check has nothing to hold.
+// the larger of the author's and 4.3 standard errors of the difference (R04). Where the base reads no
+// such number, the check has nothing to hold.
 func notWorseChecks(cells []cellData, nws []notWorse) []Check {
 	var out []Check
 	for _, d := range cells {
@@ -204,13 +204,13 @@ func notWorseCheck(k Check, p measure.Pair) Check {
 }
 
 // fair gives the constraint of fairness by the grade, one in the criteria of the model and of the
-// engine and in a pair (R55 in docs/decisions.md): on the cell of each grade but the reference's, the
-// pairs of the grade and the reference of the candidate against those of the base, learner by
-// learner, and each number of M11 — M11.same by its shortfall, M11.answers and M11.band as they are —
-// "no worse", as on any cell. The pairs read as a cell of the reference's name, so that both sides
-// and every grade resample the same learners, as the evaluation does. A grade whose cell the runs do
-// not have fails each number: olympiad maths is published, and a check never measured does not hold.
-// The two sides have the same cells of fairness, and read has held their learners to one another.
+// engine and in a pair (R55, R57): on the cell of each grade but the reference's, the pairs of the
+// grade and the reference of the candidate against those of the base, learner by learner, and each
+// number of M11 — M11.same by its shortfall, M11.answers and M11.band as they are — "no worse", as
+// on any cell. The pairs read as a cell of the reference's name, so that both sides and every grade
+// resample the same learners, as the evaluation does. A grade whose cell the runs do not have fails
+// each number: olympiad maths is published, and a check never measured does not hold. The two sides
+// have the same cells of fairness, and read has held their learners to one another.
 func fair(base, candidate []bench.FairCell) ([]Check, error) {
 	var ns []string
 	for _, n := range measure.FairNumbers() {
@@ -248,10 +248,10 @@ func fairCells(cells []bench.FairCell) []string {
 	return out
 }
 
-// floors gives the floor of the first slice (docs/architecture.md, section 3.6): on G0 and
-// G0-skills1, false "mastered" M4 at most 20 % and the answers until "mastered" M6 at most 1.5
-// times the base's, by the worst end of the candidate's interval. Where the base reads no such
-// number, the floor has nothing to hold, as "no worse" has not.
+// floors gives the floor of the first slice (R04): on G0 and G0-skills1, false "mastered" M4 at
+// most 20 % and the answers until "mastered" M6 at most 1.5 times the base's, by the worst end of
+// the candidate's interval. Where the base reads no such number, the floor has nothing to hold, as
+// "no worse" has not.
 func floors(cells []cellData) []Check {
 	out := missing(cells, "floor", "G0", "G0-skills1")
 	for _, d := range cells {
@@ -268,10 +268,10 @@ func floors(cells []cellData) []Check {
 	return out
 }
 
-// goals gives the checks of the goal a candidate of the model names (docs/architecture.md, section
-// 3.6): on G2-half, M3 closes at least 0.55 of its fixed path to the oracle (lag) or E1 at least
-// 0.27 of its fixed path to the ceiling (corridor), by the low end of the interval of the share; on G3, at most
-// 25 % of the learners never settle after the jump (settle), by the high end.
+// goals gives the checks of the goal a candidate of the model names (R04): on G2-half, M3 closes at
+// least 0.55 of its fixed path to the oracle (lag) or E1 at least 0.27 of its fixed path to the
+// ceiling (corridor), by the low end of the interval of the share; on G3, at most 25 % of the
+// learners never settle after the jump (settle), by the high end.
 func goals(cells []cellData, goal string) []Check {
 	var out []Check
 	if goal == "settle" {
@@ -294,11 +294,11 @@ func goals(cells []cellData, goal string) []Check {
 	return out
 }
 
-// neutral gives the checks that a candidate gives the base's runs on the graphs it names: on each cell
-// of each graph, every learner's sums are the base's to the bit, so every paired difference is zero —
-// on the graphs where no skill of a lesson has a task outside it, a variant of consolidation in a
-// lesson has nothing to give (R49 in docs/decisions.md). A graph the runs have no cell of is not
-// met: a check that is never measured does not hold.
+// neutral gives the checks that a candidate gives the base's runs on the graphs it names: on each
+// cell of each graph, every learner's sums are the base's to the bit, so every paired difference is
+// zero — on the graphs where no skill of a lesson has a task outside it, a variant of consolidation
+// in a lesson has nothing to give (R49). A graph the runs have no cell of is not met: a check that
+// is never measured does not hold.
 func neutral(cells []cellData, graphs []string) []Check {
 	var out []Check
 	for _, g := range graphs {
@@ -341,7 +341,7 @@ func differs(a, b measure.Sums) (string, bool) {
 
 // note gives the note of consolidation in a lesson: the numbers of E6 on each cell of a published
 // graph where the base or the candidate consolidated at least once, base and candidate paired by
-// learner. It decides nothing (docs/architecture.md, section 3.6; R49).
+// learner. It decides nothing (R49).
 func note(cells []cellData) ([]Note, error) {
 	consolidated := func(ls []measure.Sums) bool {
 		return slices.ContainsFunc(ls, func(s measure.Sums) bool { return s["E6.consolidations"] > 0 })
@@ -416,14 +416,13 @@ type frac struct {
 	resampled []float64
 }
 
-// fraction gives the share of the path of a number on a cell the candidate closes, by the path
-// fixed on the first decisive run of the base (Paths): the same path at every choice and in every
-// confirmation, whatever the base and the learners of the judgement. A number with no fixed path,
-// one not read, or one of zero or less has no share. Nor has one whose path is above zero but
-// within the author's tolerance of the number, which the author has called "no change": a ceiling
-// no further from the base than that sets no path — nor, where the path goes to perfection, a base
-// no further from it —, and the noise of the difference would decide the share (the amendment of
-// 2026-11-09 to R04 in docs/decisions.md). Either leaves the score whether the candidate's run
+// fraction gives the share of the path of a number on a cell the candidate closes, by its fixed
+// path (Paths): the same path at every choice and in every confirmation, whatever the base and the
+// learners of the judgement. A number with no fixed path, one not read, or one of zero or less has
+// no share. Nor has one whose path is above zero but within the author's tolerance of the number,
+// which the author has called "no change": a ceiling no further from the base than that sets no
+// path — nor, where the path goes to perfection, a base no further from it —, and the noise of the
+// difference would decide the share (R04). Either leaves the score whether the candidate's run
 // reads the number or not, as its share would not count.
 func fraction(d cellData, name string) frac {
 	p := d.pair[name]

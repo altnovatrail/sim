@@ -1,7 +1,6 @@
 // Package bench runs cells of virtual learners into a file of results, one line a learner, and
-// reads two such files in pairs by learner (docs/architecture.md, section 3.6; R24 in
-// docs/decisions.md). Two versions of one library do not go into one Go build, so each build of sim
-// writes its own file, and the comparison reads them side by side.
+// reads two such files in pairs by learner. Two versions of one library do not go into one Go build,
+// so each build of sim writes its own file, and the comparison reads them side by side (R24).
 package bench
 
 import (
@@ -49,7 +48,7 @@ type Header struct {
 	Part        Part     `json:"part,omitzero"`
 	// Packages are the packages the run took in place of the pinned ones, and it ran only the graphs
 	// whose every module is one of them: the gate of the CI of modules, on the packages of a pull
-	// request (docs/architecture.md, section 3.9). None, the pinned packages and every graph.
+	// request (R27). None, the pinned packages and every graph.
 	Packages []published.Package `json:"packages,omitempty"`
 	// Invariants tells that each line records the breaches of I1–I4 on its run: under the engine.
 	Invariants bool `json:"invariants"`
@@ -65,7 +64,7 @@ type Line struct {
 	Sums       measure.Sums `json:"sums"`
 	Oracle     measure.Sums `json:"oracle"`
 	// Breaches are the breaches of the invariants I1–I4 on the run, under the engine; the ceiling of
-	// the engine is no branch of engine, and its runs are not checked (R25 in docs/decisions.md).
+	// the engine is no branch of engine, and its runs are not checked (R25).
 	Breaches []string `json:"breaches,omitempty"`
 	// Fair is the trace of M11 of the learner's run, under the engine, in a cell of fairness by the grade
 	// alone: no other line has it, and theirs stay the bytes they were (R55).
@@ -97,8 +96,7 @@ type Package struct {
 
 // Part is the K-th of N parts of the learners: those whose number n gives K by n mod N. The zero
 // part is the whole. The bench draws a learner from its seeds alone, so a learner is the same in any
-// part (docs/architecture.md, section 3.4), and the parts run as processes, not goroutines, as R09
-// has it (the amendment of 2026-11-08 to R24 in docs/decisions.md).
+// part, and the parts run as processes, not goroutines (R09, R24).
 type Part struct {
 	K int `json:"k"`
 	N int `json:"n"`
@@ -109,20 +107,17 @@ func (p Part) valid() bool {
 	return p == Part{} || p.N > 0 && p.K >= 0 && p.K < p.N
 }
 
-// takes tells whether a part takes the n-th learner.
 func (p Part) takes(n int) bool {
 	return p.N <= 1 || n%p.N == p.K
 }
 
-// rules names the rules in a file of results.
 var rules = map[run.Rule]string{run.Engine: "engine", run.Ceiling: "ceiling"}
 
 // Names gives the version or commit of each library: the version the build took it at — a tag, or a
 // pseudo-version, which holds its commit —, its replacement's, with the replacement's path when it
 // is another module, or the commit the caller names. A library the build took from a workspace has
 // no version, and the caller has to name its commit, a full SHA; a commit named for a library the
-// build names a version of, or for a module that is no library, is refused
-// (docs/architecture.md, section 3.9).
+// build names a version of, or for a module that is no library, is refused (R24, R34).
 func Names(info *debug.BuildInfo, commits map[string]string) (map[string]string, error) {
 	for _, path := range slices.Sorted(maps.Keys(commits)) {
 		c := commits[path]
@@ -276,7 +271,7 @@ func Run(c Config, w io.Writer) error {
 // each choice again on all the learners would double the engine's work, the most of a run. A
 // repetition holds the bits of every learner, but not that the input a choice keeps is the one it was
 // made on — a rule that changed its input in place would change it alike in both runs —, and the
-// first learners of every cell catch that (R31, R33 in docs/decisions.md).
+// first learners of every cell catch that (R31, R33).
 const Rechosen = 10
 
 // covers tells whether a run on packages runs a graph: with none, every graph; with some, a graph
@@ -292,7 +287,6 @@ func covers(packages []published.Package, graph []string) bool {
 		slices.ContainsFunc(graph, func(id string) bool { return !packages[of(id)].Along })
 }
 
-// runOne runs the n-th learner of a population on the modules of a graph.
 func runOne(c Config, p population.Population, mods []*pack.Module, n int) (*run.Record, error) {
 	l, err := learner.New(c.Set, p.Units(), n, mods, p.Assumptions(n))
 	if err != nil {
@@ -314,7 +308,6 @@ func checkOf(n int) func(*run.Record) []invariant.Breach {
 	return invariant.CheckWithoutI1
 }
 
-// one runs the n-th learner of a population on a graph.
 func one(c Config, p population.Population, graph []string, mods []*pack.Module, n int) (Line, error) {
 	rec, err := runOne(c, p, mods, n)
 	if err != nil {
@@ -464,7 +457,6 @@ func CellsOn(populations []string, packages []published.Package) []string {
 	return out
 }
 
-// cellOf names the cell of a line: its population and graph.
 func cellOf(l Line) string {
 	return l.Population + "/" + strings.Join(l.Graph, "+")
 }
@@ -612,7 +604,7 @@ func Fair(f *File) ([]FairCell, error) {
 
 // numbersOf gives the numbers two sides compare: the measures of the model, and of the engine unless
 // a side is the oracle, which reads the model's alone; E3 is not read off the ceiling of the engine,
-// whose path goes to perfection (docs/architecture.md, section 3.6; R24).
+// whose path goes to perfection (R24).
 func numbersOf(a, b Side) []measure.Number {
 	if a.Oracle || b.Oracle {
 		return measure.ModelNumbers()

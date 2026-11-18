@@ -12,10 +12,10 @@ import (
 	"github.com/altnovatrail/sim/internal/population"
 )
 
-// Correction is an evaluation of the adult's correction against the truth (R73 in
-// docs/decisions.md): its name, as its folder evaluations/<name>/, the run of C-grade1 and D-grade1
-// and its SHA-256, the date, the version of sim that reads it and the libraries of the gate file,
-// which the engine of the run is held to.
+// Correction is an evaluation of the adult's correction against the truth (R73): its name, as its
+// folder evaluations/<name>/, the run of C-grade1 and D-grade1 and its SHA-256, the date, the
+// version of sim that reads it and the libraries of the gate file, which the engine of the run is
+// held to.
 type Correction struct {
 	Name, Date, Version, Digest string
 	Run                         *bench.File

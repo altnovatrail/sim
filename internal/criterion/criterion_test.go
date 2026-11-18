@@ -386,8 +386,7 @@ func TestRefuses(t *testing.T) {
 		t.Errorf("a confirmation of the engine on the model's held-out learners: %v", err)
 	}
 	// A confirmation runs only on its judgement's own held-out set: not on the set kept for another
-	// round, nor on one another judgement has looked at, nor without the judgement's name (R52 in
-	// docs/decisions.md).
+	// round, nor on one another judgement has looked at, nor without the judgement's name (R52).
 	set := func(experiment string) seed.Set {
 		s, err := seed.Named(experiment)
 		if err != nil {
@@ -618,9 +617,8 @@ func TestRecordPaths(t *testing.T) {
 	}
 }
 
-// The paths the criterion holds read, and the measurement that records them holds the same table:
-// since T47 each pin of the paths is a subsection of section 3 of docs/measurements.md, which the
-// amendment to R04 cites, and the latest of them is the embedded file's.
+// The paths the criterion holds read, and docs/measurements.md holds the same table in the latest
+// of its records of the paths, the embedded file's (R04).
 func TestPathsFixed(t *testing.T) {
 	p, err := fixed()
 	if err != nil {
@@ -680,8 +678,8 @@ func TestReport(t *testing.T) {
 
 // A number whose fixed path is above zero but within the author's tolerance has no share: at the
 // tolerance or below it leaves the score, read by the candidate or not, and above it the share is
-// read (the amendment of 2026-11-09 to R04). A path to perfection is the base's own shortfall, and a
-// path the tolerance in decimal, off by a few ulps, is within it.
+// read (R04). A path to perfection is the base's own shortfall, and a path the tolerance in
+// decimal, off by a few ulps, is within it.
 func TestPathWithinTolerance(t *testing.T) {
 	for _, c := range []struct {
 		number        string

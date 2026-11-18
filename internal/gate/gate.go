@@ -1,8 +1,7 @@
 // Package gate holds the gate of the bench: the gate file, which names what the gate's numbers were
 // recorded on — the commits of the libraries, the pinned packages, the versions the workspace chose
 // and the go lines — and the bands; the gate's cells and numbers; the checks of a run against the
-// file; and the recording of the bands anew (docs/architecture.md, sections 3.7 and 3.9; R26 in
-// docs/decisions.md).
+// file; and the recording of the bands anew (R26).
 package gate
 
 import (
@@ -91,14 +90,10 @@ func (f *File) Write(w io.Writer) error {
 	return err
 }
 
-// Learners are the learners of each cell of the gate: the first of the working set. They were 300,
-// as standalone's guard had; on olympiad maths since 0.1.1 a choice of the engine takes some ten times
-// longer, and 300 would not fit the job's budget of fifteen minutes, which the gate keeps by a
-// change of sim, not of the time (docs/architecture.md, section 3.9; R31 in docs/decisions.md). They
-// were 100 until engine v0.1.6 made the choice faster, and 150 until learner-model v0.1.6 made its
-// readout faster; 250 keep the slowest run of the job on 150, scaled, at about ten minutes at every
-// caller, whose gate keeps no cache of Go, within the twelve that 300 would only just meet (the
-// amendments of 2026-11-11 and 2026-11-12 to R31).
+// Learners are the learners of each cell of the gate: the first of the working set. The slowest job
+// of the gate, at a caller that keeps no cache of Go, is to take at most twelve minutes, three short
+// of the job's budget of fifteen, with a margin beyond that for the runner's spread; the gate keeps
+// the budget by a change of sim, not of the time (R31).
 const Learners = 250
 
 // learners are the learners whole holds each cell to: Learners, but a test of the checks lowers it,
@@ -106,13 +101,13 @@ const Learners = 250
 var learners = Learners
 
 // Populations are the populations of the gate, each on every graph it runs on, in the order of
-// population (docs/architecture.md, section 3.7). A-linked runs on the two published maths together,
-// since olympiad maths, from 0.1.1 on, rests skills on school maths (R31 in docs/decisions.md).
+// population. A-linked runs on the two published maths together, since olympiad maths rests skills
+// on school maths (R31).
 var Populations = []string{"G0", "G1", "G2", "G2-half", "G3", "F-model", "W-shock", "A-linked", "E-base"}
 
 // numbers are the numbers of the gate of each population, besides the two of E2 on every one. The
 // share of items with P* below 0.50, E1.hard, and the choices of nothing, E2.nothing, are what the
-// thresholds of the CI of modules are taken from (R27 in docs/decisions.md).
+// thresholds of the CI of modules are taken from (R27).
 var numbers = map[string][]string{
 	"G0":       {"M1.rms.200", "E1.corridor", "E1.hard", "M4.false.all", "M6.late", "M6.never"},
 	"G1":       {"M7.error.10"},
@@ -215,7 +210,7 @@ func (r *Report) OK() bool { return len(r.Reasons) == 0 }
 // breaks an invariant, and every number is within its band — two half-widths of the recorded value,
 // the edges included —, or, held exactly, the recorded value to the last bit. A number the recording
 // could not read is held as not read. The populations with no published graph are not run, and the
-// report names them (docs/architecture.md, section 3.7).
+// report names them.
 func Check(f *File, results *bench.File, exact bool) (*Report, error) {
 	r := &Report{Exact: exact, Reasons: whole(results)}
 	for _, l := range results.Lines {
@@ -260,8 +255,8 @@ func Check(f *File, results *bench.File, exact bool) (*Report, error) {
 }
 
 // Record gives the gate file with the bands of a run of the gate, recorded for a reason: the value
-// of every number and the half-width of its interval (docs/architecture.md, section 3.7). The run
-// must be on the commits the file names: bands of a caller's code are no record.
+// of every number and the half-width of its interval. The run must be on the commits the file names:
+// bands of a caller's code are no record.
 func Record(f *File, results *bench.File, reason string) (*File, error) {
 	if reason == "" {
 		return nil, fmt.Errorf("gate: bands are recorded for a reason")

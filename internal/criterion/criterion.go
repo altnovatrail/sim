@@ -1,9 +1,9 @@
 // Package criterion judges candidates against the base by the criterion of the model, of the
 // engine, or of a pair of both: the constraints, the score as the share of the path from the base to
-// the ceiling, "better", the choice, the confirmation on held-out learners and the way out
-// (docs/architecture.md, section 3.6; R25 in docs/decisions.md). It reads files of results that
-// sim run wrote, the candidates' beside the base's on the same learners, and holds the paths fixed
-// on the first decisive run of the base (R28).
+// the ceiling, "better", the choice, the confirmation on held-out learners and the way out (R25). It
+// reads files of results that sim run wrote, the candidates' beside the base's on the same learners,
+// and holds the paths fixed as the decisive run of the base read them before the first candidate
+// (R28).
 package criterion
 
 import (
@@ -27,12 +27,9 @@ const (
 )
 
 // Decisive is the learners of every cell a decisive run takes, and the recipe just decisive runs; a
-// run of fewer is a rough look and decides nothing (docs/architecture.md, section 3.8). It was 4,000
-// until a decisive run took hours on olympiad maths 0.1.1, and a run is to take an hour at most (R33
-// in docs/decisions.md); then 1,000, until engine v0.1.6 made the choice faster and 1,500 fit in 45
-// minutes (the amendment of 2026-11-11 to R33); then 1,500, until learner-model v0.1.6 made its
-// readout faster and 2,000 fit, by a sample on a free machine, in about 38 minutes (the amendment of
-// 2026-11-12 to R33).
+// run of fewer is a rough look and decides nothing. It is the largest, in steps of 250, at which the
+// run of the base on a free machine takes at most 41 minutes, within the hour with a margin (R04,
+// R33, R38).
 const Decisive = 2000
 
 // ErrCriterion is a judgement the criterion refuses.
@@ -44,7 +41,7 @@ var ErrCriterion = errors.New("criterion")
 // input, and its distance from the base, in the author's order. In a pair it names the library whose
 // goal it is. EqualOn are the graphs, by the IDs of their modules joined by "+", on which it claims to
 // give the same runs as the base: there every learner's sums are the base's, or it fails the check
-// "neutral" (R49 in docs/decisions.md).
+// "neutral" (R49).
 type Candidate struct {
 	Name      string
 	File      *bench.File
@@ -67,19 +64,18 @@ type Confirm struct {
 // learners, the confirmation when it has run, and the libraries the base is fixed at.
 type Input struct {
 	// Judgement is the judgement's name, its folder judgements/<name>/: a confirmation runs only on
-	// its own held-out set (R52 in docs/decisions.md). A judgement with no confirmation may leave it
-	// empty.
+	// its own held-out set (R52). A judgement with no confirmation may leave it empty.
 	Judgement string
 	Criterion string
 	// Target is the target the judgement goes by, when its criterion wrote one down before its
 	// first candidate: M11.same of the grades pooled for model-fair-1, which alone decides "better"
-	// and the choice there (R65 in docs/decisions.md).
+	// and the choice there (R65).
 	Target     string
 	Base       *bench.File
 	Candidates []Candidate
 	Confirm    *Confirm
 	// Pins are the libraries of the gate file, by module path: the base runs on them, and a
-	// candidate of one library on the other of them (R40 in docs/decisions.md).
+	// candidate of one library on the other of them (R40).
 	Pins map[string]Pin
 }
 
@@ -90,8 +86,7 @@ type Pin struct {
 }
 
 // names tells whether a file of results names the library at its pin: by the tag, or, while there
-// is none, by the pseudo-version of the commit, as go.mod names it then (docs/architecture.md,
-// section 3.9).
+// is none, by the pseudo-version of the commit, as go.mod names it then.
 func (p Pin) names(got string) bool {
 	if p.Version != "" {
 		return got == p.Version
@@ -148,8 +143,7 @@ type Verdict struct {
 
 // Note is a number of the note of consolidation in a lesson, E6, on a cell where the base or the
 // candidate consolidated: the base's value, the candidate's and their difference, base − candidate,
-// with the interval from the same resamples (docs/architecture.md, section 3.6; R49). No check,
-// path or weight reads it.
+// with the interval from the same resamples. No check, path or weight reads it (R49).
 type Note struct {
 	Cell string
 	measure.Pair
@@ -173,7 +167,7 @@ type Report struct {
 }
 
 // Judge judges the candidates of an input. A rough look — fewer learners a cell than a decisive run
-// takes — decides nothing, and its outcome says so first (docs/architecture.md, section 3.6).
+// takes — decides nothing, and its outcome says so first (R04).
 func Judge(in Input) (*Report, error) {
 	r, err := decide(in)
 	if err != nil {
@@ -336,8 +330,8 @@ func (in Input) check() error {
 
 // heldOut refuses a confirmation that is not on its judgement's own held-out set: a set kept for
 // another round or variant, or one another judgement has looked at, is held out from this one no
-// longer, nor is the set of the choice (docs/architecture.md, section 3.8; R52 in
-// docs/decisions.md). The candidate's run is held to the base's learners by their pairing.
+// longer, nor is the set of the choice (R52). The candidate's run is held to the base's learners by
+// their pairing.
 func (in Input) heldOut() error {
 	got := in.Confirm.Base.Header.Set
 	if in.Judgement == "" {
@@ -361,8 +355,8 @@ func (in Input) heldOut() error {
 // base on those the paths were read on and the gate file fixes, and a candidate of one library, the
 // chosen one on its held-out learners too, on the other library of the base — by its version, by
 // the commit of the pin, as the recipe of the decisive run builds a candidate, or by the
-// pseudo-version of that commit (R34, R40 in docs/decisions.md). A pair changes both libraries, and
-// has no other to hold.
+// pseudo-version of that commit (R34, R40). A pair changes both libraries, and has no other to
+// hold.
 func (in Input) libraries(paths *Paths) error {
 	if len(in.Pins) == 0 {
 		return fmt.Errorf("%w: a judgement needs the libraries the base is fixed at, those of the gate file", ErrCriterion)
@@ -403,7 +397,6 @@ func groupsOf(criterion, library string) []group {
 	return modelGroups
 }
 
-// files gives the candidates' files.
 func files(cs []Candidate) []*bench.File {
 	var out []*bench.File
 	for _, c := range cs {
@@ -412,7 +405,6 @@ func files(cs []Candidate) []*bench.File {
 	return out
 }
 
-// fewest gives the fewest learners of a cell over files.
 func fewest(fs []*bench.File) int {
 	least := -1
 	for _, f := range fs {
