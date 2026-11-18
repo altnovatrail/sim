@@ -119,10 +119,11 @@ func parse(fs *flag.FlagSet, args []string) error {
 // about 100 MB and collects less often (R33).
 const gcPercent = 400
 
-// alone sets a process that runs a part to one processor: the parts of a run are processes, as many
-// as the processors, and another processor for each would only take the others'. A run of the whole
-// keeps the processors for its collector. Neither changes a bit of what the run writes (R09, R33).
-// It is a variable so that the tests of the commands leave their own process as it was.
+// alone sets the collector of every process of a run to gcPercent, and a process that runs a part
+// to one processor: the parts of a run are processes, as many as the processors, and another
+// processor for each would only take the others'. A run of the whole keeps the processors for its
+// collector. Neither changes a bit of what the run writes (R09, R33). It is a variable so that the
+// tests of the commands leave their own process as it was.
 var alone = func(part bench.Part) {
 	if part.N > 1 {
 		runtime.GOMAXPROCS(1)
@@ -289,10 +290,10 @@ func compareCommand(args []string, stdout, stderr io.Writer) error {
 	return bench.Compare(bench.Side{File: files[0], Oracle: *aOracle}, bench.Side{File: files[1], Oracle: *bOracle}, stdout)
 }
 
-// judgement is a judgement file. Its name is that of its folder judgements/<name>/, which holds a
-// confirmation to its own held-out set (R52); a candidate's equal_on names the graphs it claims to
-// give the base's runs on (R49); a path is relative to the judgement file. It names no run of the
-// ceiling: the paths of the score are those the criterion holds fixed (R28).
+// judgement is a judgement file. Its name is that of its folder judgements/<name>/, and it holds a
+// confirmation to the judgement's own held-out set (R52); a candidate's equal_on names the graphs
+// it claims to give the base's runs on (R49); a path is relative to the judgement file. It names no
+// run of the ceiling: the paths of the score are those the criterion holds fixed (R28).
 type judgement struct {
 	Judgement  string `json:"judgement"`
 	Criterion  string `json:"criterion"`
@@ -473,8 +474,8 @@ type evaluation struct {
 	Date       string `json:"date"`
 }
 
-// evaluateCommand is "sim evaluate": it evaluates a run only once the run is the file of the
-// SHA-256 the evaluation file names.
+// evaluateCommand is "sim evaluate": it writes the report of an evaluation only once its run, and
+// for "rules" the base's run too, is the file of the SHA-256 the evaluation file names.
 func evaluateCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("evaluate", flag.ContinueOnError)
 	fs.SetOutput(stderr)

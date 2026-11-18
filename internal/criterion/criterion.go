@@ -2,7 +2,8 @@
 // engine, or of a pair of both: the constraints, the score as the share of the path from the base to
 // the ceiling, "better", the choice, the confirmation on held-out learners and the way out (R25). It
 // reads files of results that sim run wrote, the candidates' beside the base's on the same learners,
-// and holds the paths fixed on the first decisive run of the base (R28).
+// and holds the paths fixed as the decisive run of the base read them before the first candidate
+// (R28).
 package criterion
 
 import (
@@ -26,8 +27,9 @@ const (
 )
 
 // Decisive is the learners of every cell a decisive run takes, and the recipe just decisive runs; a
-// run of fewer is a rough look and decides nothing. It is as many as fit in a run of an hour at most
-// on a free machine (R04, R33).
+// run of fewer is a rough look and decides nothing. It is the largest, in steps of 250, at which the
+// run of the base on a free machine takes at most 41 minutes, within the hour with a margin (R04,
+// R33, R38).
 const Decisive = 2000
 
 // ErrCriterion is a judgement the criterion refuses.

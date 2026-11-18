@@ -416,14 +416,14 @@ type frac struct {
 	resampled []float64
 }
 
-// fraction gives the share of the path of a number on a cell the candidate closes, by the path
-// fixed on the first decisive run of the base (Paths): the same path at every choice and in every
-// confirmation, whatever the base and the learners of the judgement. A number with no fixed path,
-// one not read, or one of zero or less has no share. Nor has one whose path is above zero but
-// within the author's tolerance of the number, which the author has called "no change": a ceiling
-// no further from the base than that sets no path — nor, where the path goes to perfection, a base
-// no further from it —, and the noise of the difference would decide the share (R04). Either leaves
-// the score whether the candidate's run reads the number or not, as its share would not count.
+// fraction gives the share of the path of a number on a cell the candidate closes, by its fixed
+// path (Paths): the same path at every choice and in every confirmation, whatever the base and the
+// learners of the judgement. A number with no fixed path, one not read, or one of zero or less has
+// no share. Nor has one whose path is above zero but within the author's tolerance of the number,
+// which the author has called "no change": a ceiling no further from the base than that sets no
+// path — nor, where the path goes to perfection, a base no further from it —, and the noise of the
+// difference would decide the share (R04). Either leaves the score whether the candidate's run
+// reads the number or not, as its share would not count.
 func fraction(d cellData, name string) frac {
 	p := d.pair[name]
 	x, ok := d.path[name]
