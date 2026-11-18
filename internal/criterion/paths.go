@@ -29,11 +29,10 @@ type Path struct {
 	Ceiling float64 `json:"ceiling"`
 }
 
-// Paths are the paths the criteria hold, read once on the first decisive run of the base, before
-// the first candidate, and fixed (docs/architecture.md, section 3.6; the amendment of 2026-11-09 to
-// R04, R28 in docs/decisions.md): the libraries, the set and the learners of the runs they were
-// read on, the SHA-256 of the files of results of the base and of the ceiling of the engine, and the
-// path of every number of the groups of the score on every cell of a published graph.
+// Paths are the paths the criteria hold, read on the decisive run of the base before the first
+// candidate, and fixed (R04, R28): the libraries, the set and the learners of the runs they were read
+// on, the SHA-256 of the files of results of the base and of the ceiling of the engine, and the path
+// of every number of the groups of the score on every cell of a published graph.
 type Paths struct {
 	Libraries map[string]string `json:"libraries"`
 	Set       seed.Set          `json:"set"`
@@ -72,7 +71,6 @@ func (p *Paths) Write(w io.Writer) error {
 	return err
 }
 
-// on gives the fixed paths of a cell, by number.
 func (p *Paths) on(cell string) map[string]Path {
 	out := map[string]Path{}
 	for _, x := range p.Paths {
@@ -193,9 +191,9 @@ func RecordPaths(base, ceiling *bench.File, baseDigest, ceilingDigest string) (*
 	return p, nil
 }
 
-// Table gives the rows of the table of the paths in Markdown, as the latest subsection of section 3
-// of docs/measurements.md holds them: the cell, the number, the base, the ceiling and the path, to four decimals with
-// a decimal point, as the documents in English write numbers; a path not read is a dash.
+// Table gives the rows of the table of the paths in Markdown, as docs/measurements.md records them:
+// the cell, the number, the base, the ceiling and the path, to four decimals with a decimal point,
+// as the documents in English write numbers; a path not read is a dash.
 func (p *Paths) Table() string {
 	show := func(x float64) string {
 		return strconv.FormatFloat(x, 'f', 4, 64)

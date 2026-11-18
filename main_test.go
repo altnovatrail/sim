@@ -167,9 +167,9 @@ func TestJudge(t *testing.T) {
 	// The judge is held here to the libraries the paths were read on, whichever this tree builds
 	// with. Mostly they are the gate file's, and then nothing below changes; but between the move of
 	// a library and the decisive run that reads the paths anew they differ, and the judge refuses
-	// every base (R40, R41 in docs/decisions.md), as it did from T42 to T43. Then the runs are named
-	// the paths' libraries, and the embedded gate file names their versions, with no commit, since
-	// it knows only its own: a candidate's other library is held to the base's version alone.
+	// every base (R40, R41). Then the runs are named the paths' libraries, and the embedded gate file
+	// names their versions, with no commit, since it knows only its own: a candidate's other library
+	// is held to the base's version alone.
 	f, err := os.Open(filepath.Join("internal", "criterion", "paths.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -285,8 +285,8 @@ func TestJudge(t *testing.T) {
 
 // The judgement files in judgements/ still read as sim judge reads them, a judgement that names
 // itself names its folder, and a confirmation ran on its judgement's own held-out set, as runs.txt
-// names the set of each run (R35, R52 in docs/decisions.md): model-2 on held-out-model-1. The
-// records are not edited: each gives its report again on its own commit.
+// names the set of each run (R35, R52): model-2 on held-out-model-1. The records are not edited:
+// each gives its report again on its own commit.
 func TestJudgements(t *testing.T) {
 	dirs, err := filepath.Glob(filepath.Join("judgements", "*"))
 	if err != nil || len(dirs) == 0 {

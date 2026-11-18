@@ -8,8 +8,7 @@ import (
 	"github.com/altnovatrail/sim/internal/measure"
 )
 
-// direction is how a number goes into a criterion, so that less is better for every one
-// (docs/architecture.md, section 3.6).
+// direction is how a number goes into a criterion, so that less is better for every one.
 type direction int
 
 const (
@@ -28,8 +27,8 @@ type def struct {
 }
 
 // defs are the numbers the criteria read, by their names in measure. The tolerances are the
-// author's of docs/architecture.md, section 3.6; those it does not list take the tolerance of the
-// measure nearest them in kind (R25 in docs/decisions.md).
+// author's (R04); a number the author gave none takes the tolerance of the measure nearest it in
+// kind (R25).
 var defs = map[string]def{
 	"M1.rms.200":      {plain, 0.01, false},
 	"M2.brier.all":    {plain, 0.002, false},
@@ -67,10 +66,9 @@ var defs = map[string]def{
 }
 
 // resolution is the bench's resolution of "no worse": 4.3 standard errors of the paired difference
-// (docs/architecture.md, section 3.6; R04).
+// (R04).
 const resolution = 4.3
 
-// directed gives the numbers of names, each turned by its direction.
 func directed(names []string) []measure.Number {
 	all := slices.Concat(measure.ModelNumbers(), measure.EngineNumbers(), measure.FairNumbers())
 	var out []measure.Number
@@ -107,7 +105,7 @@ type weighted struct {
 	weight     float64
 }
 
-// The groups of the score of each criterion (docs/architecture.md, section 3.6).
+// The groups of the score of each criterion, with the author's weights (R04).
 var (
 	modelGroups = []group{
 		{"still", "stands still", 1, []weighted{{"G0", 1}}, []string{"M1.rms.200", "E1.corridor"}},
@@ -133,7 +131,6 @@ type notWorse struct {
 	on      []string // empty: every population
 }
 
-// applies tells whether a check of "no worse" holds on a population.
 func (n notWorse) applies(population string) bool {
 	if len(n.on) == 0 {
 		return true
@@ -143,8 +140,8 @@ func (n notWorse) applies(population string) bool {
 	})
 }
 
-// The checks of "no worse" of each criterion (docs/architecture.md, section 3.6): on every
-// population, and on a measure's own populations (section 3.5).
+// The checks of "no worse" of each criterion, on every population and on a measure's own
+// populations (R04).
 var (
 	modelNotWorse = []notWorse{
 		{numbers: []string{"M1.rms.200", "M2.brier.all", "M4.false.all", "M6.never", "E1.corridor"}},

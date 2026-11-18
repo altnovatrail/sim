@@ -1,11 +1,8 @@
 // Command sim is NovaTrail's learner simulator: virtual learners of different populations answer
 // tasks through learner-model and engine, and the numbers they give hold every change to either
-// before it is merged (docs/architecture.md). It is a tool of CI, not a library: the parts of the
-// bench live in internal/ packages (R10 in docs/decisions.md), and a caller that builds sim with
-// go.work runs it as `go run github.com/altnovatrail/sim <command>`.
-//
-// Its commands run cells of learners into a file of results, compare two such files by learner
-// (R24) and judge candidates by a criterion (R25); the rest come with the tasks of epic E2 in RUN.md.
+// before it is merged. It is a tool of CI, not a library: the parts of the bench live in internal/
+// packages, and a caller that builds sim with go.work runs it as
+// `go run github.com/altnovatrail/sim <command>` (R10).
 package main
 
 import (
@@ -34,7 +31,6 @@ import (
 	"github.com/altnovatrail/sim/internal/seed"
 )
 
-// usage is what sim prints when asked how it is used.
 const usage = `usage: sim <command> [flags]
 
 sim is NovaTrail's learner simulator. Its commands:
@@ -119,17 +115,14 @@ func parse(fs *flag.FlagSet, args []string) error {
 	return nil
 }
 
-// gcPercent is the garbage collector's share of the live heap a run lets grow before it collects:
-// four times Go's own. A process of a run then holds about 100 MB, and a run takes about 28 % less
-// processor than at Go's own 100 (R33 in docs/decisions.md).
+// gcPercent trades memory for processor: four times Go's own, so that a process of a run holds
+// about 100 MB and collects less often (R33).
 const gcPercent = 400
 
-// alone sets the collector of a process of a run to gcPercent, and a process that runs a part to one
-// processor: the parts of a run are processes, as many as the processors, with no goroutine of the
-// bench's own (R09), and another processor for each would only take the others'. A run of the whole is
-// the one process on the machine, and keeps the processors for its collector. Neither changes a bit
-// of what the run writes. It is a variable so that the tests of the commands leave their own process
-// as it was.
+// alone sets a process that runs a part to one processor: the parts of a run are processes, as many
+// as the processors, and another processor for each would only take the others'. A run of the whole
+// keeps the processors for its collector. Neither changes a bit of what the run writes (R09, R33).
+// It is a variable so that the tests of the commands leave their own process as it was.
 var alone = func(part bench.Part) {
 	if part.N > 1 {
 		runtime.GOMAXPROCS(1)
@@ -137,7 +130,6 @@ var alone = func(part bench.Part) {
 	debug.SetGCPercent(gcPercent)
 }
 
-// runCommand is "sim run".
 func runCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("run", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -192,7 +184,7 @@ func commitFlag(fs *flag.FlagSet) map[string]string {
 }
 
 // partFlag adds the flag -part to a command: the part k of n of the learners, so that a recipe runs
-// the parts as processes and merges their files (R09; the amendment of 2026-11-08 to R24).
+// the parts as processes and merges their files (R09, R24).
 func partFlag(fs *flag.FlagSet) *bench.Part {
 	p := &bench.Part{}
 	fs.Func("part", "the part k/n of the learners, those whose number gives k mod n; all of them when not given", func(v string) error {
@@ -239,7 +231,6 @@ func writeTo(path string, stdout io.Writer, write func(io.Writer) error) error {
 	return err
 }
 
-// readResults reads files of results.
 func readResults(paths []string) ([]*bench.File, error) {
 	var out []*bench.File
 	for _, path := range paths {
@@ -257,7 +248,6 @@ func readResults(paths []string) ([]*bench.File, error) {
 	return out, nil
 }
 
-// mergeCommand is "sim merge".
 func mergeCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("merge", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -280,7 +270,6 @@ func mergeCommand(args []string, stdout, stderr io.Writer) error {
 	return writeTo(*out, stdout, func(w io.Writer) error { return bench.Write(whole, w) })
 }
 
-// compareCommand is "sim compare".
 func compareCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("compare", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -300,12 +289,10 @@ func compareCommand(args []string, stdout, stderr io.Writer) error {
 	return bench.Compare(bench.Side{File: files[0], Oracle: *aOracle}, bench.Side{File: files[1], Oracle: *bOracle}, stdout)
 }
 
-// judgement is a judgement file: the name of the judgement, as its folder judgements/<name>/, which
-// a confirmation needs (R52), the criterion, the target its criterion wrote down, if any — M11.same
-// for model-fair-1 (R65) —, the files of results of the base and of each
-// candidate — with the graphs it claims to give the base's runs on, equal_on (R49) —, and of the
-// confirmation when it has run; a path is relative to the judgement file. The paths of the score
-// are those the criterion holds fixed, so no ceiling runs beside them (R28).
+// judgement is a judgement file. Its name is that of its folder judgements/<name>/, which holds a
+// confirmation to its own held-out set (R52); a candidate's equal_on names the graphs it claims to
+// give the base's runs on (R49); a path is relative to the judgement file. It names no run of the
+// ceiling: the paths of the score are those the criterion holds fixed (R28).
 type judgement struct {
 	Judgement  string `json:"judgement"`
 	Criterion  string `json:"criterion"`
@@ -330,7 +317,7 @@ type judgement struct {
 
 // gateJSON is the gate file the bench is built with: the judge holds the base to its libraries, and
 // a candidate of one library to the other of them, as it holds the score to the paths it embeds
-// (R40 in docs/decisions.md).
+// (R40).
 //
 //go:embed gate.json
 var gateJSON []byte
@@ -348,7 +335,6 @@ func pins(data []byte) (map[string]criterion.Pin, error) {
 	return out, nil
 }
 
-// judgeCommand is "sim judge".
 func judgeCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("judge", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -422,8 +408,8 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 }
 
 // pathsCommand is "sim paths": it reads the paths of the score off the decisive runs of the base
-// and of the ceiling of the engine, writes them into the file the criterion holds, and writes the
-// rows of their table, as the latest subsection of section 3 of docs/measurements.md holds them (R28).
+// and of the ceiling of the engine into the file the criterion embeds, and with -table writes the
+// rows of their table (R28).
 func pathsCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("paths", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -474,12 +460,9 @@ func readDigest(path string) (*bench.File, string, error) {
 	return file, hex.EncodeToString(h.Sum(nil)), nil
 }
 
-// evaluation is an evaluation file: the name of the evaluation, as its folder evaluations/<name>/,
-// the file of results of the decisive run of the base, relative to the evaluation file, its SHA-256
-// and the date the evaluation is made on, as YYYY-MM-DD (R55 in docs/decisions.md). An evaluation of
-// the three rules of R157 spec names its criterion, "rules", and beside its run the base's run with
-// its SHA-256 (R72); one of the adult's correction against the truth, "correction", its run alone
-// (R73); one of fairness by the grade names neither.
+// evaluation is an evaluation file, in its folder evaluations/<name>/; its run is relative to it,
+// and its date is YYYY-MM-DD (R55). The criterion "rules" names the base's run beside its own (R72);
+// "correction" names its run alone (R73); fairness by the grade names no criterion and no base.
 type evaluation struct {
 	Evaluation string `json:"evaluation"`
 	Criterion  string `json:"criterion,omitempty"`
@@ -490,9 +473,8 @@ type evaluation struct {
 	Date       string `json:"date"`
 }
 
-// evaluateCommand is "sim evaluate": it evaluates the base by the criterion of fairness by the grade
-// on the run an evaluation file names, once the run is the file of the SHA-256 it names, and writes
-// the report.
+// evaluateCommand is "sim evaluate": it evaluates a run only once the run is the file of the
+// SHA-256 the evaluation file names.
 func evaluateCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("evaluate", flag.ContinueOnError)
 	fs.SetOutput(stderr)

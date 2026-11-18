@@ -19,8 +19,8 @@ import (
 )
 
 // fairRun writes a file of results that stands in for a decisive run of the base with the cells of
-// fairness by the grade alone, on the libraries of the embedded gate file, and gives its SHA-256: no
-// population of fairness runs on a published package before T64 (R55).
+// fairness by the grade alone, on the libraries of the embedded gate file, and gives its SHA-256
+// (R55).
 func fairRun(t *testing.T, path string) string {
 	t.Helper()
 	g, err := gate.Read(bytes.NewReader(gateJSON))
@@ -114,7 +114,7 @@ func TestEvaluate(t *testing.T) {
 }
 
 // Every evaluation of evaluations/ has its evaluation file, which names its folder, a run by its
-// SHA-256 and a date, and its report (R55); the first is fairness-1, T64's evaluation of the base (R58).
+// SHA-256 and a date, and its report (R55); fairness-1 is the evaluation of the base (R58).
 func TestEvaluations(t *testing.T) {
 	dirs, err := filepath.Glob(filepath.Join("evaluations", "*"))
 	if err != nil {

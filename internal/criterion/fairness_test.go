@@ -160,8 +160,8 @@ func TestEvaluateRefuses(t *testing.T) {
 
 // The cells of fairness change nothing a judgement reads but the constraint of fairness: the report
 // of a candidate against a base with them is that without them but for the lines of fair, and the
-// paths read off a base with them and a ceiling without them are those of a base without them (R55;
-// the 2026-11-14 amendment to R04).
+// paths read off a base with them and a ceiling without them are those of a base without them (R04,
+// R55).
 func TestFairnessLeftOut(t *testing.T) {
 	base, ceiling := bare("engine", seed.Working, baseSide, false), file("ceiling", seed.Working, ceilSide, false)
 	p := usePaths(t, base, ceiling)

@@ -12,12 +12,12 @@ import (
 	"github.com/altnovatrail/sim/internal/seed"
 )
 
-// The criterion of the short run of the three rules of R157 spec, written down before the run (R72
-// in docs/decisions.md): the rules are learner-model at RulesCandidate; grade 5's M11.same holds
-// above the base's at the low end of its interval; M12.false of the reference's cell holds at most
-// guardCeiling at the high end of its interval; and the adult's correction, the cell of
-// population.Rules, has the paired difference of M11.same against grade 1's above zero at its low
-// end. fair is the constraint of R57 as it is.
+// The criterion of the short run of the three rules of R157 spec, written down before the run
+// (R72): the rules are learner-model at RulesCandidate; grade 5's M11.same holds above the base's
+// at the low end of its interval; M12.false of the reference's cell holds at most guardCeiling at
+// the high end of its interval; and the adult's correction, the cell of population.Rules, has the
+// paired difference of M11.same against grade 1's above zero at its low end. fair is the constraint
+// of R57 as it is.
 const (
 	RulesCandidate = "df338e58e35f97c51eca49be0064f19d0fcfc0a2"
 	guardCeiling   = 0.05
