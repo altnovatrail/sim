@@ -89,7 +89,7 @@ func TestRunPublished(t *testing.T) {
 }
 
 // A run repeated on the same seeds gives the same bits: every choice, and the model's state at the
-// end (docs/architecture.md, section 3.5, I1).
+// end (I1).
 func TestRunRepeats(t *testing.T) {
 	for _, id := range []string{olympiad, grade3} {
 		a := runOf(t, "G0", 11, Maths, modules(t, id))

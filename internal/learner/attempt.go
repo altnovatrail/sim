@@ -11,11 +11,10 @@ import (
 	"github.com/altnovatrail/spec/types/formatv0"
 )
 
-// The time a learner spends, in seconds: on an item of a sheet two minutes, as in standalone, on a
-// line of a workbook a minute, on an essay fifteen minutes (docs/architecture.md, section 3.1); on
-// a link of a lesson that is no task — an explanation or a worked example — two minutes, an
-// assumption of the bench (R15 in docs/decisions.md). Answers after a rung take no time of their
-// own: the next task comes at the time the attempt's items would.
+// The time a learner spends, in seconds, on an item of a sheet, as in standalone, on a line of a
+// workbook, on an essay, and on a link of a lesson that is no task — an explanation or a worked
+// example —, an assumption of the bench (R15). Answers after a rung take no time of their own: the
+// next task comes at the time the attempt's items would.
 const (
 	SheetItemSeconds    = 120
 	WorkbookLineSeconds = 60
@@ -55,12 +54,10 @@ type Attempt struct {
 	// Technique tells that the learner took the technique on request before its first answer.
 	Technique bool
 	// LeadingQuestion tells that the hint asked for gave the task's leading question too: the request
-	// of the technique gives it on a task that has one, with no lift of its own (the text of the
-	// format, section 19; R41 in docs/decisions.md).
+	// of the technique gives it on a task that has one, with no lift of its own (R41).
 	LeadingQuestion bool
 }
 
-// rungs is the number of rungs of the ladder of hints (concepts 10 spec).
 const rungs = 3
 
 // ErrNoAnswer is a task with no rubric and no cell to answer.
@@ -70,11 +67,10 @@ var ErrNoAnswer = errors.New("learner: the task has nothing to answer")
 // fraction of the place answers each in the items' order, then, after a wrong answer, again on
 // each rung of the ladder, one fraction of the place retries for each item not yet right; with the
 // fourth wrong answer the solution is shown — to a child by the adult's act, as by default, to a
-// learner of the category adult by its own button (concepts 10 spec; R82 spec). A task with a
-// rubric is written, sent once and done. The attempt's seed is the next integer of the place
-// attempt. Then the stability of each primary skill of the items moves once, by the share of its
-// first verdicts that were right, and its last practice becomes the attempt's start
-// (docs/architecture.md, section 3.1).
+// learner of the category adult by its own button (R82 spec). A task with a rubric is written, sent
+// once and done. The attempt's seed is the next integer of the place attempt. Then the stability of
+// each primary skill of the items moves once, by the share of its first verdicts that were right,
+// and its last practice becomes the attempt's start.
 func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 	task := t.Candidate.Task
 	if _, err := l.Module(moduleOf(task.ID, "task")); err != nil {
@@ -95,7 +91,7 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 		lift = l.a.TechniqueLift
 	}
 	// What an attempt holds comes from the place attempts in a fixed order: the technique, the shock,
-	// the error (docs/architecture.md, section 3.4).
+	// the error.
 	if l.a.AttemptShock != 0 {
 		lift += float64(l.a.AttemptShock * l.attempts.Normal())
 	}
@@ -173,7 +169,7 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 // practise moves the stability of each primary skill of the attempt's items once, by the share S̄
 // of its first verdicts that were right: τ* := max(τ₀; τ* · (1 + g · (1 − R*))^S̄ · (1/2)^(1 − S̄)),
 // R* at the attempt's start; and sets its last practice to the attempt's start (R04, R06
-// learner-model; docs/architecture.md, section 3.1). The skills move in the order of their IDs.
+// learner-model). The skills move in the order of their IDs.
 func (l *Learner) practise(t *pack.Task, a Attempt) {
 	right, all := map[string]int{}, map[string]int{}
 	var ids []string
@@ -224,8 +220,8 @@ type Pass struct {
 // Each is what a lesson's pass calls around each of its tasks, so that the caller reads the truth
 // and the model between them, as they stand when the task is given and once it is answered. End,
 // when given, is called last, at the end of the task's link: it gives when the next link is given,
-// at the attempt's end or later — after a task of consolidation the caller gave outside the lesson
-// (R48 in docs/decisions.md).
+// at the attempt's end or later — after a task of consolidation the caller gave outside the
+// lesson (R48).
 type Each struct {
 	Before func(t *pack.Task, at int64) error
 	After  func(t *pack.Task, a Attempt) error
@@ -233,12 +229,12 @@ type Each struct {
 }
 
 // PassLesson has the learner pass a lesson of a module given at a time, link by link in the author's
-// order to its end (docs/architecture.md, section 3.1): an explanation or a worked example takes two
-// minutes and changes nothing of the truth (R15) but for L-explain, where the first one reached
-// teaches the lesson's skills once; a task is answered as any task is. L-abandon leaves a pass at a
-// link drawn evenly, and the next pass of the lesson goes on from that link. each, when given, is
-// called around each task: Before when it is given, After once it is answered, End at the end of its
-// link; the pass ends when its last link does.
+// order to its end: an explanation or a worked example takes two minutes and changes nothing of the
+// truth (R15) but for L-explain, where the first one reached teaches the lesson's skills once; a
+// task is answered as any task is. L-abandon leaves a pass at a link drawn evenly, and the next pass
+// of the lesson goes on from that link. each, when given, is called around each task: Before when
+// it is given, After once it is answered, End at the end of its link; the pass ends when its last
+// link does.
 func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64, each *Each) (Pass, error) {
 	if _, err := l.Module(m.ID); err != nil {
 		return Pass{}, err
@@ -305,12 +301,11 @@ func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64, each
 }
 
 // learn moves the truth by the attempt's first answers, one by one, when the population learns or
-// jumps (G2, G2-half, G2-fading; G3, G3-drop), as standalone's child does after its k-th answer
-// (docs/architecture.md, sections 3.2 and 4): the module's level grows by LearnLevel and the
-// offsets of the item's primary skills by LearnSkill more, both slowed by F/(F + k) when LearnFade
-// is F, k counted from 0; every other skill of the module goes back LearnReturn of the way to where
-// it started, unslowed; and the level jumps by JumpBy at its answer of the jump. The answers are
-// the module's own.
+// jumps (G2, G2-half, G2-fading; G3, G3-drop), as standalone's child does after its k-th answer:
+// the module's level grows by LearnLevel and the offsets of the item's primary skills by LearnSkill
+// more, both slowed by F/(F + k) when LearnFade is F, k counted from 0; every other skill of the
+// module goes back LearnReturn of the way to where it started, unslowed; and the level jumps by
+// JumpBy at its answer of the jump. The answers are the module's own.
 func (l *Learner) learn(t *pack.Task, a Attempt) {
 	m := l.modules[moduleOf(t.Candidate.Task.ID, "task")]
 	for _, res := range a.Items {
@@ -348,7 +343,7 @@ func hasPrimary(t *pack.Task, i int) bool {
 
 // unreadable counts an answer of an item on a sheet, and tells whether it is the UnreadableEvery-th,
 // unreadable first and written again (S-unreadable): every answer counts, the first and those
-// after a rung (docs/architecture.md, section 3.2).
+// after a rung.
 func (l *Learner) unreadable(t *pack.Task) bool {
 	if l.a.UnreadableEvery <= 0 || t.Canvas != formatv0.CanvasKindHandwritingSheet {
 		return false

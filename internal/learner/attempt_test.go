@@ -14,8 +14,8 @@ import (
 
 // An attempt draws one fraction of the place answers for each item's first answer, whatever came
 // before, and the answers after a rung from retries: the k-th first answer of a learner meets the
-// same numbers under any rule (docs/architecture.md, section 3.4). The first answer of each item is
-// right exactly when its fraction is below P*.
+// same numbers under any rule. The first answer of each item is right exactly when its fraction is
+// below P*.
 func TestAnswerFirst(t *testing.T) {
 	l := learnerOf(t, "G0", 5, olympiad)
 	shadow := learnerOf(t, "G0", 5, olympiad)

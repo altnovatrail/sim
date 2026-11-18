@@ -11,7 +11,7 @@ import (
 )
 
 // The answer counts M1 reads the error after, the pauses M2 cuts by, in seconds, and the thresholds
-// of M3, M4, M5 and M10 (docs/architecture.md, section 3.5).
+// of M3, M4, M5 and M10.
 var (
 	errorAfter = []int{5, 10, 20, 50, 100, 200}
 	pauses     = []struct {
@@ -76,8 +76,7 @@ func rms(xs []float64) (float64, bool) {
 	return float64(sq / float64(len(xs))), true // the mean square; its root is taken at the cell
 }
 
-// Model gives the sums of one learner's run for the measures of the model, M1–M10
-// (docs/architecture.md, section 3.5).
+// Model gives the sums of one learner's run for the measures of the model, M1–M10.
 func Model(rec *run.Record) Sums {
 	obs, rights := attempts(rec)
 	return model(rec, obs, rights, false)
@@ -85,8 +84,8 @@ func Model(rec *run.Record) Sums {
 
 // Oracle gives the sums of the ceiling of the model on one learner's run, the oracle: its estimate
 // is the truth θ* + δ*, its P is P*, it declares "mastered" by true mastery, and it holds an anchor
-// when the truth does (docs/architecture.md, section 3.6). It reads the same answers as the model
-// of the run, so that the two compare by learner (R24 in docs/decisions.md).
+// when the truth does. It reads the same answers as the model of the run, so that the two compare
+// by learner (R24).
 func Oracle(rec *run.Record) Sums {
 	obs, rights := attempts(rec)
 	out := make([]*run.Obs, len(obs))
@@ -259,7 +258,6 @@ func jumpAnswer(rec *run.Record, obs []*run.Obs) (int, bool) {
 	return 0, false
 }
 
-// moduleOf gives the module of a skill by its full ID.
 func moduleOf(skill string) string {
 	module, _, _ := strings.Cut(skill, "/skill/")
 	return module
@@ -463,7 +461,7 @@ func m8(s Sums, obs []*run.Obs) {
 
 // m9: at the start of each session, the share of readings "holds" an anchor skill when the truth
 // does not hold it, and of "does not hold" when it does. The truth holds an anchor when a skill that
-// teaches it is truly mastered with its retention at the time (docs/architecture.md, section 3.5).
+// teaches it is truly mastered with its retention at the time.
 func m9(s Sums, rec *run.Record, oracle bool) {
 	l := rec.Learner
 	if l == nil {
@@ -551,7 +549,6 @@ func ece(cut string) func(Sums) (float64, bool) {
 	}
 }
 
-// difference reads a − b of two ratios.
 func difference(an, ad, bn, bd string) func(Sums) (float64, bool) {
 	return func(s Sums) (float64, bool) {
 		x, okx := ratio(an, ad)(s)

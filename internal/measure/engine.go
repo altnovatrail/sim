@@ -10,7 +10,7 @@ import (
 	"github.com/altnovatrail/sim/internal/run"
 )
 
-// The thresholds of the measures of the engine (docs/architecture.md, section 3.5).
+// The thresholds of the measures of the engine.
 const (
 	stuckChoices = 50   // E2: choices in a row on one skill
 	hardP        = 0.50 // E1: P* below it is too hard
@@ -21,8 +21,7 @@ const (
 // weeks are the weeks E3 reads the share of repetitions in: those of the longest limit.
 var weeks = (max(run.Maths.Days, run.Forgetting.Days, run.Essays.Days) + 6) / 7
 
-// Engine gives the sums of one learner's run for the measures of the engine, E1–E5
-// (docs/architecture.md, section 3.5; R23 in docs/decisions.md).
+// Engine gives the sums of one learner's run for the measures of the engine, E1–E5 (R23).
 func Engine(rec *run.Record) Sums {
 	s := Sums{"learners": 1}
 	e1(s, rec)
@@ -39,9 +38,9 @@ func gives(st run.Step) bool {
 	return !st.Resumed && (st.Choice.Kind == engine.ChoiceTask || st.Choice.Kind == engine.ChoiceLesson)
 }
 
-// e1: of the items with a verdict given, the shares with P* at the time given in the corridor
-// 0.70–0.85, below 0.50 and above 0.95; and the ceiling of the pool, the mean over the choices that
-// gave something of the largest share in the corridor of one task the rule could give.
+// e1: of the items with a verdict given, the shares with P* at the time given in the corridor, below
+// hardP and above easyP; and the ceiling of the pool, the mean over the choices that gave something
+// of the largest share in the corridor of one task the rule could give.
 func e1(s Sums, rec *run.Record) {
 	for _, st := range rec.Steps {
 		for _, o := range st.Obs {
@@ -58,7 +57,7 @@ func e1(s Sums, rec *run.Record) {
 }
 
 // shares adds items with a verdict to the sums of a measure's shares by P* at the time given: all of
-// them, and those in the corridor, below 0.50 and above 0.95. E1 reads all the items so, and the
+// them, and those in the corridor, below hardP and above easyP. E1 reads all the items so, and the
 // note E6 those of the lessons and of the consolidations (R49).
 func shares(s Sums, of string, items []run.ItemObs) {
 	for _, it := range items {
@@ -74,7 +73,6 @@ func shares(s Sums, of string, items []run.ItemObs) {
 	}
 }
 
-// mastered tells whether the model reads a skill mastered in an input.
 func mastered(in engine.Input, id string) bool {
 	for _, m := range in.Readout.Modules {
 		for _, sk := range m.Skills {

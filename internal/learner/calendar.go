@@ -3,18 +3,16 @@ package learner
 import "github.com/altnovatrail/sim/internal/seed"
 
 // Start is day 0 of every calendar, 2026-09-07 00:00:00 UTC, a Monday: every learner starts on
-// the same day (docs/architecture.md, section 3.1). The date is the bench's; only the days after
-// it matter.
+// the same day. The date is the bench's; only the days after it matter.
 const Start int64 = 1788739200
 
-// sessionStart is the time of day a session begins, 15:00 UTC.
+// sessionStart is the time of day a session begins, in seconds after midnight UTC.
 const sessionStart = 15 * 3600
 
 // Calendar is a learner's days, sessions and the times its attempts are given: a day is a session
 // with the population's chance, one fraction of the place calendar each day in order, and a session
-// is the population's number of attempts in a row from 15:00 UTC, the next given at once
-// (docs/architecture.md, section 3.1). Times are whole seconds UTC, as in evidence (R08
-// learner-model).
+// is the population's number of attempts in a row from sessionStart, the next given at once. Times
+// are whole seconds UTC, as in evidence (R08 learner-model).
 type Calendar struct {
 	s    *seed.Stream
 	a    Assumptions
@@ -27,8 +25,8 @@ type Calendar struct {
 }
 
 // NewCalendar gives the calendar of the learner's place calendar, made once and kept for the
-// learner's bad days and its break. A population with a break draws it first: its start, then its length,
-// evenly, so that it ends by BreakEndBy (docs/architecture.md, section 3.2).
+// learner's bad days and its break. A population with a break draws it first: its start, then its
+// length, evenly, so that it ends by BreakEndBy.
 func (l *Learner) NewCalendar() *Calendar {
 	if l.cal != nil {
 		return l.cal // a learner has one calendar: its bad days and its break are drawn once
@@ -90,7 +88,7 @@ func (c *Calendar) Day() int {
 }
 
 // EndSession ends the session under way: the next attempt is given on the next day that has a
-// session. The run calls it when the engine has nothing to give (R16 in docs/decisions.md).
+// session. The run calls it when the engine has nothing to give (R16).
 func (c *Calendar) EndSession() {
 	c.left = 0
 }

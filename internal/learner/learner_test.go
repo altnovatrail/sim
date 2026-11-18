@@ -27,7 +27,6 @@ func module(t *testing.T, id string) *pack.Module {
 	return ms[id]
 }
 
-// tasks gives the tasks of a published module, each by its place in the module.
 func tasks(t *testing.T, id string) []*pack.Task {
 	t.Helper()
 	m := module(t, id)

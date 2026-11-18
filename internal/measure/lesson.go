@@ -10,11 +10,11 @@ import (
 
 // Note gives the sums of one learner's run for the note of consolidation in a lesson, E6, which
 // decides nothing: no check, no path and no weight, only the note of a judgement beside its
-// criterion (docs/architecture.md, sections 3.5 and 3.6; R49 in docs/decisions.md). It reads the
-// lessons whose skills all have a verdict, the ones the run calls the engine in (R48):
+// criterion (R49). It reads the lessons whose skills all have a verdict, the ones the run calls the
+// engine in (R48):
 //   - the consolidations in a lesson — a task right before the lesson resumed — and the passes;
 //   - the items with a verdict of the lesson's task links and of the consolidations, by P* when
-//     given, in the corridor 0.70–0.85, below 0.50 and above 0.95, as E1 reads them;
+//     given, in the corridor, too hard and too easy, as E1 reads them;
 //   - P* when given of the items of the next task link of the same pass after a link that failed
 //     on a skill of the lesson, as the engine reads a failure (invariant.Failed).
 func Note(rec *run.Record) Sums {

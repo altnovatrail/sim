@@ -7,10 +7,9 @@ import (
 	"github.com/altnovatrail/sim/internal/run"
 )
 
-// The numbers of M11, fairness by the grade (docs/architecture.md, section 3.5; R55): the run's
-// length in answers, which a learner who never comes to the reference's estimate counts as; the
-// answers by which the estimate is the same; the gap under which, and the answers for which in a row,
-// it holds, as M3 settles.
+// The numbers of M11, fairness by the grade (R55): the run's length in answers, which a learner who
+// never comes to the reference's estimate counts as; the answers by which the estimate is the same;
+// the gap under which, and the answers for which in a row, it holds, as M3 settles.
 const (
 	FairLength  = 200
 	FairBy      = 50
@@ -26,15 +25,16 @@ type Trace struct {
 	// items with a verdict —, in their order: each answer of an attempt has the level after it.
 	Levels []float64 `json:"levels"`
 	// Truth is θ* of the truth's module level after each of the same answers, as run.Obs gives it,
-	// for M13 (R73 in docs/decisions.md). A file written before it has none.
+	// for M13 (R73). Empty in a file of results that did not record it, where Caught gives
+	// FairLength.
 	Truth []float64 `json:"truth,omitempty"`
 	// Bands count the attempts with a verdict whose first answer is the 51st or later, to the end of
 	// the run, those of lessons and consolidations among them, by the place of their task's band:
 	// Bands[p-1] for the place p.
 	Bands []int `json:"bands"`
 	// Guard is how often the guard of learner-model lowered the module level on the whole run, as
-	// run.Record counts it; read by M12 on the reference's cell alone (R72 in docs/decisions.md). A file
-	// of a model with no guard has none.
+	// run.Record counts it; read by M12 on the reference's cell alone (R72). A file of a model with no
+	// guard has none.
 	Guard int `json:"guard,omitempty"`
 	// Corrected is the first answers before the adult corrected the module level, as run.Record
 	// gives it, 0 when no adult did (C-).
@@ -126,8 +126,7 @@ func band(s Sums) (float64, bool) {
 	}
 }
 
-// FairNumbers are the numbers of M11, read off a cell of pairs of a grade and the reference
-// (docs/architecture.md, section 3.5; R55).
+// FairNumbers are the numbers of M11, read off a cell of pairs of a grade and the reference (R55).
 func FairNumbers() []Number {
 	return []Number{
 		{"M11.answers", ratio("M11.answers.sum", "M11.pairs")},
@@ -137,8 +136,8 @@ func FairNumbers() []Number {
 }
 
 // Guarded gives the sums of M12 of one learner, read on the reference's cell, whose truth is the
-// band of its grade (R72 in docs/decisions.md): whether the guard of learner-model lowered its
-// module level at least once on the run, a false firing there by construction.
+// band of its grade (R72): whether the guard of learner-model lowered its module level at least once
+// on the run, a false firing there by construction.
 func Guarded(t *Trace) Sums {
 	s := Sums{"M12.learners": 1}
 	if t.Guard > 0 {
@@ -153,10 +152,10 @@ func GuardNumbers() []Number {
 	return []Number{{"M12.false", ratio("M12.false", "M12.learners")}}
 }
 
-// Caught gives the sums of M13 of one learner, against its own truth (R73 in docs/decisions.md): the
-// answers k before the first of FairAnswers in a row at which the model's module level lies within
-// FairGap of the truth's, counted as Fair counts them — FairLength when it never holds —, and whether
-// k is at most FairBy.
+// Caught gives the sums of M13 of one learner, against its own truth (R73): the answers k before the
+// first of FairAnswers in a row at which the model's module level lies within FairGap of the
+// truth's, counted as Fair counts them — FairLength when it never holds —, and whether k is at most
+// FairBy.
 func Caught(t *Trace) Sums {
 	s := Sums{"M13.learners": 1}
 	k := settled(t.Levels, t.Truth)

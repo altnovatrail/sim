@@ -109,13 +109,12 @@ func (a Assumptions) validate() error {
 	return nil
 }
 
-// New draws the n-th learner of a population of the set, in the given modules, from its places
-// (docs/architecture.md, sections 3.1 and 3.4). A learner has one grade and one age category, as a
-// profile has (R107 spec). Its truth comes from the place params, in a fixed order: the grade,
-// among those every module with grades names, when they are more than one — drawn even where the
-// population fixes it —; for each module by ID,
-// the level and the offset of each skill with a verdict in the order of the graph; then, when no
-// module gives a grade, the age category, among those every module names; and last what only some
+// New draws the n-th learner of a population of the set, in the given modules, from its places. A
+// learner has one grade and one age category, as a profile has (R107 spec). Its truth comes from
+// the place params, in a fixed order: the grade, among those every module with grades names, when
+// they are more than one — drawn even where the population fixes it —; for each module by ID, the
+// level and the offset of each skill with a verdict in the order of the graph; then, when no module
+// gives a grade, the age category, among those every module names; and last what only some
 // populations draw, for each module by ID — the answer of the jump, the band that is harder —, so
 // that a population that draws more moves none of the others (R18). Its calendar, answers,
 // retries, attempts and attempt seeds come from places of their own, so that one never moves
@@ -324,8 +323,8 @@ func (l *Learner) Retention(s *Skill, at int64) float64 {
 }
 
 // Difficulty gives β* of a task: the true difficulty of its band and its difficulty, with the
-// author's miss, z of the task's place times the population's Miss (docs/architecture.md, section
-// 3.3). z is drawn once a task and a run: the place of the task's unit and the purpose miss.
+// author's miss, z of the task's place times the population's Miss. z is drawn once a task and a
+// run: the place of the task's unit and the purpose miss.
 func (l *Learner) Difficulty(t *pack.Task) float64 {
 	task := t.Candidate.Task
 	if beta, ok := l.beta[task.ID]; ok {
@@ -342,8 +341,7 @@ func (l *Learner) Difficulty(t *pack.Task) float64 {
 
 // Chance gives P* of an item of a task at a time and a rung of the ladder: c* + (1 − c*) · R̄* ·
 // σ(a · (θ* + δ̄* − β*) + lift · rung), c* the product over the item's cells of their guess, δ̄*
-// and R̄* the means over the item's primary skills with a verdict (docs/architecture.md, section
-// 3.1).
+// and R̄* the means over the item's primary skills with a verdict.
 func (l *Learner) Chance(t *pack.Task, item int, at int64, rung int) (float64, error) {
 	return l.chance(t, item, at, rung, 0)
 }
@@ -384,8 +382,7 @@ func (l *Learner) chance(t *pack.Task, item int, at int64, rung int, lift float6
 
 // guess gives c* of an item: the product over its cells of the chance of guessing each — a choice
 // of k options ChoiceGuess/k, capped at 1, a predicate PredicateGuess, and 0 for the rest: a
-// number, a fraction and a time, as the model guesses them (R19 learner-model; R41 in
-// docs/decisions.md).
+// number, a fraction and a time, as the model guesses them (R19 learner-model; R41).
 func (l *Learner) guess(slots []learnermodel.Slot) float64 {
 	c := 1.0
 	for _, s := range slots {
@@ -402,7 +399,7 @@ func (l *Learner) guess(slots []learnermodel.Slot) float64 {
 }
 
 // misses holds z of each task and set: the author's miss is the task's, one a run, and every
-// learner of the set sees the same (docs/architecture.md, section 3.3), so it is drawn once.
+// learner of the set sees the same, so it is drawn once.
 var misses = struct {
 	sync.Mutex
 	z map[missKey]float64
@@ -457,20 +454,20 @@ func teaches(m *pack.Module, id string) bool {
 }
 
 // Mastery is the middle of the corridor of success, 0.775: the truth has mastered a skill on a band
-// when P* of the reference task reaches it (docs/architecture.md, section 3.5).
+// when P* of the reference task reaches it.
 const Mastery = 0.775
 
 // TrulyMastered tells whether the truth has mastered a skill on a band: P* of the reference task —
 // difficulty 3 on that band, no miss, a choice of five options, R* = 1 — is at least 0.775, as
-// "truly mastered" in standalone (docs/architecture.md, section 3.5). It reads no number of the
-// model: not its threshold, not its guess.
+// "truly mastered" in standalone. It reads no number of the model: not its threshold, not its
+// guess.
 func (l *Learner) TrulyMastered(id string, band int32) bool {
 	return l.Reference(id, band) >= Mastery
 }
 
 // TrulyMasteredAt is TrulyMastered at a time: with the level the truth has then, fallen after the
 // break of F-break. A bad day is not counted: it lowers the answers of that day, not what the learner
-// knows (docs/architecture.md, section 3.5; R22).
+// knows (R22).
 func (l *Learner) TrulyMasteredAt(id string, band int32, at int64) bool {
 	s := l.skills[id]
 	return s != nil && l.reference(s, band, l.level(s.Module, at)) >= Mastery
@@ -484,7 +481,7 @@ func (l *Learner) level(m *Module, at int64) float64 {
 	return m.Level
 }
 
-// LevelAt gives θ* of a module at a time, as level does.
+// LevelAt gives θ* of a module at a time.
 func (l *Learner) LevelAt(module string, at int64) (float64, error) {
 	m, err := l.Module(module)
 	if err != nil {
@@ -540,8 +537,7 @@ func (l *Learner) TaughtOn(id string) int32 {
 }
 
 // ReferenceAt gives P* of the reference task of a skill on a band at a time: with the level then, as
-// TrulyMasteredAt reads it, and the skill's R* then, c + (1 − c) · R* · σ (docs/architecture.md,
-// section 3.5, M5).
+// TrulyMasteredAt reads it, and the skill's R* then, c + (1 − c) · R* · σ (M5).
 func (l *Learner) ReferenceAt(id string, band int32, at int64) float64 {
 	s := l.skills[id]
 	if s == nil {

@@ -9,9 +9,8 @@ import (
 	"github.com/altnovatrail/sim/internal/pack"
 )
 
-// Obs is what the measures read of one attempt with a verdict (docs/architecture.md, section 3.5;
-// R22): the model and the truth of its items at the attempt, and of the skills of its module before
-// and after it.
+// Obs is what the measures read of one attempt with a verdict (R22): the model and the truth of its
+// items at the attempt, and of the skills of its module before and after it.
 type Obs struct {
 	At      int64     // when the attempt was given
 	Repeat  bool      // the task, not a template, had its solution seen before: a repeat (M8)
@@ -33,8 +32,8 @@ type ItemObs struct {
 	PModel float64 // P of the model at the attempt, with retention
 	// PFresh is P of the model by the same estimate with R̄ = 1, c + (P − c)/R̄, by its own formula
 	// c + (1 − c) · R̄ · σ, R̄ the mean R of the item's recorded skills with a verdict in the order of
-	// their IDs, 1 for a skill with no practice and in the trial series (learner-model v0.1.0,
-	// chanceOf in step.go), for M10.
+	// their IDs, 1 for a skill with no practice and in the trial series (chanceOf in step.go of
+	// learner-model), for M10.
 	PFresh float64
 	Pause  int64 // seconds since the last practice of the item's primary skills, -1 for none
 	Help   bool  // the answer had help: the technique on request, or a task whose solution was seen
@@ -49,14 +48,13 @@ type SkillObs struct {
 	Truth         float64 // θ* + δ*
 	Mastered      bool    // the model's mastery
 	Band          int32   // the model's mastery band, or the first band the skill is taught on
-	TrulyMastered bool    // the truth has mastered it on Band (docs/architecture.md, section 3.5)
+	TrulyMastered bool    // the truth has mastered it on Band
 	Retention     float64 // R* of the truth
 	PRef          float64 // P of the model on the reference task of Band, with retention
 	PTrueRef      float64 // P* of the truth on it, with R*
 	Last          int64   // the model's last practice of it
 }
 
-// readAt reads the model at a time, over the learner's modules.
 func (r *Run) readAt(at int64) (learnermodel.Readout, error) {
 	ids := make([]string, len(r.modules))
 	for i, m := range r.modules {
@@ -202,10 +200,8 @@ func (r *Run) observeAfter(m *pack.Module, t *pack.Task, a learner.Attempt, o *O
 	return o, nil
 }
 
-// verdict tells whether a skill of a module has a verdict.
 func verdict(m *pack.Module, id string) bool { return verdictIn(m.Graph, id) }
 
-// verdictIn tells whether a skill of a graph has a verdict.
 func verdictIn(g learnermodel.Graph, id string) bool {
 	return slices.ContainsFunc(g.Skills, func(s learnermodel.Skill) bool {
 		return s.ID == id && s.Assessability == learnermodel.AssessabilityVerdict

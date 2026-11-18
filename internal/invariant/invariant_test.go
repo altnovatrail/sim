@@ -46,7 +46,7 @@ func record(t *testing.T, population string, n int, limit run.Limit, ids ...stri
 }
 
 // The invariants hold on every learner of the base population on the published packages: G0 in
-// each of the maths and in both, a learner of essays (docs/architecture.md, section 3.5).
+// each of the maths and in both, a learner of essays.
 func TestInvariantsHold(t *testing.T) {
 	cases := []struct {
 		population string
@@ -59,8 +59,8 @@ func TestInvariantsHold(t *testing.T) {
 		{"E-base", run.Essays, []string{essays}},
 	}
 	for _, c := range cases {
-		// Olympiad maths 0.1.1 is 772 tasks, and a learner of it takes a hundred times longer: fewer of
-		// them keep the suite within the budget of the builds same-bits runs it on.
+		// A learner of olympiad maths, many times the tasks of the others, takes a hundred times longer:
+		// fewer of them keep the suite within the budget of the builds same-bits runs it on.
 		learners := 25
 		if slices.Contains(c.ids, olympiad) {
 			learners = 6
@@ -79,7 +79,6 @@ func TestInvariantsHold(t *testing.T) {
 	}
 }
 
-// first gives the first step of a record that matches, and its place.
 func first(t *testing.T, rec *run.Record, match func(run.Step) bool) (int, run.Step) {
 	t.Helper()
 	for k, s := range rec.Steps {
@@ -109,8 +108,8 @@ func only(t *testing.T, bs []Breach, inv string) {
 // Each invariant catches a breach laid in a record: a choice the input does not give again, a code
 // against its meaning or outside the list, the author's order broken, a solved task at once.
 func TestBreaches(t *testing.T) {
-	// The first learner of G0 who gets a task by rotation: on the 19 skills of olympiad maths 0.1.1,
-	// not every one does.
+	// The first learner of G0 who gets a task by rotation: on the few skills of olympiad maths, not
+	// every one does.
 	rotation := func(s run.Step) bool {
 		return s.Choice.Kind == engine.ChoiceTask && s.Choice.Reason == engine.ReasonRotation
 	}
