@@ -78,7 +78,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T86 | Тексты без истории: `docs/architecture.md`, разделы 3.5–3.9 | Claude | — | T84 |
 | [x] | T87 | Тексты без истории: `docs/README.md`, README, CLAUDE.md, `.claude/rules/`, план | Claude | — | T84 |
 | [x] | T88 | Комментарии кода по R160 spec: корень, `internal/bench`, `criterion`, `gate` | Claude | — | T84 |
-| [ ] | T89 | Комментарии кода по R160 spec: `internal/learner`, `measure`, `run`, `invariant` | Claude | — | T84 |
+| [x] | T89 | Комментарии кода по R160 spec: `internal/learner`, `measure`, `run`, `invariant` | Claude | — | T84 |
 | [ ] | T90 | Комментарии кода по R160 spec: остальные пакеты, justfile, `.github/`, `.devcontainer/` | Claude | — | T84 |
 
 **Почему такой порядок.**
@@ -102,18 +102,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **не входит:** кандидат `engine` — он идёт своей причиной (R59); числа забывания `learner-model` (sources 3.10).
 
 ## Задачи эпика
-
-#### T89. Комментарии кода по R160 spec: `internal/learner`, `measure`, `run`, `invariant`
-
-- **Цель:** комментарии Go `internal/learner`, `internal/measure`, `internal/run`, `internal/invariant` — по R160 spec.
-- **Почему:** R160 spec, строка 7.31 COORDINATION.md spec; T84 разделила её по правилу 11.
-- **Сделать:**
-  - комментарии этих пакетов — по R160 spec, «Comments»: почему, ограничение, ловушка, контракт экспортируемого API; без пересказа кода, истории, номеров задач и разделов документов;
-  - где причина — решение, одна фраза ограничения и номер якорем в конце, `(R25)`;
-  - код не менять.
-- **Не делать:** код, имена и тесты; записи журнала.
-- **Как проверить:** `just ci-lint`, `just ci-test`, `just gate exact` — те же биты; `just -f spec/justfile docs-check-repo` — номера в комментариях; `/code-review high`.
-- **Разделы:** R160 spec, «Comments»; R32 spec; RULES.md spec, The bar; правила `.claude/rules/` изменённых частей.
 
 #### T90. Комментарии кода по R160 spec: остальные пакеты, justfile, `.github/`, `.devcontainer/`
 
