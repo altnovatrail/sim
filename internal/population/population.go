@@ -1,7 +1,6 @@
 // Package population names the populations of virtual learners: each changes one assumption of
-// the base population, on the graphs it says, and runs to its limit (docs/architecture.md, section
-// 3.2; R03; R18 in docs/decisions.md). Two sides of one assumption take half the learners each:
-// the even ones the first side, the odd ones the second.
+// the base population, on the graphs it says, and runs to its limit (R03, R18). Two sides of one
+// assumption take half the learners each: the even ones the first side, the odd ones the second.
 package population
 
 import (
@@ -26,10 +25,10 @@ type Population struct {
 	// and one of school maths are two graphs; a learner of both is one graph of two modules.
 	Graphs [][]string
 	Limit  run.Limit
-	// Reference is the reference population of a family of fairness by the grade, D-: its learner n
-	// is the learner n of every population of the family, which takes the reference's unit for every
-	// purpose, and the measure M11 reads each against it (R55 in docs/decisions.md). Empty for any
-	// other population.
+	// Reference is the reference population of a family of fairness by the grade, D-, and of
+	// C-grade1 beside it: its learner n is the learner n of every population of the family, which
+	// takes the reference's unit for every purpose, and the measure M11 reads each against it (R55,
+	// R72). Empty for any other population.
 	Reference string
 	// sides change the base population's assumptions, the first for the even learners and the
 	// second, when there is one, for the odd.
@@ -37,8 +36,7 @@ type Population struct {
 }
 
 // Units gives the population whose units its learners take, the names of their places of randomness,
-// <population>/<n>: its own, or the reference's for a population of fairness (docs/architecture.md,
-// section 3.4).
+// <population>/<n>: its own, or the reference's for a population that has one.
 func (p Population) Units() string {
 	if p.Reference != "" {
 		return p.Reference
@@ -46,8 +44,8 @@ func (p Population) Units() string {
 	return p.Name
 }
 
-// Fair says whether the population is one of fairness by the grade: the engine's ceiling does not
-// run it, its lines carry the trace of M11, and only the constraint of fairness reads its cells, no
+// Fair says whether the population reads against a reference, as those of fairness by the grade
+// and C-grade1 do: the engine's ceiling does not run it, its lines carry the trace of M11, and only the constraint of fairness reads its cells, no
 // other check of a criterion (R55).
 func (p Population) Fair() bool {
 	return p.Reference != ""
@@ -74,27 +72,22 @@ var (
 	grade3   = [][]string{{Grade3}}
 	essays   = [][]string{{Essays}}
 	// anchored is the graph of A-: a learner of a module whose skill rests on an anchor skill and of
-	// the module that teaches it. Olympiad maths, from 0.1.1 on, rests two skills on skills school maths
-	// teaches — fractions-parts on core.fractions-of-a-whole, number-divisibility on
-	// core.division-with-remainder —, so it is the two published maths together
-	// (docs/architecture.md, section 3.2; R31 in docs/decisions.md).
+	// the module that teaches it. Olympiad maths rests skills on skills school maths teaches, so it is
+	// the two published maths together (R31).
 	anchored = [][]string{{Olympiad, Grade3}}
 )
 
-// one gives the sides of a population of one side.
 func one(f func(*learner.Assumptions)) []func(*learner.Assumptions) {
 	return []func(*learner.Assumptions){f}
 }
 
-// two gives the sides of a population of two.
 func two(f, g func(*learner.Assumptions)) []func(*learner.Assumptions) {
 	return []func(*learner.Assumptions){f, g}
 }
 
-// Standalone are the nineteen populations of standalone, carried over as assumptions and not as
-// code (docs/architecture.md, section 3.2; R03). Their graphs are both maths unless said; G7 runs
-// on school maths for grade 3, the one published package with a choice (the amendment of
-// 2026-11-08 to R03).
+// Standalone are the populations of standalone, carried over as assumptions and not as code. Their
+// graphs are both maths unless said; G7 runs on school maths for grade 3, the one published package
+// with a choice (R03).
 var Standalone = []Population{
 	{Name: "G0", Graphs: maths, Limit: run.Maths},
 	{Name: "G1", Graphs: maths, Limit: run.Maths, sides: two(
@@ -141,9 +134,9 @@ var Standalone = []Population{
 	{Name: "G0-skills1", Graphs: maths, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.SkillSpread = 1 })},
 }
 
-// breaks gives the calendar of F-model: a day is a session with the chance 3/7, and one break of
-// 14–60 days begins on a day from the 30th to the 60th and ends by the 120th of 180
-// (docs/architecture.md, section 3.2).
+// breaks gives the calendar of F-model, which every F- population runs on: a day is a session with
+// the chance 3/7, and one break of 14–60 days begins on a day from the 30th to the 60th and ends by
+// the 120th of 180.
 func breaks(a *learner.Assumptions) {
 	a.SessionChance = 3.0 / 7
 	a.BreakStartFrom, a.BreakStartTo, a.BreakMin, a.BreakMax, a.BreakEndBy = 30, 60, 14, 60, 120
@@ -152,8 +145,8 @@ func breaks(a *learner.Assumptions) {
 // Own are the populations of NovaTrail's own model and engine: the scale of bands, guessing of a
 // predicate, an adult without a grade, an unreadable answer (S-); forgetting by other laws, on a
 // calendar with a break (F-); pages of a workbook (W-); the anchor skill (A-); lessons (L-);
-// essays (E-) (docs/architecture.md, section 3.2). S-predicate runs on the synthetic sheet alone: no published
-// package has a predicate, and in the criterion and the gate its checks are "no graph" (R04).
+// essays (E-). S-predicate runs on the synthetic sheet alone: no published package has a
+// predicate, and in the criterion and the gate its checks are "no graph" (R04).
 var Own = []Population{
 	{Name: "S-scale1.5", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.BandStep = 1.5 })},
 	{Name: "S-scale3.5", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.BandStep = 3.5 })},
@@ -193,8 +186,8 @@ const Reference = "D-grade3"
 
 // Fairness are the populations of fairness by the grade, on olympiad maths, the one published
 // package that names more than one grade: the assumptions of G0, the learner's grade fixed at 1, 3
-// or 5, a grade a start band, and the truth of grade 3 under each, so that the model starts 2.5
-// below the truth's band, at it and 2.5 above it (docs/architecture.md, section 3.2; R55).
+// or 5, a grade a start band, and the truth of grade 3 under each, so that the model starts a band
+// below the truth's, at it and a band above it (R55).
 var Fairness = []Population{
 	{Name: "D-grade1", Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade = 1, 3 })},
 	{Name: Reference, Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade = 3, 3 })},
@@ -204,8 +197,7 @@ var Fairness = []Population{
 // Rules are the populations of the short run of the three rules of R157 spec beside those of
 // fairness, run only by name, so that no run of all the populations has them: C-grade1 is D-grade1
 // — grade 1, the truth of grade 3 and the unit of the reference — with an adult who corrects the
-// module level to the truth's band after the learner's tenth answer (docs/architecture.md, section
-// 3.2; R72).
+// module level to the truth's band after CorrectAfter answers (R72).
 var Rules = []Population{
 	{Name: "C-grade1", Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade, a.CorrectAfter = 1, 3, CorrectAfter })},
 }

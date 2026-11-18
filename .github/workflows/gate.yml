@@ -1,15 +1,15 @@
-# The gate of sim as jobs (R67 in docs/decisions.md; docs/architecture.md, sections 3.7 and 3.9):
-# four jobs, each a part of the learners by just gate-part, and one check after them by just
-# gate-check, which merges the parts and holds the build to gate.json and the numbers to their bands
-# or, mode exact, to the recorded numbers to the last bit. It is the run of just gate cut along the
-# line its processes already are, so the numbers are its numbers to the bit, and the check refuses a
-# part missing, repeated or of another run, by sim merge's check. Every job runs on one runner, in
-# the toolchain stage of sim's devcontainer at the commit of sim it checks out.
+# The gate of sim as jobs (R67): four jobs, each a part of the learners by just gate-part, and one
+# check after them by just gate-check, which merges the parts and holds the build to gate.json and
+# the numbers to their bands or, mode exact, to the recorded numbers to the last bit. It is the run
+# of just gate cut along the line its processes already are, so the numbers are its numbers to the
+# bit, and the check refuses a part missing, repeated or of another run, by sim merge's check. Every
+# job runs on one runner, in the toolchain stage of sim's devcontainer at the commit of sim it
+# checks out.
 #
 # sim's own CI calls it from ci.yml, once an architecture, with no sim-commit: sim is then the
 # commit the event checks out. A caller — learner-model or engine — calls it by the SHA of a tag of
 # sim, with that tag and SHA as sim-tag and sim-commit, and its own library's variable, so that its
-# code takes that library's place (docs/README.md, "Gate").
+# code takes that library's place.
 name: Gate
 
 on:
@@ -81,10 +81,10 @@ jobs:
 
       # The caches of Go between runs, by the module sums and the toolchain of sim, not by the
       # commits gate.json names: a new pin builds its libraries on the cache of the one before,
-      # restore-keys, modules and all: unlike the jobs of go.yml since .github v0.1.33, an entry by
-      # the prefix keeps its modules, so a saved entry holds those of the pins before it too (R77;
-      # Д14 in run/DEBT.md). Only a push to main saves it, by the first part, as the image (R68);
-      # every other event reads it.
+      # restore-keys, modules and all: unlike the jobs of go.yml, an entry by the prefix keeps its
+      # modules, so a saved entry holds those of the pins before it too (R77; Д14 in run/DEBT.md).
+      # Only a push to main saves it, by the first part, as the image (R68); every other event reads
+      # it.
       - name: Go cache
         id: go
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -94,11 +94,11 @@ jobs:
           restore-keys: gate-${{ runner.os }}-${{ runner.arch }}-
 
       # The toolchain stage from the cache of GitHub Actions, by the steps of the shared go.yml of
-      # v0.1.33, which its composite action toolchain holds byte for byte too (R36, R42, R47, R49
-      # .github; the 2026-11-09 amendment to R31 spec; R63, R68, R70, R77; Д14 in run/DEBT.md): the
-      # same file, image, path and key, so in sim's own CI the entry is the one the jobs of go.yml
-      # and documents.yml read on the same runner — sim's toolchain adds nothing to its core, so
-      # they keep the one image of toolchain —, and the image is built from the Dockerfile only on a
+      # the release ci.yml pins, which its composite action toolchain holds byte for byte too (R36,
+      # R42, R47, R49 .github; R31 spec; R63, R68, R70, R77; Д14 in run/DEBT.md): the same file,
+      # image, path and key, so in sim's own CI the entry is the one the jobs of go.yml and
+      # documents.yml read on the same runner — sim's toolchain adds nothing to its core, so they
+      # keep the one image of toolchain —, and the image is built from the Dockerfile only on a
       # miss. Only a push to main saves it, and of the parts only the first, so that the parts do
       # not save one key; a pull request reads main's entry. The gate takes no artifact of the job
       # toolchain of go.yml: a called workflow sees the jobs of another only through the caller's

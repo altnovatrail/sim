@@ -1,10 +1,9 @@
 // Package published holds the published packages of modules the bench is pinned to, as their
-// release has them, and reads them through the chain of digests (docs/architecture.md, sections
-// 3.3 and 3.9; R14 in docs/decisions.md). The files came in only after release-verify accepted
-// each of them (RULES.md, Hard rules; R77 spec): from then on the digest of the module index,
-// pinned here, holds them, through the package digests it names and the server parts' digests
-// their inventories name. A new release of modules is a new pin: a pull request of sim with new
-// bands (docs/architecture.md, section 3.7).
+// release has them, and reads them through the chain of digests (R14). The files came in only
+// after release-verify accepted each of them (R77 spec): from then on the digest of the module
+// index, pinned here, holds them, through the package digests it names and the server parts'
+// digests their inventories name. A new release of modules is a new pin: a pull request of sim
+// with new bands.
 package published
 
 import (
@@ -92,7 +91,7 @@ func readPin(release, indexDigest string, versions map[formatv0.ModuleID]formatv
 // Package is a pinned package: its module's full ID, its version, and its package digest, as the
 // pinned index names them. In a run of the gate of modules, Along marks a package that did not
 // change and came along with one that did, a graph of the gate holding the two together: it runs
-// only on such graphs (docs/architecture.md, section 3.9; R31 in docs/decisions.md).
+// only on such graphs (R31).
 type Package struct {
 	Module  string `json:"module"`
 	Version string `json:"version"`

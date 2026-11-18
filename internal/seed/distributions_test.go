@@ -92,8 +92,7 @@ func TestDistributionMoments(t *testing.T) {
 // The golden bits: the first draws of each distribution at one place, written as the hex of their
 // bits in testdata/distributions.txt. The same file passes on every build the shared go.yml runs
 // the tests on — GOAMD64 v1 and v3, 386, js/wasm and arm64 — so the distributions give the same
-// bits everywhere (docs/architecture.md, section 3.4). SIM_UPDATE=1 writes the file again; a
-// change to it is read on review.
+// bits everywhere. SIM_UPDATE=1 writes the file again; a change to it is read on review.
 func TestGoldenBits(t *testing.T) {
 	s, err := Working.Place("golden", "distributions")
 	if err != nil {

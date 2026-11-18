@@ -32,8 +32,8 @@ func modules(t *testing.T) map[string]*pack.Module {
 
 // The packages read through the chain of digests, and their translation holds what the release
 // has: the skills with their tiers in the order of the graph, the bands, the tasks, the lessons —
-// the same facts engine's test of the release holds (T21 engine), so that a translation of sim
-// that parted from it shows here.
+// the same facts engine's test of the release holds, so that a translation of sim that parted from
+// it shows here.
 func TestReleasePackages(t *testing.T) {
 	ms := modules(t)
 	for _, tc := range []struct {
@@ -88,10 +88,9 @@ func TestReleasePackages(t *testing.T) {
 }
 
 // The kinds of check of the release: numbers, fractions, choices of five options in the check and
-// times on the sheet of olympiad maths 0.3.0, numbers, fractions and choices of three options on the
+// times on the sheet of olympiad maths, numbers, fractions and choices of three options on the
 // workbook of grade 3 — the options in the check —, choices of three options beside the check and
-// rubrics in essays (R12 of this log; docs/architecture.md, section 4). No cell of predicate is
-// published.
+// rubrics in essays (R12). No cell of predicate is published.
 func TestReleaseChecks(t *testing.T) {
 	ms := modules(t)
 	count := func(m *pack.Module) map[string]int {
@@ -128,9 +127,9 @@ func TestReleaseChecks(t *testing.T) {
 	}
 }
 
-// Of the release, only olympiad maths 0.3.0 has templates: 22 tasks, each with its instances, and an
-// attempt's seed takes one of them; a task that is no template has no instance (docs/architecture.md,
-// section 4). How the seed takes an instance is tested on a template of pack's own test.
+// Of the release, only olympiad maths has templates, each with its instances, and an attempt's seed
+// takes one of them; a task that is no template has no instance. How the seed takes an instance is
+// tested on a template of pack's own test.
 func TestReleaseTemplates(t *testing.T) {
 	ms := modules(t)
 	for id, want := range map[string]int{olympiad: 22, grade3: 0, essays: 0} {
@@ -156,10 +155,9 @@ func TestReleaseTemplates(t *testing.T) {
 	}
 }
 
-// What format 0.4 brought into the release and the bench reads: a leading question on 322 tasks
-// of olympiad maths 0.3.0 and on none of the others, and a worked example in every lesson of grade
-// 3, a link with no task between its explanation and its tasks (docs/architecture.md, sections 3.1
-// and 3.3; R41, R42 of this log).
+// What the bench reads of format 0.4 in the release: leading questions on tasks of olympiad maths
+// and on none of the others, and a worked example in every lesson of grade 3, a link with no task
+// between its explanation and its tasks (R41, R42).
 func TestReleaseFormat04(t *testing.T) {
 	ms := modules(t)
 	for id, want := range map[string]int{olympiad: 322, grade3: 0, essays: 0} {
@@ -240,7 +238,7 @@ func itoa[N ~int32](n N) string {
 }
 
 // Pinned names the three packages of the first slice by the pinned index, each with its version and
-// package digest: the maths 0.3.0 and essays 0.2.0, the modules in format 0.4.
+// package digest.
 func TestPinned(t *testing.T) {
 	ps, err := Pinned()
 	if err != nil {

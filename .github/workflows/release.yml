@@ -1,10 +1,9 @@
 # NovaTrail's shared release (R18 .github), pinned to a release of .github by SHA with its version
-# beside it. RELEASE_LINE is the line the releases are numbered in; paths, what they are built
-# from (R29 in docs/decisions.md). A commit of main whose CI has passed and which changes one of
-# the paths since the release before it gets the next patch of the line, its tag and its one file,
-# the archive of what builds and runs the gate, signed. The first release comes out always. The
-# callers of the gate take sim from git by that tag and the SHA of its commit
-# (docs/architecture.md, section 3.9).
+# beside it. RELEASE_LINE is the line the releases are numbered in; paths, what they are built from
+# (R29). A commit of main whose CI has passed and which changes one of the paths since the release
+# before it gets the next patch of the line, its tag and its one file, the archive of what builds
+# and runs the gate, signed. The first release comes out always. The callers of the gate take sim
+# from git by that tag and the SHA of its commit.
 name: Release
 
 on:

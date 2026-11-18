@@ -35,12 +35,11 @@ type Task struct {
 	Candidate engine.Candidate // the task as engine takes it, with the traps of its items
 	Local     string           // its ID in the module
 	Canvas    formatv0.CanvasKind
-	Rubric    bool     // a task with a rubric: no verdict and no evidence (architecture 3.8 spec)
+	Rubric    bool     // a task with a rubric: no verdict and no evidence
 	Ages      []string // its own age categories; none, the module's
 	Instances int      // the number of instances of a template; 0 for a task
 	// Leading tells that the task has a leading question, which a hint asked for gives before the
-	// first wrong answer (the text of the format, sections 14 and 19). The bench reads that it has
-	// one, not its text.
+	// first wrong answer. The bench reads that it has one, not its text.
 	Leading bool
 
 	numbers []formatv0.Numbers // the instances of a template, in the order the format numbers them
@@ -60,11 +59,11 @@ type Lesson struct {
 var ErrTranslate = errors.New("pack: the canonical view cannot be translated")
 
 // Translate reads a canonical view into the bench's module: full IDs — the module, the kind and
-// the local ID joined by / (the text of the format, section 10) —, anchor skills as they are;
-// bands by place from the manifest; tiers from skill_tiers; a slot's kind of check and a choice's
-// number of options, whether they stand beside the check or in it; a check by a rubric gives no
-// slot with a verdict; of a leading question, only that the task has one. The graph is
-// learner-model's own NewGraph, so that sim and api build one graph of one module alike (R28 spec).
+// the local ID joined by / —, anchor skills as they are; bands by place from the manifest; tiers
+// from skill_tiers; a slot's kind of check and a choice's number of options, whether they stand
+// beside the check or in it; a check by a rubric gives no slot with a verdict; of a leading
+// question, only that the task has one. The graph is learner-model's own NewGraph, so that sim and
+// api build one graph of one module alike (R28 spec).
 func Translate(cv *formatv0.CanonicalView) (*Module, error) {
 	module := string(cv.Manifest.ID)
 	full := func(kind, id string) string {
@@ -137,8 +136,7 @@ func Translate(cv *formatv0.CanonicalView) (*Module, error) {
 			Band: learnermodel.BandRef{Place: p, ID: string(st.Band)}, Difficulty: int32(st.Difficulty),
 			Primary: fulls("skill", skillIDs(st.Skills.Primary)), Supporting: fulls("skill", st.Skills.Supporting),
 			// A key in a module is the author's; a template's instance's is computed by its
-			// expression or its solver, checked by a solver (concepts 9.4 spec). The skill tags
-			// are the author's.
+			// expression or its solver, checked by a solver. The skill tags are the author's.
 			KeyProvenance: learnermodel.ProvenanceAuthor, SkillTagsProvenance: learnermodel.ProvenanceAuthor,
 		}
 		if st.Template != nil {
@@ -293,8 +291,8 @@ func (m *Module) suits(ages []string, age string) bool {
 }
 
 // ForAge gives the pool and the lessons as api gives them to a learner of an age category: the
-// tasks that suit them, and the lessons that suit them whose every task does too (R107 spec;
-// architecture 3.7 api). The age category is api's filter, not an input of engine.
+// tasks that suit them, and the lessons that suit them whose every task does too (R107 spec). The
+// age category is api's filter, not an input of engine.
 func (m *Module) ForAge(age string) ([]engine.Candidate, []engine.Lesson) {
 	var pool []engine.Candidate
 	suitsTask := map[string]bool{}
@@ -329,8 +327,8 @@ func (m *Module) Task(id string) (*Task, error) {
 
 // Instance gives the instance of a template an attempt with seed attemptSeed takes: its number,
 // chosen as the platform chooses it — the place names the task's ID in the module, as the format's
-// task has it (the text of the format, section 23; R60 spec) —, and its numbers, read from the canonical view, whose instances are in that order. A task that is no
-// template has no instance.
+// task has it (R60 spec) —, and its numbers, read from the canonical view, whose instances are in
+// that order. A task that is no template has no instance.
 func (m *Module) Instance(id string, attemptSeed uint64) (int, formatv0.Numbers, error) {
 	t, err := m.Task(id)
 	if err != nil {
@@ -344,8 +342,8 @@ func (m *Module) Instance(id string, attemptSeed uint64) (int, formatv0.Numbers,
 }
 
 // ItemPrimary gives the primary skills of the item at index i of the task: the item's own, when it
-// has skills of its own, and the task's otherwise (the text of the format, section 12). The truth,
-// the engine's results and the measures read an item's skills by this one rule.
+// has skills of its own, and the task's otherwise. The truth, the engine's results and the measures
+// read an item's skills by this one rule.
 func (t *Task) ItemPrimary(i int) []string {
 	it := t.Candidate.Task.Items[i]
 	if it.OwnSkills {
@@ -360,8 +358,7 @@ func (t *Task) ItemPrimary(i int) []string {
 // instances, its lessons —, as JSON, whose fields keep their order and whose maps are written by
 // their keys. What Translate does not read — the texts for the learner, the leading question's
 // own words among them, the version — is not in it, so two packages give the same text when
-// the bench reads the same of them, and Translate is the one list of what the bench reads
-// (docs/architecture.md, section 3.9; R27 in docs/decisions.md).
+// the bench reads the same of them, and Translate is the one list of what the bench reads (R27).
 func (m *Module) Text() ([]byte, error) {
 	type task struct {
 		Task

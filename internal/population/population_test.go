@@ -28,9 +28,8 @@ func changed(a learner.Assumptions) []string {
 	return out
 }
 
-// The nineteen populations of standalone, each the base population with one assumption changed —
-// the fields of that one assumption and no other — on the graphs docs/architecture.md, section
-// 3.2, gives them.
+// The populations of standalone, each the base population with one assumption changed —
+// the fields of that one assumption and no other — on its graphs.
 func TestStandalone(t *testing.T) {
 	want := []struct {
 		name   string
@@ -100,8 +99,8 @@ func TestPopulationsRun(t *testing.T) {
 	techniques := 0
 	for _, p := range All() {
 		for _, g := range p.Graphs {
-			// The populations of fairness run on the synthetic sheet, which has the three bands of grades
-			// 1–6: not on a published package before their first run, the decisive run of T64 (R55).
+			// The populations of fairness run here on the synthetic sheet, which has the three bands of
+			// grades 1–6 (R55).
 			if p.Fair() {
 				g = []string{synthetic.Sheet}
 			}
@@ -109,9 +108,9 @@ func TestPopulationsRun(t *testing.T) {
 			for _, id := range g {
 				mods = append(mods, ms[id])
 			}
-			// Olympiad maths 0.1.1 is 772 tasks, and a learner of it takes a hundred times longer: one
-			// learner of it, and none of a population that runs on school maths alone as well, keep the
-			// suite within the budget of the builds same-bits runs it on.
+			// A learner of olympiad maths, many times the tasks of the others, takes a hundred times
+			// longer: one learner of it, and none of a population that runs on school maths alone as
+			// well, keep the suite within the budget of the builds same-bits runs it on.
 			learners := 4
 			if slices.Equal(g, []string{Olympiad}) && slices.ContainsFunc(p.Graphs, func(h []string) bool { return slices.Equal(h, []string{Grade3}) }) {
 				continue
@@ -156,8 +155,8 @@ func TestPopulationsRun(t *testing.T) {
 	}
 }
 
-// No learner of any population is drawn alike in two sets (docs/architecture.md, section 3.8):
-// the first draw of the params of the first 300 learners of every population, in each recorded set.
+// No learner of any population is drawn alike in two sets: the first draw of the params of the
+// first learners of every population, in each recorded set.
 func TestSetsApart(t *testing.T) {
 	sets := []seed.Set{seed.Working}
 	for _, c := range []string{seed.CriterionModel, seed.CriterionEngine} {
@@ -190,8 +189,8 @@ func TestSetsApart(t *testing.T) {
 }
 
 // The populations of S-, F-, W-, A-, L- and E-: each the base population with the fields of its one assumption,
-// on the graphs and to the limit docs/architecture.md, section 3.2, gives it. F- share the calendar
-// with a break, and each but F-model changes one more thing on it.
+// on its graphs and to its limit. F- share the calendar with a break, and each but F-model changes
+// one more thing on it.
 func TestOwn(t *testing.T) {
 	cal := []string{"SessionChance", "BreakStartFrom", "BreakStartTo", "BreakMin", "BreakMax", "BreakEndBy"}
 	with := func(fields ...string) []string { return append(slices.Clone(cal), fields...) }
@@ -252,8 +251,8 @@ func TestOwn(t *testing.T) {
 }
 
 // The populations of fairness by the grade: G0 with the grade fixed at 1, 3 or 5 and the truth of
-// grade 3, on olympiad maths, all three on the reference's units (docs/architecture.md, section
-// 3.2; R55); no other population is one of fairness.
+// grade 3, on olympiad maths, all three on the reference's units (R55); no other population is one
+// of fairness.
 func TestFairness(t *testing.T) {
 	want := []struct {
 		name  string
