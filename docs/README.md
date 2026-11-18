@@ -1,6 +1,6 @@
 # The documents of sim
 
-What the [README](../README.md) of the repository leaves out, which says only what the component is and where it stands in NovaTrail (the second 2026-11-17 amendment to R21 spec; R77 in [decisions.md](decisions.md)). How to run the gate, judge a candidate and take a release are the sections below, moved from the README as they were.
+What the [README](../README.md) of the repository leaves out, which says only what the component is and where it stands in NovaTrail (the second 2026-11-17 amendment to R21 spec; R77 in [decisions.md](decisions.md)): how to run the gate, judge a candidate and take a release are the sections below.
 
 - [architecture.md](architecture.md) — the component: what it does and does not do, its data and links, what was decided, and what the code builds.
 - [decisions.md](decisions.md) — the decision log: what was decided, why, and what was rejected.
@@ -110,7 +110,7 @@ The target is the candidate's `M11.same` less the base's, on `D-grade1` and `D-g
 {"evaluation": "fairness-1", "run": "../../runs/base.jsonl", "sha256": "<sha256sum of the run>", "date": "YYYY-MM-DD"}
 ```
 
-`sim evaluate evaluations/fairness-1/evaluation.json > evaluations/fairness-1/report.md` writes the report: each grade against grade 3, whether the base holds the bounds of R55, and the paragraph for spec's DPIA. It refuses a run of another SHA-256, a rough look, held-out learners, a run that did not record the invariants, and a run on other libraries than the gate file names. The report names the version of sim from its build, so the run and the report are made from a clean clone at a tag, as `fairness-1` was at v0.1.19 (R58). Since the gate stands on the commit of the three rules, `sim evaluate` refuses the run of `fairness-1`, which is on v0.1.8: its report stays the record of its tag (R74). A judgement reads those cells by the constraint of fairness alone.
+`sim evaluate evaluations/fairness-1/evaluation.json > evaluations/fairness-1/report.md` writes the report: each grade against grade 3, whether the base holds the bounds of R55, and the paragraph for spec's DPIA. It refuses a run of another SHA-256, a rough look, held-out learners, a run that did not record the invariants, and a run on other libraries than the gate file names. The report names the version of sim from its build, so the run and the report are made from a clean clone at a tag (R58). The libraries gate.json names are not those of the run of `fairness-1`, so `sim evaluate` refuses that run, and its report stays the record of its tag (R74). A judgement reads those cells by the constraint of fairness alone.
 
 **The evaluation of the three rules** of R157 spec reads a run of the populations `D-grade1`, `D-grade3`, `D-grade5` and `C-grade1`, 2,000 working learners a cell, on the commit of `learner-model` that R72 names, against the base's decisive run that `paths.json` names ([architecture.md](architecture.md), section 3.6; R72 in [decisions.md](decisions.md)). The run is `sim run -populations D-grade1,D-grade3,D-grade5,C-grade1 -learners 2000`, in parts with `-part k/n` and `sim merge`, and its evaluation file names its criterion and both runs:
 
@@ -122,7 +122,7 @@ The target is the candidate's `M11.same` less the base's, on `D-grade1` and `D-g
 
 ## Taking a release
 
-A release comes out by itself once CI passes on main and something the gate is built from has changed: the next patch of the line `0.1`, from `v0.1.0`. Releases are immutable, and the tags `v*` are under a ruleset, so a tag stays on its commit for good.
+A release comes out by itself once CI passes on main and something the gate is built from has changed: the next patch of the line `0.1`. Releases are immutable, and the tags `v*` are under a ruleset, so a tag stays on its commit for good.
 
 A caller of the gate takes sim from git, not as a file:
 
