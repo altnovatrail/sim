@@ -1,6 +1,5 @@
 // Package invariant checks the invariants of the bench on every learner's run, with a tolerance
-// of zero: one breach on one learner makes the run red (docs/architecture.md, section 3.5; R04;
-// R17 in docs/decisions.md).
+// of zero: one breach on one learner makes the run red (R04, R17).
 //
 //   - I1, reproducibility: the choice taken again on the input it keeps is the same choice — each
 //     call further through a lesson too (R48) —, and a run repeated on the same seeds gives the same
@@ -46,7 +45,7 @@ func Check(rec *run.Record) []Breach {
 // CheckWithoutI1 gives every breach of I2–I4 in a run's record, and takes no choice again: past the
 // first learners of a cell, taking each choice again would double the engine's work on every step,
 // the most of a run. A repeated run holds I1 to the same bits by Same, and the first learners of
-// every cell take it on each choice (R31, R33 in docs/decisions.md).
+// every cell take it on each choice (R31, R33).
 func CheckWithoutI1(rec *run.Record) []Breach {
 	return check(rec, false)
 }
@@ -172,18 +171,16 @@ func viewOf(in engine.Input, id string) (view, bool) {
 
 // Failed is a failure on a skill by the facts of a result, as the engine and the model read it: of
 // the items answered, fewer than half right at the first verdict, or the solution shown with none
-// right (architecture 3.1 engine, the rule "Failure"; R06 learner-model). I2 holds the engine to it,
-// and the note E6 reads by it (R49 in docs/decisions.md).
+// right (R06 learner-model). I2 holds the engine to it, and the note E6 reads by it (R49).
 func Failed(r engine.SkillResult) bool {
 	return 2*r.FirstRight < r.Answered || r.SolutionShown && r.FirstRight == 0
 }
 
 // reasonCode gives the breaches of I2 on a step: a choice of a task or a lesson has one code of the
 // closed list ReasonCode, a choice of nothing none; and the code holds, on one of the choice's
-// skills, the facts its meaning names (the text of the contracts, section 15; docs/architecture.md,
-// section 3.5; the amendment of 2026-11-08 to R04, R17). Of each meaning the bench checks what it
-// can read without the engine's own rule: what a skill was given, what the model reads of it and
-// of its module, the last attempt and the runs.
+// skills, the facts its meaning names (R04, R17). Of each meaning the bench checks what it can read
+// without the engine's own rule: what a skill was given, what the model reads of it and of its
+// module, the last attempt and the runs.
 func reasonCode(s run.Step) []string {
 	c, in := s.Choice, s.Input
 	if c.Kind == engine.ChoiceNothing {
@@ -203,7 +200,7 @@ func reasonCode(s run.Step) []string {
 		return []string{"the choice is on no skill of the input"}
 	}
 	// The codes of branches 3–9 of the engine are given on skills with a verdict, which the model
-	// reads; the author's order on the others (architecture 3.5 engine).
+	// reads; the author's order on the others.
 	holds := func(meaning func(view) bool) bool {
 		for _, id := range ids {
 			if v, ok := viewOf(in, id); ok && v.skill.Assessability == learnermodel.AssessabilityVerdict && meaning(v) {
@@ -265,10 +262,10 @@ func reasonCode(s run.Step) []string {
 // authorOrder gives the breach of I3 on a step: a choice by the author's order is on a skill whose
 // prerequisites with a rubric or without assessment are done — a lesson that teaches them passed, a
 // task on them closed by "Done" —, or cannot be done: no lesson suited to the learner teaches them
-// and no task of the pool is on them (concepts 4 spec; product 10 spec). The prerequisites are
-// followed through skills with a verdict too, and the choice's own skills — a lesson that teaches a
-// skill with its prerequisite — wait for nothing, as the engine reads them (lessons.go engine).
-// Which comes next by the graph, without the learner model, is the engine's rule.
+// and no task of the pool is on them. The prerequisites are followed through skills with a verdict
+// too, and the choice's own skills — a lesson that teaches a skill with its prerequisite — wait for
+// nothing, as the engine reads them (lessons.go engine). Which comes next by the graph, without the
+// learner model, is the engine's rule.
 func authorOrder(s run.Step) []string {
 	c, in := s.Choice, s.Input
 	if c.Reason != engine.ReasonAuthorOrder {

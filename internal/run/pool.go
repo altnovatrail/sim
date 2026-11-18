@@ -13,7 +13,7 @@ import (
 )
 
 // The corridor of success E1 reads P* in, and the pause before a task with a seen solution
-// (docs/architecture.md, section 3.5; R82 spec; R03 engine).
+// (R82 spec; R03 engine).
 const (
 	CorridorLow  = 0.70
 	CorridorHigh = 0.85
@@ -37,8 +37,7 @@ type Pool struct {
 	best, review string
 }
 
-// Rule is the rule that chooses in a run: the engine, or the ceiling of the engine
-// (docs/architecture.md, section 3.6; R24 in docs/decisions.md).
+// Rule is the rule that chooses in a run: the engine, or the ceiling of the engine (R24).
 type Rule int
 
 const (
@@ -84,8 +83,7 @@ func (s Step) Skills() []string {
 
 // given tells whether a task of the pool is one the rule may give at a time in a pass: a task, not
 // a template, whose solution went to the device less than 24 hours ago is not in the first pass,
-// and in the second it is, but for the task of the last closed attempt (R82 spec; R03 engine and
-// its amendment of 2026-11-07).
+// and in the second it is, but for the task of the last closed attempt (R82 spec; R03 engine).
 func given(t learnermodel.Task, at int64, solved func(string) (int64, bool), last string, second bool) bool {
 	if t.Template {
 		return true
@@ -194,13 +192,13 @@ func (r *Run) pool(at int64) (*Pool, error) {
 	return nil, nil // not reached: the second pass returns
 }
 
-// ceiling is the choice of the ceiling of the engine on a pool (docs/architecture.md, section
-// 3.6): when a skill the truth has mastered is due — P* of the reference task of its first band
-// taught fell below 0.775 by forgetting —, the best task on it, as a repetition; otherwise the task
-// with the largest share of items with P* in the corridor, the mean P* nearest 0.775 among equal
-// shares, with the exceptions of R82 spec the rule has. When the pool gives no such task — tasks
-// with a rubric, lessons, or nothing —, the engine chooses: the ceiling is a ceiling of P*, and
-// where there is no P* it is the engine.
+// ceiling is the choice of the ceiling of the engine on a pool: when a skill the truth has mastered
+// is due — P* of the reference task of its first band taught fell below learner.Mastery by
+// forgetting —, the best task on it, as a repetition; otherwise the task with the largest share of
+// items with P* in the corridor, the mean P* nearest learner.Mastery among equal shares, with the
+// exceptions of R82 spec the rule has. When the pool gives no such task — tasks with a rubric,
+// lessons, or nothing —, the engine chooses: the ceiling is a ceiling of P*, and where there is no
+// P* it is the engine.
 func (r *Run) ceiling(in engine.Input, p *Pool) (engine.Choice, error) {
 	switch {
 	case p.review != "":
@@ -215,7 +213,7 @@ func (r *Run) ceiling(in engine.Input, p *Pool) (engine.Choice, error) {
 // a skill with a verdict of the learner the truth has mastered on its first band taught; a skill
 // the truth has no verdict of, or of a module the learner does not learn, is held — nothing reads
 // it; an anchor is held when a skill of the learner's modules that teaches it is truly mastered
-// with its R* then, or when none teaches it (docs/architecture.md, section 3.5, M9).
+// with its R* then, or when none teaches it (M9).
 func (r *Run) holds(m *pack.Module, id string, at int64) bool {
 	i := slices.IndexFunc(m.Graph.Skills, func(s learnermodel.Skill) bool { return s.ID == id })
 	if i < 0 {

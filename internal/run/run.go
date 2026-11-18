@@ -3,10 +3,9 @@
 // api would — the model's reading, the pool and the lessons the learner's age category suits, the
 // runs of lessons, the attempts closed by "Done", the last closed attempt and the summary of what
 // was handed out —, takes the engine's choice, has the learner answer by its truth, and gives the
-// model the evidence (docs/architecture.md, sections 1 and 3; architecture 3.8 spec; R104, R107
-// spec; R16 in docs/decisions.md). Within a lesson whose skills all have a verdict it calls the
-// engine at the end of each task link, as api will, and plays its answer: further through the
-// lesson, or a task of consolidation (R48). It records each step, for the invariants and the
+// model the evidence (R104, R107 spec; R16). Within a lesson whose skills all have a verdict it
+// calls the engine at the end of each task link, as api will, and plays its answer: further through
+// the lesson, or a task of consolidation (R48). It records each step, for the invariants and the
 // measures.
 package run
 
@@ -25,23 +24,23 @@ import (
 
 // Limit is when a learner's run ends: after Answers first answers of items with a verdict, when
 // Answers is above 0; after Days days of the calendar; and, when Rubrics, once every task with a
-// rubric the learner's age category suits is done (docs/architecture.md, section 3.1).
+// rubric the learner's age category suits is done.
 type Limit struct {
 	Answers int
 	Days    int
 	Rubrics bool
 }
 
-// Maths is the run of a learner in mathematics: 200 answers of items with a verdict, as 200
-// answers in standalone, within a year of the calendar, so that a rule that gives nothing for
-// good still ends (R16).
+// Maths is the run of a learner in mathematics: as many answers of items with a verdict as a run
+// of standalone, within a year of the calendar, so that a rule that gives nothing for good still
+// ends (R16).
 var Maths = Limit{Answers: 200, Days: 365}
 
-// Forgetting is the run of the populations of forgetting: 180 days of the calendar.
+// Forgetting is the run of the populations of forgetting, by days of the calendar alone.
 var Forgetting = Limit{Days: 180}
 
 // Essays is the run of a learner of essays: until the tasks with a rubric it is suited run out,
-// within 60 days.
+// within a bound of days.
 var Essays = Limit{Days: 60, Rubrics: true}
 
 // Step is one choice of the run and what came of it. Evidence, Instances and Results stand beside
@@ -62,7 +61,7 @@ type Step struct {
 	// last closed attempt (Last.Results).
 	Results [][]engine.SkillResult
 	// Obs is what the measures read of each attempt with a verdict: the model and the truth before
-	// and after it; nil for an attempt of a task with a rubric (R22 in docs/decisions.md).
+	// and after it; nil for an attempt of a task with a rubric (R22).
 	Obs  []*Obs
 	Pass *learner.Pass // the pass of a lesson, on the step that ends it, with all its attempts
 	// Pool is what the truth says of the pool at the choice, before the engine chose (R23); nil on a
@@ -72,7 +71,7 @@ type Step struct {
 	// lesson of the same run: further through the lesson, no new choice (R48).
 	Further []Call
 	// Correction is the adult's correction of the module level right after one of the step's
-	// attempts, as Append gave it back; nil on every other step (C-; R72 in docs/decisions.md).
+	// attempts, as Append gave it back; nil on every other step (C-; R72).
 	Correction *learnermodel.Evidence
 	// Resumed tells that the step is a lesson going on after a task of consolidation: its choice is
 	// the engine's answer after the consolidation, the lesson of the same run, and no new choice.
@@ -95,7 +94,7 @@ type Record struct {
 	Days    int                // the day of the calendar of the last choice, from 1
 	// Guard counts the pieces of evidence after which the count of the guard of their module,
 	// FailuresInARow of the model's state, stood at guardFailures, having stood one below it: where
-	// learner-model lowers the level by a band (R45 learner-model; R72 in docs/decisions.md).
+	// learner-model lowers the level by a band (R45 learner-model; R72).
 	Guard int
 	// Corrected is the first answers before the adult corrected the module level, 0 when no adult
 	// did (C-).
@@ -205,7 +204,6 @@ func (r *Run) Done() bool {
 	return r.limit.Rubrics && r.rubricsDone()
 }
 
-// rubricsDone tells whether every task with a rubric the learner is suited is done.
 func (r *Run) rubricsDone() bool {
 	done := 0
 	for _, d := range r.rubricDone {
@@ -217,7 +215,7 @@ func (r *Run) rubricsDone() bool {
 }
 
 // abandonAfter is how long a run of a lesson left open stays open: then it ends "abandoned"
-// (docs/architecture.md, section 3.2, L-abandon).
+// (L-abandon).
 const abandonAfter = 30 * 86400
 
 // Step takes one choice at the time the calendar gives, and follows it. A time past the limit's
@@ -450,7 +448,7 @@ func further(c engine.Choice, lesson *pack.Lesson) bool {
 }
 
 // Verdicts tells whether a lesson has skills and every one has a verdict in its module's graph: only
-// then is the engine called within it (concepts 5 spec; R48), and the note E6 reads it (R49).
+// then is the engine called within it (R48), and the note E6 reads it (R49).
 func Verdicts(g learnermodel.Graph, skills []string) bool {
 	return len(skills) > 0 && !slices.ContainsFunc(skills, func(id string) bool { return !verdictIn(g, id) })
 }
@@ -466,7 +464,7 @@ func (r *Run) issue(skills []string, at int64) {
 }
 
 // open records the run of a lesson as open while it is passed, as api holds it: an open run of the
-// lesson goes on, and a new pass is a new run (concepts 5 spec).
+// lesson goes on, and a new pass is a new run.
 func (r *Run) open(lesson *pack.Lesson, at int64) {
 	if slices.ContainsFunc(r.runs, func(x engine.Run) bool { return x.Lesson == lesson.Lesson.ID && x.End == engine.RunOpen }) {
 		return
@@ -501,7 +499,7 @@ func instance(m *pack.Module, t *pack.Task, a learner.Attempt) (int, error) {
 	return n, nil
 }
 
-// input builds the engine's input at a time as api would build it (architecture 3.6 engine).
+// input builds the engine's input at a time as api would build it.
 func (r *Run) input(at int64) (engine.Input, error) {
 	ro, err := r.readAt(at)
 	if err != nil {
@@ -529,7 +527,6 @@ func (r *Run) summary() engine.Summary {
 	return s
 }
 
-// task finds a task of a choice in the learner's modules.
 func (r *Run) task(id string) (*pack.Module, *pack.Task, error) {
 	for _, m := range r.modules {
 		if t, err := m.Task(id); err == nil {
@@ -539,7 +536,6 @@ func (r *Run) task(id string) (*pack.Module, *pack.Task, error) {
 	return nil, nil, fmt.Errorf("%w: the engine chose the task %s, which no module of the learner has", ErrRun, id)
 }
 
-// lesson finds a lesson of a choice in the learner's modules.
 func (r *Run) lesson(id string) (*pack.Module, *pack.Lesson, error) {
 	for _, m := range r.modules {
 		for i := range m.Lessons {
@@ -610,11 +606,10 @@ func guardOf(s learnermodel.State, module string) int32 {
 	return 0
 }
 
-// correct is the adult's correction of a learner of C- (R72 in docs/decisions.md): once the
-// learner's first answers with a verdict reach CorrectAfter, right after the attempt that brings
-// them there, the module level is set to the band of the truth, at the time of the attempt's last
-// action, by the evidence of a correction of learner-model, which the step records. Every other
-// learner it leaves as it is.
+// correct is the adult's correction of a learner of C- (R72): once the learner's first answers
+// with a verdict reach CorrectAfter, right after the attempt that brings them there, the module
+// level is set to the band of the truth, at the time of the attempt's last action, by the evidence
+// of a correction of learner-model, which the step records. Every other learner it leaves as it is.
 func (r *Run) correct(m *pack.Module, at int64, step *Step) error {
 	after := r.l.CorrectAfter()
 	if after == 0 || r.corrected || r.rec.Answers < after {
@@ -635,12 +630,11 @@ func (r *Run) correct(m *pack.Module, at int64, step *Step) error {
 	return nil
 }
 
-// evidence gives the evidence of an attempt on a task with a verdict (R82 spec; concepts 11 spec):
-// its outcome by its wrong answers, the first and final verdict of each item, whether the task's
-// solution went to the device before — no such fact for a template, whose instances differ —, and
-// the time of its last action, and the technique taken on request (G8) with the leading question
-// the same hint gave, when the task has one. The truth has no traps, and the learner asks for
-// nothing else.
+// evidence gives the evidence of an attempt on a task with a verdict (R82 spec): its outcome by its
+// wrong answers, the first and final verdict of each item, whether the task's solution went to the
+// device before — no such fact for a template, whose instances differ —, and the time of its last
+// action, and the technique taken on request (G8) with the leading question the same hint gave,
+// when the task has one. The truth has no traps, and the learner asks for nothing else.
 func (r *Run) evidence(m *pack.Module, t *pack.Task, a learner.Attempt, seen bool) (learnermodel.Evidence, error) {
 	lm, err := r.l.Module(m.ID)
 	if err != nil {
@@ -689,7 +683,7 @@ func (r *Run) evidence(m *pack.Module, t *pack.Task, a learner.Attempt, seen boo
 
 // results gives the attempt's result on each primary skill of its task, in the order of IDs: of
 // the items the skill is primary in, how many got a first verdict, how many of them right, and
-// whether the solution was shown (architecture 3.6 engine).
+// whether the solution was shown.
 func results(t *pack.Task, a learner.Attempt) []engine.SkillResult {
 	by := map[string]*engine.SkillResult{}
 	for _, s := range t.Candidate.Task.Primary {

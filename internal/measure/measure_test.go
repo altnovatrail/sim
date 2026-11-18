@@ -150,7 +150,6 @@ func TestLateAndCatch(t *testing.T) {
 	}
 }
 
-// cell runs n learners of a population on its first graph and gives their sums and the graph.
 func cell(t *testing.T, name string, n int) ([]Sums, []string) {
 	t.Helper()
 	recs, graph := records(t, name, n)
@@ -162,8 +161,8 @@ func cell(t *testing.T, name string, n int) ([]Sums, []string) {
 }
 
 // records runs n learners of a population on its last graph and gives their records and the graph.
-// The last graph of the maths is school maths: a learner of olympiad maths 0.1.1, 772 tasks, takes a
-// hundred times longer, and most measures read the same on either.
+// The last graph of the maths is school maths: a learner of olympiad maths takes a hundred times
+// longer, and most measures read the same on either.
 func records(t *testing.T, name string, n int) ([]*run.Record, []string) {
 	t.Helper()
 	p, ok := population.Named(name)
@@ -227,7 +226,6 @@ func recordsOf(t *testing.T, name string, g int, ks []int) ([]*run.Record, []str
 	return recs, graph
 }
 
-// readCell reads the measures of the model off n learners of a population.
 func readCell(t *testing.T, name string, n int) []Value {
 	t.Helper()
 	sums, graph := cell(t, name, n)

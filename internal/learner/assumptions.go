@@ -1,13 +1,12 @@
 // Package learner is the virtual learner of the bench: its truth, which the bench knows and the
-// learner model estimates from its attempts, and its calendar (docs/architecture.md, section 3.1;
-// R03). The truth is the bench's own model, not learner-model's code: the bench measures the model
-// on a learner it knows, not on a copy of itself. The base population holds the model's
-// assumptions (R03, R04, R06 learner-model), and each population changes one of them
-// (docs/architecture.md, section 3.2), by a field of Assumptions.
+// learner model estimates from its attempts, and its calendar (R03). The truth is the bench's own
+// model, not learner-model's code: the bench measures the model on a learner it knows, not on a
+// copy of itself. The base population holds the model's assumptions (R03, R04, R06 learner-model),
+// and each population changes one of them, by a field of Assumptions.
 package learner
 
 // Assumptions are what a population assumes of its learners. Base gives the base population's; a
-// population is Base with one field changed (R15 in docs/decisions.md).
+// population is Base with one field changed (R15).
 type Assumptions struct {
 	// BandStep is the true step between neighbouring bands, in logits: the shift 2.5 · (p − 1)
 	// of a start band and of a task's band (R03 learner-model).
@@ -16,8 +15,7 @@ type Assumptions struct {
 	StartSpread float64
 	// SkillSpread is the spread of a skill's offset from the module's level, N(0, σ²).
 	SkillSpread float64
-	// Miss multiplies a task's z, drawn once a task and a run: the author's miss of its difficulty
-	// (docs/architecture.md, section 3.3).
+	// Miss multiplies a task's z, drawn once a task and a run: the author's miss of its difficulty.
 	Miss float64
 	// Slope is a of σ(a · (θ* + δ̄* − β*)).
 	Slope float64
@@ -26,8 +24,7 @@ type Assumptions struct {
 	ChoiceGuess float64
 	// PredicateGuess is the chance of guessing a cell of predicate; the model has 0.
 	PredicateGuess float64
-	// RungLift is what each rung of the ladder of hints adds to the logit of the items not yet
-	// right (concepts 10 spec).
+	// RungLift is what each rung of the ladder of hints adds to the logit of the items not yet right.
 	RungLift float64
 	// Forgets tells whether retention falls with time; false keeps it at 1.
 	Forgets bool
@@ -121,13 +118,12 @@ type Assumptions struct {
 	TruthGrade int32
 	// CorrectAfter makes an adult correct the module level once, to the band of the truth, by the
 	// evidence of a correction of learner-model, right after the attempt that brings the learner's
-	// first answers of items with a verdict to this many (C-; R72 in docs/decisions.md). Zero leaves the
-	// level to the model.
+	// first answers of items with a verdict to this many (C-; R72). Zero leaves the level to the
+	// model.
 	CorrectAfter int
 }
 
-// Base gives the assumptions of the base population: the model's own, but the author's miss
-// (docs/architecture.md, section 3.1).
+// Base gives the assumptions of the base population: the model's own, but the author's miss.
 func Base() Assumptions {
 	return Assumptions{
 		BandStep:        2.5,

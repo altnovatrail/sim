@@ -1,9 +1,8 @@
 // Package measure reads the measures of the bench off the runs of virtual learners, by the truth
-// the bench knows and what the learner model and the engine gave (docs/architecture.md, section
-// 3.5; R04; R22 in docs/decisions.md). Each learner's run gives its sums; a number of a cell is
-// read from the sums of all its learners, and its 95 % interval from 2,000 resamples of the
-// learners, the same resamples for every number of the cell, so that two cells of the same learners
-// compare by learner (docs/architecture.md, section 3.6).
+// the bench knows and what the learner model and the engine gave (R04, R22). Each learner's run
+// gives its sums; a number of a cell is read from the sums of all its learners, and its 95 %
+// interval from Resamples resamples of the learners, the same resamples for every number of the
+// cell, so that two cells of the same learners compare by learner.
 package measure
 
 import (
@@ -31,8 +30,7 @@ type Number struct {
 
 // Value is a number read off a cell: its value and the ends of its 95 % interval. A number the cell
 // cannot read is not Read, and in a check it is unmet; on a graph with a module whose package is not
-// published it is NoGraph, and its checks are neither met nor failed (docs/architecture.md, section
-// 3.6; R19).
+// published it is NoGraph, and its checks are neither met nor failed (R19).
 type Value struct {
 	Name             string
 	Value, Low, High float64
@@ -42,7 +40,7 @@ type Value struct {
 	Read    bool
 	NoGraph bool
 	// Resampled are its values over the resamples, in their order, when it is read: the k-th of two
-	// numbers of the same learners comes of the same resample (R25 in docs/decisions.md).
+	// numbers of the same learners comes of the same resample (R25).
 	Resampled []float64
 }
 
@@ -53,7 +51,6 @@ const (
 	tail      = Resamples / 40
 )
 
-// ratio is the number num/den of the sums, read when den is above zero.
 func ratio(num, den string) func(Sums) (float64, bool) {
 	return func(s Sums) (float64, bool) {
 		if s[den] <= 0 {
@@ -192,8 +189,7 @@ func rows(learners ...[]Sums) ([]string, [][][]float64) {
 }
 
 // Pair is a number read off two cells of the same learners — two rules, or a rule and the oracle —
-// and their difference a − b, with its 95 % interval from the same resamples in both
-// (docs/architecture.md, section 3.6).
+// and their difference a − b, with its 95 % interval from the same resamples in both.
 type Pair struct {
 	A, B, Diff Value
 }
