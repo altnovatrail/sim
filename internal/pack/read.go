@@ -1,8 +1,7 @@
 // Package pack reads published packages of modules as the bench needs them: the server part,
 // server.json, by the types of spec's canonical view and without module-kit, checked through the
-// chain of digests from a pinned module index (docs/architecture.md, sections 1, 3.3 and 3.9; R62,
-// R72, R77 spec; the text of the format, sections 25 and 26). It translates the canonical view into
-// what learner-model and engine take, as api would (R14 in docs/decisions.md).
+// chain of digests from a pinned module index (R62 spec, R72 spec, R77 spec). It translates the
+// canonical view into what learner-model and engine take, as api would (R14).
 package pack
 
 import (
@@ -20,7 +19,7 @@ import (
 )
 
 // formatVersions are the versions of the module format the bench reads: while the format is v0,
-// only the current one, 0.4 since spec v0.10.0 (R44, R111 spec), the window module-kit reads too.
+// only the current one, the window module-kit reads too (R44 spec, R111 spec).
 var formatVersions = []formatv0.ModuleFormatVersion{"0.4"}
 
 // ErrDigest is a file whose SHA-256 is not the one the chain of digests names.
@@ -37,10 +36,9 @@ var ErrWithdrawn = errors.New("pack: the version is withdrawn from publication")
 var ErrIdentity = errors.New("pack: the package is not the version its entry names")
 
 // ReadIndex reads a module index whose SHA-256, in hex, must be digest: the digest the gate file
-// pins, as the configuration of api pins it (R63 spec; docs/architecture.md, section 3.9). It reads
-// the index's members by their places alone, whatever version of the format the index is of: a
-// reader skips an entry whose format version it does not read, rather than refuse the index (the
-// text of the format, section 2), and Entry does that.
+// pins, as the configuration of api pins it (R63 spec). It reads the index's members by their
+// places alone, whatever version of the format the index is of: a reader skips an entry whose
+// format version it does not read, rather than refuse the index, and Entry does that.
 func ReadIndex(data []byte, digest string) (*formatv0.ModuleIndex, error) {
 	if hexDigest(data) != digest {
 		return nil, fmt.Errorf("%w: the module index is %s, not %s", ErrDigest, hexDigest(data), digest)
@@ -72,7 +70,7 @@ func Entry(idx *formatv0.ModuleIndex, id formatv0.ModuleID, version formatv0.Mod
 // index is e: the SHA-256 of its inventory.json must be the entry's package digest, and the digest
 // and size of server.json the inventory's; the inventory and the manifest must name the module,
 // the version and the version of the format the entry names; server.json is read by the types of
-// the canonical view (the text of the format, sections 25 and 26).
+// the canonical view.
 func ReadPackage(archive []byte, id formatv0.ModuleID, version formatv0.ModuleVersion, e formatv0.Entry) (*formatv0.CanonicalView, error) {
 	files, err := Untar(archive)
 	if err != nil {
@@ -94,13 +92,13 @@ func ReadPackage(archive []byte, id formatv0.ModuleID, version formatv0.ModuleVe
 
 // ReadFiles reads a package from its inventory.json and server.json, as a folder holds them: the
 // digest and size of server.json must be the inventory's, whatever the version of the format, since
-// the inventory keeps server_part in every version (the text of the format, section 2); that
-// version must be one the bench reads, and the manifest must name the module, the version and the
-// version of the format the inventory names; server.json is read by the types of the canonical
-// view. With an entry of an index, the SHA-256 of inventory.json must be the entry's package digest
-// and its version of the format the entry's: the chain of digests from the index. With none, the
-// package is one a build wrote, which no index names yet. The inventory comes back whenever it could
-// be read, so that a caller can tell a package of a version of the format outside the window.
+// the inventory keeps server_part in every version; that version must be one the bench reads, and
+// the manifest must name the module, the version and the version of the format the inventory names;
+// server.json is read by the types of the canonical view. With an entry of an index, the SHA-256 of
+// inventory.json must be the entry's package digest and its version of the format the entry's: the
+// chain of digests from the index. With none, the package is one a build wrote, which no index
+// names yet. The inventory comes back whenever it could be read, so that a caller can tell a
+// package of a version of the format outside the window.
 func ReadFiles(inventory, server []byte, e *formatv0.Entry) (*formatv0.CanonicalView, *formatv0.Inventory, error) {
 	if e != nil && Digest(inventory) != e.PackageDigest {
 		return nil, nil, fmt.Errorf("%w: inventory.json is %s, the index names %s", ErrDigest, Digest(inventory), e.PackageDigest)

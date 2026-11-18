@@ -130,11 +130,10 @@ func TestRandomVectors(t *testing.T) {
 
 // Every vector of the templates: the instance an attempt's seed takes is the one whose numbers the
 // vector gives. The instances are the combinations of the parameters in the order of an odometer —
-// names by code units, the first slowest, each domain upwards — that the constraint keeps (the
-// text of the format, section 23). sim reads the instances from the canonical view and evaluates
-// no expression; this test evaluates only the constraints of the forms "p != q" and "p % q == 0"
-// that the vectors have, both sides parameters, and fails on any other, so a new vector is read
-// before it is trusted.
+// names by code units, the first slowest, each domain upwards — that the constraint keeps. sim
+// reads the instances from the canonical view and evaluates no expression; this test evaluates only
+// the constraints of the forms "p != q" and "p % q == 0" that the vectors have, both sides
+// parameters, and fails on any other, so a new vector is read before it is trusted.
 func TestTemplateVectors(t *testing.T) {
 	for _, name := range vectors(t, "templates") {
 		t.Run(path.Base(name), func(t *testing.T) {
@@ -193,7 +192,7 @@ func combinations(t *testing.T, tpl *formatv0.Template) []map[formatv0.TemplateN
 		}
 		keep = func(c map[formatv0.TemplateName]int64) bool { return c[p] != c[q] }
 		if divides {
-			// Division by zero is an error of the format (section 23), not a combination left out.
+			// Division by zero is an error of the format, not a combination left out.
 			if d := tpl.Parameters[q]; d.From <= 0 && d.To >= 0 {
 				t.Fatalf("the test reads no constraint %q: the divisor's domain holds 0", *tpl.Constraint)
 			}

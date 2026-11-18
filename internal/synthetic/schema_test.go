@@ -41,8 +41,7 @@ func canonicalView(t *testing.T) *jsonschema.Schema {
 }
 
 // Every synthetic view is a valid canonical view of the format 0.4: the schema spec gives it holds
-// what the Go types cannot — required members, enums, the shared taxonomy (the text of the format,
-// section 25).
+// what the Go types cannot — required members, enums, the shared taxonomy.
 func TestSchema(t *testing.T) {
 	s := canonicalView(t)
 	for id, view := range views {

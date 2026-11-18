@@ -79,7 +79,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T87 | Тексты без истории: `docs/README.md`, README, CLAUDE.md, `.claude/rules/`, план | Claude | — | T84 |
 | [x] | T88 | Комментарии кода по R160 spec: корень, `internal/bench`, `criterion`, `gate` | Claude | — | T84 |
 | [x] | T89 | Комментарии кода по R160 spec: `internal/learner`, `measure`, `run`, `invariant` | Claude | — | T84 |
-| [ ] | T90 | Комментарии кода по R160 spec: остальные пакеты, justfile, `.github/`, `.devcontainer/` | Claude | — | T84 |
+| [x] | T90 | Комментарии кода по R160 spec: остальные пакеты, justfile, `.github/`, `.devcontainer/` | Claude | — | T84 |
 
 **Почему такой порядок.**
 - Суд — по коммитам черновых pull request кандидатов, не по их релизу: `sim` гонит кандидата из его коммита (R34), а релиз выбранного ждёт полос `sim` (R103 spec).
@@ -102,18 +102,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **не входит:** кандидат `engine` — он идёт своей причиной (R59); числа забывания `learner-model` (sources 3.10).
 
 ## Задачи эпика
-
-#### T90. Комментарии кода по R160 spec: остальные пакеты, justfile, `.github/`, `.devcontainer/`
-
-- **Цель:** комментарии Go `internal/population`, `internal/pack`, `internal/published`, `internal/seed`, `internal/synthetic` и комментарии `#` justfile, `.github/` и `.devcontainer/` — по R160 spec.
-- **Почему:** R160 spec, строка 7.31 COORDINATION.md spec; T84 разделила её по правилу 11.
-- **Сделать:**
-  - комментарии этих пакетов и файлов — по R160 spec, «Comments»: почему, ограничение, ловушка, контракт экспортируемого API; без пересказа кода, истории, номеров задач и разделов документов;
-  - где причина — решение, одна фраза ограничения и номер якорем в конце, `(R25)`;
-  - код не менять.
-- **Не делать:** код, имена и тесты; записи журнала.
-- **Как проверить:** `just ci-lint`, `just ci-test`, `just gate exact` — те же биты; `just -f spec/justfile docs-check-repo` — номера в комментариях; `/code-review high`.
-- **Разделы:** R160 spec, «Comments»; R32 spec; RULES.md spec, The bar; правила `.claude/rules/` изменённых частей.
 
 #### T72. Суд `model-fair-1`
 

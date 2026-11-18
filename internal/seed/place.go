@@ -1,8 +1,7 @@
 // Package seed gives the bench its numbers: every draw of sim comes from a place of randomness of
-// the module format, a seed and names, by the platform's one generator (docs/architecture.md,
-// sections 3.4 and 3.8; R27, R59 spec; the text of the format, section 22). spec has the
-// generator's test vectors but no Go code of it, so the place is built here, by Go's own PCG, and
-// the vectors hold it to the format (R12 in docs/decisions.md).
+// the module format, a seed and names, by the platform's one generator (R27 spec, R59 spec). spec
+// has the generator's test vectors but no Go code of it, so the place is built here, by Go's own
+// PCG, and the vectors hold it to the format (R12).
 package seed
 
 import (
@@ -15,7 +14,7 @@ import (
 
 // Stream is the stream of draws of one place of randomness. The format's five functions are
 // its methods, each Go's own method of math/rand/v2 on the same PCG, drawing the same integers in
-// the same order (the text of the format, section 22).
+// the same order.
 type Stream struct {
 	r *rand.Rand
 }

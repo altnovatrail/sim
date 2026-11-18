@@ -112,7 +112,7 @@ ENV PATH="/usr/local/node/bin:/usr/local/go/bin:/home/vscode/.local/bin:${PATH}"
 # adds at the end of this stage, if it adds any. What they install, a release never builds, and
 # neither do the checks that run no browser: what the release and those ci- recipes call belongs in
 # toolchain-core. sim's tests need nothing the core lacks, and the kind go adds none here, so the
-# shared checks keep one image of both stages (R47 .github; R70 in docs/decisions.md).
+# shared checks keep one image of both stages (R47 .github; R70).
 
 FROM toolchain-core AS toolchain
 
@@ -173,7 +173,7 @@ RUN arch="$(dpkg --print-architecture)"; \
 # gopls is the language server that the Go extension in devcontainer.json starts. It is built
 # with the Go that toolchain-core installs, and only here: the checks do not need it. This step and
 # gopls/ beside this file are the go kind's of spec's repo-template, and a move to a tag of spec
-# brings them with the rest of the devcontainer (R102 spec; R32 in docs/decisions.md).
+# brings them with the rest of the devcontainer (R102 spec; R32).
 ARG GOPLS_VERSION=0.24.0
 
 # gopls is built from its lock file, gopls/ in this folder. Its go.mod names gopls as a tool at an

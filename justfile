@@ -1,6 +1,6 @@
 # sim's own recipes. The ci- ones are what .github's shared go.yml runs, one job each, in the
-# toolchain stage of .devcontainer/Dockerfile (R16 .github; R10 in docs/decisions.md): their names
-# are the same in every Go repository of NovaTrail, and what they run is this repository's own.
+# toolchain stage of .devcontainer/Dockerfile (R16 .github; R10): their names are the same in every
+# Go repository of NovaTrail, and what they run is this repository's own.
 # The gate, which builds the bench on the commits of its gate file, is no ci- recipe: it comes with
 # its own job (R09).
 
@@ -58,22 +58,20 @@ ci-lint:
 # arm64 hardware, then the targets. The recipes test-targets, fma-diff and rules below run the same
 # in the container, and same-bits runs all three; CI calls none of them.
 # No race detector: there is no goroutine in the code, which the rule goroutine keeps out, nor in
-# the tests, and it made a learner of olympiad maths, from 0.1.1 on, some ten times slower, past the ten
-# minutes go test gives a package (the amendment of 2026-11-09 to R10 in docs/decisions.md). A test
-# that starts a goroutine brings it back.
+# the tests, and it makes a learner of olympiad maths some ten times slower, past the ten minutes go
+# test gives a package (R10). A test that starts a goroutine brings it back.
 # Run the tests and write their coverage.
 ci-test:
     mkdir -p coverage
     go test -count=1 -covermode=count -coverpkg=./... -coverprofile=coverage/go.out ./...
 
-# The checks of the same bits on every build (R09; docs/architecture.md, section 3.9) in the
-# container, as the shared go.yml of .github runs them with same-bits, by its own scripts: .github
-# at the commit ci.yml pins its go.yml to, so that the container runs what CI runs and nothing here
-# is kept in step by hand, as engine's recipes do. CI calls none of these recipes. ci.yml must call
-# go.yml once, by a commit's SHA. The checkout of that commit is kept in the user's cache, by the
-# SHA and the version of Go, with the tool of the rules built in it, and reused: the first run of a
-# commit reaches the network. The path of the tool's module holds .github, which go run does not
-# take.
+# The checks of the same bits on every build (R09) in the container, as the shared go.yml of
+# .github runs them with same-bits, by its own scripts: .github at the commit ci.yml pins its go.yml
+# to, so that the container runs what CI runs and nothing here is kept in step by hand, as engine's
+# recipes do. CI calls none of these recipes. ci.yml must call go.yml once, by a commit's SHA. The
+# checkout of that commit is kept in the user's cache, by the SHA and the version of Go, with the
+# tool of the rules built in it, and reused: the first run of a commit reaches the network. The path
+# of the tool's module holds .github, which go run does not take.
 # Give the folder of the checkout of .github that ci.yml pins, fetching it once.
 [private]
 github:
@@ -270,15 +268,15 @@ ci-licenses:
     fi
     go run {{ GO_LICENSES }} check ./... --allowed_licenses="$ALLOWED_LICENSES"
 
-# The workspace a build on the libraries of gate.json goes through (docs/architecture.md, section
-# 3.9; R26, R34 in docs/decisions.md), one for the gate and for the decisive run of a candidate. Each
-# library comes from <prefix>_<NAME> — GATE_ENGINE, CANDIDATE_LEARNER_MODEL — when the caller sets
-# it: a commit by its full SHA, fetched from GitHub even when it is on no branch, as the head of a
-# pull request is, or a folder, of the caller's folder from when relative, which with clean=yes must
-# have nothing uncommitted, so that the commit a file of results names is the code that ran. A
-# library the caller does not name comes at the commit gate.json names, which is the commit of its
-# tag. It writes dir/go.work with sim and the two libraries, and a line a library, its fields apart
-# by tabs: its module path, its folder, the commit it is at, and the variable that named it or -.
+# The workspace a build on the libraries of gate.json goes through (R26, R34), one for the gate and
+# for the decisive run of a candidate. Each library comes from <prefix>_<NAME> — GATE_ENGINE,
+# CANDIDATE_LEARNER_MODEL — when the caller sets it: a commit by its full SHA, fetched from GitHub
+# even when it is on no branch, as the head of a pull request is, or a folder, of the caller's
+# folder from when relative, which with clean=yes must have nothing uncommitted, so that the commit
+# a file of results names is the code that ran. A library the caller does not name comes at the
+# commit gate.json names, which is the commit of its tag. It writes dir/go.work with sim and the two
+# libraries, and a line a library, its fields apart by tabs: its module path, its folder, the commit
+# it is at, and the variable that named it or -.
 # Write the workspace of a build on the libraries of gate.json.
 [private]
 [positional-arguments]
@@ -342,37 +340,36 @@ workspace dir prefix clean from:
     } > "$dir/go.work"
     printf '%s\n' "${lines[@]}"
 
-# The decisive run of a rule (docs/architecture.md, sections 3.6, 3.8 and 3.9; R09, R28, R33, R34 in
-# docs/decisions.md): 2,000 learners of a set — working, or held-out-<criterion>-<n> or
-# held-out-<criterion>-<variant>-<n> for a confirmation — of every cell of every population, as
-# processes, one part of the learners each, as many as the processors, merged into one file of
-# results, whose SHA-256 it prints. Without a candidate it builds the bench on the libraries go.mod
-# names, the base while it names the releases gate.json does, so that the base's file is the one
-# paths.json names to the byte. A candidate is CANDIDATE_LEARNER_MODEL or CANDIDATE_ENGINE, a commit
-# by its full SHA or a folder with nothing uncommitted; a pair is both with CANDIDATE_PAIR=yes, so
-# that a variable left set from another run does not make a pair unseen. The bench is then built
-# through the workspace of the gate, with the other library at the commit of gate.json, the build is
-# held to gate.json as the gate holds it before anything runs, and the file names both libraries by
-# commit. A set is checked before the run. The file is no part of the repository: its seeds and the
-# same bits on every build give it again to the byte, and runs/, which git ignores, keeps it between
-# judgements. rule is engine, for the base or a candidate and the oracle on its answers, or ceiling,
-# for the ceiling of the engine; a relative out or folder is of the caller's folder:
+# The decisive run of a rule (R09, R28, R33, R34): the learners a decisive run takes of a set —
+# working, or held-out-<criterion>-<n> or held-out-<criterion>-<variant>-<n> for a confirmation — of
+# every cell of every population, as processes, one part of the learners each, as many as the
+# processors, merged into one file of results, whose SHA-256 it prints. Without a candidate it
+# builds the bench on the libraries go.mod names, the base while it names the releases gate.json
+# does, so that the base's file is the one paths.json names to the byte. A candidate is
+# CANDIDATE_LEARNER_MODEL or CANDIDATE_ENGINE, a commit by its full SHA or a folder with nothing
+# uncommitted; a pair is both with CANDIDATE_PAIR=yes, so that a variable left set from another run
+# does not make a pair unseen. The bench is then built through the workspace of the gate, with the
+# other library at the commit of gate.json, the build is held to gate.json as the gate holds it
+# before anything runs, and the file names both libraries by commit. A set is checked before the
+# run. The file is no part of the repository: its seeds and the same bits on every build give it
+# again to the byte, and runs/, which git ignores, keeps it between judgements. rule is engine, for
+# the base or a candidate and the oracle on its answers, or ceiling, for the ceiling of the engine;
+# a relative out or folder is of the caller's folder:
 # `CANDIDATE_ENGINE=<sha> just decisive engine runs/engine-a.jsonl`.
 # Run the decisive run of a rule into a file of results: rule engine or ceiling, set working or held-out-….
 decisive rule out set="working": (cells "decisive" rule out set "2000")
 
-# A rough look (docs/architecture.md, sections 3.6 and 3.8; R49 in docs/decisions.md): the run of
-# just decisive, the same build and the same candidates, on fewer learners a cell — from 1 to 1,999,
-# 300 unless named, as engine's rough looks ran — and on the working learners alone: a look at
-# held-out learners would leave them held out no longer. sim judge names its report a rough look,
-# and it decides nothing. The base's rough look runs the same way, without a candidate, on as many
-# learners: `just rough engine runs/base-300.jsonl` and
+# A rough look (R49): the run of just decisive, the same build and the same candidates, on fewer
+# learners a cell than a decisive run's — the recipe's default unless named — and on the working
+# learners alone: a look at held-out learners would leave them held out no longer. sim judge names
+# its report a rough look, and it decides nothing. The base's rough look runs the same way, without
+# a candidate, on as many learners: `just rough engine runs/base-300.jsonl` and
 # `CANDIDATE_ENGINE=<sha> just rough engine runs/engine-a-300.jsonl`.
 # Run a rough look of a rule on fewer working learners than a decisive run: rule engine or ceiling.
 rough rule out learners="300": (cells "rough" rule out "working" learners)
 
 # The body of just decisive and just rough: the runs of a rule on so many learners a cell of a set,
-# a rough look only of fewer than a decisive run's 2,000 and only on the working learners.
+# a rough look only of fewer than a decisive run's and only on the working learners.
 [private]
 cells kind rule out set learners:
     #!/usr/bin/env bash
@@ -435,20 +432,20 @@ cells kind rule out set learners:
     "$tmp/sim" merge -out "$out" "$tmp"/part-*.jsonl
     sha256sum "$out"
 
-# The gate (docs/architecture.md, sections 3.7 and 3.9; R09, R26, R27 in docs/decisions.md). It
-# builds the bench only on the commits gate.json names, through the workspace the recipe workspace
-# writes in a temporary folder: each library at its commit, or the caller's own code in its place
-# from GATE_LEARNER_MODEL or GATE_ENGINE, a folder or a commit by its full SHA. It points GOWORK at
-# that workspace and builds sim once. The run goes as processes, one part of the learners each, as many as the
-# processors: R09 keeps goroutines out of code. Then sim holds the build to gate.json — the versions
-# the workspace chose, the go lines, the point sim's go.mod names, the packages — and the numbers to
-# their bands, and writes the table. mode is bands, as the callers hold them; exact, the recorded
-# numbers to the last bit, as sim's own CI holds them on amd64 and arm64; record, which writes the
-# bands into gate.json anew, for the reason given as the one argument; or modules, the gate of the
-# CI of modules, whose arguments are those of `sim gate changed` (docs/README.md): it asks sim what
-# changed of what the bench reads, before it fetches anything, runs the gate on the packages of the
-# changed modules alone, and holds the numbers to thresholds, not bands. Relative paths among those
-# arguments are of the caller's folder. gate-part and gate-check below run the same gate as jobs.
+# The gate (R09, R26, R27). It builds the bench only on the commits gate.json names, through the
+# workspace the recipe workspace writes in a temporary folder: each library at its commit, or the
+# caller's own code in its place from GATE_LEARNER_MODEL or GATE_ENGINE, a folder or a commit by its
+# full SHA. It points GOWORK at that workspace and builds sim once. The run goes as processes, one
+# part of the learners each, as many as the processors: R09 keeps goroutines out of code. Then sim
+# holds the build to gate.json — the versions the workspace chose, the go lines, the point sim's
+# go.mod names, the packages — and the numbers to their bands, and writes the table. mode is bands,
+# as the callers hold them; exact, the recorded numbers to the last bit, as sim's own CI holds them
+# on amd64 and arm64; record, which writes the bands into gate.json anew, for the reason given as
+# the one argument; or modules, the gate of the CI of modules, whose arguments are those of
+# `sim gate changed`: it asks sim what changed of what the bench reads, before it fetches anything,
+# runs the gate on the packages of the changed modules alone, and holds the numbers to thresholds,
+# not bands. Relative paths among those arguments are of the caller's folder. gate-part and
+# gate-check below run the same gate as jobs.
 # Run the gate on the commits of gate.json: mode bands, exact, record or modules.
 [positional-arguments]
 gate mode="bands" *args:
@@ -464,15 +461,15 @@ gate mode="bands" *args:
     esac
     {{ just_executable() }} -f {{ quote(justfile()) }} gate-bench {{ quote(invocation_directory()) }} "$mode" 0 1 - "$@"
 
-# The gate as jobs of CI, as the workflow gate.yml runs it (R67 in docs/decisions.md): n jobs, each
-# its part of the learners, those whose number gives k mod n, and one check after them. It is the
-# run of just gate, cut along the same line its processes are: job k runs, as processes, the parts
-# k + n·j of n·p, j below p, with p its processors, so the parts of all n jobs are each part of n·p
-# once, as long as every job has as many processors — the jobs of one gate run on one kind of
-# runner. Each part is a file part-<number>.jsonl in dir, of the caller's folder when relative,
-# which the jobs of one machine share. It holds the numbers to nothing; gate-check does, and refuses
-# a part missing or a part of another run — other learners, libraries or number of parts —, by sim
-# merge's own check. The gate of modules stays one job.
+# The gate as jobs of CI, as the workflow gate.yml runs it (R67): n jobs, each its part of the
+# learners, those whose number gives k mod n, and one check after them. It is the run of just gate,
+# cut along the same line its processes are: job k runs, as processes, the parts k + n·j of n·p, j
+# below p, with p its processors, so the parts of all n jobs are each part of n·p once, as long as
+# every job has as many processors — the jobs of one gate run on one kind of runner. Each part is a
+# file part-<number>.jsonl in dir, of the caller's folder when relative, which the jobs of one
+# machine share. It holds the numbers to nothing; gate-check does, and refuses a part missing or a
+# part of another run — other learners, libraries or number of parts —, by sim merge's own check.
+# The gate of modules stays one job.
 # Run part k of n of the gate into a folder, as one job of n.
 [positional-arguments]
 gate-part k n dir:
@@ -541,7 +538,7 @@ gate-bench from mode job jobs parts *args:
             exit 0
         fi
         # A line "along <folder>" is a package that did not change and runs only on the graphs it
-        # shares with one that did (R31 in docs/decisions.md).
+        # shares with one that did (R31).
         while IFS= read -r line; do
             case "$line" in
                 "along "*) packages+=(-along "${line#along }") ;;

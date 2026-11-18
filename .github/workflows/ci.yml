@@ -30,16 +30,16 @@ jobs:
     name: Documents
     uses: altnovatrail/.github/.github/workflows/documents.yml@f1c7e9e6f8245fdbdbc23c4091f3c26350e3a44e # v0.1.33
 
-  # The repository's Go code, by its own ci- recipes in its toolchain stage, and the coverage of
-  # its tests, which the shared workflow sends to Codecov (R16 .github; R10). id-token: write is
-  # for its coverage job alone, which asks for an OIDC token: a called workflow can only lower what
-  # this job gives it. With same-bits it holds the bits the same on every build too (R09;
-  # docs/architecture.md, section 3.9): "Go / targets", the check after a job "Go / target (…)" for
-  # each target (R43 .github), "Go / fma-diff", "Go / arm64" on arm64 hardware, and "Go / rules",
-  # the rules of code by the tool of .github and the lists of .github/coderules.json. Its jobs take
-  # the image of the toolchain stage and the caches of Go from this repository's cache of GitHub
-  # Actions, which a push to main alone saves (R41, R42 .github; R68). The gate is not among them:
-  # it builds the bench on the commits of its gate file and comes with a job of its own (R09).
+  # The repository's Go code, by its own ci- recipes in its toolchain stage, and the coverage of its
+  # tests, which the shared workflow sends to Codecov (R16 .github; R10). id-token: write is for its
+  # coverage job alone, which asks for an OIDC token: a called workflow can only lower what this job
+  # gives it. With same-bits it holds the bits the same on every build too (R09): "Go / targets",
+  # the check after a job "Go / target (…)" for each target (R43 .github), "Go / fma-diff",
+  # "Go / arm64" on arm64 hardware, and "Go / rules", the rules of code by the tool of .github
+  # and the lists of .github/coderules.json. Its jobs take the image of the toolchain stage and the
+  # caches of Go from this repository's cache of GitHub Actions, which a push to main alone saves
+  # (R41, R42 .github; R68). The gate is not among them: it builds the bench on the commits of its
+  # gate file and comes with a job of its own (R09).
   go:
     name: Go
     permissions:
@@ -49,12 +49,12 @@ jobs:
     with:
       same-bits: true
 
-  # The gate (R09, R26; docs/architecture.md, sections 3.7 and 3.9): the bench built on the commits
-  # of gate.json through go.work, in the toolchain stage of sim's devcontainer, on amd64 and arm64,
-  # each by gate.yml — four jobs of a part of the learners each and the check after them, whose name
-  # is the gate's, "Gate / amd64" and "Gate / arm64" (R67). Its own CI holds the numbers to the
-  # recorded ones to the last bit, so that the two architectures give the same bits as each other
-  # and as the record; a caller holds them to their bands.
+  # The gate (R09, R26): the bench built on the commits of gate.json through go.work, in the
+  # toolchain stage of sim's devcontainer, on amd64 and arm64, each by gate.yml — four jobs of a
+  # part of the learners each and the check after them, whose name is the gate's, "Gate / amd64" and
+  # "Gate / arm64" (R67). Its own CI holds the numbers to the recorded ones to the last bit, so that
+  # the two architectures give the same bits as each other and as the record; a caller holds them to
+  # their bands.
   gate-amd64:
     name: Gate
     uses: ./.github/workflows/gate.yml

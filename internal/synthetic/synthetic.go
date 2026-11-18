@@ -1,12 +1,11 @@
 // Package synthetic builds the bench's own synthetic packages: canonical views in the shape of the
 // three modules of the first slice, for the code and the tests of the bench and not to judge
-// candidates by (docs/architecture.md, section 3.3; R03; R19 in docs/decisions.md). A sheet with a
-// choice, numbers and a predicate over three bands of grades 1–6, one of whose skills rests on an
-// anchor skill; a workbook of one band of grade 3 with pages of up to ten lines, one of whose skills
-// teaches that anchor; essays with a rubric and no grades. The published packages have neither a
-// skill that rests on another module's anchor nor a cell of predicate (docs/architecture.md,
-// section 4), so the populations A- and S-predicate run here only. No learner's data is in them:
-// every word is the bench's own (RULES.md, Hard rules).
+// candidates by (R03, R19). A sheet with a choice, numbers and a predicate over three bands of
+// grades 1–6, one of whose skills rests on an anchor skill; a workbook of one band of grade 3 with
+// pages of up to ten lines, one of whose skills teaches that anchor; essays with a rubric and no
+// grades. The published packages have neither a skill that rests on another module's anchor nor a
+// cell of predicate, so the populations A- and S-predicate run here only. No learner's data is in
+// them: every word is the bench's own.
 package synthetic
 
 import (
@@ -26,9 +25,9 @@ const (
 	Sheet    = "synthetic/sheet"
 	Workbook = "synthetic/workbook"
 	Essays   = "synthetic/essays"
-	// Anchor is an anchor skill of the shared taxonomy: the format names no other (the text of the
-	// format; formatv0.SharedTaxonomy), and the published school maths for grade 3 teaches it too,
-	// which matters not, since the synthetic modules never meet the published ones.
+	// Anchor is an anchor skill of the shared taxonomy: the format names no other
+	// (formatv0.SharedTaxonomy), and the published school maths for grade 3 teaches it too, which
+	// matters not, since the synthetic modules never meet the published ones.
 	Anchor = string(formatv0.SharedTaxonomyCoreMultiplicationTable)
 )
 
