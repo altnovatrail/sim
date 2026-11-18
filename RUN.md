@@ -74,7 +74,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T82 | База гейта — релиз `learner-model` v0.1.13 (Д12) | Claude | — | релиз `learner-model` v0.1.13 с #84 |
 | [x] | T83 | Переход на тег `spec` v0.18.27 и релиз `.github` v0.1.33 | Claude | — | — |
 | [x] | T84 | Тексты без истории (R160 spec) и тег `spec` v0.18.34 | Claude | — | — |
-| [ ] | T85 | Тексты без истории: `docs/architecture.md`, разделы 1–3.4 | Claude | — | T84 |
+| [x] | T85 | Тексты без истории: `docs/architecture.md`, разделы 1–3.4 | Claude | — | T84 |
 | [ ] | T86 | Тексты без истории: `docs/architecture.md`, разделы 3.5–3.9 | Claude | — | T84 |
 | [ ] | T87 | Тексты без истории: `docs/README.md`, README, CLAUDE.md, `.claude/rules/`, план | Claude | — | T84 |
 | [ ] | T88 | Комментарии кода по R160 spec: корень, `internal/bench`, `criterion`, `gate` | Claude | — | T84 |
@@ -111,19 +111,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **не входит:** кандидат `engine` — он идёт своей причиной (R59); числа забывания `learner-model` (sources 3.10).
 
 ## Задачи эпика
-
-#### T85. Тексты без истории: `docs/architecture.md`, разделы 1–3.4
-
-- **Цель:** разделы 1 и 2, вводная и «What stays open» раздела 3 и подразделы 3.1–3.4 [docs/architecture.md](docs/architecture.md) описывают текущее устройство, без истории (R160 spec).
-- **Почему:** R160 spec, строка 7.31 COORDINATION.md spec; T84 разделила её по правилу 11.
-- **Сделать:**
-  - убрать хроники версий, статусов и повышений, номера задач и даты: значение — файлом, где оно задано (`go.mod`, `gate.json`, подмодуль `spec`, `ARG` Dockerfile), не значением;
-  - решение — ссылкой номером, без пересказа; раздел 2 — только то, что ещё решать;
-  - ссылка на поправку записи `spec`, которую тег переписал на месте (R143, R145, R154, R155 spec), — на запись;
-  - ссылки других документов на изменённые места — сверить.
-- **Не делать:** записи журнала — их переписывает задача, которая их касается (R160 spec); `docs/sources.md`, `docs/measurements.md` и архивы `docs/plan/` — вне правила. Разделы 3.5–3.9 — T86; раздел 4 не переписывается (CLAUDE.md, Documents).
-- **Как проверить:** `just -f spec/justfile docs-check-repo`; `/code-review high`.
-- **Разделы:** R160 spec; RULES.md spec, The bar; [docs/architecture.md](docs/architecture.md), разделы 1–3.4.
 
 #### T86. Тексты без истории: `docs/architecture.md`, разделы 3.5–3.9
 
