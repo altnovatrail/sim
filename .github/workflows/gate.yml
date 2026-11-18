@@ -9,7 +9,7 @@
 # sim's own CI calls it from ci.yml, once an architecture, with no sim-commit: sim is then the
 # commit the event checks out. A caller — learner-model or engine — calls it by the SHA of a tag of
 # sim, with that tag and SHA as sim-tag and sim-commit, and its own library's variable, so that its
-# code takes that library's place (README.md, "Gate").
+# code takes that library's place (docs/README.md, "Gate").
 name: Gate
 
 on:
@@ -92,7 +92,7 @@ jobs:
           restore-keys: gate-${{ runner.os }}-${{ runner.arch }}-
 
       # The toolchain stage from the cache of GitHub Actions, by the steps of the shared go.yml of
-      # v0.1.31 (R36, R42, R47 .github; the 2026-11-09 amendment to R31 spec; R63, R68, R70): the
+      # v0.1.33 (R36, R42, R47 .github; the 2026-11-09 amendment to R31 spec; R63, R68, R70, R77): the
       # same file, image, path and key, so in sim's own CI the entry is the one the jobs of go.yml
       # and documents.yml read on the same runner — sim's toolchain adds nothing to its core, so
       # they keep the one image of toolchain —, and the image is built from the Dockerfile only on a
