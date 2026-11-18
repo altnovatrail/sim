@@ -1,3 +1,5 @@
 {
-  "entries": {"R04": 90}
+  "entry": 12,
+  "entries": {"R04": 81, "R31": 14, "R33": 13, "R55": 13},
+  "comments": true
 }
