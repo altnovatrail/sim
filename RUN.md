@@ -1,6 +1,6 @@
 # RUN.md — work plan of sim
 
-What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.18.34: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
+What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.19.4: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
 
 Language (R154 spec): rules and tables in English, terse, for the session; the epic's description, table 1 and the bodies of tasks in Russian — the author writes and reviews them. Commit messages, issues and a pull request's title and description in English, a person's too; a session's terse, for the session, never a copy of the report (the 2026-11-17 amendments to R14 spec; R75, R77).
 
@@ -80,11 +80,12 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T88 | Комментарии кода по R160 spec: корень, `internal/bench`, `criterion`, `gate` | Claude | — | T84 |
 | [x] | T89 | Комментарии кода по R160 spec: `internal/learner`, `measure`, `run`, `invariant` | Claude | — | T84 |
 | [x] | T90 | Комментарии кода по R160 spec: остальные пакеты, justfile, `.github/`, `.devcontainer/` | Claude | — | T84 |
+| [x] | T91 | Переход на тег `spec` v0.19.4 | Claude | — | — |
 
 **Почему такой порядок.**
 - Суд — по коммитам черновых pull request кандидатов, не по их релизу: `sim` гонит кандидата из его коммита (R34), а релиз выбранного ждёт полос `sim` (R103 spec).
 - База на релиз — после суда; при выходе T73 только архивирует эпик. Отдельной задачи итога нет: последняя архивирует (R59).
-- T74–T90 — вне эпика, в таблице 1, а не в `run/TASKS.md` (R61): каждая — по строке COORDINATION.md spec или слову автора в прогоне оркестратора `spec` (R156 spec), её причина — в её теле; тела сделанных — в [docs/plan/E10.md](docs/plan/E10.md).
+- T74–T91 — вне эпика, в таблице 1, а не в `run/TASKS.md` (R61): каждая — по строке COORDINATION.md spec, слову автора или эпику `spec` в прогоне его оркестратора (R156 spec), её причина — в её теле; тела сделанных — в [docs/plan/E10.md](docs/plan/E10.md).
 - T87–T90 — строка 7.31 COORDINATION.md spec, по одному ревью (правило 11): друг от друга не зависят и не двигают ни бит, ни закрепления.
 
 ## Epic E10. Суд круга справедливости модели
@@ -98,7 +99,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **одно закрепление:** от тега T71 до выбора суда `go.mod`, `gate.json`, пакеты и пути не меняются; релиз `spec`, `engine` или `modules`, который выйдет за это время, ждёт конца суда и берётся своей задачей. Исключение — тег `spec` с теми же битами (R45);
 - **пока суд отложен** (R69): правила «биты 68 ячеек не двигаются до выбора суда» и «одно закрепление» не действуют, а «критерий — до первого кандидата» и «отложенный набор суда» — действуют — суда нет, и держать им нечего; вернувшийся суд называет свой тег и базу поправкой к R65 до первого кандидата (R69);
 - **отложенный набор суда** не гоняет никто до подтверждения T72: ни разведка `learner-model`, ни грубый взгляд (R49, R52; раздел 3.8 [docs/architecture.md](docs/architecture.md));
-- **в прогоне оркестратора `spec`** каждая задача — своя ветка от `main` и свой pull request, мержит оркестратор на зелёных проверках (R156 spec; правило 7); вопросы плана — строки [run/QUESTIONS.md](run/QUESTIONS.md);
+- **в прогоне оркестратора `spec`** каждая задача — своя ветка от `main` и свой pull request, если промпт не называет общую — ветку эпика `spec` или пакета задач (R159 spec); мержит оркестратор на зелёных проверках (R156 spec; правило 7); вопросы плана — строки [run/QUESTIONS.md](run/QUESTIONS.md);
 - **не входит:** кандидат `engine` — он идёт своей причиной (R59); числа забывания `learner-model` (sources 3.10).
 
 ## Задачи эпика
