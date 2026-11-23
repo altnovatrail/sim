@@ -94,7 +94,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T102 | Ссылки по R171 spec: журнал, R70–R77 | Claude | — | T93 |
 | [x] | T103 | Ссылки по R171 spec: `docs/architecture.md`, разделы 1–3.4, и `docs/README.md` | Claude | — | T93 |
 | [x] | T104 | Ссылки по R171 spec: `docs/architecture.md`, разделы 3.5–4 | Claude | — | T94, T95, T97, T98 |
-| [ ] | T105 | Ссылки по R171 spec: `docs/sources.md`, `docs/measurements.md`, ключ `"citations"` | Claude | — | T93–T104 |
+| [x] | T105 | Ссылки по R171 spec: `docs/sources.md`, `docs/measurements.md`, ключ `"citations"` | Claude | — | T93–T104 |
 | [x] | T106 | Переход на тег `spec` v0.19.12 | Claude | — | — |
 | [x] | T107 | Ссылки по строгому правилу R171 spec: проход по первой части | Claude | — | T106 |
 
@@ -151,15 +151,3 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Как проверить:** при выборе — `just gate exact`, `just ci-test`, `just ci-lint`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
 - **Отложено (2026-11-16):** `[?]` — вслед за T72, по тому же решению автора (R69): суда нет, и базе не на что переходить; эпик не уходит в архив, пока таблица 1 не вся отмечена (правила RUN.md, «Epics»). Вернуться вместе с T72.
 - **Разделы:** R04, R26, R29, R40, R55, R58, R59; [docs/architecture.md](docs/architecture.md), разделы 3, 3.6 и 3.9; architecture 3.9 spec; dpia 10.2 spec.
-
-#### T105. Ссылки по R171 spec: `docs/sources.md`, `docs/measurements.md`, ключ `"citations"`
-
-- **Цель:** [docs/sources.md](docs/sources.md) и [docs/measurements.md](docs/measurements.md) — по правилу ссылок R171 spec: запись хранит дату и не называет задачу, в заголовке тоже; шапка `docs/sources.md` — по заготовке; `docs-budgets.json` — `"citations": true`, и `docs-check-repo` с ним зелёный.
-- **Почему:** последняя часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела: ключ включает последняя.
-- **Сделать:**
-  1. Шаги 4 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — в обоих файлах; номер задачи в заголовке записи — убрать, номер раздела не меняется; ссылки других документов на запись по заголовку-якорю — поправить.
-  2. Шапка `docs/sources.md` — по `spec/repo-template/files/docs/sources.md`, с отличиями `sim`; в шапке журнала — без оговорки о поправках, которые ещё свёртывают свои задачи: их больше нет.
-  3. `docs-budgets.json` — `"citations": true`, как в `spec/repo-template/files/docs-budgets.json`; что `docs-check-repo` с ним ещё находит в других документах — поправить здесь же.
-  4. Замер «после» — командами measurements 1.18.4 spec, по видам, против «до» тела T93.
-- **Как проверить:** `just -f spec/justfile docs-check-repo` с ключом — зелёный; `/code-review high`, один круг; в отчёте — ссылок «до» (тело T93) и «после», по видам.
-- **Разделы:** R171 spec, R32 spec; `spec/repo-template/files/` — `docs/sources.md`, `docs-budgets.json`; measurements 1.18 spec.

@@ -1,14 +1,12 @@
 # sim decision log
 
-> Why sim is built the way it is. Each entry: what was decided, why, what was rejected, and in its tail "— *Consequence:*" the files and sections that a change of it edits (R171 spec).
+> Why sim is built the way it is. Each entry: what was decided, why, what was rejected, and in its tail "— *Consequence:*" the files, by their paths, that a change of it edits.
 >
-> **Rule:** do not re-propose what was rejected without new facts. If a decision has to change, ask the author and rewrite its entry in its place, and every entry the change touches: an entry is its text in force — what was decided, why, what was rejected and what a change of it edits —, git keeps the old text, and the commit says why (R160 spec). No dated amendment is written, and those still here are folded into their entries by tasks of their own, one a group of sections (RUN.md, table 1).
+> **Rule:** do not re-propose what was rejected without new facts. If a decision has to change, ask the author and rewrite its entry in its place, and every entry the change touches: an entry is its text in force — what was decided, why, what was rejected and what a change of it edits —, git keeps the old text, and the commit says why. An entry's number stands in its heading alone: an entry cites no other entry and no section, says in words what it rests on, and carries no date of who decided it and no amendment; a claim about the outside world cites its one record of [sources.md](sources.md) or [measurements.md](measurements.md).
 >
-> The repository was set up 2026-10-19 from the template of `spec` v0.1.0 (R21 spec). How it comes to differ from the template — tools in the devcontainer, rules in RUN.md — is recorded here as a decision, as R46 canvas-api recorded how it differed from its model. A move to a tag of `spec` is its commit, with no entry of the log, and what an entry says of the tag of `spec` or the release of `.github` that `sim` stands on is the state of its day: the tag is the submodule's and `go.mod`'s, the release that of the `uses:` of `.github/workflows/` (R71; R160 spec). Next number — R78.
+> The repository was set up 2026-10-19 from the template of `spec` v0.1.0. How it comes to differ from the template — tools in the devcontainer, rules in RUN.md — is recorded here as a decision. A move to a tag of `spec` is its commit, with no entry of the log, and what an entry says of the tag of `spec` or the release of `.github` that `sim` stands on is the state of its day: the tag is the submodule's and `go.mod`'s, the release that of the `uses:` of `.github/workflows/`. Next number — R78.
 >
-> Here entries are cited as `R03`, in other repositories as `R03 sim`. `spec`'s decisions are cited as "R18 spec", MathTrail's decisions as "R37 canvas-api", and in a list as "canvas-api: R37, R38". Each log has its own numbers.
->
-> Open questions that concern several repositories are in `spec`'s registers: О- in product 13 spec, П- in privacy 9 spec, Т- in repositories 8 spec. What is still to be decided in the component itself is in [architecture.md](architecture.md), section 2.
+> Open questions that concern several repositories — О-, П-, Т- — are in the registers of `spec`, in `spec/docs/product.md`, `spec/docs/privacy.md` and `spec/docs/repositories.md`. What is still to decide in the component itself is in [architecture.md](architecture.md).
 
 ## The tag `spec`
 
