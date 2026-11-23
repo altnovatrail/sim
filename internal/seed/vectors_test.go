@@ -17,7 +17,7 @@ import (
 
 // readVector reads a vector of spec's format/vectors into v: the YAML into plain values, and those
 // through JSON into the types of formatv0, whose tags are JSON's. The vectors are embedded in
-// spec's Go module, so no submodule is needed (R64 spec).
+// spec's Go module, so no submodule is needed.
 func readVector(t *testing.T, name string, v any) {
 	t.Helper()
 	data, err := fs.ReadFile(spec.Format, name)

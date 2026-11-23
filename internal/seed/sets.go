@@ -18,21 +18,22 @@ type Set struct {
 // Working is the set of working learners: the gate and the decisive runs take the same ones.
 var Working = Set{Seed: 20261107, Experiment: "working"}
 
-// heldOut are the held-out sets R04 has recorded, by the name of their experiment. The seed of each
-// next choice of a criterion, and of each pair, is recorded in R04 before its candidate first runs,
-// and only then comes in here.
+// heldOut are the held-out sets the decision log has recorded, by the name of their experiment. The
+// seed of each next choice of a criterion, and of each pair, is recorded in the log before its
+// candidate first runs, and only then comes in here (R04).
 var heldOut = map[string]uint64{
 	"held-out-model-1":  20261108,
 	"held-out-engine-1": 20261109,
 	// The judgement of one variant apart from the rounds of its criterion takes a set of its own,
-	// held-out-<criterion>-<variant>-<n>: consolidation in a lesson (R49).
+	// held-out-<criterion>-<variant>-<n>: consolidation in a lesson.
 	"held-out-engine-lesson-1": 20261113,
 	// The judgement of the round of fairness by the grade, apart from the rounds of the model's
-	// criterion (R65).
+	// criterion.
 	"held-out-model-fair-1": 20261116,
 }
 
-// Named gives a set by the name of its experiment: working, or a held-out set R04 has recorded.
+// Named gives a set by the name of its experiment: working, or a held-out set the decision log has
+// recorded.
 func Named(experiment string) (Set, error) {
 	if experiment == Working.Experiment {
 		return Working, nil
@@ -44,16 +45,16 @@ func Named(experiment string) (Set, error) {
 	return Set{Seed: s, Experiment: experiment}, nil
 }
 
-// ErrNotRecorded is a held-out set R04 has not recorded yet.
+// ErrNotRecorded is a held-out set the decision log has not recorded yet.
 var ErrNotRecorded = errors.New("seed: no such held-out set is recorded in R04")
 
 // confirmations are the held-out sets of the judgements' confirmations, by the name of the
 // judgement, its folder judgements/<name>/: each judgement confirms its choice on a set of its own,
 // so a set kept for another round or variant, or one another judgement has looked at, is none of
-// its (R35, R52). A round takes the first set of its criterion no confirmation has looked at —
-// model-2 the one model-1 left by its exit (R46) —, but engine-2 keeps held-out-engine-1, which
-// engine-lesson-1 would take by that rule (R35). The row of each next judgement comes in with the
-// line of R04 that records its seed, and no set is in two rows.
+// its. A round takes the first set of its criterion no confirmation has looked at — model-2 the one
+// model-1 left by its exit —, but engine-2 keeps held-out-engine-1, which engine-lesson-1 would
+// take by that rule. The row of each next judgement comes in with the record of its seed in the
+// decision log, and no set is in two rows.
 var confirmations = map[string]string{
 	"model-2":         "held-out-model-1",
 	"engine-2":        "held-out-engine-1",
@@ -91,7 +92,7 @@ const (
 )
 
 // HeldOut gives the held-out set of the n-th choice of a criterion: experiment
-// held-out-<criterion>-<n>, at the seed R04 recorded for it.
+// held-out-<criterion>-<n>, at the seed the decision log recorded for it.
 func HeldOut(criterion string, n int) (Set, error) {
 	experiment := "held-out-" + criterion + "-" + strconv.Itoa(n)
 	s, ok := heldOut[experiment]

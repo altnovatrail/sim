@@ -20,7 +20,7 @@ import (
 
 // The gate of the CI of modules judges content, not a library, and a change of content moves the
 // numbers by design: it holds the invariants and thresholds, not bands, on the packages a pull
-// request built, and only on the modules where what the bench reads changed (R04, R05, R27).
+// request built, and only on the modules where what the bench reads changed.
 
 // State is what a package of a pull request is against the published versions of its module.
 type State string
@@ -34,7 +34,7 @@ const (
 	// Same is a package the bench reads the same of as the newest published version.
 	Same State = "same"
 	// Transition is a package of another version of the format than the newest published version:
-	// a transition of the format, where the bench does not run (R103 spec).
+	// a transition of the format, where the bench does not run.
 	Transition State = "transition"
 )
 
@@ -61,15 +61,15 @@ type Change struct {
 var ErrModules = errors.New("gate: modules")
 
 // Changes tells, for each package of a pull request, whether what the bench reads of it changed
-// against the newest published version of its module that is not withdrawn — the one api gives
-// (R63 spec) —, by their canonical texts (pack.Module.Text). idx is the index of the newest release
-// of modules, which release-verify has accepted, and pub the packages of its versions, each
-// checked by the chain of digests from it; with no index, there is no release yet, and every
-// package is new. A package of another version of the format than that version is a transition,
-// whose content the bench does not compare across the formats; a package of a version of the format
-// the bench does not read, which is no transition, is refused: it wants a newer tag of sim. A
-// package that is broken — a server part apart from its inventory, a manifest of another module —
-// is refused, a transition too.
+// against the newest published version of its module that is not withdrawn — the one api gives —,
+// by their canonical texts (pack.Module.Text). idx is the index of the newest release of modules,
+// which release-verify has accepted, and pub the packages of its versions, each checked by the
+// chain of digests from it; with no index, there is no release yet, and every package is new. A
+// package of another version of the format than that version is a transition, whose content the
+// bench does not compare across the formats; a package of a version of the format the bench does
+// not read, which is no transition, is refused: it wants a newer tag of sim. A package that is
+// broken — a server part apart from its inventory, a manifest of another module — is refused, a
+// transition too.
 func Changes(idx *formatv0.ModuleIndex, pub, packages []Package) ([]Change, error) {
 	byDigest := map[formatv0.Digest]Package{}
 	for _, p := range pub {
@@ -215,7 +215,7 @@ func ModulesConfig(part bench.Part, commits map[string]string, packages []bench.
 	return c
 }
 
-// tolerance is the author's tolerance of the shares of E1 and E2, one percentage point (R04).
+// tolerance is the author's tolerance of the shares of E1 and E2, one percentage point.
 const tolerance = 0.01
 
 // threshold is a threshold of the gate of modules: a number, on the cells of populations — every
@@ -230,11 +230,11 @@ type threshold struct {
 	from        string // "largest", "smallest", or "" for a limit of its own
 }
 
-// thresholds are the thresholds of the gate of modules (R05, R27): the learners stuck and the
-// choices of nothing no more than on the published graphs; on G0 and G2-half, the share of items
-// with P* below 0.50 no more, and the share in the corridor no less, than on the published graphs;
-// no more than 20 % false "mastered" on G0, the floor of the model's criterion; no task with a
-// rubric given again.
+// thresholds are the thresholds of the gate of modules: the learners stuck and the choices of
+// nothing no more than on the published graphs; on G0 and G2-half, the share of items with P* below
+// 0.50 no more, and the share in the corridor no less, than on the published graphs; no more than
+// 20 % false "mastered" on G0, the floor of the model's criterion; no task with a rubric given
+// again.
 var thresholds = []threshold{
 	{number: "E2.stuck", most: true, from: "largest"},
 	{number: "E2.nothing", most: true, from: "largest"},
@@ -407,11 +407,11 @@ func (r *ThresholdReport) Write(w io.Writer) error {
 	return err
 }
 
-// Runs gives the packages of a pull request the gate of modules runs on, in their order: the changed
-// and new ones, or with all every one but a transition of the format; and with them each package
-// that did not change but shares a graph of a population of the gate with one that runs, so that
-// the graph runs on the packages of the pull request — A-linked on both maths when either changed
-// (R31). Such a package names in With the module that brings it.
+// Runs gives the packages of a pull request the gate of modules runs on, in their order: the
+// changed and new ones, or with all every one but a transition of the format; and with them each
+// package that did not change but shares a graph of a population of the gate with one that runs, so
+// that the graph runs on the packages of the pull request — A-linked on both maths when either
+// changed. Such a package names in With the module that brings it.
 func Runs(changes []Change, all bool) []Change {
 	runs := func(c Change) bool { return c.State == Changed || c.State == New || all && c.State == Same }
 	with := map[string]string{}

@@ -13,8 +13,8 @@ import (
 
 // The time a learner spends, in seconds, on an item of a sheet, as in standalone, on a line of a
 // workbook, on an essay, and on a link of a lesson that is no task — an explanation or a worked
-// example —, an assumption of the bench (R15). Answers after a rung take no time of their own: the
-// next task comes at the time the attempt's items would.
+// example —, an assumption of the bench. Answers after a rung take no time of their own: the next
+// task comes at the time the attempt's items would.
 const (
 	SheetItemSeconds    = 120
 	WorkbookLineSeconds = 60
@@ -35,7 +35,7 @@ const (
 // ItemResult is how one item of an attempt went.
 type ItemResult struct {
 	Place      int32
-	FirstRight bool    // the first verdict of the item, the one the model reads (R06 learner-model)
+	FirstRight bool    // the first verdict of the item, the one the model reads
 	Right      bool    // whether it was right by the attempt's end
 	Wrong      int     // its wrong answers before it was right, or all of them
 	Unreadable bool    // its first answer was unreadable and written again (S-unreadable)
@@ -54,7 +54,7 @@ type Attempt struct {
 	// Technique tells that the learner took the technique on request before its first answer.
 	Technique bool
 	// LeadingQuestion tells that the hint asked for gave the task's leading question too: the request
-	// of the technique gives it on a task that has one, with no lift of its own (R41).
+	// of the technique gives it on a task that has one, with no lift of its own.
 	LeadingQuestion bool
 }
 
@@ -67,10 +67,10 @@ var ErrNoAnswer = errors.New("learner: the task has nothing to answer")
 // fraction of the place answers each in the items' order, then, after a wrong answer, again on
 // each rung of the ladder, one fraction of the place retries for each item not yet right; with the
 // fourth wrong answer the solution is shown — to a child by the adult's act, as by default, to a
-// learner of the category adult by its own button (R82 spec). A task with a rubric is written, sent
-// once and done. The attempt's seed is the next integer of the place attempt. Then the stability of
-// each primary skill of the items moves once, by the share of its first verdicts that were right,
-// and its last practice becomes the attempt's start.
+// learner of the category adult by its own button. A task with a rubric is written, sent once and
+// done. The attempt's seed is the next integer of the place attempt. Then the stability of each
+// primary skill of the items moves once, by the share of its first verdicts that were right, and
+// its last practice becomes the attempt's start.
 func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 	task := t.Candidate.Task
 	if _, err := l.Module(moduleOf(task.ID, "task")); err != nil {
@@ -161,15 +161,15 @@ func (l *Learner) Answer(t *pack.Task, at int64) (Attempt, error) {
 	a.End = at + per*int64(len(a.Items))
 	l.practise(t, a)
 	l.learn(t, a)
-	// The solution goes to the device when the attempt closes right or with it shown (R82 spec).
+	// The solution goes to the device when the attempt closes right or with it shown.
 	l.solved[task.ID] = a.End
 	return a, nil
 }
 
 // practise moves the stability of each primary skill of the attempt's items once, by the share S̄
 // of its first verdicts that were right: τ* := max(τ₀; τ* · (1 + g · (1 − R*))^S̄ · (1/2)^(1 − S̄)),
-// R* at the attempt's start; and sets its last practice to the attempt's start (R04, R06
-// learner-model). The skills move in the order of their IDs.
+// R* at the attempt's start; and sets its last practice to the attempt's start. The skills move in
+// the order of their IDs.
 func (l *Learner) practise(t *pack.Task, a Attempt) {
 	right, all := map[string]int{}, map[string]int{}
 	var ids []string
@@ -221,7 +221,7 @@ type Pass struct {
 // and the model between them, as they stand when the task is given and once it is answered. End,
 // when given, is called last, at the end of the task's link: it gives when the next link is given,
 // at the attempt's end or later — after a task of consolidation the caller gave outside the
-// lesson (R48).
+// lesson.
 type Each struct {
 	Before func(t *pack.Task, at int64) error
 	After  func(t *pack.Task, a Attempt) error
@@ -230,11 +230,11 @@ type Each struct {
 
 // PassLesson has the learner pass a lesson of a module given at a time, link by link in the author's
 // order to its end: an explanation or a worked example takes two minutes and changes nothing of the
-// truth (R15) but for L-explain, where the first one reached teaches the lesson's skills once; a
-// task is answered as any task is. L-abandon leaves a pass at a link drawn evenly, and the next pass
-// of the lesson goes on from that link. each, when given, is called around each task: Before when
-// it is given, After once it is answered, End at the end of its link; the pass ends when its last
-// link does.
+// truth but for L-explain, where the first one reached teaches the lesson's skills once; a task is
+// answered as any task is. L-abandon leaves a pass at a link drawn evenly, and the next pass of the
+// lesson goes on from that link. each, when given, is called around each task: Before when it is
+// given, After once it is answered, End at the end of its link; the pass ends when its last link
+// does.
 func (l *Learner) PassLesson(m *pack.Module, lesson *pack.Lesson, at int64, each *Each) (Pass, error) {
 	if _, err := l.Module(m.ID); err != nil {
 		return Pass{}, err

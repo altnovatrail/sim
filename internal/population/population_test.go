@@ -100,7 +100,7 @@ func TestPopulationsRun(t *testing.T) {
 	for _, p := range All() {
 		for _, g := range p.Graphs {
 			// The populations of fairness run here on the synthetic sheet, which has the three bands of
-			// grades 1–6 (R55).
+			// grades 1–6.
 			if p.Fair() {
 				g = []string{synthetic.Sheet}
 			}
@@ -251,8 +251,8 @@ func TestOwn(t *testing.T) {
 }
 
 // The populations of fairness by the grade: G0 with the grade fixed at 1, 3 or 5 and the truth of
-// grade 3, on olympiad maths, all three on the reference's units (R55); no other population is one
-// of fairness.
+// grade 3, on olympiad maths, all three on the reference's units; no other population is one of
+// fairness.
 func TestFairness(t *testing.T) {
 	want := []struct {
 		name  string
@@ -282,7 +282,7 @@ func TestFairness(t *testing.T) {
 }
 
 // C-grade1 is D-grade1 with an adult who corrects the level after CorrectAfter answers: of fairness,
-// on the reference's units, found by its name, and in no run of all the populations (R72).
+// on the reference's units, found by its name, and in no run of all the populations.
 func TestRules(t *testing.T) {
 	if len(Rules) != 1 {
 		t.Fatalf("%d populations of the rules, want 1", len(Rules))

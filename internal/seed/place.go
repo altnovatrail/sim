@@ -1,7 +1,7 @@
 // Package seed gives the bench its numbers: every draw of sim comes from a place of randomness of
-// the module format, a seed and names, by the platform's one generator (R27 spec, R59 spec). spec
-// has the generator's test vectors but no Go code of it, so the place is built here, by Go's own
-// PCG, and the vectors hold it to the format (R12).
+// the module format, a seed and names, by the platform's one generator. spec has the generator's
+// test vectors but no Go code of it, so the place is built here, by Go's own PCG, and the vectors
+// hold it to the format.
 package seed
 
 import (

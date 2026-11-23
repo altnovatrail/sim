@@ -2,7 +2,7 @@
 // tasks through learner-model and engine, and the numbers they give hold every change to either
 // before it is merged. It is a tool of CI, not a library: the parts of the bench live in internal/
 // packages, and a caller that builds sim with go.work runs it as
-// `go run github.com/altnovatrail/sim <command>` (R10).
+// `go run github.com/altnovatrail/sim <command>`.
 package main
 
 import (
@@ -116,14 +116,14 @@ func parse(fs *flag.FlagSet, args []string) error {
 }
 
 // gcPercent trades memory for processor: four times Go's own, so that a process of a run holds
-// about 100 MB and collects less often (R33).
+// about 100 MB and collects less often.
 const gcPercent = 400
 
 // alone sets the collector of every process of a run to gcPercent, and a process that runs a part
 // to one processor: the parts of a run are processes, as many as the processors, and another
 // processor for each would only take the others'. A run of the whole keeps the processors for its
-// collector. Neither changes a bit of what the run writes (R09, R33). It is a variable so that the
-// tests of the commands leave their own process as it was.
+// collector. Neither changes a bit of what the run writes. It is a variable so that the tests of
+// the commands leave their own process as it was.
 var alone = func(part bench.Part) {
 	if part.N > 1 {
 		runtime.GOMAXPROCS(1)
@@ -185,7 +185,7 @@ func commitFlag(fs *flag.FlagSet) map[string]string {
 }
 
 // partFlag adds the flag -part to a command: the part k of n of the learners, so that a recipe runs
-// the parts as processes and merges their files (R09, R24).
+// the parts as processes and merges their files.
 func partFlag(fs *flag.FlagSet) *bench.Part {
 	p := &bench.Part{}
 	fs.Func("part", "the part k/n of the learners, those whose number gives k mod n; all of them when not given", func(v string) error {
@@ -291,9 +291,9 @@ func compareCommand(args []string, stdout, stderr io.Writer) error {
 }
 
 // judgement is a judgement file. Its name is that of its folder judgements/<name>/, and it holds a
-// confirmation to the judgement's own held-out set (R52); a candidate's equal_on names the graphs
-// it claims to give the base's runs on (R49); a path is relative to the judgement file. It names no
-// run of the ceiling: the paths of the score are those the criterion holds fixed (R28).
+// confirmation to the judgement's own held-out set; a candidate's equal_on names the graphs it
+// claims to give the base's runs on; a path is relative to the judgement file. It names no run of
+// the ceiling: the paths of the score are those the criterion holds fixed.
 type judgement struct {
 	Judgement  string `json:"judgement"`
 	Criterion  string `json:"criterion"`
@@ -317,8 +317,7 @@ type judgement struct {
 }
 
 // gateJSON is the gate file the bench is built with: the judge holds the base to its libraries, and
-// a candidate of one library to the other of them, as it holds the score to the paths it embeds
-// (R40).
+// a candidate of one library to the other of them, as it holds the score to the paths it embeds.
 //
 //go:embed gate.json
 var gateJSON []byte
@@ -353,7 +352,7 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 	}
 	dir := filepath.Dir(fs.Arg(0))
 	// A judgement file in its judgement's folder, judgements/<name>/, names that judgement: a name
-	// left over from a copy would hold the confirmation to another judgement's set (R52).
+	// left over from a copy would hold the confirmation to another judgement's set.
 	if abs, err := filepath.Abs(dir); err == nil && filepath.Base(filepath.Dir(abs)) == "judgements" && j.Judgement != filepath.Base(abs) && j.Judgement != "" {
 		return fmt.Errorf("%s: the judgement file names the judgement %s, and lies in the folder of %s", fs.Arg(0), j.Judgement, filepath.Base(abs))
 	}
@@ -410,7 +409,7 @@ func judgeCommand(args []string, stdout, stderr io.Writer) error {
 
 // pathsCommand is "sim paths": it reads the paths of the score off the decisive runs of the base
 // and of the ceiling of the engine into the file the criterion embeds, and with -table writes the
-// rows of their table (R28).
+// rows of their table.
 func pathsCommand(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("paths", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -462,8 +461,8 @@ func readDigest(path string) (*bench.File, string, error) {
 }
 
 // evaluation is an evaluation file, in its folder evaluations/<name>/; its run is relative to it,
-// and its date is YYYY-MM-DD (R55). The criterion "rules" names the base's run beside its own (R72);
-// "correction" names its run alone (R73); fairness by the grade names no criterion and no base.
+// and its date is YYYY-MM-DD. The criterion "rules" names the base's run beside its own;
+// "correction" names its run alone; fairness by the grade names no criterion and no base.
 type evaluation struct {
 	Evaluation string `json:"evaluation"`
 	Criterion  string `json:"criterion,omitempty"`

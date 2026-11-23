@@ -12,19 +12,18 @@ import (
 	"github.com/altnovatrail/sim/internal/pack"
 )
 
-// The corridor of success E1 reads P* in, and the pause before a task with a seen solution
-// (R82 spec; R03 engine).
+// The corridor of success E1 reads P* in, and the pause before a task with a seen solution.
 const (
 	CorridorLow  = 0.70
 	CorridorHigh = 0.85
 	pause        = 24 * 3600
 )
 
-// Pool is what the truth says of the pool at a choice, before the engine chooses (R23): what any
-// rule could have given, so that the measures of the engine read the choice against it.
+// Pool is what the truth says of the pool at a choice, before the engine chooses: what any rule
+// could have given, so that the measures of the engine read the choice against it.
 type Pool struct {
 	// Ceiling is the largest share of items with a verdict whose P* is in the corridor, of one task
-	// of the pool the rule could give: no rule that gives whole tasks gets above it (R104 spec).
+	// of the pool the rule could give: no rule that gives whole tasks gets above it.
 	Ceiling float64
 	// Given tells that the pool has a task the rule could give.
 	Given bool
@@ -37,7 +36,7 @@ type Pool struct {
 	best, review string
 }
 
-// Rule is the rule that chooses in a run: the engine, or the ceiling of the engine (R24).
+// Rule is the rule that chooses in a run: the engine, or the ceiling of the engine.
 type Rule int
 
 const (
@@ -83,7 +82,7 @@ func (s Step) Skills() []string {
 
 // given tells whether a task of the pool is one the rule may give at a time in a pass: a task, not
 // a template, whose solution went to the device less than 24 hours ago is not in the first pass,
-// and in the second it is, but for the task of the last closed attempt (R82 spec; R03 engine).
+// and in the second it is, but for the task of the last closed attempt.
 func given(t learnermodel.Task, at int64, solved func(string) (int64, bool), last string, second bool) bool {
 	if t.Template {
 		return true
@@ -196,9 +195,9 @@ func (r *Run) pool(at int64) (*Pool, error) {
 // is due — P* of the reference task of its first band taught fell below learner.Mastery by
 // forgetting —, the best task on it, as a repetition; otherwise the task with the largest share of
 // items with P* in the corridor, the mean P* nearest learner.Mastery among equal shares, with the
-// exceptions of R82 spec the rule has. When the pool gives no such task — tasks with a rubric,
-// lessons, or nothing —, the engine chooses: the ceiling is a ceiling of P*, and where there is no
-// P* it is the engine.
+// exceptions the rule has for a task whose solution went to the device. When the pool gives no such
+// task — tasks with a rubric, lessons, or nothing —, the engine chooses: the ceiling is a ceiling of
+// P*, and where there is no P* it is the engine.
 func (r *Run) ceiling(in engine.Input, p *Pool) (engine.Choice, error) {
 	switch {
 	case p.review != "":

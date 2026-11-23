@@ -17,12 +17,12 @@ const partEnv = "SIM_MEASURE_PART"
 
 // engineSumsOn runs n learners of a population on its g-th graph, as recordsOn does, and gives the
 // sums of the engine's measures of each, in the learners' order, and the graph. Where the test
-// binary can start processes, the learners go to as many processes of it as the processors, the k-th
-// of n those whose number gives k mod n, as the recipes split a run (R09, R67): each process runs
-// the test alone, writes its learners' sums into a file, in their order, and skips, and the test
-// reads them. A learner comes from its seeds alone, so its sums are the same in any process. In
-// js/wasm and wasip1, which start no process, and when the run counts coverage, which a process of
-// its own would not add to the profile, the learners run here, one after another.
+// binary can start processes, the learners go to as many processes of it as the processors, the
+// k-th of n those whose number gives k mod n, as the recipes split a run: each process runs the
+// test alone, writes its learners' sums into a file, in their order, and skips, and the test reads
+// them. A learner comes from its seeds alone, so its sums are the same in any process. In js/wasm
+// and wasip1, which start no process, and when the run counts coverage, which a process of its own
+// would not add to the profile, the learners run here, one after another.
 func engineSumsOn(t *testing.T, name string, g, n int) ([]Sums, []string) {
 	t.Helper()
 	if v, ok := os.LookupEnv(partEnv); ok {

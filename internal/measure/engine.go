@@ -21,7 +21,7 @@ const (
 // weeks are the weeks E3 reads the share of repetitions in: those of the longest limit.
 var weeks = (max(run.Maths.Days, run.Forgetting.Days, run.Essays.Days) + 6) / 7
 
-// Engine gives the sums of one learner's run for the measures of the engine, E1–E5 (R23).
+// Engine gives the sums of one learner's run for the measures of the engine, E1–E5.
 func Engine(rec *run.Record) Sums {
 	s := Sums{"learners": 1}
 	e1(s, rec)
@@ -33,7 +33,7 @@ func Engine(rec *run.Record) Sums {
 }
 
 // gives tells whether a step gave something: a task or a lesson, but for a lesson going on after a
-// consolidation, which is no new choice (R48).
+// consolidation, which is no new choice.
 func gives(st run.Step) bool {
 	return !st.Resumed && (st.Choice.Kind == engine.ChoiceTask || st.Choice.Kind == engine.ChoiceLesson)
 }
@@ -58,7 +58,7 @@ func e1(s Sums, rec *run.Record) {
 
 // shares adds items with a verdict to the sums of a measure's shares by P* at the time given: all of
 // them, and those in the corridor, below hardP and above easyP. E1 reads all the items so, and the
-// note E6 those of the lessons and of the consolidations (R49).
+// note E6 those of the lessons and of the consolidations.
 func shares(s Sums, of string, items []run.ItemObs) {
 	for _, it := range items {
 		s.add(of+".items", 1)
@@ -96,7 +96,7 @@ func e2(s Sums, rec *run.Record) {
 	stuck := false
 	for _, st := range rec.Steps {
 		if st.Resumed {
-			continue // a lesson going on after a consolidation is no new choice (R48)
+			continue // a lesson going on after a consolidation is no new choice
 		}
 		if st.Pool != nil && st.Pool.Given {
 			s.add("E2.given", 1)

@@ -6,11 +6,10 @@ import (
 	"github.com/altnovatrail/learner-model/detmath"
 )
 
-// The format gives no normal or exponential distribution, and sim answers for theirs: each is
-// built here on one fraction of the stream, with arithmetic whose every product goes straight into
+// The format gives no normal or exponential distribution, and sim answers for theirs: each is built
+// here on one fraction of the stream, with arithmetic whose every product goes straight into
 // float64() and with detmath.Log and, for the normal, math.Sqrt, which give the same bits on every
-// build (R09 learner-model). So the bands of the gate, read to the last digit, are the same on any
-// processor (R09, R12).
+// build. So the bands of the gate, read to the last digit, are the same on any processor (R12).
 
 // Normal draws a number of the standard normal distribution: the inverse of its distribution
 // function at one fraction, by Wichura's algorithm AS 241, PPND16, which is good to about 1e-16.

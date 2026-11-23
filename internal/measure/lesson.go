@@ -10,8 +10,8 @@ import (
 
 // Note gives the sums of one learner's run for the note of consolidation in a lesson, E6, which
 // decides nothing: no check, no path and no weight, only the note of a judgement beside its
-// criterion (R49). It reads the lessons whose skills all have a verdict, the ones the run calls the
-// engine in (R48):
+// criterion. It reads the lessons whose skills all have a verdict, the ones the run calls the
+// engine in:
 //   - the consolidations in a lesson — a task right before the lesson resumed — and the passes;
 //   - the items with a verdict of the lesson's task links and of the consolidations, by P* when
 //     given, in the corridor, too hard and too easy, as E1 reads them;
@@ -61,7 +61,7 @@ func Note(rec *run.Record) Sums {
 }
 
 // verdictLesson gives the skills of a lesson of an input when it has skills and every one has a
-// verdict, as the run calls the engine within it (run.Verdicts; R48); nil otherwise.
+// verdict, as the run calls the engine within it (run.Verdicts); nil otherwise.
 func verdictLesson(in engine.Input, id string) []string {
 	for _, m := range in.Modules {
 		i := slices.IndexFunc(m.Lessons, func(l engine.Lesson) bool { return l.ID == id })
@@ -78,7 +78,7 @@ func verdictLesson(in engine.Input, id string) []string {
 
 // NoteNumbers are the numbers of the note of consolidation in a lesson a cell is read for: the
 // consolidations a pass, the shares of the items of the lessons' links and of the consolidations,
-// and the mean P* of the next link after a failure. The criteria hold none of them (R49).
+// and the mean P* of the next link after a failure. The criteria hold none of them.
 func NoteNumbers() []Number {
 	out := []Number{{"E6.consolidations", ratio("E6.consolidations", "E6.passes")}}
 	for _, of := range []string{"E6.lesson", "E6.consolidation"} {

@@ -12,7 +12,7 @@ const sessionStart = 15 * 3600
 // Calendar is a learner's days, sessions and the times its attempts are given: a day is a session
 // with the population's chance, one fraction of the place calendar each day in order, and a session
 // is the population's number of attempts in a row from sessionStart, the next given at once. Times
-// are whole seconds UTC, as in evidence (R08 learner-model).
+// are whole seconds UTC, as in evidence.
 type Calendar struct {
 	s    *seed.Stream
 	a    Assumptions
@@ -88,7 +88,7 @@ func (c *Calendar) Day() int {
 }
 
 // EndSession ends the session under way: the next attempt is given on the next day that has a
-// session. The run calls it when the engine has nothing to give (R16).
+// session. The run calls it when the engine has nothing to give.
 func (c *Calendar) EndSession() {
 	c.left = 0
 }

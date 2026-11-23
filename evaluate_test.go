@@ -19,8 +19,7 @@ import (
 )
 
 // fairRun writes a file of results that stands in for a decisive run of the base with the cells of
-// fairness by the grade alone, on the libraries of the embedded gate file, and gives its SHA-256
-// (R55).
+// fairness by the grade alone, on the libraries of the embedded gate file, and gives its SHA-256.
 func fairRun(t *testing.T, path string) string {
 	t.Helper()
 	g, err := gate.Read(bytes.NewReader(gateJSON))
@@ -114,7 +113,7 @@ func TestEvaluate(t *testing.T) {
 }
 
 // Every evaluation of evaluations/ has its evaluation file, which names its folder, a run by its
-// SHA-256 and a date, and its report (R55); fairness-1 is the evaluation of the base (R58).
+// SHA-256 and a date, and its report; fairness-1 is the evaluation of the base.
 func TestEvaluations(t *testing.T) {
 	dirs, err := filepath.Glob(filepath.Join("evaluations", "*"))
 	if err != nil {
@@ -140,7 +139,7 @@ func TestEvaluations(t *testing.T) {
 
 // An evaluation file of the three rules names its criterion and the base's run beside its own, and
 // one of fairness neither; sim evaluate reads both runs by their SHA-256 and holds the base to the
-// paths' (R72).
+// paths'.
 func TestEvaluateRules(t *testing.T) {
 	dir := t.TempDir()
 	folder := filepath.Join(dir, "evaluations", "rules-1")
@@ -175,8 +174,7 @@ func TestEvaluateRules(t *testing.T) {
 	}
 }
 
-// An evaluation file of the correction names its run alone, and sim evaluate writes its report
-// (R73).
+// An evaluation file of the correction names its run alone, and sim evaluate writes its report.
 func TestEvaluateCorrection(t *testing.T) {
 	dir := t.TempDir()
 	folder := filepath.Join(dir, "evaluations", "rules-2")

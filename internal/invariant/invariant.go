@@ -1,9 +1,9 @@
 // Package invariant checks the invariants of the bench on every learner's run, with a tolerance
-// of zero: one breach on one learner makes the run red (R04, R17).
+// of zero: one breach on one learner makes the run red.
 //
 //   - I1, reproducibility: the choice taken again on the input it keeps is the same choice — each
-//     call further through a lesson too (R48) —, and a run repeated on the same seeds gives the same
-//     bits (Same);
+//     call further through a lesson too —, and a run repeated on the same seeds gives the same bits
+//     (Same);
 //   - I2, the reason code: each choice of a task or a lesson has one code of the closed list, a
 //     choice of nothing none, and the code is true to its meaning on the facts it names;
 //   - I3, the author's order: a skill with a rubric or without assessment comes after the skills of
@@ -45,7 +45,7 @@ func Check(rec *run.Record) []Breach {
 // CheckWithoutI1 gives every breach of I2–I4 in a run's record, and takes no choice again: past the
 // first learners of a cell, taking each choice again would double the engine's work on every step,
 // the most of a run. A repeated run holds I1 to the same bits by Same, and the first learners of
-// every cell take it on each choice (R31, R33).
+// every cell take it on each choice (R33).
 func CheckWithoutI1(rec *run.Record) []Breach {
 	return check(rec, false)
 }
@@ -57,7 +57,7 @@ func check(rec *run.Record, again bool) []Breach {
 			out = append(out, Breach{Invariant: inv, Unit: rec.Unit, Step: k, Choice: s.Choice, Detail: fmt.Sprintf(format, args...)})
 		}
 		// The calls further through a lesson are choices of the engine too: taken again, and true to
-		// their code (R48).
+		// their code.
 		calls := append([]run.Call{{Input: s.Input, Choice: s.Choice}}, s.Further...)
 		for i, call := range calls {
 			at := ""
@@ -171,16 +171,16 @@ func viewOf(in engine.Input, id string) (view, bool) {
 
 // Failed is a failure on a skill by the facts of a result, as the engine and the model read it: of
 // the items answered, fewer than half right at the first verdict, or the solution shown with none
-// right (R06 learner-model). I2 holds the engine to it, and the note E6 reads by it (R49).
+// right. I2 holds the engine to it, and the note E6 reads by it.
 func Failed(r engine.SkillResult) bool {
 	return 2*r.FirstRight < r.Answered || r.SolutionShown && r.FirstRight == 0
 }
 
 // reasonCode gives the breaches of I2 on a step: a choice of a task or a lesson has one code of the
 // closed list ReasonCode, a choice of nothing none; and the code holds, on one of the choice's
-// skills, the facts its meaning names (R04, R17). Of each meaning the bench checks what it can read
-// without the engine's own rule: what a skill was given, what the model reads of it and of its
-// module, the last attempt and the runs.
+// skills, the facts its meaning names. Of each meaning the bench checks what it can read without
+// the engine's own rule: what a skill was given, what the model reads of it and of its module, the
+// last attempt and the runs.
 func reasonCode(s run.Step) []string {
 	c, in := s.Choice, s.Input
 	if c.Kind == engine.ChoiceNothing {
@@ -332,8 +332,7 @@ func authorOrder(s run.Step) []string {
 }
 
 // solvedAgain gives the breach of I4 on a step: the choice is the task of the last closed attempt,
-// not a template, and its solution went to the device then (R82 spec; R107 spec): "at once" is
-// "not as the next task".
+// not a template, and its solution went to the device then: "at once" is "not as the next task".
 func solvedAgain(s run.Step) string {
 	c, in := s.Choice, s.Input
 	if c.Kind != engine.ChoiceTask || !in.HasLast || in.Last.InLesson || c.ID != in.Last.Task {

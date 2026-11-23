@@ -75,8 +75,8 @@ func TestE2(t *testing.T) {
 			t.Errorf("%s: stuck %v, want %v", c.name, s["E2.stuck"], c.stuck)
 		}
 	}
-	// A lesson going on after a consolidation is no new choice: it neither counts nor breaks a streak
-	// (R48).
+	// A lesson going on after a consolidation is no new choice: it neither counts nor breaks a
+	// streak.
 	resumed := steps(50, reach, -1, -1)
 	back := taskStep(0, "b", false, nil)
 	back.Resumed = true

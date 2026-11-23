@@ -328,7 +328,7 @@ func TestAuthorOrderGraph(t *testing.T) {
 }
 
 // The calls further through a lesson are choices too: one the input does not give again is a breach
-// of I1, one against its code of I2, and a repeat that goes further otherwise of I1 by Same (R48).
+// of I1, one against its code of I2, and a repeat that goes further otherwise of I1 by Same.
 func TestFurtherBreaches(t *testing.T) {
 	rec := record(t, "G0", 0, run.Maths, olympiad)
 	k, s := first(t, rec, func(s run.Step) bool { return len(s.Further) > 0 })

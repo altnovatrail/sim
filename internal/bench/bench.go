@@ -1,6 +1,6 @@
 // Package bench runs cells of virtual learners into a file of results, one line a learner, and
 // reads two such files in pairs by learner. Two versions of one library do not go into one Go build,
-// so each build of sim writes its own file, and the comparison reads them side by side (R24).
+// so each build of sim writes its own file, and the comparison reads them side by side.
 package bench
 
 import (
@@ -48,14 +48,14 @@ type Header struct {
 	Part        Part     `json:"part,omitzero"`
 	// Packages are the packages the run took in place of the pinned ones, and it ran only the graphs
 	// whose every module is one of them: the gate of the CI of modules, on the packages of a pull
-	// request (R27). None, the pinned packages and every graph.
+	// request. None, the pinned packages and every graph.
 	Packages []published.Package `json:"packages,omitempty"`
 	// Invariants tells that each line records the breaches of I1–I4 on its run: under the engine.
 	Invariants bool `json:"invariants"`
 }
 
 // Line is one learner of a cell: its population, graph and number, and the sums of its run — of the
-// measures of the model and of the engine, and under the engine of the note E6 too (R49) — and the
+// measures of the model and of the engine, and under the engine of the note E6 too — and the
 // oracle's on the same answers.
 type Line struct {
 	Population string       `json:"population"`
@@ -64,10 +64,10 @@ type Line struct {
 	Sums       measure.Sums `json:"sums"`
 	Oracle     measure.Sums `json:"oracle"`
 	// Breaches are the breaches of the invariants I1–I4 on the run, under the engine; the ceiling of
-	// the engine is no branch of engine, and its runs are not checked (R25).
+	// the engine is no branch of engine, and its runs are not checked.
 	Breaches []string `json:"breaches,omitempty"`
 	// Fair is the trace of M11 of the learner's run, under the engine, in a cell of fairness by the grade
-	// alone: no other line has it, and theirs stay the bytes they were (R55).
+	// alone: no other line has it, and theirs stay the bytes they were.
 	Fair *measure.Trace `json:"fair,omitempty"`
 }
 
@@ -96,7 +96,7 @@ type Package struct {
 
 // Part is the K-th of N parts of the learners: those whose number n gives K by n mod N. The zero
 // part is the whole. The bench draws a learner from its seeds alone, so a learner is the same in any
-// part, and the parts run as processes, not goroutines (R09, R24).
+// part, and the parts run as processes, not goroutines (R09).
 type Part struct {
 	K int `json:"k"`
 	N int `json:"n"`
@@ -117,7 +117,7 @@ var rules = map[run.Rule]string{run.Engine: "engine", run.Ceiling: "ceiling"}
 // pseudo-version, which holds its commit —, its replacement's, with the replacement's path when it
 // is another module, or the commit the caller names. A library the build took from a workspace has
 // no version, and the caller has to name its commit, a full SHA; a commit named for a library the
-// build names a version of, or for a module that is no library, is refused (R24, R34).
+// build names a version of, or for a module that is no library, is refused.
 func Names(info *debug.BuildInfo, commits map[string]string) (map[string]string, error) {
 	for _, path := range slices.Sorted(maps.Keys(commits)) {
 		c := commits[path]
@@ -186,7 +186,7 @@ func modules(graph []string, packages []Package) ([]*pack.Module, error) {
 }
 
 // Populations names every population a rule runs: under the ceiling of the engine, none of fairness
-// by the grade, since M11 has no path and the ceiling's file stays as it was (R55).
+// by the grade, since M11 has no path and the ceiling's file stays as it was.
 func Populations(rule run.Rule) []string {
 	var out []string
 	for _, p := range population.All() {
@@ -271,7 +271,7 @@ func Run(c Config, w io.Writer) error {
 // each choice again on all the learners would double the engine's work, the most of a run. A
 // repetition holds the bits of every learner, but not that the input a choice keeps is the one it was
 // made on — a rule that changed its input in place would change it alike in both runs —, and the
-// first learners of every cell catch that (R31, R33).
+// first learners of every cell catch that.
 const Rechosen = 10
 
 // covers tells whether a run on packages runs a graph: with none, every graph; with some, a graph
@@ -318,7 +318,7 @@ func one(c Config, p population.Population, graph []string, mods []*pack.Module,
 	line := Line{Population: p.Name, Graph: graph, N: n, Sums: sums, Oracle: measure.Oracle(rec)}
 	if c.Rule == run.Engine {
 		// The note of consolidation in a lesson is read under the engine alone, as the breaches
-		// are: the ceiling of the engine does not consolidate, and its file stays as it was (R49).
+		// are: the ceiling of the engine does not consolidate, and its file stays as it was.
 		maps.Copy(sums, measure.Note(rec))
 		if p.Fair() {
 			line.Fair = measure.Traced(rec)
@@ -503,7 +503,7 @@ type Cell struct {
 
 // Cells reads two sides in pairs by learner: the same set, the same cells and the same learners in
 // the same order, or none. Against the ceiling of the engine, which does not run the populations of
-// fairness by the grade, their lines are left out of both sides (R55).
+// fairness by the grade, their lines are left out of both sides.
 func Cells(a, b Side) ([]Cell, error) {
 	if a.File.Header.Set != b.File.Header.Set {
 		return nil, fmt.Errorf("%w: the sides ran on different sets of learners, %v and %v", ErrBench, a.File.Header.Set, b.File.Header.Set)
@@ -548,7 +548,7 @@ func linesOf(f *File, ceiling bool) []Line {
 }
 
 // FairCell is a cell of fairness by the grade read in pairs: the learner n of a grade against the
-// learner n of the reference, one learner under two grades, each pair the sums of M11 (R55).
+// learner n of the reference, one learner under two grades, each pair the sums of M11.
 type FairCell struct {
 	// Cell and Population are the grade's; Reference is the reference's cell, whose name the
 	// resamples of every grade are drawn by, so that they resample the same n in all the cells.
@@ -604,7 +604,7 @@ func Fair(f *File) ([]FairCell, error) {
 
 // numbersOf gives the numbers two sides compare: the measures of the model, and of the engine unless
 // a side is the oracle, which reads the model's alone; E3 is not read off the ceiling of the engine,
-// whose path goes to perfection (R24).
+// whose path goes to perfection.
 func numbersOf(a, b Side) []measure.Number {
 	if a.Oracle || b.Oracle {
 		return measure.ModelNumbers()

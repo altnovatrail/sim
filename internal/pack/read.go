@@ -1,7 +1,7 @@
 // Package pack reads published packages of modules as the bench needs them: the server part,
 // server.json, by the types of spec's canonical view and without module-kit, checked through the
-// chain of digests from a pinned module index (R62 spec, R72 spec, R77 spec). It translates the
-// canonical view into what learner-model and engine take, as api would (R14).
+// chain of digests from a pinned module index. It translates the canonical view into what
+// learner-model and engine take, as api would.
 package pack
 
 import (
@@ -19,7 +19,7 @@ import (
 )
 
 // formatVersions are the versions of the module format the bench reads: while the format is v0,
-// only the current one, the window module-kit reads too (R44 spec, R111 spec).
+// only the current one, the window module-kit reads too.
 var formatVersions = []formatv0.ModuleFormatVersion{"0.4"}
 
 // ErrDigest is a file whose SHA-256 is not the one the chain of digests names.
@@ -29,16 +29,16 @@ var ErrDigest = errors.New("pack: a digest does not match")
 var ErrFormat = errors.New("pack: a version of the module format outside the window")
 
 // ErrWithdrawn is a version the index marks withdrawn from publication: api begins no attempt on
-// it (R63 spec), and the bench reads none.
+// it, and the bench reads none.
 var ErrWithdrawn = errors.New("pack: the version is withdrawn from publication")
 
 // ErrIdentity is a package that is not the module and version its entry names.
 var ErrIdentity = errors.New("pack: the package is not the version its entry names")
 
 // ReadIndex reads a module index whose SHA-256, in hex, must be digest: the digest the gate file
-// pins, as the configuration of api pins it (R63 spec). It reads the index's members by their
-// places alone, whatever version of the format the index is of: a reader skips an entry whose
-// format version it does not read, rather than refuse the index, and Entry does that.
+// pins, as the configuration of api pins it. It reads the index's members by their places alone,
+// whatever version of the format the index is of: a reader skips an entry whose format version it
+// does not read, rather than refuse the index, and Entry does that.
 func ReadIndex(data []byte, digest string) (*formatv0.ModuleIndex, error) {
 	if hexDigest(data) != digest {
 		return nil, fmt.Errorf("%w: the module index is %s, not %s", ErrDigest, hexDigest(data), digest)

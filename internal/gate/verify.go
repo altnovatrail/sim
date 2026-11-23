@@ -64,12 +64,11 @@ func fields(line string) []string {
 	return out
 }
 
-// Verify gives every way the build of the gate departs from the gate file (R26): a library not
-// built from the workspace, a shared dependency the workspace chose at another version, a module
-// whose go line is another than the recorded or newer than the Go that built the gate, sim's go.mod
-// requiring a library at another point than the file names — the tag of its release, or the
-// pseudo-version of its commit while it is in none —, and packages other than those the bench
-// embeds.
+// Verify gives every way the build of the gate departs from the gate file: a library not built from
+// the workspace, a shared dependency the workspace chose at another version, a module whose go line
+// is another than the recorded or newer than the Go that built the gate, sim's go.mod requiring a
+// library at another point than the file names — the tag of its release, or the pseudo-version of
+// its commit while it is in none —, and packages other than those the bench embeds.
 func Verify(f *File, info *debug.BuildInfo, goVersion string, modules []Module) []string {
 	var out []string
 	dep := func(path string) *debug.Module {

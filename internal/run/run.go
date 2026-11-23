@@ -3,10 +3,9 @@
 // api would — the model's reading, the pool and the lessons the learner's age category suits, the
 // runs of lessons, the attempts closed by "Done", the last closed attempt and the summary of what
 // was handed out —, takes the engine's choice, has the learner answer by its truth, and gives the
-// model the evidence (R104, R107 spec; R16). Within a lesson whose skills all have a verdict it
-// calls the engine at the end of each task link, as api will, and plays its answer: further through
-// the lesson, or a task of consolidation (R48). It records each step, for the invariants and the
-// measures.
+// model the evidence. Within a lesson whose skills all have a verdict it calls the engine at the end
+// of each task link, as api will, and plays its answer: further through the lesson, or a task of
+// consolidation. It records each step, for the invariants and the measures.
 package run
 
 import (
@@ -33,7 +32,7 @@ type Limit struct {
 
 // Maths is the run of a learner in mathematics: as many answers of items with a verdict as a run
 // of standalone, within a year of the calendar, so that a rule that gives nothing for good still
-// ends (R16).
+// ends.
 var Maths = Limit{Answers: 200, Days: 365}
 
 // Forgetting is the run of the populations of forgetting, by days of the calendar alone.
@@ -46,7 +45,7 @@ var Essays = Limit{Days: 60, Rubrics: true}
 // Step is one choice of the run and what came of it. Evidence, Instances and Results stand beside
 // Attempts, one for each. A lesson with a task of consolidation is several steps, in the order of
 // time: the lesson up to the consolidation, the consolidation — a choice of a task —, and the
-// lesson after it, Resumed (R48).
+// lesson after it, Resumed.
 type Step struct {
 	Input    engine.Input // the input as the engine got it; the choice is the same on it again
 	Choice   engine.Choice
@@ -61,17 +60,17 @@ type Step struct {
 	// last closed attempt (Last.Results).
 	Results [][]engine.SkillResult
 	// Obs is what the measures read of each attempt with a verdict: the model and the truth before
-	// and after it; nil for an attempt of a task with a rubric (R22).
+	// and after it; nil for an attempt of a task with a rubric.
 	Obs  []*Obs
 	Pass *learner.Pass // the pass of a lesson, on the step that ends it, with all its attempts
-	// Pool is what the truth says of the pool at the choice, before the engine chose (R23); nil on a
-	// step Resumed.
+	// Pool is what the truth says of the pool at the choice, before the engine chose; nil on a step
+	// Resumed.
 	Pool *Pool
 	// Further are the calls of the engine at the end of the step's task links answered with the
-	// lesson of the same run: further through the lesson, no new choice (R48).
+	// lesson of the same run: further through the lesson, no new choice.
 	Further []Call
 	// Correction is the adult's correction of the module level right after one of the step's
-	// attempts, as Append gave it back; nil on every other step (C-; R72).
+	// attempts, as Append gave it back; nil on every other step (C-).
 	Correction *learnermodel.Evidence
 	// Resumed tells that the step is a lesson going on after a task of consolidation: its choice is
 	// the engine's answer after the consolidation, the lesson of the same run, and no new choice.
@@ -94,7 +93,7 @@ type Record struct {
 	Days    int                // the day of the calendar of the last choice, from 1
 	// Guard counts the pieces of evidence after which the count of the guard of their module,
 	// FailuresInARow of the model's state, stood at guardFailures, having stood one below it: where
-	// learner-model lowers the level by a band (R45 learner-model; R72).
+	// learner-model lowers the level by a band.
 	Guard int
 	// Corrected is the first answers before the adult corrected the module level, 0 when no adult
 	// did (C-).
@@ -318,10 +317,10 @@ func (r *Run) give(step *Step, at int64) (int64, error) {
 // passLesson follows the choice of a lesson at a time: the module has one choice more and each skill
 // of the lesson is handed out then, the run of the lesson is open, and the learner passes it link by
 // link. At the end of each task link of a lesson whose skills all have a verdict the engine is
-// called, as api will call it (R48): the lesson of the same run goes on, and a task outside the
-// lesson is a consolidation, given at once. The ceiling calls nothing there and goes on. It gives the
-// steps the choice became: the lesson, or, with consolidations, its parts and the consolidations
-// between them, in the order of time, and when the pass ended.
+// called, as api will call it: the lesson of the same run goes on, and a task outside the lesson is
+// a consolidation, given at once. The ceiling calls nothing there and goes on. It gives the steps
+// the choice became: the lesson, or, with consolidations, its parts and the consolidations between
+// them, in the order of time, and when the pass ended.
 func (r *Run) passLesson(step Step, at int64) ([]Step, int64, error) {
 	m, lesson, err := r.lesson(step.Choice.ID)
 	if err != nil {
@@ -401,8 +400,9 @@ func (r *Run) passLesson(step Step, at int64) ([]Step, int64, error) {
 // consolidate follows the engine's answer c at the end of a task link of a lesson, on the input in,
 // when it is not further through the lesson: a task outside the lesson is a choice of its module and
 // is given at once, with the pool read as at any choice; then the engine is called again, and the
-// lesson of the same run must go on (R48). Any other answer is a run that cannot go on. It gives the
-// step of the consolidation and the step of the lesson resumed.
+// lesson of the same run must go on: the call api makes after any attempt outside a lesson, which
+// the invariants must see. Any other answer is a run that cannot go on. It gives the step of the
+// consolidation and the step of the lesson resumed (R48).
 func (r *Run) consolidate(lesson *pack.Lesson, in engine.Input, c engine.Choice) (*Step, *Step, error) {
 	if c.Kind != engine.ChoiceTask || slices.ContainsFunc(lesson.Lesson.Tasks, func(t learnermodel.Task) bool { return t.ID == c.ID }) {
 		return nil, nil, fmt.Errorf("%w: at the end of a link of %s at %d the engine chose %v %s (%v), neither the lesson nor a task outside it",
@@ -448,13 +448,13 @@ func further(c engine.Choice, lesson *pack.Lesson) bool {
 }
 
 // Verdicts tells whether a lesson has skills and every one has a verdict in its module's graph: only
-// then is the engine called within it (R48), and the note E6 reads it (R49).
+// then is the engine called within it, and the note E6 reads it.
 func Verdicts(g learnermodel.Graph, skills []string) bool {
 	return len(skills) > 0 && !slices.ContainsFunc(skills, func(id string) bool { return !verdictIn(g, id) })
 }
 
 // issue hands out skills at a time: the time of their last issue does not go back, so that a lesson
-// going on after a consolidation leaves the consolidation's time (R48).
+// going on after a consolidation leaves the consolidation's time.
 func (r *Run) issue(skills []string, at int64) {
 	for _, s := range skills {
 		is := r.issued[s]
@@ -487,7 +487,7 @@ func (r *Run) pass(lesson *pack.Lesson, p learner.Pass) {
 }
 
 // instance gives the number of the instance of a template an attempt takes, by its seed; -1 for a
-// task that is no template (R12; R14).
+// task that is no template.
 func instance(m *pack.Module, t *pack.Task, a learner.Attempt) (int, error) {
 	if !t.Candidate.Task.Template {
 		return -1, nil
@@ -511,7 +511,7 @@ func (r *Run) input(at int64) (engine.Input, error) {
 	}, nil
 }
 
-// summary gives the summary of what was handed out, in the order of IDs (R104, R107 spec).
+// summary gives the summary of what was handed out, in the order of IDs.
 func (r *Run) summary() engine.Summary {
 	var s engine.Summary
 	for _, id := range slices.Sorted(maps.Keys(r.issued)) {
@@ -549,11 +549,10 @@ func (r *Run) lesson(id string) (*pack.Module, *pack.Lesson, error) {
 
 // close records a closed attempt as api would: the evidence of a task with a verdict, appended to
 // the model's state; the attempt closed by "Done" of a task with a rubric; the solution sent to the
-// device when the attempt closed right or with the solution shown (R82 spec); the summary of each
-// primary skill, handed out at issued — the time of the choice of the task, or of its lesson, and
-// never back (R48) —;
-// and the last closed attempt. seen tells whether the task's solution went to the device before
-// the attempt, as the learner keeps it.
+// device when the attempt closed right or with the solution shown; the summary of each primary
+// skill, handed out at issued — the time of the choice of the task, or of its lesson, and never
+// back —; and the last closed attempt. seen tells whether the task's solution went to the device
+// before the attempt, as the learner keeps it.
 func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine.ReasonCode, lesson string, issued int64, seen bool) (*learnermodel.Evidence, error) {
 	task := t.Candidate.Task
 	results := results(t, a)
@@ -589,7 +588,7 @@ func (r *Run) close(m *pack.Module, t *pack.Task, a learner.Attempt, code engine
 }
 
 // guardFailures is the count of the guard of learner-model at which it lowers a module's level by
-// a band: three failures in a row (R45 learner-model; R157 spec).
+// a band: three failures in a row.
 const guardFailures = 3
 
 // fired tells whether the guard lowered a module's level between two states: its count stands at
@@ -606,10 +605,10 @@ func guardOf(s learnermodel.State, module string) int32 {
 	return 0
 }
 
-// correct is the adult's correction of a learner of C- (R72): once the learner's first answers
-// with a verdict reach CorrectAfter, right after the attempt that brings them there, the module
-// level is set to the band of the truth, at the time of the attempt's last action, by the evidence
-// of a correction of learner-model, which the step records. Every other learner it leaves as it is.
+// correct is the adult's correction of a learner of C-: once the learner's first answers with a
+// verdict reach CorrectAfter, right after the attempt that brings them there, the module level is
+// set to the band of the truth, at the time of the attempt's last action, by the evidence of a
+// correction of learner-model, which the step records. Every other learner it leaves as it is.
 func (r *Run) correct(m *pack.Module, at int64, step *Step) error {
 	after := r.l.CorrectAfter()
 	if after == 0 || r.corrected || r.rec.Answers < after {
@@ -630,11 +629,11 @@ func (r *Run) correct(m *pack.Module, at int64, step *Step) error {
 	return nil
 }
 
-// evidence gives the evidence of an attempt on a task with a verdict (R82 spec): its outcome by its
-// wrong answers, the first and final verdict of each item, whether the task's solution went to the
-// device before — no such fact for a template, whose instances differ —, and the time of its last
-// action, and the technique taken on request (G8) with the leading question the same hint gave,
-// when the task has one. The truth has no traps, and the learner asks for nothing else.
+// evidence gives the evidence of an attempt on a task with a verdict: its outcome by its wrong
+// answers, the first and final verdict of each item, whether the task's solution went to the device
+// before — no such fact for a template, whose instances differ —, and the time of its last action,
+// and the technique taken on request (G8) with the leading question the same hint gave, when the
+// task has one. The truth has no traps, and the learner asks for nothing else.
 func (r *Run) evidence(m *pack.Module, t *pack.Task, a learner.Attempt, seen bool) (learnermodel.Evidence, error) {
 	lm, err := r.l.Module(m.ID)
 	if err != nil {
@@ -668,7 +667,7 @@ func (r *Run) evidence(m *pack.Module, t *pack.Task, a learner.Attempt, seen boo
 		}
 		ia := learnermodel.ItemAnswer{
 			Place: res.Place, Submitted: true,
-			// An answer written again after it could not be read: no verdict and no mistake (R04 spec).
+			// An answer written again after it could not be read: no verdict and no mistake.
 			Unverdicted:  unreadable(res.Unreadable),
 			FirstVerdict: first, HasFirstVerdict: true,
 			FinalVerdict: final, HasFinalVerdict: true,

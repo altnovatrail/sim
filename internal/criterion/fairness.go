@@ -12,8 +12,8 @@ import (
 )
 
 // The bounds the base holds the criterion of fairness by the grade to, for every grade alike: M11.same
-// at least sameFloor at the low end of its interval and M11.band at most bandCeiling at the high end
-// (R55).
+// at least sameFloor at the low end of its interval and M11.band at most bandCeiling at the high
+// end, written down before the criterion's first run (R55).
 const (
 	sameFloor   = 0.90
 	bandCeiling = 0.05
@@ -50,7 +50,7 @@ type Grade struct {
 // file, with no breach of an invariant and at least a decisive run's learners on each cell of
 // fairness, which are every population of fairness on a published graph. Each grade but the
 // reference's is read against the reference in pairs by learner, the resamples drawn by the
-// reference's cell, so that every grade resamples the same learners (R55).
+// reference's cell, so that every grade resamples the same learners.
 func Evaluate(e Evaluation) (*Fairness, error) {
 	switch {
 	case e.Name == "" || e.Date == "" || e.Digest == "":
@@ -88,8 +88,8 @@ func Evaluate(e Evaluation) (*Fairness, error) {
 	return f, nil
 }
 
-// bounds tells whether a grade's M11.same and M11.band hold the bounds of R55: M11.same at least
-// sameFloor at the low end of its interval, M11.band at most bandCeiling at the high end.
+// bounds tells whether a grade's M11.same and M11.band hold the bounds of fairness: M11.same at
+// least sameFloor at the low end of its interval, M11.band at most bandCeiling at the high end.
 func bounds(same, band measure.Value) (bool, bool) {
 	return same.Read && same.Low >= sameFloor, band.Read && band.High <= bandCeiling
 }
@@ -102,7 +102,7 @@ type gradeCell struct {
 }
 
 // grades gives the cells of fairness by the grade that the evaluation and the constraint fair read:
-// the cell of each grade but the reference's on each of its graphs, with its pairs among cells (R55).
+// the cell of each grade but the reference's on each of its graphs, with its pairs among cells.
 func grades(cells []bench.FairCell) []gradeCell {
 	var out []gradeCell
 	for _, p := range population.Fairness {
@@ -126,8 +126,7 @@ func fairCell(cells []bench.FairCell, name string) *bench.FairCell {
 }
 
 // Write writes the report of the evaluation in Markdown: the criterion, the base and the run, each
-// grade's numbers with their intervals, whether the base holds, and the paragraph for dpia 10.2 spec
-// (R55).
+// grade's numbers with their intervals, whether the base holds, and the paragraph for the DPIA.
 func (f *Fairness) Write(w io.Writer) error {
 	var b strings.Builder
 	h := f.Run.Header

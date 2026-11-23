@@ -34,7 +34,7 @@ func link(skill string, failed bool, ps ...float64) (*run.Obs, []engine.SkillRes
 
 // The note reads a lesson with a consolidation after its first link: the consolidation a pass, the
 // shares of the links' items and of the consolidation's, and P* of the next link after the failure,
-// which comes after the consolidation (R48, R49).
+// which comes after the consolidation.
 func TestNote(t *testing.T) {
 	in := lessonInput(learnermodel.AssessabilityVerdict)
 	lesson := run.Step{Input: in, Choice: engine.Choice{Kind: engine.ChoiceLesson, ID: "m/lesson/x", Reason: engine.ReasonNewSkill}}
@@ -108,7 +108,7 @@ func TestNoteNothing(t *testing.T) {
 }
 
 // On real runs of the base the note reads the lessons of school maths, and no consolidation: the
-// base answers "further" at the end of every link (R48).
+// base answers "further" at the end of every link.
 func TestNoteOnRuns(t *testing.T) {
 	recs, graph := recordsOn(t, "G2", 1, 12)
 	var sums []Sums

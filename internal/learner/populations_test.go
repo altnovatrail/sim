@@ -171,8 +171,8 @@ func TestTechnique(t *testing.T) {
 		t.Errorf("the technique in %d attempts of 500", taken)
 	}
 	// The same hint gives the leading question on a task that has one, with no lift and no number of
-	// its own: the attempt is the one on the task without it, the question beside (R41). A learner
-	// who asks for nothing gets none.
+	// its own: the attempt is the one on the task without it, the question beside. A learner who
+	// asks for nothing gets none.
 	leading, plainTask := *tk, *tk
 	leading.Leading, plainTask.Leading = true, false
 	with, without, base := learnerWith(t, "G8", 1, a, olympiad), learnerWith(t, "G8", 1, a, olympiad), learnerOf(t, "G8", 1, olympiad)

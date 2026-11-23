@@ -296,7 +296,7 @@ func TestRunRefused(t *testing.T) {
 }
 
 // A template is given as one task, and each attempt takes the instance its seed names, as the
-// platform chooses it (R12; R14): on a synthetic module of one skill and one template.
+// platform chooses it: on a synthetic module of one skill and one template.
 func TestRunTemplate(t *testing.T) {
 	cv := &formatv0.CanonicalView{
 		Manifest: formatv0.Manifest{
@@ -336,7 +336,7 @@ func TestRunTemplate(t *testing.T) {
 }
 
 // An answer that could not be read and was written again reaches the model as a submission with no
-// verdict before the first one (R04 spec): S-unreadable on olympiad maths.
+// verdict before the first one: S-unreadable on olympiad maths.
 func TestRunUnreadable(t *testing.T) {
 	mods := modules(t, olympiad)
 	a := learner.Base()

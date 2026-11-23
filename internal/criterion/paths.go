@@ -30,9 +30,9 @@ type Path struct {
 }
 
 // Paths are the paths the criteria hold, read on the decisive run of the base before the first
-// candidate, and fixed (R04, R28): the libraries, the set and the learners of the runs they were read
-// on, the SHA-256 of the files of results of the base and of the ceiling of the engine, and the path
-// of every number of the groups of the score on every cell of a published graph.
+// candidate, and fixed: the libraries, the set and the learners of the runs they were read on, the
+// SHA-256 of the files of results of the base and of the ceiling of the engine, and the path of
+// every number of the groups of the score on every cell of a published graph (R28).
 type Paths struct {
 	Libraries map[string]string `json:"libraries"`
 	Set       seed.Set          `json:"set"`
@@ -116,8 +116,7 @@ func pathNumbers(population string) []string {
 // whose files of results have the SHA-256 given: on the working learners, the whole runs and not a
 // part, on the pinned packages, with every population of the groups of the score, at least a
 // decisive run's learners on every cell, on the same libraries and the same learners, the base with
-// no breach of an invariant. A cell on a graph with no published package
-// has no path (R19).
+// no breach of an invariant. A cell on a graph with no published package has no path.
 func RecordPaths(base, ceiling *bench.File, baseDigest, ceilingDigest string) (*Paths, error) {
 	b, c := base.Header, ceiling.Header
 	switch {

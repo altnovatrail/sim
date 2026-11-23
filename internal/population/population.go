@@ -1,6 +1,6 @@
-// Package population names the populations of virtual learners: each changes one assumption of
-// the base population, on the graphs it says, and runs to its limit (R03, R18). Two sides of one
-// assumption take half the learners each: the even ones the first side, the odd ones the second.
+// Package population names the populations of virtual learners: each changes one assumption of the
+// base population, on the graphs it says, and runs to its limit. Two sides of one assumption take
+// half the learners each: the even ones the first side, the odd ones the second.
 package population
 
 import (
@@ -11,7 +11,7 @@ import (
 	"github.com/altnovatrail/sim/internal/synthetic"
 )
 
-// The modules of the first slice, by full ID (R41 spec).
+// The modules of the first slice, by full ID.
 const (
 	Olympiad = "novatrail/olympiad-math"
 	Grade3   = "novatrail/grade-3-math"
@@ -27,8 +27,8 @@ type Population struct {
 	Limit  run.Limit
 	// Reference is the reference population of a family of fairness by the grade, D-, and of
 	// C-grade1 beside it: its learner n is the learner n of every population of the family, which
-	// takes the reference's unit for every purpose, and the measure M11 reads each against it (R55,
-	// R72). Empty for any other population.
+	// takes the reference's unit for every purpose, and the measure M11 reads each against it.
+	// Empty for any other population.
 	Reference string
 	// sides change the base population's assumptions, the first for the even learners and the
 	// second, when there is one, for the odd.
@@ -44,9 +44,9 @@ func (p Population) Units() string {
 	return p.Name
 }
 
-// Fair says whether the population reads against a reference, as those of fairness by the grade
-// and C-grade1 do: the engine's ceiling does not run it, its lines carry the trace of M11, and only the constraint of fairness reads its cells, no
-// other check of a criterion (R55).
+// Fair says whether the population reads against a reference, as those of fairness by the grade and
+// C-grade1 do: the engine's ceiling does not run it, its lines carry the trace of M11, and only the
+// constraint of fairness reads its cells, no other check of a criterion.
 func (p Population) Fair() bool {
 	return p.Reference != ""
 }
@@ -73,7 +73,7 @@ var (
 	essays   = [][]string{{Essays}}
 	// anchored is the graph of A-: a learner of a module whose skill rests on an anchor skill and of
 	// the module that teaches it. Olympiad maths rests skills on skills school maths teaches, so it is
-	// the two published maths together (R31).
+	// the two published maths together.
 	anchored = [][]string{{Olympiad, Grade3}}
 )
 
@@ -87,7 +87,7 @@ func two(f, g func(*learner.Assumptions)) []func(*learner.Assumptions) {
 
 // Standalone are the populations of standalone, carried over as assumptions and not as code. Their
 // graphs are both maths unless said; G7 runs on school maths for grade 3, the one published package
-// with a choice (R03).
+// with a choice.
 var Standalone = []Population{
 	{Name: "G0", Graphs: maths, Limit: run.Maths},
 	{Name: "G1", Graphs: maths, Limit: run.Maths, sides: two(
@@ -146,7 +146,7 @@ func breaks(a *learner.Assumptions) {
 // predicate, an adult without a grade, an unreadable answer (S-); forgetting by other laws, on a
 // calendar with a break (F-); pages of a workbook (W-); the anchor skill (A-); lessons (L-);
 // essays (E-). S-predicate runs on the synthetic sheet alone: no published package has a
-// predicate, and in the criterion and the gate its checks are "no graph" (R04).
+// predicate, and in the criterion and the gate its checks are "no graph".
 var Own = []Population{
 	{Name: "S-scale1.5", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.BandStep = 1.5 })},
 	{Name: "S-scale3.5", Graphs: olympiad, Limit: run.Maths, sides: one(func(a *learner.Assumptions) { a.BandStep = 3.5 })},
@@ -181,29 +181,30 @@ var Own = []Population{
 	{Name: "E-leave", Graphs: essays, Limit: run.Essays, sides: one(func(a *learner.Assumptions) { a.LeaveChance = 1.0 / 3 })},
 }
 
-// Reference is the reference population of fairness by the grade, D-grade3 (R55).
+// Reference is the reference population of fairness by the grade, D-grade3.
 const Reference = "D-grade3"
 
 // Fairness are the populations of fairness by the grade, on olympiad maths, the one published
 // package that names more than one grade: the assumptions of G0, the learner's grade fixed at 1, 3
 // or 5, a grade a start band, and the truth of grade 3 under each, so that the model starts a band
-// below the truth's, at it and a band above it (R55).
+// below the truth's, at it and a band above it.
 var Fairness = []Population{
 	{Name: "D-grade1", Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade = 1, 3 })},
 	{Name: Reference, Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade = 3, 3 })},
 	{Name: "D-grade5", Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade = 5, 3 })},
 }
 
-// Rules are the populations of the short run of the three rules of R157 spec beside those of
-// fairness, run only by name, so that no run of all the populations has them: C-grade1 is D-grade1
-// — grade 1, the truth of grade 3 and the unit of the reference — with an adult who corrects the
-// module level to the truth's band after CorrectAfter answers (R72).
+// Rules are the populations of the short run of the three rules of the learner model (a low start,
+// an adult's correction and a guard) beside those of fairness, run only by name, so that no run of
+// all the populations has them: C-grade1 is D-grade1 — grade 1, the truth of grade 3 and the unit
+// of the reference — with an adult who corrects the module level to the truth's band after
+// CorrectAfter answers.
 var Rules = []Population{
 	{Name: "C-grade1", Graphs: olympiad, Limit: run.Maths, Reference: Reference, sides: one(func(a *learner.Assumptions) { a.Grade, a.TruthGrade, a.CorrectAfter = 1, 3, CorrectAfter })},
 }
 
 // CorrectAfter is the answers after which the adult of C-grade1 corrects the level: about one
-// session, as R55 counts fifty answers five sessions (R72).
+// session, as the criterion of fairness counts fifty answers five sessions.
 const CorrectAfter = 10
 
 // All gives the populations the bench has, a copy, so that no caller changes them for another.

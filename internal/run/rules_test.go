@@ -9,7 +9,7 @@ import (
 )
 
 // The guard fired where the count of a module goes from one below guardFailures to it, and nowhere
-// else: not on the next failure of the same run, nor in another module (R72).
+// else: not on the next failure of the same run, nor in another module.
 func TestFired(t *testing.T) {
 	state := func(counts ...int32) learnermodel.State {
 		s := learnermodel.State{}
@@ -41,7 +41,7 @@ func TestFired(t *testing.T) {
 // An adult of C- corrects the module level once, right after the attempt that brings the first
 // answers to CorrectAfter, to the band of the truth: the run records the answers before it, the
 // model's level stands in the truth's band then, and the state at the end differs from the same
-// learner's with no adult. A learner with no adult has no correction (R72).
+// learner's with no adult. A learner with no adult has no correction.
 func TestCorrection(t *testing.T) {
 	mods := modules(t, olympiad)
 	runOf := func(after int) (*Record, *learner.Learner) {
