@@ -65,7 +65,7 @@ func TestEvaluateCorrection(t *testing.T) {
 	if err := r.Write(&b); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"# The adult's correction against the truth: rules-2", "by R73 of docs/decisions.md", "The correction holds the criterion.", "## For dpia 10.2 spec"} {
+	for _, want := range []string{"# The adult's correction against the truth: rules-2", "in docs/decisions.md", "The correction holds the criterion.", "## For spec's DPIA"} {
 		if !strings.Contains(b.String(), want) {
 			t.Errorf("the report has no %q:\n%s", want, b.String())
 		}

@@ -32,7 +32,7 @@ type Path struct {
 // Paths are the paths the criteria hold, read on the decisive run of the base before the first
 // candidate, and fixed: the libraries, the set and the learners of the runs they were read on, the
 // SHA-256 of the files of results of the base and of the ceiling of the engine, and the path of
-// every number of the groups of the score on every cell of a published graph (R28).
+// every number of the groups of the score on every cell of a published graph.
 type Paths struct {
 	Libraries map[string]string `json:"libraries"`
 	Set       seed.Set          `json:"set"`

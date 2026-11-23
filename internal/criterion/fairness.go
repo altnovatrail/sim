@@ -13,7 +13,7 @@ import (
 
 // The bounds the base holds the criterion of fairness by the grade to, for every grade alike: M11.same
 // at least sameFloor at the low end of its interval and M11.band at most bandCeiling at the high
-// end, written down before the criterion's first run (R55).
+// end, written down before the criterion's first run.
 const (
 	sameFloor   = 0.90
 	bandCeiling = 0.05
@@ -132,7 +132,7 @@ func (f *Fairness) Write(w io.Writer) error {
 	h := f.Run.Header
 	fmt.Fprintf(&b, "# The fairness of the learner model by the grade: %s\n\n", f.Name)
 	b.WriteString("## The criterion\n\n")
-	fmt.Fprintf(&b, "Written down before its first run, by R55 of docs/decisions.md of sim. The populations %s, on olympiad maths, differ by the grade alone: the assumptions of G0, one truth — that of grade 3 — and one unit for the learner n of every grade, so that the model starts on bands 1, 2 and 3. On the module level θ the model gives after each answer, against the learner n of the reference %s: M11.answers is the number of answers before the first of %d in a row with |θ − θ of the reference| below %.1f, a learner for whom it never holds counting as %d; M11.same is the share of learners for whom that number is at most %d; M11.band is the largest absolute difference, over the bands, between the grade's and the reference's shares of the attempts with a verdict at that band from answer %d on. The intervals are 95 %%, from %d resamples of the learners' numbers, the same in every cell. The base holds when, for every grade alike, M11.same is at least %.2f at the low end of its interval and M11.band at most %.2f at the high end; M11.answers has no bound.\n\n",
+	fmt.Fprintf(&b, "Written down before its first run, in docs/decisions.md of sim. The populations %s, on olympiad maths, differ by the grade alone: the assumptions of G0, one truth — that of grade 3 — and one unit for the learner n of every grade, so that the model starts on bands 1, 2 and 3. On the module level θ the model gives after each answer, against the learner n of the reference %s: M11.answers is the number of answers before the first of %d in a row with |θ − θ of the reference| below %.1f, a learner for whom it never holds counting as %d; M11.same is the share of learners for whom that number is at most %d; M11.band is the largest absolute difference, over the bands, between the grade's and the reference's shares of the attempts with a verdict at that band from answer %d on. The intervals are 95 %%, from %d resamples of the learners' numbers, the same in every cell. The base holds when, for every grade alike, M11.same is at least %.2f at the low end of its interval and M11.band at most %.2f at the high end; M11.answers has no bound.\n\n",
 		strings.Join(fairnessNames(), ", "), population.Reference, measure.FairAnswers, measure.FairGap, measure.FairLength, measure.FairBy, measure.FairBy+1, measure.Resamples, sameFloor, bandCeiling)
 	b.WriteString("## The base\n\n")
 	for _, path := range bench.Libraries {
@@ -148,9 +148,9 @@ func (f *Fairness) Write(w io.Writer) error {
 		verdict = "does not hold"
 	}
 	fmt.Fprintf(&b, "\nThe base %s the criterion.\n\n", verdict)
-	b.WriteString("## For dpia 10.2 spec\n\n")
+	b.WriteString("## For spec's DPIA\n\n")
 	ref := gradeOf(population.Reference)
-	fmt.Fprintf(&b, "On %s, sim evaluated the learner model by the grade (R147 spec; R55 sim): virtual learners of one skill under grades %s of olympiad maths, %d a grade. The base — %s — %s the criterion written down before the first run.", f.Date, gradeList(), f.minLearners(), libraries(h), verdict)
+	fmt.Fprintf(&b, "On %s, sim evaluated the learner model by the grade: virtual learners of one skill under grades %s of olympiad maths, %d a grade. The base — %s — %s the criterion written down before the first run.", f.Date, gradeList(), f.minLearners(), libraries(h), verdict)
 	for _, g := range f.Grades {
 		name, _, _ := strings.Cut(g.Cell, "/")
 		fmt.Fprintf(&b, " Grade %s: a share of %s of the learners held within %.1f of the estimate under grade %s after at most %d answers, and %s answers went by on average, a learner who never held counting as %d; the share of the tasks at a band after the %dth answer differed from grade %s's by at most %s.", gradeOf(name), showInterval(g.Same), measure.FairGap, ref, measure.FairBy, showInterval(g.Answers), measure.FairLength, measure.FairBy, ref, showInterval(g.Band))

@@ -92,7 +92,7 @@ func TestEvaluateRules(t *testing.T) {
 	if err := r.Write(&b); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"# The short run of the three rules of R157 spec: rules-1", "by R72 of docs/decisions.md", "| 3. M12.false of D-grade3/novatrail/olympiad-math, 60 learners | 1 [1; 1] | at most 0.05 | no |", "The rules are not checked", "## For dpia 10.2 spec"} {
+	for _, want := range []string{"# The short run of the learner model's three rules: rules-1", "in docs/decisions.md", "| 3. M12.false of D-grade3/novatrail/olympiad-math, 60 learners | 1 [1; 1] | at most 0.05 | no |", "The rules are not checked", "## For spec's DPIA"} {
 		if !strings.Contains(b.String(), want) {
 			t.Errorf("the report has no %q:\n%s", want, b.String())
 		}

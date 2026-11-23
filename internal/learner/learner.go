@@ -117,7 +117,7 @@ func (a Assumptions) validate() error {
 // grade, the age category, among those every module names; and last what only some populations
 // draw, for each module by ID — the answer of the jump, the band that is harder —, so that a
 // population that draws more moves none of the others. Its calendar, answers, retries, attempts and
-// attempt seeds come from places of their own, so that one never moves another (R18).
+// attempt seeds come from places of their own, so that one never moves another.
 func New(set seed.Set, population string, n int, modules []*pack.Module, a Assumptions) (*Learner, error) {
 	if len(modules) == 0 {
 		return nil, ErrNoModule

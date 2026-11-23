@@ -96,7 +96,7 @@ type Package struct {
 
 // Part is the K-th of N parts of the learners: those whose number n gives K by n mod N. The zero
 // part is the whole. The bench draws a learner from its seeds alone, so a learner is the same in any
-// part, and the parts run as processes, not goroutines (R09).
+// part, and the parts run as processes, not goroutines.
 type Part struct {
 	K int `json:"k"`
 	N int `json:"n"`
@@ -223,7 +223,7 @@ func Run(c Config, w io.Writer) error {
 			return fmt.Errorf("%w: population %s comes twice", ErrBench, name)
 		}
 		if p.Fair() && c.Rule == run.Ceiling {
-			return fmt.Errorf("%w: the ceiling of the engine does not run %s, a population of fairness: M11 has no path (R55)", ErrBench, name)
+			return fmt.Errorf("%w: the ceiling of the engine does not run %s, a population of fairness: M11 has no path", ErrBench, name)
 		}
 		pops = append(pops, p)
 	}

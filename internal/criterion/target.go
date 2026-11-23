@@ -134,13 +134,13 @@ func (in Input) checkTarget() error {
 	switch {
 	case in.Target == want:
 	case want == "":
-		return fmt.Errorf("%w: the judgement %q names the target %q, which only %s wrote down before their first candidate (R65)", ErrCriterion, in.Judgement, in.Target, strings.Join(slices.Sorted(maps.Keys(targets)), ", "))
+		return fmt.Errorf("%w: the judgement %q names the target %q, which only %s wrote down before their first candidate", ErrCriterion, in.Judgement, in.Target, strings.Join(slices.Sorted(maps.Keys(targets)), ", "))
 	default:
-		return fmt.Errorf("%w: the judgement %s goes by the target %s, which its file is to name, and it names %q (R65)", ErrCriterion, in.Judgement, want, in.Target)
+		return fmt.Errorf("%w: the judgement %s goes by the target %s, which its file is to name, and it names %q", ErrCriterion, in.Judgement, want, in.Target)
 	}
 	for _, c := range in.Candidates {
 		if in.Target != "" && (c.Group != "" || c.Goal != "") {
-			return fmt.Errorf("%w: candidate %s names a group or a goal, and the judgement %s judges every candidate by its target %s (R65)", ErrCriterion, c.Name, in.Judgement, in.Target)
+			return fmt.Errorf("%w: candidate %s names a group or a goal, and the judgement %s judges every candidate by its target %s", ErrCriterion, c.Name, in.Judgement, in.Target)
 		}
 	}
 	return nil

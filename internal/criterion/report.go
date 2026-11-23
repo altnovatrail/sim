@@ -21,7 +21,7 @@ func (r *Report) Write(w io.Writer) error {
 	fmt.Fprintf(&b, "# The criterion of the %s\n\n", r.Criterion)
 	fmt.Fprintf(&b, "This is %s: the fewest learners of a cell is %d, and a decisive run takes %d.\n\n", kind, r.Learners, Decisive)
 	if r.Target != "" {
-		fmt.Fprintf(&b, "The judgement %s goes by its target, %s of %s pooled: the mean of the grades' Δ, each the candidate's %s against %s less the base's, with its 95 %% interval. The target alone decides \"better\" and the choice; the score of the criterion is a reference, which decides nothing; the bounds of R55 are written for the confirmation and decide nothing either (R65).\n\n",
+		fmt.Fprintf(&b, "The judgement %s goes by its target, %s of %s pooled: the mean of the grades' Δ, each the candidate's %s against %s less the base's, with its 95 %% interval. The target alone decides \"better\" and the choice; the score of the criterion is a reference, which decides nothing; the bounds of fairness by the grade are written for the confirmation and decide nothing either.\n\n",
 			r.Judgement, r.Target, gradeNames(), r.Target, population.Reference)
 	}
 	fmt.Fprintf(&b, "The choice is made on the graphs %s.", strings.Join(r.Graphs, ", "))
@@ -123,7 +123,7 @@ func writeTarget(b *strings.Builder, t Target) {
 // at most bandCeiling at the high end. They decide nothing in a judgement with a target; the
 // outcome goes to the DPIA.
 func writeBounds(b *strings.Builder, t Target) {
-	fmt.Fprintf(b, "#### The bounds of R55 on the held-out learners, which decide nothing here\n\n")
+	fmt.Fprintf(b, "#### The bounds of fairness by the grade on the held-out learners, which decide nothing here\n\n")
 	fmt.Fprintf(b, "| cell | M11.same at least %.2f at its low end | M11.band at most %.2f at its high end |\n|---|---|---|\n", sameFloor, bandCeiling)
 	holds := true
 	for _, g := range t.Grades {
@@ -134,7 +134,7 @@ func writeBounds(b *strings.Builder, t Target) {
 	if !holds {
 		verdict = "does not hold"
 	}
-	fmt.Fprintf(b, "\nThe chosen one on its held-out learners %s the bounds of R55.\n\n", verdict)
+	fmt.Fprintf(b, "\nThe chosen one on its held-out learners %s the bounds of fairness by the grade.\n\n", verdict)
 }
 
 // yesNo writes whether a bound holds.

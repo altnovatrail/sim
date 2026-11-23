@@ -250,7 +250,7 @@ var read = sync.OnceValues(func() (map[string]*pack.Module, error) {
 })
 
 // IsSynthetic tells whether a module is a synthetic one: the criterion and the gate refuse it, since
-// they judge on published packages alone (R03).
+// they judge on published packages alone.
 func IsSynthetic(module string) bool {
 	return strings.HasPrefix(module, "synthetic/")
 }

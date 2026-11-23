@@ -20,7 +20,7 @@ var Working = Set{Seed: 20261107, Experiment: "working"}
 
 // heldOut are the held-out sets the decision log has recorded, by the name of their experiment. The
 // seed of each next choice of a criterion, and of each pair, is recorded in the log before its
-// candidate first runs, and only then comes in here (R04).
+// candidate first runs, and only then comes in here.
 var heldOut = map[string]uint64{
 	"held-out-model-1":  20261108,
 	"held-out-engine-1": 20261109,
@@ -46,7 +46,7 @@ func Named(experiment string) (Set, error) {
 }
 
 // ErrNotRecorded is a held-out set the decision log has not recorded yet.
-var ErrNotRecorded = errors.New("seed: no such held-out set is recorded in R04")
+var ErrNotRecorded = errors.New("seed: no such held-out set is recorded in the decision log")
 
 // confirmations are the held-out sets of the judgements' confirmations, by the name of the
 // judgement, its folder judgements/<name>/: each judgement confirms its choice on a set of its own,

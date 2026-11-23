@@ -93,7 +93,7 @@ func (f *File) Write(w io.Writer) error {
 // Learners are the learners of each cell of the gate: the first of the working set. The slowest job
 // of the gate, at a caller that keeps no cache of Go, is to take at most twelve minutes, three short
 // of the job's budget of fifteen, with a margin beyond that for the runner's spread; the gate keeps
-// the budget by a change of sim, not of the time (R31).
+// the budget by a change of sim, not of the time.
 const Learners = 250
 
 // learners are the learners whole holds each cell to: Learners, but a test of the checks lowers it,
