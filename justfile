@@ -43,7 +43,7 @@ ci-lint:
     arg="$(sed -n 's/^ARG GOPLS_VERSION=\(.*\)$/\1/p' .devcontainer/Dockerfile)"
     if [ -z "$lock" ] || [ "$arg" != "$lock" ]; then
         echo "ci-lint: .devcontainer/gopls/go.mod names gopls ${lock:-at no version} and" \
-            ".devcontainer/Dockerfile has GOPLS_VERSION ${arg:-unset}; take both from the go kind of spec's repo-template (R32)" >&2
+            ".devcontainer/Dockerfile has GOPLS_VERSION ${arg:-unset}; take both from the go kind of spec's repo-template" >&2
         exit 1
     fi
     {{ just_executable() }} ci-release
@@ -435,7 +435,7 @@ cells kind rule out set learners:
 # recipe workspace writes in a temporary folder: each library at its commit, or the caller's own
 # code in its place from GATE_LEARNER_MODEL or GATE_ENGINE, a folder or a commit by its full SHA. It
 # points GOWORK at that workspace and builds sim once. The run goes as processes, one part of the
-# learners each, as many as the processors: the rule goroutine keeps goroutines out of code (R09).
+# learners each, as many as the processors: the rule goroutine keeps goroutines out of code.
 # Then sim holds the build to gate.json — the versions the workspace chose, the go lines, the point
 # sim's go.mod names, the packages — and the numbers to their bands, and writes the table.
 # mode is bands, as the callers hold them; exact, the recorded numbers to the last bit, as sim's own

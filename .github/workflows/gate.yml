@@ -83,7 +83,7 @@ jobs:
       # commits gate.json names: a new pin builds its libraries on the cache of the one before,
       # restore-keys, modules and all: unlike the jobs of go.yml, an entry by the prefix keeps its
       # modules, so a saved entry holds those of the pins before it too (Д14 in run/DEBT.md). Only a
-      # push to main saves it, by the first part, as the image; every other event reads it (R67).
+      # push to main saves it, by the first part, as the image; every other event reads it.
       - name: Go cache
         id: go
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -102,7 +102,7 @@ jobs:
       # toolchain of go.yml: a called workflow sees the jobs of another only through the caller's
       # needs, and the gate would wait for that job on every run. Nor does it call that action,
       # which takes the caller's tree and its Dockerfile at the root of the workspace, while the
-      # gate checks sim out into sim/ (R63; Д14 in run/DEBT.md).
+      # gate checks sim out into sim/ (Д14 in run/DEBT.md).
       - name: Toolchain image from the cache
         id: toolchain
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

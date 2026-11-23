@@ -402,7 +402,7 @@ func (r *Run) passLesson(step Step, at int64) ([]Step, int64, error) {
 // is given at once, with the pool read as at any choice; then the engine is called again, and the
 // lesson of the same run must go on: the call api makes after any attempt outside a lesson, which
 // the invariants must see. Any other answer is a run that cannot go on. It gives the step of the
-// consolidation and the step of the lesson resumed (R48).
+// consolidation and the step of the lesson resumed.
 func (r *Run) consolidate(lesson *pack.Lesson, in engine.Input, c engine.Choice) (*Step, *Step, error) {
 	if c.Kind != engine.ChoiceTask || slices.ContainsFunc(lesson.Lesson.Tasks, func(t learnermodel.Task) bool { return t.ID == c.ID }) {
 		return nil, nil, fmt.Errorf("%w: at the end of a link of %s at %d the engine chose %v %s (%v), neither the lesson nor a task outside it",

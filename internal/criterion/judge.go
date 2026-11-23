@@ -77,7 +77,7 @@ func judge(criterion, tgt string, base *bench.File, baseFair []bench.FairCell, p
 		return Verdict{}, fmt.Errorf("%w: candidate %s: %w", ErrCriterion, c.Name, err)
 	}
 	if a, b := fairCells(baseFair), fairCells(candFair); !slices.Equal(a, b) {
-		return Verdict{}, fmt.Errorf("%w: candidate %s has the cells of fairness by the grade [%s], and the base [%s]: both runs need the populations D-, which just decisive and just rough run (R55)", ErrCriterion, c.Name, strings.Join(b, ", "), strings.Join(a, ", "))
+		return Verdict{}, fmt.Errorf("%w: candidate %s has the cells of fairness by the grade [%s], and the base [%s]: both runs need the populations D-, which just decisive and just rough run", ErrCriterion, c.Name, strings.Join(b, ", "), strings.Join(a, ", "))
 	}
 	cells, err := read(base, c.File, paths)
 	if err != nil {

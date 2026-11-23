@@ -45,7 +45,7 @@ func Check(rec *run.Record) []Breach {
 // CheckWithoutI1 gives every breach of I2–I4 in a run's record, and takes no choice again: past the
 // first learners of a cell, taking each choice again would double the engine's work on every step,
 // the most of a run. A repeated run holds I1 to the same bits by Same, and the first learners of
-// every cell take it on each choice (R33).
+// every cell take it on each choice.
 func CheckWithoutI1(rec *run.Record) []Breach {
 	return check(rec, false)
 }

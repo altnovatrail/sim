@@ -19,4 +19,4 @@ A component of [NovaTrail](https://github.com/altnovatrail/spec), a universal op
 
 It stands beside learner-model and engine, the two libraries it imports at build time and whose CI takes it as a gate at an exact tag, so that a change that worsens the criterion is not merged; the CI of modules runs it when what it reads of a package changes; and it derives its learners' seeds with spec's random generator, one for the whole platform.
 
-Its card is architecture 3.9 spec, among the documents of [spec](https://github.com/altnovatrail/spec); its own documents, its decisions and its plan are in [docs/](docs/README.md).
+Its card is in the architecture of [spec](https://github.com/altnovatrail/spec); its own documents, its decisions and its plan are in [docs/](docs/README.md).

@@ -79,7 +79,7 @@ func TestEvaluate(t *testing.T) {
 	if err := f.Write(&b); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"# The fairness of the learner model by the grade: fairness-1", "R55", "D-grade1, D-grade3, D-grade5", "- sim v0.1.18", "SHA-256 abc", "| D-grade1/novatrail/olympiad-math | 60 | 25 [", "| yes |", "The base holds the criterion.", "## For dpia 10.2 spec", "On 2026-11-14", "Grade 5: a share of 1 [1; 1]", "github.com/altnovatrail/learner-model v1.2.0 and github.com/altnovatrail/engine v3.4.0"} {
+	for _, want := range []string{"# The fairness of the learner model by the grade: fairness-1", "in docs/decisions.md of sim", "D-grade1, D-grade3, D-grade5", "- sim v0.1.18", "SHA-256 abc", "| D-grade1/novatrail/olympiad-math | 60 | 25 [", "| yes |", "The base holds the criterion.", "## For spec's DPIA", "On 2026-11-14", "Grade 5: a share of 1 [1; 1]", "github.com/altnovatrail/learner-model v1.2.0 and github.com/altnovatrail/engine v3.4.0"} {
 		if !strings.Contains(b.String(), want) {
 			t.Errorf("the report does not say %q:\n%s", want, b.String())
 		}

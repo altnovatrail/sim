@@ -27,7 +27,7 @@ const (
 
 // Decisive is the learners of every cell a decisive run takes, and the recipe just decisive runs; a
 // run of fewer is a rough look and decides nothing. It is the largest, in steps of 250, at which the
-// run of the base on a free machine takes at most 41 minutes, within the hour with a margin (R33).
+// run of the base on a free machine takes at most 41 minutes, within the hour with a margin.
 const Decisive = 2000
 
 // ErrCriterion is a judgement the criterion refuses.
@@ -341,7 +341,7 @@ func (in Input) heldOut() error {
 	want, err := seed.Confirmation(in.Judgement)
 	if err != nil {
 		// The row of the judgement or the seed of its set is missing; the error of seed says which.
-		return fmt.Errorf("%w: the judgement %s has no held-out set: its row and its seed come by an amendment to R04 before its candidate first runs: %w", ErrCriterion, in.Judgement, err)
+		return fmt.Errorf("%w: the judgement %s has no held-out set: its row and its seed come by an entry of the decision log before its candidate first runs: %w", ErrCriterion, in.Judgement, err)
 	}
 	if got != want || got == in.Base.Header.Set {
 		return fmt.Errorf("%w: the confirmation ran on %s, not on %s, the held-out learners of the judgement %s apart from the choice's", ErrCriterion, got.Experiment, want.Experiment, in.Judgement)

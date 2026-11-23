@@ -113,7 +113,7 @@ func TestTarget(t *testing.T) {
 			t.Errorf("the report does not say %q:\n%s", want, b.String())
 		}
 	}
-	if strings.Contains(b.String(), "bounds of R55 on the held-out") {
+	if strings.Contains(b.String(), "bounds of fairness by the grade on the held-out") {
 		t.Errorf("the bounds stand in a report with no confirmation:\n%s", b.String())
 	}
 }
@@ -130,9 +130,9 @@ func TestTargetConfirm(t *testing.T) {
 		from          func(string, int) int
 		outcome, says string
 	}{
-		{soon, "chosen and confirmed: fairer", "The chosen one on its held-out learners holds the bounds of R55."},
+		{soon, "chosen and confirmed: fairer", "The chosen one on its held-out learners holds the bounds of fairness by the grade."},
 		{late(0, 4), "chosen and confirmed: fairer", "| `D-grade5/" + olympiad[0] + "` | no: 0.75 ["},
-		{late(4, 2), "not confirmed", "The chosen one on its held-out learners does not hold the bounds of R55."},
+		{late(4, 2), "not confirmed", "The chosen one on its held-out learners does not hold the bounds of fairness by the grade."},
 	} {
 		in := fairInput(Candidate{Name: "fairer", File: fairCandidate(seed.Working, baseSide, soon)})
 		in.Confirm = &Confirm{Base: fairCandidate(held, baseSide, late(4, 2)), Candidate: fairCandidate(held, baseSide, c.from)}
@@ -144,7 +144,7 @@ func TestTargetConfirm(t *testing.T) {
 		if err := r.Write(&b); err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(r.Outcome, c.outcome) || !strings.Contains(b.String(), c.says) || !strings.Contains(b.String(), "#### The bounds of R55 on the held-out learners") {
+		if !strings.Contains(r.Outcome, c.outcome) || !strings.Contains(b.String(), c.says) || !strings.Contains(b.String(), "#### The bounds of fairness by the grade on the held-out learners") {
 			t.Errorf("outcome %q, want %q and %q:\n%s", r.Outcome, c.outcome, c.says, b.String())
 		}
 	}

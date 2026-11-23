@@ -76,7 +76,7 @@ func engineSumsOn(t *testing.T, name string, g, n int) ([]Sums, []string) {
 	dir := t.TempDir()
 	file := func(k int, ext string) string { return filepath.Join(dir, fmt.Sprintf("part-%d.%s", k, ext)) }
 	// The output of a process goes into a file, which it writes itself: a writer of another kind would
-	// need a goroutine of os/exec to copy it, and the tests start none (R10).
+	// need a goroutine of os/exec to copy it, and the tests start none.
 	cmds := make([]*exec.Cmd, procs)
 	for k := range procs {
 		out, err := os.Create(file(k, "out"))
