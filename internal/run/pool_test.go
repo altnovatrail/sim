@@ -190,8 +190,8 @@ func TestCeiling(t *testing.T) {
 			t.Fatal(err)
 		}
 		base += corridor(engineRec)
-		// A task with a seen solution is not the next task, but after the pause of 24 hours it may be
-		// (R82 spec): F-model's breaks bring the same task back the day after.
+		// A task with a seen solution is not the next task, but after the pause of 24 hours it may
+		// be: F-model's breaks bring the same task back the day after.
 		last, ended := "", int64(0)
 		for _, s := range rec.Steps {
 			if s.Choice.Kind != engine.ChoiceTask {

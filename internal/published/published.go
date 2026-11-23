@@ -1,9 +1,8 @@
 // Package published holds the published packages of modules the bench is pinned to, as their
-// release has them, and reads them through the chain of digests (R14). The files came in only
-// after release-verify accepted each of them (R77 spec): from then on the digest of the module
-// index, pinned here, holds them, through the package digests it names and the server parts'
-// digests their inventories name. A new release of modules is a new pin: a pull request of sim
-// with new bands.
+// release has them, and reads them through the chain of digests. The files came in only after
+// release-verify accepted each of them: from then on the digest of the module index, pinned here,
+// holds them, through the package digests it names and the server parts' digests their inventories
+// name. A new release of modules is a new pin: a pull request of sim with new bands.
 package published
 
 import (
@@ -28,8 +27,8 @@ const (
 //go:embed v*
 var files embed.FS
 
-// versions are the modules of the first slice (R41 spec), by full ID, and the version of each the
-// bench reads. They are a pin, as the release is: unexported, so nothing outside changes them.
+// versions are the modules of the first slice, by full ID, and the version of each the bench reads.
+// They are a pin, as the release is: unexported, so nothing outside changes them.
 var versions = map[formatv0.ModuleID]formatv0.ModuleVersion{
 	"novatrail/olympiad-math":  "0.3.0",
 	"novatrail/english-essays": "0.2.0",
@@ -91,7 +90,7 @@ func readPin(release, indexDigest string, versions map[formatv0.ModuleID]formatv
 // Package is a pinned package: its module's full ID, its version, and its package digest, as the
 // pinned index names them. In a run of the gate of modules, Along marks a package that did not
 // change and came along with one that did, a graph of the gate holding the two together: it runs
-// only on such graphs (R31).
+// only on such graphs.
 type Package struct {
 	Module  string `json:"module"`
 	Version string `json:"version"`

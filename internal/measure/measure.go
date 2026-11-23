@@ -1,8 +1,8 @@
 // Package measure reads the measures of the bench off the runs of virtual learners, by the truth
-// the bench knows and what the learner model and the engine gave (R04, R22). Each learner's run
-// gives its sums; a number of a cell is read from the sums of all its learners, and its 95 %
-// interval from Resamples resamples of the learners, the same resamples for every number of the
-// cell, so that two cells of the same learners compare by learner.
+// the bench knows and what the learner model and the engine gave. Each learner's run gives its
+// sums; a number of a cell is read from the sums of all its learners, and its 95 % interval from
+// Resamples resamples of the learners, the same resamples for every number of the cell, so that two
+// cells of the same learners compare by learner.
 package measure
 
 import (
@@ -30,7 +30,7 @@ type Number struct {
 
 // Value is a number read off a cell: its value and the ends of its 95 % interval. A number the cell
 // cannot read is not Read, and in a check it is unmet; on a graph with a module whose package is not
-// published it is NoGraph, and its checks are neither met nor failed (R19).
+// published it is NoGraph, and its checks are neither met nor failed.
 type Value struct {
 	Name             string
 	Value, Low, High float64
@@ -40,7 +40,7 @@ type Value struct {
 	Read    bool
 	NoGraph bool
 	// Resampled are its values over the resamples, in their order, when it is read: the k-th of two
-	// numbers of the same learners comes of the same resample (R25).
+	// numbers of the same learners comes of the same resample.
 	Resampled []float64
 }
 

@@ -1,15 +1,15 @@
 // Package learner is the virtual learner of the bench: its truth, which the bench knows and the
-// learner model estimates from its attempts, and its calendar (R03). The truth is the bench's own
+// learner model estimates from its attempts, and its calendar. The truth is the bench's own
 // model, not learner-model's code: the bench measures the model on a learner it knows, not on a
-// copy of itself. The base population holds the model's assumptions (R03, R04, R06 learner-model),
-// and each population changes one of them, by a field of Assumptions.
+// copy of itself. The base population holds the model's assumptions, and each population changes
+// one of them, by a field of Assumptions.
 package learner
 
 // Assumptions are what a population assumes of its learners. Base gives the base population's; a
-// population is Base with one field changed (R15).
+// population is Base with one field changed.
 type Assumptions struct {
 	// BandStep is the true step between neighbouring bands, in logits: the shift 2.5 · (p − 1)
-	// of a start band and of a task's band (R03 learner-model).
+	// of a start band and of a task's band.
 	BandStep float64
 	// StartSpread is the spread of the module's level around the start band, N(0, σ²).
 	StartSpread float64
@@ -20,7 +20,7 @@ type Assumptions struct {
 	// Slope is a of σ(a · (θ* + δ̄* − β*)).
 	Slope float64
 	// ChoiceGuess is the chance of guessing a choice of k options, times k: 1 gives 1/k, as the
-	// model has it (R03 learner-model); it is capped at 1.
+	// model has it; it is capped at 1.
 	ChoiceGuess float64
 	// PredicateGuess is the chance of guessing a cell of predicate; the model has 0.
 	PredicateGuess float64
@@ -29,9 +29,9 @@ type Assumptions struct {
 	// Forgets tells whether retention falls with time; false keeps it at 1.
 	Forgets bool
 	// LawC and LawF are C and F of the law of retention R* = (1 + F · Δt / τ*)^(−C), Δt and τ* in
-	// days (R04 learner-model).
+	// days.
 	LawC, LawF float64
-	// Growth is g, by which practice spaced out grows the stability (R06 learner-model).
+	// Growth is g, by which practice spaced out grows the stability.
 	Growth float64
 	// SessionChance is the chance that a day of the calendar has a session.
 	SessionChance float64
@@ -66,7 +66,7 @@ type Assumptions struct {
 	Adult              bool
 	AdultFrom, AdultTo float64
 	// UnreadableEvery makes every UnreadableEvery-th answer of an item on a sheet unreadable first,
-	// written again (S-unreadable): no verdict and no mistake (R04 spec).
+	// written again (S-unreadable): no verdict and no mistake.
 	UnreadableEvery int
 	// The break of the calendar (F-): one break, starting on a day from BreakStartFrom to
 	// BreakStartTo, BreakMin to BreakMax days long, drawn evenly, ending by day BreakEndBy; and
@@ -118,8 +118,7 @@ type Assumptions struct {
 	TruthGrade int32
 	// CorrectAfter makes an adult correct the module level once, to the band of the truth, by the
 	// evidence of a correction of learner-model, right after the attempt that brings the learner's
-	// first answers of items with a verdict to this many (C-; R72). Zero leaves the level to the
-	// model.
+	// first answers of items with a verdict to this many (C-). Zero leaves the level to the model.
 	CorrectAfter int
 }
 

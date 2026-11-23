@@ -15,7 +15,7 @@ import (
 )
 
 // A learner of a population of fairness runs on its reference's unit and carries the trace of M11
-// under the engine alone; a learner of any other population has none (R55).
+// under the engine alone; a learner of any other population has none.
 func TestFairLine(t *testing.T) {
 	ms, err := synthetic.Modules()
 	if err != nil {

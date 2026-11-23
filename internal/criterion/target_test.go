@@ -40,7 +40,7 @@ func fairCandidate(set seed.Set, s side, from func(string, int) int) *bench.File
 	return withFairness(bare("engine", set, s, false), olympiad, from, even)
 }
 
-// The target M11.same pooled alone decides "better" and the choice (R65): of the candidates that hold
+// The target M11.same pooled alone decides "better" and the choice: of the candidates that hold
 // every constraint, the one fairest on both grades is chosen over one that mends grade 5 alone, one
 // better by the score alone is not better, and one that mends grade 5 at grade 1's cost fails fair.
 // Δ of a grade is the candidate's share less the base's, and the shares are those the evaluation reads.
@@ -119,7 +119,7 @@ func TestTarget(t *testing.T) {
 }
 
 // The chosen one is confirmed by the target on the held-out learners of model-fair-1, and the report
-// writes whether it holds the bounds of R55 there, which decide nothing (R65).
+// writes whether it holds the bounds of fairness there, which decide nothing.
 func TestTargetConfirm(t *testing.T) {
 	usual(t)
 	held, err := seed.Confirmation("model-fair-1")
@@ -150,7 +150,7 @@ func TestTargetConfirm(t *testing.T) {
 	}
 }
 
-// Runs without the cells of fairness leave the target unread, and no candidate is better (R65).
+// Runs without the cells of fairness leave the target unread, and no candidate is better.
 func TestTargetUnread(t *testing.T) {
 	usual(t)
 	in := fairInput(Candidate{Name: "bare", File: bare("engine", seed.Working, betterSide, false)})
@@ -174,7 +174,7 @@ func TestTargetUnread(t *testing.T) {
 
 // A judgement goes by the target its criterion wrote down and by no other: model-fair-1 names
 // M11.same, no other judgement names a target, and a candidate of a judgement with a target names
-// no group or goal (R65).
+// no group or goal.
 func TestTargetRefuses(t *testing.T) {
 	usual(t)
 	cand := func(group, goal string) Candidate {

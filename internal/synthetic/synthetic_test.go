@@ -40,7 +40,7 @@ func kinds(m *pack.Module) (map[learnermodel.CheckKind]int, int) {
 	return out, rubrics
 }
 
-// The synthetic packages have the shape the bench runs on (R19): a sheet with a choice, numbers, a
+// The synthetic packages have the shape the bench runs on: a sheet with a choice, numbers, a
 // predicate and a time, and leading questions, over three bands of grades 1–6; a workbook of one
 // band of grade 3 with pages of up to ten lines; essays with a rubric and no grades; and a skill of
 // the sheet that rests on the anchor skill a skill of the workbook teaches.
@@ -150,8 +150,7 @@ func TestRuns(t *testing.T) {
 }
 
 // A learner who asks for the technique, as G8 does, gets the leading question with it on the tasks
-// of the sheet that have one: the evidence carries it, of the kind that records it, and only there
-// (R41).
+// of the sheet that have one: the evidence carries it, of the kind that records it, and only there.
 func TestLeadingQuestion(t *testing.T) {
 	ms := modules(t)
 	a := learner.Base()

@@ -46,7 +46,7 @@ func evaluateCorrection(t *testing.T, f *bench.File) (*CorrectionResult, error) 
 }
 
 // The correction holds when its learners come to the truth by the 50th answer more often than the
-// same learners without it, and not when they come no sooner (R73).
+// same learners without it, and not when they come no sooner.
 func TestEvaluateCorrection(t *testing.T) {
 	faster := func(p string, n int) int {
 		if p == "C-grade1" {

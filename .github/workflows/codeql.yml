@@ -1,5 +1,5 @@
-# CodeQL over the repository's workflows and its languages (R09 .github), pinned to a release of
-# .github. The job gives the shared workflow what it needs to upload its results.
+# CodeQL over the repository's workflows and its languages, pinned to a release of .github. The job
+# gives the shared workflow what it needs to upload its results.
 name: CodeQL
 
 on:
@@ -23,6 +23,6 @@ jobs:
     uses: altnovatrail/.github/.github/workflows/codeql.yml@f1c7e9e6f8245fdbdbc23c4091f3c26350e3a44e # v0.1.33
     # Go is read from a build, with the Go the toolchain stage of .devcontainer/Dockerfile pins in the
     # stage toolchain-core it is built from: the archive of its ARG GO_VERSION from go.dev, checked
-    # against GO_SHA256_AMD64, without building the stage (R45 .github; R10, R68, R70).
+    # against GO_SHA256_AMD64, without building the stage.
     with:
       languages: go

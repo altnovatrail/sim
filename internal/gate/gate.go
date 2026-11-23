@@ -1,7 +1,7 @@
 // Package gate holds the gate of the bench: the gate file, which names what the gate's numbers were
 // recorded on — the commits of the libraries, the pinned packages, the versions the workspace chose
 // and the go lines — and the bands; the gate's cells and numbers; the checks of a run against the
-// file; and the recording of the bands anew (R26).
+// file; and the recording of the bands anew.
 package gate
 
 import (
@@ -102,12 +102,12 @@ var learners = Learners
 
 // Populations are the populations of the gate, each on every graph it runs on, in the order of
 // population. A-linked runs on the two published maths together, since olympiad maths rests skills
-// on school maths (R31).
+// on school maths.
 var Populations = []string{"G0", "G1", "G2", "G2-half", "G3", "F-model", "W-shock", "A-linked", "E-base"}
 
 // numbers are the numbers of the gate of each population, besides the two of E2 on every one. The
 // share of items with P* below 0.50, E1.hard, and the choices of nothing, E2.nothing, are what the
-// thresholds of the CI of modules are taken from (R27).
+// thresholds of the CI of modules are taken from.
 var numbers = map[string][]string{
 	"G0":       {"M1.rms.200", "E1.corridor", "E1.hard", "M4.false.all", "M6.late", "M6.never"},
 	"G1":       {"M7.error.10"},

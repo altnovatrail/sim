@@ -90,7 +90,7 @@ func TestReleasePackages(t *testing.T) {
 // The kinds of check of the release: numbers, fractions, choices of five options in the check and
 // times on the sheet of olympiad maths, numbers, fractions and choices of three options on the
 // workbook of grade 3 — the options in the check —, choices of three options beside the check and
-// rubrics in essays (R12). No cell of predicate is published.
+// rubrics in essays. No cell of predicate is published.
 func TestReleaseChecks(t *testing.T) {
 	ms := modules(t)
 	count := func(m *pack.Module) map[string]int {
@@ -157,7 +157,7 @@ func TestReleaseTemplates(t *testing.T) {
 
 // What the bench reads of format 0.4 in the release: leading questions on tasks of olympiad maths
 // and on none of the others, and a worked example in every lesson of grade 3, a link with no task
-// between its explanation and its tasks (R41, R42).
+// between its explanation and its tasks.
 func TestReleaseFormat04(t *testing.T) {
 	ms := modules(t)
 	for id, want := range map[string]int{olympiad: 322, grade3: 0, essays: 0} {

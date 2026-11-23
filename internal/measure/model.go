@@ -85,7 +85,7 @@ func Model(rec *run.Record) Sums {
 // Oracle gives the sums of the ceiling of the model on one learner's run, the oracle: its estimate
 // is the truth θ* + δ*, its P is P*, it declares "mastered" by true mastery, and it holds an anchor
 // when the truth does. It reads the same answers as the model of the run, so that the two compare
-// by learner (R24).
+// by learner.
 func Oracle(rec *run.Record) Sums {
 	obs, rights := attempts(rec)
 	out := make([]*run.Obs, len(obs))

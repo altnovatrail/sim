@@ -9,8 +9,8 @@ import (
 	"github.com/altnovatrail/sim/internal/pack"
 )
 
-// Obs is what the measures read of one attempt with a verdict (R22): the model and the truth of its
-// items at the attempt, and of the skills of its module before and after it.
+// Obs is what the measures read of one attempt with a verdict: the model and the truth of its items
+// at the attempt, and of the skills of its module before and after it.
 type Obs struct {
 	At      int64     // when the attempt was given
 	Repeat  bool      // the task, not a template, had its solution seen before: a repeat (M8)
@@ -27,7 +27,7 @@ type Obs struct {
 type ItemObs struct {
 	PTrue float64 // P* of the first answer
 	// PGiven is P* of the item when it was given, as the truth stood then, without what only the
-	// attempt holds — the technique, the shock, the error and the repeat (E1; R23).
+	// attempt holds — the technique, the shock, the error and the repeat (E1).
 	PGiven float64
 	PModel float64 // P of the model at the attempt, with retention
 	// PFresh is P of the model by the same estimate with R̄ = 1, c + (P − c)/R̄, by its own formula
@@ -209,7 +209,7 @@ func verdictIn(g learnermodel.Graph, id string) bool {
 }
 
 // guess gives the model's c of an item: the product over its cells of 1/k for a choice of k options
-// and 0 for the rest (R03 learner-model).
+// and 0 for the rest.
 func guess(slots []learnermodel.Slot) float64 {
 	c := 1.0
 	for _, s := range slots {

@@ -94,7 +94,7 @@ func TestGate(t *testing.T) {
 
 // fileModes says whether the build keeps a file's mode: WASI preview1 has none, and Go's Chmod on
 // wasip1 only checks that the file is there, so in node:wasi, where "Go / targets" and "Go / arm64"
-// run the tests, a file has the mode the host gave it (R63).
+// run the tests, a file has the mode the host gave it.
 var fileModes = runtime.GOOS != "wasip1"
 
 // "sim run -part" runs a part, and "sim merge" merges the parts into the whole, to the byte.

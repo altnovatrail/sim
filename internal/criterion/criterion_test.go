@@ -45,7 +45,7 @@ type side struct {
 
 // file builds a file of results as bare does, and under the engine with the cells of fairness by the
 // grade too, every grade at the reference's estimate from the first answer and its attempts at every
-// band alike: the base and a candidate run them, and the engine's ceiling does not (R55).
+// band alike: the base and a candidate run them, and the engine's ceiling does not.
 func file(rule string, set seed.Set, s side, breach bool) *bench.File {
 	f := bare(rule, set, s, breach)
 	if rule != "engine" {
@@ -386,7 +386,7 @@ func TestRefuses(t *testing.T) {
 		t.Errorf("a confirmation of the engine on the model's held-out learners: %v", err)
 	}
 	// A confirmation runs only on its judgement's own held-out set: not on the set kept for another
-	// round, nor on one another judgement has looked at, nor without the judgement's name (R52).
+	// round, nor on one another judgement has looked at, nor without the judgement's name.
 	set := func(experiment string) seed.Set {
 		s, err := seed.Named(experiment)
 		if err != nil {
@@ -435,7 +435,7 @@ func TestRefuses(t *testing.T) {
 
 // A candidate of one library runs on the other library of the base, by its version or by the commit
 // of its pin, as the recipe builds it; the base runs on the libraries of the paths and of the gate
-// file, a pseudo-version of the pin's commit while it has no tag; a pair changes both (R40).
+// file, a pseudo-version of the pin's commit while it has no tag; a pair changes both.
 func TestLibraries(t *testing.T) {
 	usual(t)
 	model, engine := bench.Libraries[0], bench.Libraries[1]
@@ -618,7 +618,7 @@ func TestRecordPaths(t *testing.T) {
 }
 
 // The paths the criterion holds read, and docs/measurements.md holds the same table in the latest
-// of its records of the paths, the embedded file's (R04).
+// of its records of the paths, the embedded file's.
 func TestPathsFixed(t *testing.T) {
 	p, err := fixed()
 	if err != nil {
@@ -678,7 +678,7 @@ func TestReport(t *testing.T) {
 
 // A number whose fixed path is above zero but within the author's tolerance has no share: at the
 // tolerance or below it leaves the score, read by the candidate or not, and above it the share is
-// read (R04). A path to perfection is the base's own shortfall, and a path the tolerance in
+// read. A path to perfection is the base's own shortfall, and a path the tolerance in
 // decimal, off by a few ulps, is within it.
 func TestPathWithinTolerance(t *testing.T) {
 	for _, c := range []struct {
@@ -736,7 +736,7 @@ func TestPathSmall(t *testing.T) {
 // The recipe of the decisive run, just decisive, runs Decisive learners a cell, of the working ones
 // unless it is given another set: a decisive run of another size would be refused by sim paths, or
 // read as a rough look, and a base of other learners would not be the one paths.json names. A rough
-// look, just rough, runs fewer, on the working learners alone (R49).
+// look, just rough, runs fewer, on the working learners alone.
 func TestDecisiveRecipe(t *testing.T) {
 	justfile, err := os.ReadFile(filepath.Join("..", "..", "justfile"))
 	if err != nil {
@@ -756,7 +756,7 @@ func TestDecisiveRecipe(t *testing.T) {
 
 // The check "neutral": a candidate that gives the base's runs on a graph it names holds it; one
 // learner's sum apart fails it, named by the learner and the key; a graph the runs have no cell of
-// fails it too, and a graph of no published package neither holds nor fails it (R49).
+// fails it too, and a graph of no published package neither holds nor fails it.
 func TestNeutral(t *testing.T) {
 	usual(t)
 	apart := file("engine", seed.Working, baseSide, false)
@@ -805,7 +805,7 @@ func TestNeutral(t *testing.T) {
 }
 
 // The note of consolidation in a lesson stands on the cells where a run consolidated, base and
-// candidate side by side, and the report writes it as a table apart from the checks (R49).
+// candidate side by side, and the report writes it as a table apart from the checks.
 func TestNote(t *testing.T) {
 	usual(t)
 	consolidates := file("engine", seed.Working, baseSide, false)

@@ -125,7 +125,7 @@ func TestTranslate(t *testing.T) {
 		t.Errorf("t-sheet item 2: %+v", it)
 	}
 	// A time is a check of its own kind, and of a leading question the bench reads that the task has
-	// one (R41).
+	// one.
 	if s := st.Items[1].Slots; !slices.Equal(s, []learnermodel.Slot{{Check: learnermodel.CheckKindTime}}) || !sheet.Leading {
 		t.Errorf("t-sheet: item 2 slots %v, a leading question %v", s, sheet.Leading)
 	}
@@ -456,7 +456,7 @@ func TestText(t *testing.T) {
 			task.Difficulty = 5
 			v.Tasks["t-sheet"] = task
 		}, false},
-		// The bench reads that a task has a leading question, not its words (R41).
+		// The bench reads that a task has a leading question, not its words.
 		"the words of a leading question": {func(v *formatv0.CanonicalView) {
 			task := v.Tasks["t-sheet"]
 			task.LeadingQuestion = ptr(formatv0.Text("What is asked, again?"))

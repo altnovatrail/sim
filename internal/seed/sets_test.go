@@ -118,7 +118,7 @@ func TestBetweenAndPermutation(t *testing.T) {
 	}
 }
 
-// Named gives a set by its experiment: working, or a held-out set R04 has recorded.
+// Named gives a set by its experiment: working, or a held-out set the decision log has recorded.
 func TestNamed(t *testing.T) {
 	if s, err := Named("working"); err != nil || s != Working {
 		t.Errorf("Named(working) = %v, %v", s, err)
@@ -126,7 +126,7 @@ func TestNamed(t *testing.T) {
 	if s, err := Named("held-out-engine-1"); err != nil || s != (Set{Seed: 20261109, Experiment: "held-out-engine-1"}) {
 		t.Errorf("Named(held-out-engine-1) = %v, %v", s, err)
 	}
-	// The judgement of consolidation in a lesson has a set of its own, apart from the rounds (R49).
+	// The judgement of consolidation in a lesson has a set of its own, apart from the rounds.
 	if s, err := Named("held-out-engine-lesson-1"); err != nil || s != (Set{Seed: 20261113, Experiment: "held-out-engine-lesson-1"}) {
 		t.Errorf("Named(held-out-engine-lesson-1) = %v, %v", s, err)
 	}
@@ -135,11 +135,11 @@ func TestNamed(t *testing.T) {
 	}
 }
 
-// A judgement's confirmation runs on its own held-out set (R52): model-2 on the set model-1 left by
-// its exit, engine-2 on the one kept for it, engine-lesson-1 and model-fair-1 on their own (R49,
-// R65). A judgement with no row — model-3 until its seed is recorded, and the rounds that ended in
-// an exit without a confirmation — has none. Every held-out set R04 has recorded is in exactly one
-// row, of its judgement's criterion, so a seed never comes in without its judgement.
+// A judgement's confirmation runs on its own held-out set: model-2 on the set model-1 left by its
+// exit, engine-2 on the one kept for it, engine-lesson-1 and model-fair-1 on their own. A judgement
+// with no row — model-3 until its seed is recorded, and the rounds that ended in an exit without a
+// confirmation — has none. Every held-out set the decision log has recorded is in exactly one row,
+// of its judgement's criterion, so a seed never comes in without its judgement.
 func TestConfirmation(t *testing.T) {
 	for judgement, want := range map[string]Set{
 		"model-2":         {Seed: 20261108, Experiment: "held-out-model-1"},
@@ -179,7 +179,7 @@ func TestConfirmation(t *testing.T) {
 	if j, ok := Judgement("working"); ok {
 		t.Errorf("the working learners are the held-out set of %s", j)
 	}
-	// A row whose set R04 has not recorded gives no set.
+	// A row whose set the decision log has not recorded gives no set.
 	t.Cleanup(func() { delete(confirmations, "model-3") })
 	confirmations["model-3"] = "held-out-model-2"
 	if _, err := Confirmation("model-3"); err != ErrNotRecorded {

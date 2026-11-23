@@ -61,7 +61,7 @@ func evaluation(t *testing.T, f *bench.File) (*Fairness, error) {
 // The base holds when every grade comes to the reference's estimate by 50 answers for at least 0.90
 // of the learners at the low end and the bands differ by at most 0.05 at the high end; it does not
 // when a grade comes late or its bands part, and the report says which and gives the paragraph for
-// dpia 10.2 spec.
+// the DPIA.
 func TestEvaluate(t *testing.T) {
 	f, err := evaluation(t, fairBase(func(_ string, n int) int { return 10 * (n % 6) }, even))
 	if err != nil {
@@ -160,8 +160,7 @@ func TestEvaluateRefuses(t *testing.T) {
 
 // The cells of fairness change nothing a judgement reads but the constraint of fairness: the report
 // of a candidate against a base with them is that without them but for the lines of fair, and the
-// paths read off a base with them and a ceiling without them are those of a base without them (R04,
-// R55).
+// paths read off a base with them and a ceiling without them are those of a base without them.
 func TestFairnessLeftOut(t *testing.T) {
 	base, ceiling := bare("engine", seed.Working, baseSide, false), file("ceiling", seed.Working, ceilSide, false)
 	p := usePaths(t, base, ceiling)
@@ -222,7 +221,7 @@ func TestFairnessLeftOut(t *testing.T) {
 // The constraint fair holds a candidate as close to the reference as the base on every grade, and
 // fails the grade and the number where it is not: in the criteria of the model and of the engine, in a
 // pair once, and in the confirmation; runs without the cells fail it, and a line of fairness with
-// no trace is refused (R55).
+// no trace is refused.
 func TestFair(t *testing.T) {
 	usual(t)
 	half := func(grade string, n int) int {

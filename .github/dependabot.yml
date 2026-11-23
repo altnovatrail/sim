@@ -2,8 +2,7 @@ version: 2
 
 updates:
   # The actions of the workflows, and the references to .github's shared workflows with them. The
-  # references move together, in one pull request, since each names the same release (Д88 spec;
-  # R63).
+  # references move together, in one pull request, since each names the same release (Д88 spec).
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -23,13 +22,12 @@ updates:
 
   # The Go modules the code is built from, as in every Go repository of NovaTrail. Dependabot raises
   # none of spec's module, learner-model and engine: spec's module moves with the spec submodule, by
-  # a move to its tag (R64 spec); learner-model and engine come by a task that holds the tag to the
-  # signed release by release-verify (R77 spec), and the commits the bench is built on are the gate
-  # file's, which a pull request of sim moves (R05). The ecosystem stays all the same, as in every
-  # Go repository. Go itself, in the Dockerfile, and the tools the recipes run by `go run` at an
-  # exact version are not among them: those are raised by hand. Neither is .devcontainer/gopls/, the
-  # lock file of gopls: its version goes up together with GOPLS_VERSION in the Dockerfile, by hand
-  # (R11).
+  # a move to its tag; learner-model and engine come by a task that holds the tag to the signed
+  # release by release-verify, and the commits the bench is built on are the gate file's, which a
+  # pull request of sim moves. The ecosystem stays all the same, as in every Go repository. Go
+  # itself, in the Dockerfile, and the tools the recipes run by `go run` at an exact version are not
+  # among them: those are raised by hand. Neither is .devcontainer/gopls/, the lock file of gopls:
+  # its version goes up together with GOPLS_VERSION in the Dockerfile, by hand.
   - package-ecosystem: gomod
     directory: /
     schedule:

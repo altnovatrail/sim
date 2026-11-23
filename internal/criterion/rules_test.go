@@ -53,8 +53,9 @@ func evaluateRules(t *testing.T, run, base *bench.File) (*RulesResult, error) {
 	return EvaluateRules(Rules{Name: "rules-1", Date: "2026-11-17", Version: "v0.1.28", Run: run, Base: base, RunDigest: "abc", BaseDigest: p.Base, Pins: maps.Clone(pinned)})
 }
 
-// The evaluation of the rules holds each of the four conditions of R72 on its own: grade 5 faster
-// than the base, fair, the guard's false firings, and the correction against grade 1 without it.
+// The evaluation of the rules holds each of the four conditions of the criterion on its own: grade
+// 5 faster than the base, fair, the guard's false firings, and the correction against grade 1
+// without it.
 func TestEvaluateRules(t *testing.T) {
 	// The base: grade 5 at the reference's estimate from answer 60 for every learner, grade 1 from 0.
 	base := fairBase(func(g string, _ int) int { return map[string]int{"D-grade5": 60}[g] }, even)

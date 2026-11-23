@@ -16,14 +16,14 @@ import (
 )
 
 // anchorPrefix opens the ID of an anchor skill, a skill of the shared taxonomy that another
-// module's skills teach (R50 spec): it stays as it is, with no module before it.
+// module's skills teach: it stays as it is, with no module before it.
 const anchorPrefix = "core."
 
 // Module is a module as the bench reads it: the graph and the inputs of engine, translated once
 // from the canonical view, and what the virtual learners need beside them.
 type Module struct {
 	ID    string
-	Graph learnermodel.Graph // by learnermodel.NewGraph, for both libraries (R28 spec)
+	Graph learnermodel.Graph // by learnermodel.NewGraph, for both libraries
 	Ages  []string           // the module's age categories, its audience
 	Tasks []Task             // ordered by full ID
 	// Lessons are the module's lessons, ordered by full ID.
@@ -63,7 +63,7 @@ var ErrTranslate = errors.New("pack: the canonical view cannot be translated")
 // from skill_tiers; a slot's kind of check and a choice's number of options, whether they stand
 // beside the check or in it; a check by a rubric gives no slot with a verdict; of a leading
 // question, only that the task has one. The graph is learner-model's own NewGraph, so that sim and
-// api build one graph of one module alike (R28 spec).
+// api build one graph of one module alike.
 func Translate(cv *formatv0.CanonicalView) (*Module, error) {
 	module := string(cv.Manifest.ID)
 	full := func(kind, id string) string {
@@ -282,7 +282,7 @@ func sortedKeys[K cmp.Ordered, V any](m map[K]V) []K {
 }
 
 // suits tells whether a task or a lesson with the age categories ages suits a learner of the age
-// category age: its own age categories, or else the module's (R107 spec).
+// category age: its own age categories, or else the module's.
 func (m *Module) suits(ages []string, age string) bool {
 	if len(ages) == 0 {
 		ages = m.Ages
@@ -291,8 +291,8 @@ func (m *Module) suits(ages []string, age string) bool {
 }
 
 // ForAge gives the pool and the lessons as api gives them to a learner of an age category: the
-// tasks that suit them, and the lessons that suit them whose every task does too (R107 spec). The
-// age category is api's filter, not an input of engine.
+// tasks that suit them, and the lessons that suit them whose every task does too. The age category
+// is api's filter, not an input of engine.
 func (m *Module) ForAge(age string) ([]engine.Candidate, []engine.Lesson) {
 	var pool []engine.Candidate
 	suitsTask := map[string]bool{}
@@ -327,8 +327,8 @@ func (m *Module) Task(id string) (*Task, error) {
 
 // Instance gives the instance of a template an attempt with seed attemptSeed takes: its number,
 // chosen as the platform chooses it — the place names the task's ID in the module, as the format's
-// task has it (R60 spec) —, and its numbers, read from the canonical view, whose instances are in
-// that order. A task that is no template has no instance.
+// task has it —, and its numbers, read from the canonical view, whose instances are in that order.
+// A task that is no template has no instance.
 func (m *Module) Instance(id string, attemptSeed uint64) (int, formatv0.Numbers, error) {
 	t, err := m.Task(id)
 	if err != nil {
@@ -358,7 +358,7 @@ func (t *Task) ItemPrimary(i int) []string {
 // instances, its lessons —, as JSON, whose fields keep their order and whose maps are written by
 // their keys. What Translate does not read — the texts for the learner, the leading question's
 // own words among them, the version — is not in it, so two packages give the same text when
-// the bench reads the same of them, and Translate is the one list of what the bench reads (R27).
+// the bench reads the same of them, and Translate is the one list of what the bench reads.
 func (m *Module) Text() ([]byte, error) {
 	type task struct {
 		Task

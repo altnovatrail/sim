@@ -26,7 +26,7 @@ var errRed = errors.New("the gate is red")
 var buildInfo = debug.ReadBuildInfo
 
 // gateCommand is "sim gate": the recipe of the gate calls it, built once through the workspace it
-// writes from the gate file (R26).
+// writes from the gate file.
 func gateCommand(args []string, stdout, stderr io.Writer) error {
 	if len(args) == 0 {
 		fmt.Fprintln(stderr, gateUsage)
@@ -158,7 +158,7 @@ func readFolders(folders []string) ([]gate.Package, error) {
 // stdout the folders the gate of modules runs on — the changed and new ones, or with -all, when the
 // pull request moves the tag of sim, every one but a transition of the format —, a line each, and
 // after "along " those that did not change but share a graph of the gate with one of them
-// (gate.Runs; R27, R31).
+// (gate.Runs).
 func gateChanged(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("gate changed", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -321,8 +321,8 @@ func verify(f *gate.File, dirs []string) ([]string, error) {
 }
 
 // gateVerify holds the build to the gate file alone, before a run that has no bands to hold: the
-// decisive run of a candidate, built through the same workspace as the gate (R34). It names every
-// way the build departs from the file and fails on any.
+// decisive run of a candidate, built through the same workspace as the gate. It names every way the
+// build departs from the file and fails on any.
 func gateVerify(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("gate verify", flag.ContinueOnError)
 	fs.SetOutput(stderr)

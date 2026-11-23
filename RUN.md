@@ -2,7 +2,7 @@
 
 What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.19.11: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
 
-Language (R154 spec): rules and tables in English, terse, for the session; the epic's description, table 1 and the bodies of tasks in Russian — the author writes and reviews them. Commit messages, issues and a pull request's title and description in English, a person's too; a session's terse, for the session, never a copy of the report (the 2026-11-17 amendments to R14 spec; R75, R77).
+Language (R154 spec): rules and tables in English, terse, for the session; the epic's description, table 1 and the bodies of tasks in Russian — the author writes and reviews them. Commit messages, issues and a pull request's title and description in English, a person's too; a session's terse, for the session, never a copy of the report (R14 spec; R75).
 
 ## Rules
 
@@ -22,7 +22,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 8. End with a short report in Russian: what was done, files, how to check, what the review found or why there was none, what is open and what goes «в реестр spec».
 9. When done: table 1 `[ ]` → `[x]`; append to the body «Сделано (дата)» — one line, what was done and its pull request, which says how it was checked; where the author commits after review, the report says it. What stays open is rows, not text: a question for the author, of [run/QUESTIONS.md](run/QUESTIONS.md); what is put off, of [run/DEBT.md](run/DEBT.md) (R160 spec).
    - Then move the body verbatim, relative links fixed, to the epic archive `docs/plan/<epic>.md`, with a gist sentence — an unheaded list item at the start of the receiving section: «T01 — сделана <дата>: <итог одной фразой>». Neither stays here (R153 spec).
-   - A task outside an epic stands in table 1 of the current epic and lives as its task. Between epics there is none: it waits for the next epic and becomes its first task (R47, R50, R61).
+   - A task outside an epic stands in table 1 of the current epic and lives as its task. Between epics there is none: it waits for the next epic and becomes its first task (R61).
 10. Language — RULES.md, Hard rules; above, «Language».
 11. A task larger than one review (≈ 30–60 minutes of reading): propose a split before starting.
 12. Before a new task, close the findings on the previous one (R30 spec); an allowed departure from rule 1.
@@ -82,12 +82,26 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T90 | Комментарии кода по R160 spec: остальные пакеты, justfile, `.github/`, `.devcontainer/` | Claude | — | T84 |
 | [x] | T91 | Переход на тег `spec` v0.19.4 | Claude | — | — |
 | [x] | T92 | Переход на тег `spec` v0.19.11 | Claude | — | — |
+| [x] | T93 | Ссылки по R171 spec: план, CLAUDE.md, `.claude/rules/`, комментарии кода | Claude | да | T92 |
+| [ ] | T94 | Ссылки по R171 spec: журнал, R01–R04 | Claude | — | T93 |
+| [ ] | T95 | Ссылки по R171 spec: журнал, R05–R13 | Claude | — | T93 |
+| [ ] | T96 | Ссылки по R171 spec: журнал, R14–R25 | Claude | — | T93 |
+| [ ] | T97 | Ссылки по R171 spec: журнал, R26–R32 | Claude | — | T93 |
+| [ ] | T98 | Ссылки по R171 spec: журнал, R33–R44 | Claude | — | T93 |
+| [ ] | T99 | Ссылки по R171 spec: журнал, R45–R54 | Claude | — | T93 |
+| [ ] | T100 | Ссылки по R171 spec: журнал, R55–R63 | Claude | — | T93 |
+| [ ] | T101 | Ссылки по R171 spec: журнал, R64–R69 | Claude | — | T93 |
+| [ ] | T102 | Ссылки по R171 spec: журнал, R70–R77 | Claude | — | T93 |
+| [ ] | T103 | Ссылки по R171 spec: `docs/architecture.md`, разделы 1–3.4, и `docs/README.md` | Claude | — | T93 |
+| [ ] | T104 | Ссылки по R171 spec: `docs/architecture.md`, разделы 3.5–4 | Claude | — | T93 |
+| [ ] | T105 | Ссылки по R171 spec: `docs/sources.md`, `docs/measurements.md`, ключ `"citations"` | Claude | — | T93–T104 |
 
 **Почему такой порядок.**
 - Суд — по коммитам черновых pull request кандидатов, не по их релизу: `sim` гонит кандидата из его коммита (R34), а релиз выбранного ждёт полос `sim` (R103 spec).
 - База на релиз — после суда; при выходе T73 только архивирует эпик. Отдельной задачи итога нет: последняя архивирует (R59).
-- T74–T92 — вне эпика, в таблице 1, а не в `run/TASKS.md` (R61): каждая — по строке COORDINATION.md spec, слову автора или эпику `spec` в прогоне его оркестратора (R156 spec), её причина — в её теле; тела сделанных — в [docs/plan/E10.md](docs/plan/E10.md).
+- T74–T105 — вне эпика, в таблице 1, а не в `run/TASKS.md` (R61): каждая — по строке COORDINATION.md spec, слову автора или эпику `spec` в прогоне его оркестратора (R156 spec), её причина — в её теле; тела сделанных — в [docs/plan/E10.md](docs/plan/E10.md).
 - T87–T90 — строка 7.31 COORDINATION.md spec, по одному ревью (правило 11): друг от друга не зависят и не двигают ни бит, ни закрепления.
+- T93–T105 — строка 7.43 COORDINATION.md spec, правило ссылок R171 spec, разбитое по правилу 11 и шагу 9 тела T93: части журнала — по его разделам `##`, друг от друга не зависят; ключ `"citations": true` включает последняя, T105, когда остальные сделаны. В таблице 1, а не в `run/TASKS.md`, которого здесь нет (R61).
 
 ## Epic E10. Суд круга справедливости модели
 
@@ -99,7 +113,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **биты 68 ячеек не двигаются до выбора суда:** T71 меняет чтение результатов, а не прогон, так что файл базы — `runs/base-t64.jsonl`, чей SHA-256 называет `paths.json` (R58), — и 69 чисел гейта прежние. Сдвигает их только выбранный и подтверждённый кандидат — в T72 и T73;
 - **одно закрепление:** от тега T71 до выбора суда `go.mod`, `gate.json`, пакеты и пути не меняются; релиз `spec`, `engine` или `modules`, который выйдет за это время, ждёт конца суда и берётся своей задачей. Исключение — тег `spec` с теми же битами (R45);
 - **пока суд отложен** (R69): правила «биты 68 ячеек не двигаются до выбора суда» и «одно закрепление» не действуют, а «критерий — до первого кандидата» и «отложенный набор суда» — действуют — суда нет, и держать им нечего; вернувшийся суд называет свой тег и базу поправкой к R65 до первого кандидата (R69);
-- **отложенный набор суда** не гоняет никто до подтверждения T72: ни разведка `learner-model`, ни грубый взгляд (R49, R52; раздел 3.8 [docs/architecture.md](docs/architecture.md));
+- **отложенный набор суда** не гоняет никто до подтверждения T72: ни разведка `learner-model`, ни грубый взгляд (R52; раздел 3.8 [docs/architecture.md](docs/architecture.md));
 - **в прогоне оркестратора `spec`** каждая задача — своя ветка от `main` и свой pull request, если промпт не называет общую — ветку эпика `spec` или пакета задач (R159 spec); мержит оркестратор на зелёных проверках (R156 spec; правило 7); вопросы плана — строки [run/QUESTIONS.md](run/QUESTIONS.md);
 - **не входит:** кандидат `engine` — он идёт своей причиной (R59); числа забывания `learner-model` (sources 3.10).
 
@@ -135,3 +149,103 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Как проверить:** при выборе — `just gate exact`, `just ci-test`, `just ci-lint`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
 - **Отложено (2026-11-16):** `[?]` — вслед за T72, по тому же решению автора (R69): суда нет, и базе не на что переходить; эпик не уходит в архив, пока таблица 1 не вся отмечена (правила RUN.md, «Epics»). Вернуться вместе с T72.
 - **Разделы:** R04, R26, R29, R40, R55, R58, R59; [docs/architecture.md](docs/architecture.md), разделы 3, 3.6 и 3.9; architecture 3.9 spec; dpia 10.2 spec.
+
+#### T94. Ссылки по R171 spec: журнал, R01–R04
+
+- **Цель:** записи R01–R04 [docs/decisions.md](docs/decisions.md) — разделы `##` от «The tag `spec`» до «The criterion and the bands» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах; R04 — его часть строки Д15, которую удаляет последняя из T94, T97 и T98. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
+- **Разделы:** R171 spec, R160 spec; свои записи R01–R04; `spec/repo-template/files/docs/decisions.md`.
+
+#### T95. Ссылки по R171 spec: журнал, R05–R13
+
+- **Цель:** записи R05–R13 [docs/decisions.md](docs/decisions.md) — разделы `##` от «The gate in CI» до «How epic E2 is worked» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
+- **Разделы:** R171 spec, R160 spec; свои записи R05–R13; `spec/repo-template/files/docs/decisions.md`.
+
+#### T96. Ссылки по R171 spec: журнал, R14–R25
+
+- **Цель:** записи R14–R25 [docs/decisions.md](docs/decisions.md) — разделы `##` от «Packages» до «The criteria and the report» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
+- **Разделы:** R171 spec, R160 spec; свои записи R14–R25; `spec/repo-template/files/docs/decisions.md`.
+
+#### T97. Ссылки по R171 spec: журнал, R26–R32
+
+- **Цель:** записи R26–R32 [docs/decisions.md](docs/decisions.md) — разделы `##` от «The gate» до «The tag `spec` v0.12.0» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах; R31 — его часть строки Д15, которую удаляет последняя из T94, T97 и T98. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
+- **Разделы:** R171 spec, R160 spec; свои записи R26–R32; `spec/repo-template/files/docs/decisions.md`.
+
+#### T98. Ссылки по R171 spec: журнал, R33–R44
+
+- **Цель:** записи R33–R44 [docs/decisions.md](docs/decisions.md) — разделы `##` от «Runs no longer than an hour» до «Epic E5» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах; R33 — его часть строки Д15, которую удаляет последняя из T94, T97 и T98. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
+- **Разделы:** R171 spec, R160 spec; свои записи R33–R44; `spec/repo-template/files/docs/decisions.md`.
+
+#### T99. Ссылки по R171 spec: журнал, R45–R54
+
+- **Цель:** записи R45–R54 [docs/decisions.md](docs/decisions.md) — разделы `##` от «The tag `spec` v0.16.3» до «Epic E9» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
+- **Разделы:** R171 spec, R160 spec; свои записи R45–R54; `spec/repo-template/files/docs/decisions.md`.
+
+#### T100. Ссылки по R171 spec: журнал, R55–R63
+
+- **Цель:** записи R55–R63 [docs/decisions.md](docs/decisions.md) — разделы `##` от «The fairness by the grade» до «Epic E12» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах; R60 — его часть строки Д16, которую удаляет последняя из T100 и T102. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
+- **Разделы:** R171 spec, R160 spec; свои записи R55–R63; `spec/repo-template/files/docs/decisions.md`.
+
+#### T101. Ссылки по R171 spec: журнал, R64–R69
+
+- **Цель:** записи R64–R69 [docs/decisions.md](docs/decisions.md) — разделы `##` от «Epic E10» до «The judgement of the round of fairness deferred» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
+- **Разделы:** R171 spec, R160 spec; свои записи R64–R69; `spec/repo-template/files/docs/decisions.md`.
+
+#### T102. Ссылки по R171 spec: журнал, R70–R77
+
+- **Цель:** записи R70–R77 [docs/decisions.md](docs/decisions.md) — разделы `##` от «The tag `spec` v0.18.4 and `toolchain-core`» до «The tag `spec` v0.18.27» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах; R70, R75 и R77 — их часть строки Д16, которую удаляет последняя из T100 и T102. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
+- **Разделы:** R171 spec, R160 spec; свои записи R70–R77; `spec/repo-template/files/docs/decisions.md`.
+
+#### T103. Ссылки по R171 spec: `docs/architecture.md`, разделы 1–3.4, и `docs/README.md`
+
+- **Цель:** разделы 1–3.4 [docs/architecture.md](docs/architecture.md) и [docs/README.md](docs/README.md) — по правилу ссылок R171 spec: ни номеров задач, ни ссылок на поправки, в скобке не больше двух ссылок, и только те, по которым читатель пойдёт действовать, без цепочек.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах и файле; `docs/README.md` — для людей, но в `docs/`, и правило его читает. Ключ `"citations"` включает T105.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; `/code-review high`, один круг; в отчёте — ссылок было и стало, по видам.
+- **Разделы:** R171 spec; [docs/architecture.md](docs/architecture.md), разделы 1–3.4; [docs/README.md](docs/README.md).
+
+#### T104. Ссылки по R171 spec: `docs/architecture.md`, разделы 3.5–4
+
+- **Цель:** разделы 3.5–4 [docs/architecture.md](docs/architecture.md) — по правилу ссылок R171 spec, как T103.
+- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
+- **Сделать:** шаги 4 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах; ссылки на R04, R05, R31 и R33 — сверить с действующим текстом записей, свёрнутым T94, T95, T97 и T98 (строка Д15). Ключ `"citations"` включает T105.
+- **Как проверить:** как T103.
+- **Разделы:** R171 spec; [docs/architecture.md](docs/architecture.md), разделы 3.5–4; строка Д15 [run/DEBT.md](run/DEBT.md).
+
+#### T105. Ссылки по R171 spec: `docs/sources.md`, `docs/measurements.md`, ключ `"citations"`
+
+- **Цель:** [docs/sources.md](docs/sources.md) и [docs/measurements.md](docs/measurements.md) — по правилу ссылок R171 spec: запись хранит дату и не называет задачу, в заголовке тоже; шапка `docs/sources.md` — по заготовке; `docs-budgets.json` — `"citations": true`, и `docs-check-repo` с ним зелёный.
+- **Почему:** последняя часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела: ключ включает последняя.
+- **Сделать:**
+  1. Шаги 4 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — в обоих файлах; номер задачи в заголовке записи — убрать, номер раздела не меняется; ссылки других документов на запись по заголовку-якорю — поправить.
+  2. Шапка `docs/sources.md` — по `spec/repo-template/files/docs/sources.md`, с отличиями `sim`.
+  3. `docs-budgets.json` — `"citations": true`, как в `spec/repo-template/files/docs-budgets.json`; что `docs-check-repo` с ним ещё находит в других документах — поправить здесь же.
+  4. Замер «после» — командами measurements 1.18.4 spec, по видам, против «до» тела T93.
+- **Как проверить:** `just -f spec/justfile docs-check-repo` с ключом — зелёный; `/code-review high`, один круг; в отчёте — ссылок «до» (тело T93) и «после», по видам.
+- **Разделы:** R171 spec, R32 spec; `spec/repo-template/files/` — `docs/sources.md`, `docs-budgets.json`; measurements 1.18 spec.

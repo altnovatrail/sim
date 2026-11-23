@@ -27,8 +27,7 @@ type def struct {
 }
 
 // defs are the numbers the criteria read, by their names in measure. The tolerances are the
-// author's (R04); a number the author gave none takes the tolerance of the measure nearest it in
-// kind (R25).
+// author's; a number the author gave none takes the tolerance of the measure nearest it in kind.
 var defs = map[string]def{
 	"M1.rms.200":      {plain, 0.01, false},
 	"M2.brier.all":    {plain, 0.002, false},
@@ -50,7 +49,7 @@ var defs = map[string]def{
 	"M9.hasFalse":     {plain, 0.02, true},
 	"M9.notFalse":     {plain, 0.02, true},
 	"M10.retention":   {plain, 0.002, false}, // Brier, as M2's
-	"M11.answers":     {plain, 1, false},     // the constraint fair alone reads M11 (R55)
+	"M11.answers":     {plain, 1, false},     // the constraint fair alone reads M11
 	"M11.same":        {shortfall, 0.01, false},
 	"M11.band":        {plain, 0.01, false},
 	"E1.corridor":     {shortfall, 0.01, false},
@@ -65,8 +64,7 @@ var defs = map[string]def{
 	"E5.again":        {plain, 1, true},
 }
 
-// resolution is the bench's resolution of "no worse": 4.3 standard errors of the paired difference
-// (R04).
+// resolution is the bench's resolution of "no worse": 4.3 standard errors of the paired difference.
 const resolution = 4.3
 
 func directed(names []string) []measure.Number {
@@ -105,7 +103,7 @@ type weighted struct {
 	weight     float64
 }
 
-// The groups of the score of each criterion, with the author's weights (R04).
+// The groups of the score of each criterion, with the author's weights.
 var (
 	modelGroups = []group{
 		{"still", "stands still", 1, []weighted{{"G0", 1}}, []string{"M1.rms.200", "E1.corridor"}},
@@ -141,7 +139,7 @@ func (n notWorse) applies(population string) bool {
 }
 
 // The checks of "no worse" of each criterion, on every population and on a measure's own
-// populations (R04).
+// populations.
 var (
 	modelNotWorse = []notWorse{
 		{numbers: []string{"M1.rms.200", "M2.brier.all", "M4.false.all", "M6.never", "E1.corridor"}},

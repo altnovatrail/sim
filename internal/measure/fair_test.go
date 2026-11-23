@@ -179,7 +179,7 @@ func TestFairOnRuns(t *testing.T) {
 
 // The trace of a learner of C-grade1 carries the answers before the adult's correction, and is
 // that of the same learner of D-grade1 up to them; M12 reads the share of learners whose level the
-// guard lowered, each counted once (R72).
+// guard lowered, each counted once.
 func TestRulesOnRuns(t *testing.T) {
 	ms, err := published.Modules()
 	if err != nil {
@@ -224,7 +224,7 @@ func TestRulesOnRuns(t *testing.T) {
 
 // M13 counts the answers before the model's level holds within FairGap of the truth's for
 // FairAnswers in a row, FairLength when it never does, and the share of learners by FairBy; the
-// trace carries the truth beside each level (R73).
+// trace carries the truth beside each level.
 func TestCaught(t *testing.T) {
 	trace := func(from int) *Trace {
 		tr := &Trace{}

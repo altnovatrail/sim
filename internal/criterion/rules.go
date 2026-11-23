@@ -12,12 +12,13 @@ import (
 	"github.com/altnovatrail/sim/internal/seed"
 )
 
-// The criterion of the short run of the three rules of R157 spec, written down before the run
-// (R72): the rules are learner-model at RulesCandidate; grade 5's M11.same holds above the base's
+// The criterion of the short run of the three rules — a new learner's estimate starts low, an adult
+// corrects the level, and a guard lowers the level after failures in a row —, written down before
+// the run: the rules are learner-model at RulesCandidate; grade 5's M11.same holds above the base's
 // at the low end of its interval; M12.false of the reference's cell holds at most guardCeiling at
 // the high end of its interval; and the adult's correction, the cell of population.Rules, has the
 // paired difference of M11.same against grade 1's above zero at its low end. fair is the constraint
-// of R57 as it is.
+// of the judgements as it is.
 const (
 	RulesCandidate = "df338e58e35f97c51eca49be0064f19d0fcfc0a2"
 	guardCeiling   = 0.05
@@ -39,8 +40,8 @@ type Rules struct {
 	Pins                  map[string]Pin
 }
 
-// RulesResult is what the evaluation of the three rules reads: each of the four conditions of R72,
-// its numbers and whether it holds, and whether all hold.
+// RulesResult is what the evaluation of the three rules reads: each of the four conditions of the
+// criterion, its numbers and whether it holds, and whether all hold.
 type RulesResult struct {
 	Rules
 	// Better is M11.same of grade 5 under the rules, BaseSame the same of the base's run.
@@ -67,7 +68,7 @@ type RulesGrade struct {
 	Rules, Base []measure.Value
 }
 
-// EvaluateRules reads the evaluation of the three rules (R72): the run of the rules — under the
+// EvaluateRules reads the evaluation of the three rules: the run of the rules — under the
 // engine, on the working learners, a whole run on the pinned packages with its invariants and no
 // breach, learner-model at RulesCandidate and the engine at the gate file's pin, the cells of
 // population.Fairness and of population.Rules of at least a decisive run's learners each — against
@@ -178,8 +179,8 @@ func whole(name string, f *bench.File) error {
 }
 
 // Write writes the report of the evaluation of the rules in Markdown: the criterion, the two runs,
-// the four conditions with their numbers and intervals, the outcome, and the paragraph for dpia 10.2
-// spec (R72).
+// the four conditions with their numbers and intervals, the outcome, and the paragraph for the
+// DPIA.
 func (r *RulesResult) Write(w io.Writer) error {
 	var b strings.Builder
 	yes := func(ok bool) string {

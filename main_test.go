@@ -164,12 +164,12 @@ func TestJudge(t *testing.T) {
 		}
 		return path
 	}
-	// The judge is held here to the libraries the paths were read on, whichever this tree builds
-	// with. Mostly they are the gate file's, and then nothing below changes; but between the move of
-	// a library and the decisive run that reads the paths anew they differ, and the judge refuses
-	// every base (R40, R41). Then the runs are named the paths' libraries, and the embedded gate file
-	// names their versions, with no commit, since it knows only its own: a candidate's other library
-	// is held to the base's version alone.
+	// The judge is held here to the libraries the paths were read on, whichever this tree builds with.
+	// Mostly they are the gate file's, and then nothing below changes; but between the move of a
+	// library and the decisive run that reads the paths anew they differ, and the judge refuses every
+	// base. Then the runs are named the paths' libraries, and the embedded gate file names their
+	// versions, with no commit, since it knows only its own: a candidate's other library is held to
+	// the base's version alone.
 	f, err := os.Open(filepath.Join("internal", "criterion", "paths.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -209,15 +209,14 @@ func TestJudge(t *testing.T) {
 	if !strings.Contains(stdout.String(), "# The criterion of the model") || !strings.Contains(stdout.String(), "the base stays") || strings.Contains(stdout.String(), "fails neutral") {
 		t.Errorf("the report:\n%s", stdout.String())
 	}
-	// A graph the candidate names in equal_on and the runs have no cell of fails the check "neutral"
-	// (R49).
+	// A graph the candidate names in equal_on and the runs have no cell of fails the check "neutral".
 	stdout.Reset()
 	absent := write("absent.json", `{"criterion":"model","base":"base.jsonl","candidates":[{"name":"same","file":"base.jsonl","equal_on":["novatrail/english-essays"]}]}`)
 	if got := run([]string{"judge", absent}, &stdout, &stderr); got != 0 || !strings.Contains(stdout.String(), "fails neutral novatrail/english-essays all") {
 		t.Errorf("sim judge of a graph the runs do not have = %d:\n%s", got, stdout.String())
 	}
 	// The judgement model-fair-1 goes by the target its file names, M11.same, and no other judgement
-	// names one (R65).
+	// names one.
 	stdout.Reset()
 	targeted := write("target.json", `{"judgement":"model-fair-1","criterion":"model","target":"M11.same","base":"base.jsonl","candidates":[{"name":"same","file":"base.jsonl"}]}`)
 	if got := run([]string{"judge", targeted}, &stdout, &stderr); got != 0 || !strings.Contains(stdout.String(), "The judgement model-fair-1 goes by its target, M11.same") || !strings.Contains(stdout.String(), "- the target, M11.same pooled: ") {
@@ -229,7 +228,7 @@ func TestJudge(t *testing.T) {
 		t.Errorf("sim judge of model-2 with a target = %d: %s", got, stderr.String())
 	}
 	// A candidate of the engine built beside another commit of learner-model is no candidate of this
-	// judgement: the judge holds it to the base's learner-model, by the embedded gate file (R40).
+	// judgement: the judge holds it to the base's learner-model, by the embedded gate file.
 	beside := map[string]string{bench.Libraries[0]: strings.Repeat("f", 40), bench.Libraries[1]: p.Libraries[bench.Libraries[1]]}
 	relabel(t, filepath.Join(dir, "base.jsonl"), filepath.Join(dir, "foreign.jsonl"), beside)
 	foreign := write("foreign.json", `{"criterion":"engine","base":"base.jsonl","candidates":[{"name":"beside","file":"foreign.jsonl"}]}`)
@@ -238,7 +237,7 @@ func TestJudge(t *testing.T) {
 		t.Errorf("sim judge of a candidate beside another learner-model = %d: %s", got, stderr.String())
 	}
 	// A judgement file in the folder of one judgement that names another — a copy's leftover — is
-	// refused before its runs are read; in its own folder it goes on (R52).
+	// refused before its runs are read; in its own folder it goes on.
 	for _, c := range []struct {
 		folder string
 		status int
@@ -285,8 +284,8 @@ func TestJudge(t *testing.T) {
 
 // The judgement files in judgements/ still read as sim judge reads them, a judgement that names
 // itself names its folder, and a confirmation ran on its judgement's own held-out set, as runs.txt
-// names the set of each run (R35, R52): model-2 on held-out-model-1. The records are not edited:
-// each gives its report again on its own commit.
+// names the set of each run: model-2 on held-out-model-1. The records are not edited: each gives
+// its report again on its own commit.
 func TestJudgements(t *testing.T) {
 	dirs, err := filepath.Glob(filepath.Join("judgements", "*"))
 	if err != nil || len(dirs) == 0 {

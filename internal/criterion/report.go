@@ -102,7 +102,7 @@ func writeVerdict(b *strings.Builder, v Verdict) {
 
 // writeTarget writes the numbers of M11 of each grade of the target, the base's and the candidate's
 // as they are, with their intervals, and their difference, the candidate's less the base's: that of
-// M11.same is the grade's Δ (R65).
+// M11.same is the grade's Δ.
 func writeTarget(b *strings.Builder, t Target) {
 	fmt.Fprintf(b, "#### The target: %s of the grades\n\n", t.Name)
 	b.WriteString("| cell | number | base | candidate | candidate − base |\n|---|---|---|---|---|\n")
@@ -118,10 +118,10 @@ func writeTarget(b *strings.Builder, t Target) {
 	b.WriteString("\n")
 }
 
-// writeBounds writes whether the chosen candidate holds the bounds of R55 on its held-out learners:
-// on every grade, M11.same at least sameFloor at the low end of its interval and M11.band at most
-// bandCeiling at the high end. They decide nothing in a judgement with a target; the outcome goes to
-// dpia 10.2 spec (R65).
+// writeBounds writes whether the chosen candidate holds the bounds of fairness on its held-out
+// learners: on every grade, M11.same at least sameFloor at the low end of its interval and M11.band
+// at most bandCeiling at the high end. They decide nothing in a judgement with a target; the
+// outcome goes to the DPIA.
 func writeBounds(b *strings.Builder, t Target) {
 	fmt.Fprintf(b, "#### The bounds of R55 on the held-out learners, which decide nothing here\n\n")
 	fmt.Fprintf(b, "| cell | M11.same at least %.2f at its low end | M11.band at most %.2f at its high end |\n|---|---|---|\n", sameFloor, bandCeiling)
@@ -146,7 +146,7 @@ func yesNo(ok bool) string {
 }
 
 // writeNote writes the note of consolidation in a lesson, E6, on the cells where the base or the
-// candidate consolidated: it explains where a shift of E1 comes from and decides nothing (R49).
+// candidate consolidated: it explains where a shift of E1 comes from and decides nothing.
 func writeNote(b *strings.Builder, note []Note) {
 	if len(note) == 0 {
 		return

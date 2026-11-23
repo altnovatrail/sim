@@ -12,19 +12,19 @@ import (
 )
 
 // Same is the target M11.same: the share of the learners of each grade but the reference's who come
-// to the reference's estimate, the candidate's less the base's, pooled over the grades (R65).
+// to the reference's estimate, the candidate's less the base's, pooled over the grades.
 const Same = "M11.same"
 
 // targets are the judgements written down with a target of their own, by name, and their target: the
 // judgement file names it, and no other judgement may, so that a judgement goes by the target its
-// criterion wrote down before its first candidate and by no other (R65, R66).
+// criterion wrote down before its first candidate and by no other.
 var targets = map[string]string{
 	"model-fair-1": Same,
 }
 
 // Target is a candidate's target against the base: each grade's numbers of M11 and Δ, the target's
 // score, the mean of the grades' Δ with its 95 % interval, and the score of each group of the
-// criterion, which stands beside its whole score as a reference and decides nothing (R65).
+// criterion, which stands beside its whole score as a reference and decides nothing.
 type Target struct {
 	Name   string
 	Grades []TargetGrade
@@ -41,8 +41,8 @@ type GroupScore struct {
 // TargetGrade is one grade of the target: its cell; M11.answers, M11.same and M11.band as they are,
 // in the order of measure.FairNumbers, A the base's and B the candidate's, each with its interval,
 // and Diff, base − candidate; Δ, the candidate's M11.same less the base's; and whether the candidate
-// holds the bounds of R55 on the grade, which the report writes for the confirmation and which
-// decide nothing (R65).
+// holds the bounds of fairness on the grade, which the report writes for the confirmation and which
+// decide nothing.
 type TargetGrade struct {
 	Cell                 string
 	Numbers              []measure.Pair
@@ -54,11 +54,11 @@ type TargetGrade struct {
 // target reads the target M11.same of a candidate against the base off the pairs of the grades and
 // the reference that fair reads, resampled by the reference's cell, so that both grades and both
 // sides resample the same learners n: Δ of a grade is the candidate's share less the base's, and the
-// target's score is the mean of the grades' Δ, the k-th resample of each grade added up (R65). A grade
+// target's score is the mean of the grades' Δ, the k-th resample of each grade added up. A grade
 // whose cell the runs do not have, or whose share a side does not read, leaves the score unread, and
 // an unread score is not better than the base. The two sides have the same cells of fairness. The
 // mean is over grades, (Δ1 + Δ5) / 2, so a grade on more than one graph is refused: the populations
-// of fairness are on olympiad maths alone (R55).
+// of fairness are on olympiad maths alone.
 func target(base, candidate []bench.FairCell) (*Target, error) {
 	t := &Target{Name: Same}
 	var total []float64
@@ -128,7 +128,7 @@ func negated(v measure.Value) measure.Value {
 
 // checkTarget refuses a judgement that names a target its criterion did not write down, or names none
 // when it did, and a candidate that names a group or a goal where the judgement's target judges every
-// candidate (R65).
+// candidate.
 func (in Input) checkTarget() error {
 	want := targets[in.Judgement]
 	switch {
@@ -148,7 +148,7 @@ func (in Input) checkTarget() error {
 
 // deciding gives the score that decides whether a candidate is better than the base and which is
 // chosen: the target's in a judgement that names one, where the criterion's score is a reference that
-// decides nothing, and the criterion's otherwise (R65).
+// decides nothing, and the criterion's otherwise.
 func (v Verdict) deciding() Score {
 	if v.Target != nil {
 		return v.Target.Score

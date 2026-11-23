@@ -12,10 +12,9 @@ import (
 	"github.com/altnovatrail/sim/internal/population"
 )
 
-// Correction is an evaluation of the adult's correction against the truth (R73): its name, as its
-// folder evaluations/<name>/, the run of C-grade1 and D-grade1 and its SHA-256, the date, the
-// version of sim that reads it and the libraries of the gate file, which the engine of the run is
-// held to.
+// Correction is an evaluation of the adult's correction against the truth: its name, as its folder
+// evaluations/<name>/, the run of C-grade1 and D-grade1 and its SHA-256, the date, the version of
+// sim that reads it and the libraries of the gate file, which the engine of the run is held to.
 type Correction struct {
 	Name, Date, Version, Digest string
 	Run                         *bench.File
@@ -32,7 +31,7 @@ type CorrectionResult struct {
 	Holds               bool
 }
 
-// EvaluateCorrection reads the evaluation of the correction against the truth (R73): a whole run of
+// EvaluateCorrection reads the evaluation of the correction against the truth: a whole run of
 // the rules, as EvaluateRules holds it, whose cells C-grade1 and D-grade1 of olympiad maths have the
 // same learners in the same order, at least a decisive run's, each with the truth in its trace. It
 // holds when the paired difference of M13.same, the correction's less grade 1's, is above zero at
@@ -80,8 +79,8 @@ func EvaluateCorrection(c Correction) (*CorrectionResult, error) {
 	return out, nil
 }
 
-// onCandidate holds a run of the rules to the libraries R72 names: learner-model at RulesCandidate,
-// the engine at the gate file's pin.
+// onCandidate holds a run of the rules to the libraries the criterion of the rules names:
+// learner-model at RulesCandidate, the engine at the gate file's pin.
 func onCandidate(name string, f *bench.File, pins map[string]Pin) error {
 	pins = maps.Clone(pins)
 	pins["github.com/altnovatrail/learner-model"] = Pin{Commit: RulesCandidate}
@@ -100,7 +99,7 @@ func onPins(name string, f *bench.File, pins map[string]Pin) error {
 }
 
 // Write writes the report of the evaluation of the correction in Markdown: the criterion, the run,
-// M13 of both cells and their difference, the outcome, and the paragraph for dpia 10.2 spec (R73).
+// M13 of both cells and their difference, the outcome, and the paragraph for the DPIA.
 func (r *CorrectionResult) Write(w io.Writer) error {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# The adult's correction against the truth: %s\n\n## The criterion\n\n", r.Name)

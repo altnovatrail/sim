@@ -15,7 +15,7 @@ import (
 
 // consolidation is a run on the synthetic sheet whose rule is laid by a test: the first choice is
 // the lesson of a skill, whose tasks d1 and d3 are its links, and a task of the same skill outside
-// the lesson is there to consolidate (R19; R48).
+// the lesson is there to consolidate.
 type consolidation struct {
 	r      *Run
 	m      *pack.Module

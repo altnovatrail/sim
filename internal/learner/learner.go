@@ -19,13 +19,13 @@ import (
 const secondsPerDay = 86400
 
 // stabilityFloor is τ₀, in days: the stability a skill starts with and never goes below, as the
-// model's (R04 learner-model).
+// model's.
 const stabilityFloor = 1.0
 
 // Learner is a virtual learner: its truth in each of its modules and its streams of draws.
 type Learner struct {
 	Unit string // <population>/<n>
-	Age  string // one age category, as a profile has one (R107 spec)
+	Age  string // one age category, as a profile has one
 
 	a       Assumptions
 	set     seed.Set
@@ -110,15 +110,14 @@ func (a Assumptions) validate() error {
 }
 
 // New draws the n-th learner of a population of the set, in the given modules, from its places. A
-// learner has one grade and one age category, as a profile has (R107 spec). Its truth comes from
-// the place params, in a fixed order: the grade, among those every module with grades names, when
-// they are more than one — drawn even where the population fixes it —; for each module by ID, the
-// level and the offset of each skill with a verdict in the order of the graph; then, when no module
-// gives a grade, the age category, among those every module names; and last what only some
-// populations draw, for each module by ID — the answer of the jump, the band that is harder —, so
-// that a population that draws more moves none of the others (R18). Its calendar, answers,
-// retries, attempts and attempt seeds come from places of their own, so that one never moves
-// another.
+// learner has one grade and one age category, as a profile has. Its truth comes from the place
+// params, in a fixed order: the grade, among those every module with grades names, when they are
+// more than one — drawn even where the population fixes it —; for each module by ID, the level and
+// the offset of each skill with a verdict in the order of the graph; then, when no module gives a
+// grade, the age category, among those every module names; and last what only some populations
+// draw, for each module by ID — the answer of the jump, the band that is harder —, so that a
+// population that draws more moves none of the others. Its calendar, answers, retries, attempts and
+// attempt seeds come from places of their own, so that one never moves another (R18).
 func New(set seed.Set, population string, n int, modules []*pack.Module, a Assumptions) (*Learner, error) {
 	if len(modules) == 0 {
 		return nil, ErrNoModule
@@ -382,7 +381,7 @@ func (l *Learner) chance(t *pack.Task, item int, at int64, rung int, lift float6
 
 // guess gives c* of an item: the product over its cells of the chance of guessing each — a choice
 // of k options ChoiceGuess/k, capped at 1, a predicate PredicateGuess, and 0 for the rest: a
-// number, a fraction and a time, as the model guesses them (R19 learner-model; R41).
+// number, a fraction and a time, as the model guesses them.
 func (l *Learner) guess(slots []learnermodel.Slot) float64 {
 	c := 1.0
 	for _, s := range slots {
@@ -429,8 +428,8 @@ func missOf(set seed.Set, module, task string) float64 {
 }
 
 // SolvedAt tells when the solution of a task last went to the device, if it did: when an attempt on
-// it closed right or with the solution shown (R82 spec). The run reads it for the evidence and the
-// summary, and W-repeat for its chance, so the fact has one source.
+// it closed right or with the solution shown. The run reads it for the evidence and the summary,
+// and W-repeat for its chance, so the fact has one source.
 func (l *Learner) SolvedAt(task string) (int64, bool) {
 	at, ok := l.solved[task]
 	return at, ok
@@ -447,7 +446,7 @@ func (l *Learner) Solved() ([]string, []int64) {
 	return ids, ats
 }
 
-// teaches tells whether a skill of a module teaches an anchor skill (R50 spec).
+// teaches tells whether a skill of a module teaches an anchor skill.
 func teaches(m *pack.Module, id string) bool {
 	i := slices.IndexFunc(m.Graph.Skills, func(s learnermodel.Skill) bool { return s.ID == id })
 	return i >= 0 && len(m.Graph.Skills[i].Teaches) > 0
@@ -467,7 +466,7 @@ func (l *Learner) TrulyMastered(id string, band int32) bool {
 
 // TrulyMasteredAt is TrulyMastered at a time: with the level the truth has then, fallen after the
 // break of F-break. A bad day is not counted: it lowers the answers of that day, not what the learner
-// knows (R22).
+// knows.
 func (l *Learner) TrulyMasteredAt(id string, band int32, at int64) bool {
 	s := l.skills[id]
 	return s != nil && l.reference(s, band, l.level(s.Module, at)) >= Mastery

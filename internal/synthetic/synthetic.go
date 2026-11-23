@@ -1,11 +1,11 @@
 // Package synthetic builds the bench's own synthetic packages: canonical views in the shape of the
 // three modules of the first slice, for the code and the tests of the bench and not to judge
-// candidates by (R03, R19). A sheet with a choice, numbers and a predicate over three bands of
-// grades 1–6, one of whose skills rests on an anchor skill; a workbook of one band of grade 3 with
-// pages of up to ten lines, one of whose skills teaches that anchor; essays with a rubric and no
-// grades. The published packages have neither a skill that rests on another module's anchor nor a
-// cell of predicate, so the populations A- and S-predicate run here only. No learner's data is in
-// them: every word is the bench's own.
+// candidates by. A sheet with a choice, numbers and a predicate over three bands of grades 1–6, one
+// of whose skills rests on an anchor skill; a workbook of one band of grade 3 with pages of up to
+// ten lines, one of whose skills teaches that anchor; essays with a rubric and no grades. The
+// published packages have neither a skill that rests on another module's anchor nor a cell of
+// predicate, so the populations A- and S-predicate run here only. No learner's data is in them:
+// every word is the bench's own.
 package synthetic
 
 import (
@@ -250,7 +250,7 @@ var read = sync.OnceValues(func() (map[string]*pack.Module, error) {
 })
 
 // IsSynthetic tells whether a module is a synthetic one: the criterion and the gate refuse it, since
-// they judge on published packages alone (R03, R04).
+// they judge on published packages alone (R03).
 func IsSynthetic(module string) bool {
 	return strings.HasPrefix(module, "synthetic/")
 }
