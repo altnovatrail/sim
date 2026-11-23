@@ -789,8 +789,8 @@
 
 ## Runs no longer than an hour
 
-**R33. The decisive run and the confirmation go on 1,000 learners a cell instead of 4,000. The choice anew at every step for `I1` is taken only by the first 10 learners of a cell — in every run, as in the gate. The process of a run goes with `GOGC` 400, and the process of a part of a run also on one processor. The files of the decisive runs are kept in `runs/` of the working copy, which `git` does not see, and a judgement runs only the candidate.** The author's decision 2026-11-09, in T30: a run longer than an hour is not acceptable — the author is prototyping, and the functionality changes fast. The author's answers 2026-11-10 when planning T36 (RUN.md, T36); the runtime environment is a proposal of the execution.
-- **What was found in planning** (2026-11-10, measurements on a copy of the repository; the sources — [architecture.md](architecture.md), section 4):
+**R33. The decisive run and the confirmation take as many learners a cell as fit into an hour with a margin, `criterion.Decisive` of `internal/criterion/criterion.go`, which the recipe `just decisive` runs: the largest, in steps of 250 from 1,500 to 4,000, at which the base, recalculated from a sample on a free machine, takes no longer than 41 minutes. The choice anew at every step for `I1` is taken only by the first `bench.Rechosen` learners of a cell — in every run, as in the gate. The process of a run goes with `GOGC` 400, and the process of a part of a run also on one processor. The files of the decisive runs are kept in `runs/` of the working copy, which `git` does not see, and a judgement runs only the candidate.** A run longer than an hour is not acceptable: the author is prototyping, and the functionality changes fast.
+- **What was found in planning** (2026-11-10, measurements on a copy of the repository):
   - 10 learners a cell in all 65 cells — 1,064 s of CPU:
     - half of it — the six populations `F-`, which have 180 days;
     - school maths, the essays and `S-predicate` together — less than 1 %;
@@ -804,75 +804,48 @@
     - all together with `GOMAXPROCS=1` — 43 s, 2.8 times less;
     - the ceiling with `GOGC=400` and `GOMAXPROCS=1` — 22 → 16 s;
   - the memory at `GOGC=400` — about 100 MB a process, 20 processes — about 2 GB;
-  - after these edits `engine.Choose` is 73 % of the CPU, and the simulator's own code about 17 %, mostly the P* of the pool at every step for the measures. Beyond that only `engine` speeds up the run (row В10 of table 3 of RUN.md). The run of the base on 4,000 learners would take about 2.4 hours;
-  - the files of the decisive runs of T30 lay in `/tmp` and were lost after Rebuild Container.
+  - after these edits `engine.Choose` is 73 % of the CPU, and the simulator's own code about 17 %, mostly the P* of the pool at every step for the measures. Beyond that only the libraries speed up the run;
+  - the files of the first decisive runs lay in `/tmp` and were lost after Rebuild Container.
+- **What was found on the sizes** (2026-11-10 to 2026-11-12, the development machine, 20 threads; a sample of 100 learners a cell in all the cells, by parts on 20 processes, recalculated to the size; the times of the runs are measurements 1.3):
+  - the sample on `engine` v0.1.6 is 1.54 times faster than on v0.1.4; on `learner-model` v0.1.6 and the packages of `modules` v0.2.5, on a free machine — the load average 1.8–2.0 —, the base recalculates to about 38.3 minutes on 2,000 learners and to about 43.1 on 2,250, and the ceiling, which does not call `engine`, to about 26.7 on 2,000;
+  - the recalculation overstates a little: a sample that promised 41 minutes on 1,500 gave a run of 38;
+  - on a host that neighbouring containers share, both the clock of a run and its CPU per process wander by themselves, so the size is chosen by the sample on a free machine;
+  - the file of a run on 2,000 learners — about 1.0 GB for the base and 0.8 GB for the ceiling; `sim paths` reads both in 5 min 23 s;
+  - the judgements `engine-1` and `model-1` went on 1,000 learners a cell and stay on their runs; the later judgements and confirmations go on the size in force.
 - **Decided by the author:**
-  - 1,000 learners a cell for the decisive run and the confirmation;
+  - the size of the decisive run and of the confirmation — by the rule of the headline, no more than 4,000;
   - the choice anew for `I1` — for the first 10 learners of a cell, `bench.Rechosen`;
   - the run of the base is kept in `runs/`.
 - **A proposal of the execution:**
-  - `sim run` and `sim gate run` set themselves `GOGC` 400, and the run by parts also `GOMAXPROCS` 1, in the code, not in the recipe, so that every call gets them. R09 keeps goroutines out of the code anyway, and the parts of a run are processes, one per processor. A whole run is one process on the machine, and the processors are left to its garbage collection;
-  - the populations of the decisive run — all of them: "no worse" is read on every population with a verdict ([architecture.md](architecture.md), section 3.6), and without any of them the judgement would not read its constraint;
+  - `sim run` and `sim gate run` set themselves `GOGC` 400, and the run by parts also `GOMAXPROCS` 1, in the code, not in the recipe, so that every call gets them. The code keeps no goroutines anyway, and the parts of a run are processes, one per processor. A whole run is one process on the machine, and the processors are left to its garbage collection;
+  - the populations of the decisive run — all of them: "no worse" is read on every population with a verdict, and without any of them the judgement would not read its constraint;
   - `invariant.CheckRepeated` is renamed `CheckWithoutI1`: the decisive run has no repeat;
   - the recipe `just decisive` creates the file's folder if there is none.
-- **The run** (the 2026-11-10 amendment to R04, "runs no longer than an hour"): the base on 1,000 learners — about 37 CPU minutes per process, the ceiling — about 14. On a free machine each run fits into an hour; on a machine that other containers loaded, the base took 1 h 42 min by the clock. The paths are close to the paths of T30, and the measures with a small path are the same seven.
 
 — *Why:*
-- **1,000 learners.** By its own means the simulator speeds the run up 2.8 times, and about seven were needed. The rest only a smaller number of learners gives, until `engine` speeds up the choice. 1,000 leave a margin for a busy machine and for the growth of the pools. The resolution of "no worse" — 4.3 standard errors of the paired difference — is wider by √4 = 2 times, and the author's tolerance, where it is smaller, gives way to the resolution. The judgement still tells apart what is stronger than the noise, and a rough look — fewer than 1,000 — still decides nothing.
-- **The choice anew for the first 10.** The repeat, `Same`, holds `I1` to the bit at the gate, and the first 10 learners of each cell catch a rule that changes its input in place (R31). In the decisive run these are 650 learners and about 130 thousand choices. The choice anew for all cost about 40 % of the CPU. A rule that does not choose the same thing on the same input — for example, by the order of ranging over a map — the decisive run without a repeat will not see for the other learners. But a candidate, before it is judged, passes the gate in the CI of its library, and the gate repeats each of its 100 learners of each cell and holds `I1` to the bit (R31). And its decisive run, repeated on the same seeds, must give the same bytes.
+- **The size by the hour with a margin.** By its own means the simulator speeds the run up 2.8 times; more only a smaller number of learners gives, until the libraries speed up the choice. "With a margin" is a run no longer than 45 minutes on a free machine — a quarter of an hour for a busy machine and the growth of the pools —, and the recalculation is held to 41 minutes, since it overstates a little. The resolution of "no worse" — 4.3 standard errors of the paired difference — widens as one over the root of the size, and the author's tolerance, where it is smaller, gives way to the resolution. A rough look — fewer learners than a decisive run's — still decides nothing.
+- **The choice anew for the first 10.** The repeat, `Same`, holds `I1` to the bit at the gate, and the first 10 learners of each cell catch a rule that changes its input in place. The choice anew for all cost about 40 % of the CPU. A rule that does not choose the same thing on the same input — for example, by the order of ranging over a map — the decisive run without a repeat will not see for the other learners. But a candidate, before it is judged, passes the gate in the CI of its library, and the gate repeats each of its learners of each cell and holds `I1` to the bit. And its decisive run, repeated on the same seeds, must give the same bytes.
 - **`GOMAXPROCS` 1 and `GOGC` 400.** Neither changes a bit, and garbage collection cost about a quarter of the CPU. There are as many processes as processors, and the extra threads of each process only take CPU away from the others.
-- **`runs/`.** A folder of the working copy survives Rebuild Container, and `/tmp` does not. `git` does not see it, and the files still do not lie in the repository (R28). A judgement runs the candidate, and the base's file is checked by SHA-256 against what `paths.json` names; how the recipe of a candidate's run does this, T31 decides.
+- **`runs/`.** A folder of the working copy survives Rebuild Container, and `/tmp` does not. `git` does not see it, and the files still do not lie in the repository. A judgement runs the candidate, and the base's file is checked by SHA-256 against what `paths.json` names.
 
 — *Rejected:*
-- keep 4,000 and wait until `engine` speeds up the choice — the judgements would wait for someone else's task, and the run would take about 2.4 hours even after the edits of the simulator;
-- 1,500 learners — about 54 minutes on a free machine, right at the hour, and on a busy one more;
-- 1,000 only on the olympiad cells and 4,000 on the others — the size of the run would depend on the graph, and with the growth of the packages the rule would have to be revisited;
-- the choice anew for all learners — then about 750 learners would fit into an hour, and the resolution would be 2.3 times wider;
+- keep 4,000 and wait until the libraries speed up the choice — the judgements would wait for someone else's task, and on `learner-model` v0.1.6 the base on 4,000 would take about 77 minutes;
+- a size right at the edge — 2,250 at about 43 minutes, or 1,600 at about 44 on `engine` v0.1.6: no margin is left for the growth of the pools;
+- a step of 100 — 2,100 or 2,200 would give 3–5 % of resolution at the price of an uneven size and a smaller margin;
+- a recalculation no longer than 38 minutes — more margin than the rule asks, for 1,750 learners and a resolution coarser by 1.08 times;
+- the size by the clock of a run on a busy host — it measures the neighbours, not the simulator;
+- a smaller size only on the olympiad cells and 4,000 on the others — the size of the run would depend on the graph, and with the growth of the packages the rule would have to be revisited;
+- the choice anew for all learners — it costs about 40 % of the CPU, fewer learners would fit into the hour, and the gate's repeat holds `I1` to the bit anyway;
 - cut the populations down to the score groups — see the "A proposal of the execution";
 - run the base anew in every judgement — two runs instead of one.
 
-— *Consequence:* the 2026-11-10 amendments to R04, R17, R28 and R31; a new `paths.json`. Returning to 4,000 learners — by an amendment to R04, when `engine` speeds up the choice (В10). Where it is written: RUN.md, T36; [architecture.md](architecture.md), sections 3, 3.6–3.8; README; `main.go`, `gate.go`, `internal/bench/`, `internal/invariant/`, `internal/criterion/`, `justfile`, `.gitignore`.
-
-— *Amendment 2026-11-11, after the speed-up of `engine` (T41; R38):* the decisive run and the confirmation go on 1,500 learners a cell, not on 1,000. The choice anew for `I1` is still for the first 10 learners of a cell; `GOGC` 400 and one processor a part are as they were. The author's answers 2026-11-10 when planning T41 (RUN.md, T41).
-- **What was found** (2026-11-10, the development machine, 20 threads; the head of pull request #57 of `engine`, `74afdf8`, by its files the same as the tag v0.1.6):
-  - the sample — 100 learners a cell in all 65 cells, by parts on 20 processes: the base on `engine` v0.1.4 — 256 s, on v0.1.6 — 166 s, 1.54 times less; the ceiling — 83 s, it does not call `engine`;
-  - recalculated to 1,000 learners the base is about 28 min instead of 43, to 1,500 about 41 min, to 1,600 about 44;
-  - the run of the base on 1,500 learners — 38 min by the clock on an almost free machine, the ceiling — about 19 CPU minutes per process (the 2026-11-11 amendment to R04);
-  - the measures with a path no greater than the author's tolerance — the same seven as on 1,000.
-- **Decided by the author:** 1,500 learners; the choice anew for `I1` — for the first 10.
-
-— *Why:* the rule of R38 — the decisive run gets as many learners as fit into an hour with a margin, and "with a margin" is no longer than 45 minutes on a free machine, a quarter of an hour for a busy machine and the growth of the pools. 1,500 is about 41 minutes. The resolution of "no worse" is narrower by √1.5 ≈ 1.22 times. R33's rejection of 1,500 stood on 54 minutes at `engine` v0.1.4 — a new fact removed it.
-
-— *Rejected:*
-- 1,600 — about 44 minutes, right at 45: no margin is left for the growth of the pools;
-- 1,250 — about 35 minutes: more margin than R38 asks, and the resolution is narrower only by 1.12 times;
-- the choice anew for `I1` for all learners — then about 1,000 would fit into 45 minutes, and `I1` is held to the bit by the gate's repeat anyway (R31).
-
-— *Consequence:* `criterion.Decisive` and the recipe `just decisive` — 1,500; the 2026-11-11 amendment to R04 — a new `paths.json`; the judgements `engine-1` and `model-1` stay on their runs of 1,000, and the next judgements and confirmations go on 1,500. 4,000 still do not fit: a third of the choice is now `Readout.Task` of `learner-model` (row В32 RUN.md `engine`, «в реестр spec»), and beyond that `learner-model` speeds up the run. Where it is written: RUN.md, T41; [architecture.md](architecture.md), sections 3.6 and 3.8; README; `internal/criterion/criterion.go`, `justfile`.
-
-— *Amendment 2026-11-12, after the speed-up of `learner-model` (T46; R43, R44):* the decisive run and the confirmation go on 2,000 learners a cell, not on 1,500. The choice anew for `I1` is still for the first 10 learners of a cell; `GOGC` 400 and one processor a part are as they were. The author's answers 2026-11-12 when planning and executing T46 (RUN.md, T46).
-- **What was found** (2026-11-12, the development machine, 20 threads; `learner-model` v0.1.6, `engine` v0.1.6, the packages of `modules` v0.2.5):
-  - the sample — 100 learners a cell in all 65 cells, by parts on 20 processes, on a free machine: the load average was 1.8 before the build of the simulator and 2.0 after it, at the start of the run. The base — 1 min 55 s against 166 s in T41, the ceiling — 1 min 20 s against 83 s: the base has the speed-up of `Readout.Task`, and the ceiling does not call `engine`;
-  - recalculated, the base on 1,500 learners is about 28.8 minutes, on 1,750 about 33.5, on 2,000 about 38.3, on 2,250 about 43.1; the ceiling on 2,000 about 26.7. This matches the CPU measurement of T45 — about 25.9 minutes per process for the base on 1,500 (R43). In T41 such a sample promised 41 minutes on 1,500, and the run took 38: the recalculation overstates a little;
-  - the runs on 2,000 learners went on a host that neighbouring containers shared: the base — 62 min 37 s by the clock and about 31.3 CPU minutes per process, the ceiling — 30 min 37 s and about 24.1 (the 2026-11-12 amendment to R04). The CPU per process of the ceiling is 4/3 more than on 1,500 in T45 (18.0), as expected, and that of the base only 1.21 times more (25.9 → 31.3): CPU time on an overloaded host wanders by itself, so the size is chosen by the sample, not by it;
-  - the file of a run — about 1.0 GB for the base and 0.8 GB for the ceiling; `sim paths` reads both in 5 min 23 s.
-- **Decided by the author:** the size is the largest on a grid in steps of 250, from 1,500 to 4,000, at which the base, recalculated from the sample on a free machine, is no longer than 41 minutes, as 1,500 was in T41. This is 2,000; the choice anew for `I1` — for the first 10.
-
-— *Why:* the rule of R38 — the decisive run gets as many learners as fit into an hour with a margin, and "with a margin" is no longer than 45 minutes on a free machine (the 2026-11-11 amendment). 2,000 is about 38 minutes; 2,250 about 43, right at the edge, like the 1,600 at 44 minutes rejected in T41. The resolution of "no worse" is narrower by √(4/3) ≈ 1.15 times.
-
-— *Rejected:*
-- 2,250 — about 43 minutes: no margin is left for the growth of the pools;
-- a step of 100 — 2,100 or 2,200 would give 3–5 % of resolution at the price of an uneven size and a smaller margin;
-- no longer than 38 minutes — more margin than R38 asks: then 1,750, and the resolution is narrower only by 1.08 times;
-- the size by the clock of a run on a busy host — it measures the neighbours, not the simulator.
-
-— *Consequence:* `criterion.Decisive` and the recipe `just decisive` — 2,000; the 2026-11-12 amendment to R04 — a new `paths.json`; the judgements `engine-1` and `model-1` stay on their runs of 1,000, and the next judgements and confirmations, starting with `model-2`, go on 2,000. 4,000 still do not fit — about 77 minutes of the base; Д7 is closed together with the 2026-11-12 amendment to R31: the sizes are again as large as the time allows. Where it is written: RUN.md, T46; [architecture.md](architecture.md), sections 3.6 and 3.8; README; `internal/criterion/criterion.go`, `justfile`.
+— *Consequence:* `internal/criterion/criterion.go`, the recipe `just decisive` of `justfile`, `main.go`, `gate.go`, `internal/bench/`, `internal/invariant/`, `.gitignore`; a new size is new paths, `internal/criterion/paths.json`, and new bands, `gate.json`; [architecture.md](architecture.md); [README.md](README.md).
 
 ## A candidate's decisive run
 
-**R34. A candidate's decisive run is run by the same recipe `just decisive` as the run of the base: with a set of learners and with the candidate from `CANDIDATE_LEARNER_MODEL`, `CANDIDATE_ENGINE` or both. A candidate is a commit by its full SHA, which the recipe fetches from GitHub, or a folder without uncommitted edits. The candidate's simulator is built through the gate's workspace: this piece of the recipes is one for both recipes, and the build before the run is held by `sim gate verify`. The base without a candidate is built by `go.mod`, as before.** The author's answers 2026-11-10 when planning T31 (RUN.md, T31); the rest is a proposal of the execution.
+**R34. A candidate's decisive run is run by the same recipe `just decisive` as the run of the base: with a set of learners and with the candidate from `CANDIDATE_LEARNER_MODEL`, `CANDIDATE_ENGINE` or both. A candidate is a commit by its full SHA, which the recipe fetches from GitHub, or a folder without uncommitted edits. The candidate's simulator is built through the gate's workspace: this piece of the recipes is one for both recipes, and the build before the run is held by `sim gate verify`. The base without a candidate is built by `go.mod`, as before. A rough look, `just rough`, is the same recipe on fewer learners a cell and on the working learners alone.**
 - **What was found in planning** (2026-11-10):
-  - three candidates are open in `engine`, pull requests #46–48 — A, B and C (T31 `engine`). T33 will judge them in a round (the 2026-11-09 amendment to R103 spec);
+  - three candidates are open in `engine`, pull requests #46–48 — A, B and C, which one round judges together;
   - GitHub gives a commit by its full SHA even when it is on no branch: the head of the open #48 of `engine` was fetched by `git fetch --depth 1`;
   - the gate's build is held by `gate.Verify`: the libraries from the workspace, the shared dependencies and the lines `go` of the gate file, the `go.mod` of `sim`, the pinned packages. It needs no parts of a run, but only `sim gate check` called it, together with the bands;
   - the header of the results file is written by `bench.Names`. It names a library from the workspace by the commit passed through `-commit`, and a library from `go.mod` by its version.
@@ -886,10 +859,11 @@
   - a pair is both variables together with `CANDIDATE_PAIR=yes`. A variable left over from another run does not silently make a pair of a candidate, and a variable with a name that is not among the libraries of the gate file is a refusal;
   - a relative folder is from the caller's folder, as the run's file is;
   - the recipe checks the set of learners before the run, by a short run of one learner;
-  - README — the section "Judging a candidate": from the commit of a pull request to the judgement, the confirmation and the recording of the bands.
+  - a rough look, `just rough <rule> <file> [learners]`, is the same body as `just decisive`, a hidden recipe, with the same build and the same candidates, on fewer learners a cell — 300 unless named — and only on the working learners;
+  - [README.md](README.md) of `docs/` says how a candidate goes from the commit of a pull request to the judgement, the confirmation and the recording of the bands.
 
 — *Why:*
-- **The base by `go.mod`.** Then its file is to the byte the one whose SHA-256 `paths.json` names (R28; the 2026-11-10 amendment to R04). Through the workspace the header would name the libraries by commits, the bytes would diverge, and the base with the paths would have to be written anew.
+- **The base by `go.mod`.** Then its file is to the byte the one whose SHA-256 `paths.json` names. Through the workspace the header would name the libraries by commits, the bytes would diverge, and the base with the paths would have to be written anew.
 - **A SHA or a folder.** The head of a pull request lies on GitHub, and the SHA names it unambiguously. A folder is needed for a candidate that is not on GitHub yet. Without edits — because the header names a commit, and the file must be a run of exactly that commit.
 - **One piece of the workspace.** The gate and a candidate's run build the simulator the same way; two copies would diverge.
 
@@ -899,59 +873,50 @@
 - a folder with uncommitted edits — the header would name a commit, and other code would run;
 - a copy of its own of the piece of `go.work` in the recipe `decisive`.
 
-— *Consequence:* the 2026-11-10 amendments to R26 and R28; T32 and T33 run the candidates by this recipe. Where it is written: RUN.md, T31; [architecture.md](architecture.md), sections 3, 3.6, 3.8 and 3.9; README; `justfile`, `gate.go`.
-
-— *Amendment 2026-11-13 (T55; R49):* a rough look is run by `just rough <rule> <file> [learners]`: the same body as `just decisive`, a hidden recipe, with the same build and the same candidates, on fewer learners a cell — 300 unless named — and only on the working learners.
-
-— *Amendment 2026-11-18 (T83; R77):* the section "Judging a candidate" stands in [README.md](README.md) of `docs/`, moved from the repository's README as it was.
+— *Consequence:* `justfile`, `gate.go`; [architecture.md](architecture.md); [README.md](README.md).
 
 ## The order of the judgements and the judgement's report
 
-**R35. Of the first two judgements — of the model and of the engine — the first is the one whose candidates are ready earlier, and the second goes on the base with what the first chose. The judgement's report lies in the repository, in `judgements/<criterion>-<n>/`. There is no row «В реестр spec» with a tag with a candidate.** The author's answers 2026-11-10 when planning T32 (RUN.md, T32).
+**R35. Of the first two judgements — of the model and of the engine — the first is the one whose candidates are ready earlier, and the second goes on the base with what the first chose. The judgement's report lies in the repository, in `judgements/<criterion>-<n>/`, where n is the number of the round of this criterion, and that of a judgement of one variant apart from the rounds of its criterion in `judgements/<criterion>-<variant>-<n>/`. Which held-out set each judgement confirms on is a row of the table of `internal/seed/sets.go`. There is no row «В реестр spec» with a tag with a candidate.**
 - **What was found in planning** (2026-11-10):
-  - the exploration of `learner-model` — its T30, pull request #42 — chose three candidates: `g10`, `halve035` and `forget-set`. All in the group "Forgets", without a target and without a new field, and their draft pull requests are T31 `learner-model`, not started yet;
+  - the exploration of `learner-model`, its pull request #42, chose three candidates: `g10`, `halve035` and `forget-set`. All in the group "Forgets", without a target and without a new field, and their draft pull requests were not open yet;
   - the engine's candidates A, B and C are already ready, pull requests #46–48 of `engine`;
-  - after the first choice the base is what was chosen ([architecture.md](architecture.md), section 3.6), so the order of the judgements decides on which base the second goes;
-  - `sim judge` does not check that a candidate's second library is the same as the base's; from such an error the recipe's `CANDIDATE_PAIR` protects now (R34).
+  - after the first choice the base is what was chosen, so the order of the judgements decides on which base the second goes;
+  - `sim judge` did not check that a candidate's second library is the same as the base's; the recipe's `CANDIDATE_PAIR` protected a pair from such an error.
 - **Decided by the author:**
-  - **the order.** Now T33 goes first. If it chose the engine, T32 runs the base anew — the model v0.1.4 with the chosen engine, by the recipe on the new `go.mod` —, and the recipe builds the model's candidates with the engine at the commit of `gate.json` (R34). The path stays pinned (R28);
-  - **the report.** The folder `judgements/<criterion>-<n>/`, where n is the number of the choice of this criterion, as for the held-out learners ([architecture.md](architecture.md), section 3.8): the judgement file, the report of `sim judge` as it is and the SHA-256 of each run. The outcome and its reasons are recorded by a decision of the log;
-  - **`spec`.** The first candidates are led by row 4.9 of [COORDINATION.md](../spec/COORDINATION.md), and the order of releases by R103 spec: `spec` will see the tag of `sim` with the bands and the report on `main`, and the tag in "Gate" is raised by the library's session.
+  - **the order.** The engine's round went first, its candidates being ready. Had it chosen, the model's round would run the base anew — the model v0.1.4 with the chosen engine, by the recipe on the new `go.mod` —, and the recipe would build the model's candidates with the engine at the commit of `gate.json`. The path stays pinned;
+  - **the report.** The folder `judgements/<criterion>-<n>/`: the judgement file, the report of `sim judge` as it is and the SHA-256 of each run. The outcome and its reasons are recorded by a decision of the log;
+  - **`spec`.** The first candidates are led by `spec`'s plan of work across repositories, and so is the order of releases: `spec` sees the tag of `sim` with the bands and the report on `main`, and the library's session raises the tag in "Gate".
+- **The number of a folder.** n is the number of the round of the judgement of this criterion, not of the choice: a round may end in an exit without a confirmation, and then there is no choice, and the next round needs a folder of its own.
+- **The held-out set.** The held-out set of a round is the first `held-out-<criterion>-<n>` not yet touched: after `engine-1`, an exit without a confirmation, the round `engine-2` confirms on `held-out-engine-1` again. A judgement of one variant apart from the rounds of its criterion has a set of its own, `held-out-<criterion>-<variant>-<n>`: the judgement of consolidation in a lesson is `judgements/engine-lesson-1/` on `held-out-engine-lesson-1`, and it went before `engine-2`; `held-out-engine-1` stays with the round `engine-2`, though by "the first untouched" it would go to the variant. The table of `internal/seed/sets.go` names each judgement's set; the judgement file names its judgement, as its folder does, by `"judgement"`, and `sim judge` takes a confirmation only on that row's set. The row of a new round comes with the record of its set.
+- **The second library.** The judgement itself checks that a candidate's second library is the same as the base's, by the embedded `gate.json`. The recipe's protection — a pair requires `CANDIDATE_PAIR=yes` — stays.
 
 — *Why:*
-- **Whoever is ready goes first.** The candidates of one library do not wait for someone else's, and the second judgement judges its candidates together with what is already chosen, as section 3.6 says.
-- **The report in the repository.** The bands are recorded anew by a pull request with a reason — the report of the judgement and of the confirmation ([architecture.md](architecture.md), section 3.7) —, and review reads this report beside the bands. The runs are reproduced to the byte, but review should not have to take the report anew in order to read it.
+- **Whoever is ready goes first.** The candidates of one library do not wait for someone else's, and the second judgement judges its candidates together with what is already chosen.
+- **The report in the repository.** The bands are recorded anew by a pull request with a reason — the report of the judgement and of the confirmation —, and review reads this report beside the bands. The runs are reproduced to the byte, but review should not have to take the report anew in order to read it.
 
 — *Rejected:*
 - judge as a pair — the engine's candidates would wait for the model's candidates, and the combinations 3 × 3 are nine runs;
 - both judgements on the previous base — the chosen model and engine would never be judged together;
 - the report only in the log — see the "Why";
-- a row «В реестр spec» — what it would ask row 4.9 already leads.
+- a row «В реестр spec» — what it would ask `spec`'s plan already leads.
 
-— *Consequence:* T33 goes before T32; the reports are `judgements/engine-1/` and `judgements/model-1/`. Where it is written: RUN.md, T32 and T33; [architecture.md](architecture.md), section 3.6.
-
-— *Amendment 2026-11-10, after the judgement `engine-1` (R36):* n in `judgements/<criterion>-<n>/` is the number of the round of the judgement of this criterion, not the number of the choice. A round may end in an exit without a confirmation, and then there is no choice, and the next round needs a folder of its own. The held-out set of a round is the first `held-out-<criterion>-<n>` not yet touched ([architecture.md](architecture.md), section 3.8): for `engine-2` it is `held-out-engine-1` again.
-
-— *Amendment 2026-11-11 (T40; R40):* the judgement itself checks that a candidate's second library is the same as the base's, by the embedded `gate.json`; Д6 is closed. The recipe's protection — a pair requires `CANDIDATE_PAIR=yes` (R34) — stays.
-
-— *Amendment 2026-11-13 (T55; R49):* a judgement of one variant apart from the rounds of its criterion has a folder and a held-out set of its own, `<criterion>-<variant>-<n>`. The judgement of consolidation in a lesson is `judgements/engine-lesson-1/` on `held-out-engine-lesson-1`, and it goes before `engine-2`. `held-out-engine-1` stays with the round `engine-2` (row В41 of RUN.md `engine`, the author's decision 2026-11-12), though by "the first untouched" above it would go to this judgement.
-
-— *Amendment 2026-11-14 (T57; R52):* which set each judgement confirms on, by the rules above, is a row of the table of `internal/seed/sets.go`: `model-2` — `held-out-model-1`, `engine-2` — `held-out-engine-1`, `engine-lesson-1` — `held-out-engine-lesson-1`. The judgement file names its judgement, as its folder, by `"judgement"`, and `sim judge` takes a confirmation only on that row's set. The row of `model-3` comes with the amendment to R04 that records `held-out-model-2`.
+— *Consequence:* `judgements/`, `internal/seed/sets.go`, `internal/criterion/`; [architecture.md](architecture.md).
 
 ## The judgement `engine-1`
 
-**R36. The first judgement of the candidates of `engine` — A, B and C, pull requests #46–48 — ended in an exit: no candidate holds all the constraints of the engine's criterion, and the base stays as it is. There was no confirmation, and `held-out-engine-1` is still held out. `gate.json`, `go.mod` and the bands do not change.** The judgement of T33 (RUN.md), a round by the 2026-11-09 amendment to R103 spec; the report — `judgements/engine-1/` (R35).
+**R36. The first judgement of the candidates of `engine` — A, B and C, pull requests #46–48 — ended in an exit: no candidate holds all the constraints of the engine's criterion, and the base stays as it is. There was no confirmation, and `held-out-engine-1` is still held out. `gate.json`, `go.mod` and the bands do not change.** One round judged the three; its report is `judgements/engine-1/`.
 - **The candidates** — all in the group `corridor`, without new constants and without a new field; the lines for the judgement file came from their descriptions:
   - A, `7ef8288c…`, `distance` 1 — a task in the corridor before an unseen one outside it;
   - B, `32aa835d…`, `distance` 2 — a seen solution after a pause does not change the order;
   - C, `97abff0d…`, `distance` 3 — the order of A and consolidation of an error only in the corridor.
-- **The runs** — decisive, on 1,000 working learners a cell, by the recipe `just decisive` (R34), on a free machine:
-  - the base — `runs/base.jsonl` of the run of T36, SHA-256 `b13a9264…4c92`, the one that `paths.json` names;
+- **The runs** — decisive, on 1,000 working learners a cell, by the recipe `just decisive`, on a free machine:
+  - the base — `runs/base.jsonl` of the run on 1,000 learners, SHA-256 `b13a9264…4c92`, the one that `paths.json` named;
   - A — 48 min by the clock, SHA-256 `6ac032a5…e94d`;
   - B — 42 min, `21ad0cbd…f8e4`;
   - C — 41 min, `79353c9a…b8459`.
 
-  So the hour of T36 by the clock is confirmed too (R33). One twentieth of the run of A was run anew and matched its file line for line, 3,250 lines.
+  So the runs held the hour by the clock too. One twentieth of the run of A was run anew and matched its file line for line, 3,250 lines.
 - **The report** of `sim judge`:
 
   | candidate | score | group `corridor` | failed "no worse" |
@@ -963,21 +928,21 @@
   - All three are better than the base by the score.
   - A fails the lag `M3.lag` on `G2` of both maths (on school maths worse by 0.036 at a tolerance of 0.019) and `E4.given` for `F-growth5` (0.01015 at 0.01).
   - C fails the school `E1.corridor` for `G2` (0.01004 at 0.01) and `M3.lag` for `G2` (0.036 at 0.018), and also the olympiad `M3.lag` for `G2-fading`.
-  - B fails `E4.given` on almost all the olympiad populations, `E3.retention` for `F-`, `M4.false.all` for `W-repeat` and `M3.lag`. The risk of repeating a seen solution came true (R06 learner-model).
-  - For all of them three `E3.end` on school maths left the score — their path is within the tolerance (the 2026-11-09 amendment to R04).
+  - B fails `E4.given` on almost all the olympiad populations, `E3.retention` for `F-`, `M4.false.all` for `W-repeat` and `M3.lag`. The risk of repeating a seen solution came true.
+  - For all of them three `E3.end` on school maths left the score — their path is within the tolerance.
 
-— *Why an exit:* the choice takes only a candidate that holds all the constraints and is better than the base ([architecture.md](architecture.md), section 3.6). There are none such. The common reason of A and C is the model's lag `M3.lag` on `G2`: the new order of the tasks gives the model less evidence where the truth is learning. This is read as a signal for the next round of `engine`, not as an argument to loosen the tolerance: the tolerances were written down before the first candidate (R04).
+— *Why an exit:* the choice takes only a candidate that holds all the constraints and is better than the base. There are none such. The common reason of A and C is the model's lag `M3.lag` on `G2`: the new order of the tasks gives the model less evidence where the truth is learning. This is read as a signal for the next round of `engine`, not as an argument to loosen the tolerance: the tolerances were written down before the first candidate.
 
-— *Consequence:* pull requests #46–48 of `engine` are closed by its session, with a link to `judgements/engine-1/`. There is no row «В реестр spec» about branch 3 of C: C is not chosen. T32 judges the model's candidates on the previous base — `runs/base.jsonl` —, because there is no first choice (R35). The next judgement of the engine is `judgements/engine-2/`, and its confirmation is again on `held-out-engine-1`: it is untouched (the 2026-11-10 amendment to R35). Where it is written: RUN.md, T33; `judgements/engine-1/`.
+— *Consequence:* pull requests #46–48 of `engine` are closed by its session, with a link to `judgements/engine-1/`. There is no row «В реестр spec» about branch 3 of C: C is not chosen. The model's candidates are judged on the previous base, `runs/base.jsonl`, because there is no first choice. The next judgement of the engine is `judgements/engine-2/`, its confirmation again on `held-out-engine-1`, which is untouched. The files: `judgements/engine-1/`.
 
 ## The judgement `model-1`
 
-**R37. The first judgement of the candidates of `learner-model` — `g10`, `halve035` and `forget-set`, pull requests #43–45 — ended in an exit: no candidate holds all the constraints of the model's criterion, and the base stays as it is. There was no confirmation, and `held-out-model-1` is still held out. `gate.json`, `go.mod` and the bands do not change.** The judgement of T32 (RUN.md), one round by the 2026-11-09 amendment to R103 spec; the report — `judgements/model-1/` (R35 and its amendment). It went after the engine's judgement, which also ended in an exit (R36), so the base is the previous one.
+**R37. The first judgement of the candidates of `learner-model` — `g10`, `halve035` and `forget-set`, pull requests #43–45 — ended in an exit: no candidate holds all the constraints of the model's criterion, and the base stays as it is. There was no confirmation, and `held-out-model-1` is still held out. `gate.json`, `go.mod` and the bands do not change.** One round judged the three; its report is `judgements/model-1/`. It went after the engine's judgement, which also ended in an exit, so the base is the previous one.
 - **The candidates** — all in the group `forgets`, without a target and without a new field; the fields for the judgement file came from the session of `learner-model`. All three drafts are made from `main` 9fb144f, where the model's code is the same as in the release v0.1.4:
   - `g10`, `7f735b20…` — `stabilityGrowth` 10, one constant;
   - `halve035`, `17e0a42f…` — `stabilityCut` 0.35, one constant;
   - `forget-set`, `75c6a908…` — both, two constants.
-- **The runs** — decisive, on 1,000 working learners a cell, by the recipe `just decisive` with `CANDIDATE_LEARNER_MODEL` (R34). The engine is taken at the commit of `gate.json`, v0.1.4:
+- **The runs** — decisive, on 1,000 working learners a cell, by the recipe `just decisive` with `CANDIDATE_LEARNER_MODEL`. The engine is taken at the commit of `gate.json`, v0.1.4:
   - the base — `runs/base.jsonl`, SHA-256 `b13a9264…4c92`;
   - `g10` — 41 min by the clock, `e19ff45e…0434`;
   - `halve035` — 44 min, `400d9a6d…d66e`;
@@ -998,70 +963,64 @@
   - `forget-set` fails the same as `g10`, and also the olympiad `E1.corridor` for `G2`, `G2-fading` and `S-adult` and `M1.rms.200` for `F-none`.
   - Common to all is the catching up after a break, `M3.settle` for `F-break`: with the new numbers of forgetting the model catches up with the truth after a break more slowly. Why — the judgement does not read; this is a question for the next round.
 
-— *Why an exit:* the choice takes only a candidate that holds all the constraints and is better than the base ([architecture.md](architecture.md), section 3.6). There are none such. The tolerances were written down before the first candidate (R04), and that `halve035` failed by a hair is no argument to shift them. This is a signal for the next round of the model: to change forgetting so as not to delay the catching up after a break.
+— *Why an exit:* the choice takes only a candidate that holds all the constraints and is better than the base. There are none such. The tolerances were written down before the first candidate, and that `halve035` failed by a hair is no argument to shift them. This is a signal for the next round of the model: to change forgetting so as not to delay the catching up after a break.
 
-— *Consequence:* pull requests #43–45 of `learner-model` are closed by its session, with a link to `judgements/model-1/`. There are no first choices for either the model or the engine, so T34 — the move to the releases of the chosen ones — the author does not do: its status is `[-]`. The base stays `learner-model` v0.1.4 and `engine` v0.1.4. The next round of the model is `judgements/model-2/`, its confirmation on `held-out-model-1`. Where it is written: RUN.md, T32; `judgements/model-1/`.
+— *Consequence:* pull requests #43–45 of `learner-model` are closed by its session, with a link to `judgements/model-1/`. There are no first choices for either the model or the engine, so there is no move to the releases of chosen ones: the base stays `learner-model` v0.1.4 and `engine` v0.1.4. The next round of the model is `judgements/model-2/`, its confirmation on `held-out-model-1`. The files: `judgements/model-1/`.
 
 ## Epic E4
 
-**R38. Epic E4 is «Стенд за библиотеками»: the simulator catches up with `spec`, `engine` and `modules` before new candidates. In it: the move to `spec` v0.14.0, the base on `engine` v0.1.5, a judgement that sees a candidate's second library (Д6), the sizes of the runs after the speed-up of `engine`, the check kind `time` and the leading question on a release of `learner-model`, the pin of `modules` v0.2.1 and the summing up. The second rounds of candidates go as tasks of this epic, when the candidates come. The sizes after the speed-up are by measurement, and the rule of the hour stays.** The author's answers 2026-11-10 when laying out E4 (RUN.md, table 1).
+**R38. Epic E4 is «Стенд за библиотеками»: the simulator catches up with `spec`, `engine` and `modules` before new candidates. In it: the move to `spec` v0.14.0, the base on `engine` v0.1.5, a judgement that sees a candidate's second library, the sizes of the runs after the speed-up of `engine`, the check kind `time` and the leading question on a release of `learner-model`, the pin of `modules` v0.2.1 and the summing up. The second rounds of candidates go as tasks of this epic, when the candidates come. The sizes after the speed-up are by measurement, and the rule of the hour stays.**
 - **What was found in planning** (read 2026-11-10):
-  - `spec` has come out up to v0.14.0, and `sim` stands on v0.12.0 (R32);
-  - `spec` answered В10 by the row's recommendation (Д167 RUN.md `spec`): `engine` speeds up the choice on a large pool by a task of its own. E4 of `engine` is the profile of `Choose` on `olympiad-math` 0.1.1, a speed-up without a change of the choice, about 10×, and "Gate" on a tag of `sim` that will give the gate back 300 learners (T37–T39 RUN.md `engine`);
-  - `spec` answered В11 (Д173 RUN.md `spec`; row 4.10 of its COORDINATION.md). The answers to В10 and В11 came out with the tag v0.14.0, while the submodule stands on v0.12.0, so the rows of table 3 leave by the move T38. The order is this: `learner-model` releases `time` and the leading question in one release through the gate of `sim` (its Д14); then `sim` translates them in the learner's truth and in the evidence and releases a tag; then `modules` releases v0.2.1 (T56 RUN.md `modules`), and `sim` pins itself to it;
-  - `engine` released v0.1.5 with the fix of R82 spec in the base: the task of the last attempt with a seen solution does not go next. It was found by the invariant `I4` of the gate of `sim` on the candidates of T31. According to `engine`, all 69 numbers of the gate are the same to the bit, and row В29 RUN.md `engine` asks `sim` and `api` to take v0.1.5;
+  - `spec` has come out up to v0.14.0, and `sim` stands on v0.12.0;
+  - `spec` answered `sim`'s question on the cost of the choice by the question's recommendation: `engine` speeds up the choice on a large pool by an epic of its own — the profile of `Choose` on `olympiad-math` 0.1.1, a speed-up without a change of the choice, about 10×, and "Gate" on a tag of `sim` that will give the gate back 300 learners;
+  - `spec` answered `sim`'s question on the order of the releases of format 0.4. Both answers came out with the tag v0.14.0, while the submodule stands on v0.12.0, so the questions leave table 3 with the move to the tag. The order is this: `learner-model` releases `time` and the leading question in one release through the gate of `sim`; then `sim` translates them in the learner's truth and in the evidence and releases a tag; then `modules` releases v0.2.1, and `sim` pins itself to it;
+  - `engine` released v0.1.5 with a fix in the base: the task of the last attempt with a seen solution does not go next. It was found by the invariant `I4` of the gate of `sim` on the first candidates of `engine`. According to `engine`, all 69 numbers of the gate are the same to the bit, and it asks `sim` and `api` to take v0.1.5;
   - there will be no new candidates soon: `engine` is speeding up the choice, and `learner-model` is recording the outcome of the first judgement.
 - **Decided by the author:**
   - **the content** — «Стенд за библиотеками», the second rounds — when the candidates come;
   - **the sizes after the speed-up:** the gate gets 300 learners if it fits into 15 minutes on the runner; the decisive run gets as many as fit into an hour with a margin, but no more than 4,000. New sizes are new paths and new bands.
-- **A proposal of the execution for the sizes**, T41 decides it when planning: if 300 learners do not fit into 15 minutes on the runner, the gate gets the largest size that fits, but no less than 100; "with a margin" is a decisive run no longer than 45 minutes on a free machine, a quarter of an hour for a busy machine and the growth of the pools.
-- **A proposal of the execution:** the order of the tasks — T38–T44 (RUN.md, «Почему такой порядок»); the second rounds — as tasks with a number free at the moment of writing.
+- **A proposal of the execution for the sizes:** if 300 learners do not fit into 15 minutes on the runner, the gate gets the largest size that fits, but no less than 100; "with a margin" is a decisive run no longer than 45 minutes on a free machine, a quarter of an hour for a busy machine and the growth of the pools.
+- **A proposal of the execution:** the order of the tasks is the epic's plan; the second rounds — as tasks of their own, each with a number free at the moment of writing.
 
 — *Why:*
 - **The simulator behind the libraries.** Candidates can be judged only on what the libraries stand on and what the learners will get. `spec`, `engine` v0.1.5 and the packages 0.2.1 have already come out or are coming out, and there are no candidates yet.
-- **Sizes by measurement.** R33 cut the runs down to an hour because the choice was expensive. When it becomes cheaper, it is worth giving back as much as the same rule allows, not the previous numbers blindly.
+- **Sizes by measurement.** The runs were cut down to an hour because the choice was expensive. When it becomes cheaper, it is worth giving back as much as the same rule allows, not the previous numbers blindly.
 
 — *Rejected:*
-- E4 as T35 proposed it — only the second rounds: the epic would wait for candidates, and the simulator would lag behind the libraries;
+- E4 as the summing up of E3 proposed it — only the second rounds: the epic would wait for candidates, and the simulator would lag behind the libraries;
 - give back 300 and 4,000 blindly — the decisive run could go over an hour;
 - leave the sizes alone after the speed-up — the gate would stay coarser than it can be, and `engine` is waiting for a tag with 300 learners.
 
-— *Consequence:*
-- E3 is moved to the archive [docs/plan/E3.md](plan/E3.md);
-- table 1 of RUN.md — E4 in the tasks T38–T44;
-- the row E4 left table 2; В10 and В11 are closed by T38 with the answers that came with the tag `spec` v0.14.0;
-- [architecture.md](architecture.md) — the status and subsection 2.5, "Decided"; README, "Status".
+— *Consequence:* RUN.md and [docs/plan/E3.md](plan/E3.md); [architecture.md](architecture.md).
 
 ## The tag `spec` v0.15.0
 
-**R39. `sim` stands on `spec` v0.15.0 — the latest tag, not v0.14.0, which the task named. The submodule, `go.mod` and `gate.json` are on it. The gate's numbers are the same to the bit, and the bands are as before. Rows В10 and В11 of table 3 of RUN.md are closed by the answers of `spec` that came with the tag.** The author's instruction 2026-11-11: «делай T38, но вышла более свежая версия spec» (RUN.md, T38).
-- **What was found in the move** (read 2026-11-11; the sources — [architecture.md](architecture.md), section 4):
+**R39. `sim` stands on `spec` v0.15.0 — the latest tag, not v0.14.0, which the plan named. The submodule, `go.mod` and `gate.json` are on it. The gate's numbers are the same to the bit, and the bands are as before. `sim`'s questions on the cost of the choice and on the order of the releases of format 0.4 leave table 3, closed by the answers of `spec` that came with the tag.**
+- **What was found in the move** (read 2026-11-11, sources 7.3):
   - `spec` has come out up to v0.15.0, the tag is on commit 58d3f46, and `gh release verify` confirmed it;
-  - for `sim` the tags v0.13.0–v0.15.0 change nothing that the simulator reads: `RULES.md`, the text and schemas of format 0.4 except the example of traps, the types `formatv0`, the template and the container are the same as on v0.12.0, and card architecture 3.9 spec is untouched;
+  - for `sim` the tags v0.13.0–v0.15.0 change nothing that the simulator reads: `RULES.md`, the text and schemas of format 0.4 except the example of traps, the types `formatv0`, the template and the container are the same as on v0.12.0, and the component's card in `spec` is untouched;
   - the Go module `spec` added the packages `consentagev1`, `exportv1` and `legalv2` and the parts `Legal`, `ConsentAge` and `Export`, and holds the embedded files in parts. Its `go.mod` is the same, so there are no new dependencies;
-  - for `sim` the tags decided four answers of table 4 of RUN.md `spec`:
-    - Д167 — the answer to В10: `engine` speeds up the choice by a task of its own, and the gate and the decisive run grow after it. T41 did this: `engine` v0.1.6, the gate on 150 learners, the decisive run on 1,500 (the 2026-11-11 amendments to R31 and R33);
-    - Д199 — the same move to `engine` v0.1.6: T41 too;
-    - Д198 — the answer to В32 of `engine`: `learner-model` speeds up `Readout.Task` by a task of its own, and `sim` gives the gate back 300 learners and the decisive run 4,000 when both edits come out. This is the debt Д7 of table 4 of RUN.md;
-    - Д173 — the answer to В11: row 4.10 of COORDINATION.md `spec`. First `learner-model` releases `time` and the leading question in one release through the gate of `sim`, then `sim` translates them and releases a tag, then `modules` releases v0.2.1. These are T42 and T43;
-  - the libraries do not require the Go module `spec`: the `go.mod` of `learner-model` v0.1.4 is without `require`, and `engine` v0.1.6 requires only `learner-model`. `spec` is a dependency of the simulator itself, and its version is the tag of the submodule (R64 spec);
+  - for `sim` the tags bring four answers of `spec`:
+    - on the cost of the choice: `engine` speeds up the choice by a task of its own, and the gate and the decisive run grow after it — `engine` v0.1.6, the gate on 150 learners, the decisive run on 1,500, which `sim` has already taken;
+    - the same move to `engine` v0.1.6;
+    - on the cost of `Readout.Task`, which `engine` asked: `learner-model` speeds it up by a task of its own, and `sim` gives the gate back 300 learners and the decisive run 4,000 when both edits come out;
+    - on the order of the releases of format 0.4: first `learner-model` releases `time` and the leading question in one release through the gate of `sim`, then `sim` translates them and releases a tag, then `modules` releases v0.2.1;
+  - the libraries do not require the Go module `spec`: the `go.mod` of `learner-model` v0.1.4 is without `require`, and `engine` v0.1.6 requires only `learner-model`. `spec` is a dependency of the simulator itself, and its version is the tag of the submodule;
   - `just gate exact` on v0.15.0 — all 69 numbers are the same to the bit, and the bands were not written anew.
 - **Decided by the author:** the move straight to v0.15.0.
 
-— *Why:* the repository stands on the latest tag of `spec` (RULES.md, Across repositories), and between v0.14.0 and v0.15.0 nothing changes for the simulator. The move to v0.14.0 would only put off the next one.
+— *Why:* the repository stands on the latest tag of `spec`, and between v0.14.0 and v0.15.0 nothing changes for the simulator. The move to v0.14.0 would only put off the next one.
 
-— *Rejected:* v0.14.0, as the task named it — one more move right after.
+— *Rejected:* v0.14.0, as the plan named it — one more move right after.
 
-— *Consequence:* В10 and В11 left table 3 of RUN.md; `gate.json` names `spec` v0.15.0; the tag — in CLAUDE.md, README and the opening of RUN.md. The merge releases a tag of `sim`, and the gates of the libraries take it. Where it is written: RUN.md, T38; [architecture.md](architecture.md), the status, section 2 and section 4; README.
-
-— *Amendment 2026-11-12:* `sim` stands on `spec` v0.16.3 (R45): the submodule, `go.mod` and `gate.json` are on it, Go in the container is 1.27.4, and the gate's numbers are the same to the bit.
+— *Consequence:* `spec/`, `go.mod`, `gate.json`; CLAUDE.md and RUN.md, the lines that name the tag; table 3 of the plan, `run/QUESTIONS.md`; [architecture.md](architecture.md). The merge releases a tag of `sim`, and the gates of the libraries take it.
 
 ## A candidate's second library
 
-**R40. A judgement holds the base and the candidates to the libraries of the base. `sim` embeds `gate.json`, as it embeds `paths.json`, and `sim judge` refuses the whole judgement if: the base or the base of the confirmation runs on other libraries than those on which the paths were read; the base is not on the versions that the gate file names; the second library of a candidate of one library — or of the same candidate on the held-out learners — is neither the base's version nor the commit of its pin. A pair has no second library. The headers of the results files, the recipe and the bytes of the runs do not change.** The author's answers 2026-11-11 when planning T40 (RUN.md, T40); the rest is a proposal of the execution. It closes Д6 of table 4 of RUN.md.
+**R40. A judgement holds the base and the candidates to the libraries of the base. `sim` embeds `gate.json`, as it embeds `paths.json`, and `sim judge` refuses the whole judgement if: the base or the base of the confirmation runs on other libraries than those on which the paths were read; the base is not on the versions that the gate file names; the second library of a candidate of one library — or of the same candidate on the held-out learners — is neither the base's version nor the commit of its pin. A pair has no second library. The headers of the results files, the recipe and the bytes of the runs do not change.**
 - **What was found in planning** (2026-11-11):
-  - the base's header names both libraries by versions — the recipe `just decisive` builds the base by `go.mod` —, and a candidate's header names both by commits: the recipe takes the second library by the commit from `gate.json` (R34). The judgement cannot compare them directly: only the gate file matches a version with the commit of its tag;
-  - the judgement did not check the base against the one on which the paths were read either, though `paths.json` names its versions (a finding of the review of T41);
+  - the base's header names both libraries by versions — the recipe `just decisive` builds the base by `go.mod` —, and a candidate's header names both by commits: the recipe takes the second library by the commit from `gate.json`. The judgement cannot compare them directly: only the gate file matches a version with the commit of its tag;
+  - the judgement did not check the base against the one on which the paths were read either, though `paths.json` names its versions (a finding of a review);
   - while a library has no release, `go.mod` names it by the pseudo-version of a commit, and `sim gate verify` already matches a pseudo-version with a commit by the suffix of 12 characters;
   - the packages `criterion` and `gate` do not import each other.
 - **Decided by the author:**
@@ -1074,7 +1033,7 @@
   - the refusal names the candidate, the library and both points: where the candidate ran and where the base did.
 
 — *Why:*
-- **`gate.json`.** It alone names both the version and the commit of its tag, and the candidates' runs are built exactly by it (R34). The headers, the recipe and the bytes of the runs stay as before, and the pinned run of the base, whose SHA-256 `paths.json` names, is the same (R28). The embedded file judges by the pin with which `sim` is built — as the paths do.
+- **`gate.json`.** It alone names both the version and the commit of its tag, and the candidates' runs are built exactly by it. The headers, the recipe and the bytes of the runs stay as before, and the pinned run of the base, whose SHA-256 `paths.json` names, is the same. The embedded file judges by the pin with which `sim` is built — as the paths do.
 - **A refusal of the whole judgement.** A run on someone else's second library is not a candidate of this judgement: it is an error of the input, like a run on the wrong learners, not a verdict on the candidate.
 - **The base against the paths.** A candidate's share is its difference from the base divided by the pinned path. On a base of other libraries the path is not the right one, and the share would be someone else's.
 
@@ -1083,78 +1042,68 @@
 - a path to the gate file in the judgement file — the wrong one can be given;
 - a check "wrong library" with "not met" for one candidate — the judgement would give a verdict on a run that is not of it;
 - checking the SHA-256 of the base's file too — rough looks and tests would need a way around, and on someone else's base the check of the libraries already refuses;
-- only Д6, without the check of the base against the paths — see the "Why".
+- only the check of a candidate's second library, without the check of the base against the paths — see the "Why".
 
 — *Consequence:*
 - the judgements `engine-1` and `model-1` on the present tree get a refusal: their base is on `engine` v0.1.4, and the paths on v0.1.6. Their reports are records on their own commits, and there they are reproduced;
-- the recipe's protection stays: a pair requires `CANDIDATE_PAIR=yes` (R34);
-- the 2026-11-11 amendments to R25 and R35; Д6 is closed.
-
-Where it is written: RUN.md, T40; [architecture.md](architecture.md), sections 3 and 3.6; README; `main.go`, `internal/criterion/criterion.go`.
+- the recipe's protection stays: a pair requires `CANDIDATE_PAIR=yes`;
+- the files: `main.go`, `internal/criterion/criterion.go`; [architecture.md](architecture.md); [README.md](README.md).
 
 ## Format 0.4 on the simulator
 
-**R41. The simulator reads the check kind `time` and the leading question of format 0.4 on `learner-model` v0.1.5. `time` is a check kind of its own, and the truth guesses it with a probability of 0, as a number. The simulator reads the leading question only by whether the task has one: a request of `G8` before the first answer on such a task gives both the technique and the question, the evidence carries `LeadingQuestionOnRequest`, and the rise of the logit is as before. There is no decisive run here, and `paths.json` stays on `learner-model` v0.1.4: until T43 the judgement refuses.** The author's answers 2026-11-11 when planning T42 (RUN.md, T42); the rest is a proposal of the execution. It carries out row 4.10 of COORDINATION.md `spec` in the part of `sim` (Д173 RUN.md `spec`; R39).
-- **What was found in planning** (2026-11-11; the sources — [architecture.md](architecture.md), section 4):
-  - `learner-model` v0.1.5 adds `CheckKindTime` without guessing and the field of evidence `LeadingQuestionOnRequest` — "a hint the learner asked for gave the task's leading question". The model counts it as help, as a technique on request: the answer goes into the step, but does not set "mastered". The kind of evidence is 2; by R28 learner-model the model's numbers do not change;
-  - the leading question is given only by a hint on request before the first error ([format text](../spec/format/README.md), sections 14 and 19). On the simulator only `G8` asks for it, and the base learner never does ([architecture.md](architecture.md), section 3.1);
-  - `modules` v0.2.1 with `time` in 30 tasks and leading questions in 311 tasks came out 2026-11-10, before row 4.10 (row В38 RUN.md `modules`), so T43 waits only for this record.
+**R41. The simulator reads the check kind `time` and the leading question of format 0.4 from `learner-model` v0.1.5 on. `time` is a check kind of its own, and the truth guesses it with a probability of 0, as a number. The simulator reads the leading question only by whether the task has one: a request of `G8` before the first answer on such a task gives both the technique and the question, the evidence carries `LeadingQuestionOnRequest`, and the rise of the logit is as before. The move to the release brought no decisive run of its own: the paths were read anew once, with the pin of the packages that carry `time` and leading questions, and until then the judgement refused.** It carries out `sim`'s part of the order of the releases of format 0.4 across repositories.
+- **What was found in planning** (2026-11-11, sources 3.6):
+  - `learner-model` v0.1.5 adds `CheckKindTime` without guessing and the field of evidence `LeadingQuestionOnRequest` — "a hint the learner asked for gave the task's leading question". The model counts it as help, as a technique on request: the answer goes into the step, but does not set "mastered". The kind of evidence is 2, and the model's numbers do not change;
+  - the leading question is given only by a hint on request before the first error, by the format's text, [spec/format/README.md](../spec/format/README.md). On the simulator only `G8` asks for it, and the base learner never does;
+  - `modules` v0.2.1 with `time` in 30 tasks and leading questions in 311 tasks came out 2026-11-10, before the order across repositories set it, so the pin of the packages waits only for this record.
 - **Decided by the author:**
   - the leading question — one request, one rise, without a new assumption;
-  - there is no decisive run in T42: the paths are read once by T43, already on `modules` v0.2.1.
+  - there is no decisive run with the move: the paths are read once, with the pin of the packages of `modules` v0.2.1 or later.
 - **A proposal of the execution:**
   - `release-verify` accepted `learner-model-proto-v0.1.5.tar.gz` — "learner-model v0.1.5, signed by the shared release.yml of .github v0.1.21"; `go.mod` and `gate.json` are on v0.1.5, the commit of the tag `3a2cd29`. `just gate exact` — all 69 numbers are the same to the bit. The bands are recorded anew by `just gate record` only for the sake of the reason: the values in them are the same to the bit, and the gate file now names the commit on which they are recorded;
-  - the translation: `time` — `CheckKindTime`; `pack.Task.Leading` — the task has a `leading_question`. The canonical text holds both (the 2026-11-11 amendments to R14 and R27);
-  - the truth: `Attempt.LeadingQuestion` — the technique of `G8` on a task with a question, without a new number from the place `attempts`; the evidence carries it in `LeadingQuestionOnRequest`, of kind 2 (the 2026-11-11 amendment to R18). The truth does not know traps, so there is no 12-hour miss for `time`;
-  - the synthetics: the skill of the sheet on the anchor skill is answered by a time, and the tasks of the sheet of difficulty 5 have a leading question (the 2026-11-11 amendment to R19);
+  - the translation: `time` — `CheckKindTime`; `pack.Task.Leading` — the task has a `leading_question`. The canonical text holds both;
+  - the truth: `Attempt.LeadingQuestion` — the technique of `G8` on a task with a question, without a new number from the place `attempts`; the evidence carries it in `LeadingQuestionOnRequest`, of kind 2. The truth does not know traps, so there is no 12-hour miss for `time`;
+  - the synthetics: the skill of the sheet on the anchor skill is answered by a time, and the tasks of the sheet of difficulty 5 have a leading question;
   - the judgement's test in `main_test.go` holds its runs and the embedded gate file to the libraries of the paths: between the move of a library and the decisive run that reads the paths anew, they diverge.
+- **On `learner-model` v0.1.6**, where `Readout.Task` is faster with the same bits, the translation and the truth are the same: both decisive runs and the gate matched the runs on v0.1.5 to the bit.
 
 — *Why:*
-- **`time` with a guessing of 0.** An answer of time is typed, not chosen, like a number, and the model guesses it the same way — 0 (R19 learner-model). In the rest the truth holds the model's assumptions ([architecture.md](architecture.md), section 3.1).
-- **One request, one rise.** By the format text the leading question comes with the same hint as the techniques, and the model counts them as one help. How much the question helps beyond the technique there are no data — neither at the simulator nor at `learner-model`, where R06 and R21 learner-model rejected a weight without data. Without a new assumption the numbers of `G8` do not shift in T43 either, and the simulator judges the task as the learner will get it: the evidence carries what the server will record.
+- **`time` with a guessing of 0.** An answer of time is typed, not chosen, like a number, and the model guesses it the same way — 0. In the rest the truth holds the model's assumptions.
+- **One request, one rise.** By the format text the leading question comes with the same hint as the techniques, and the model counts them as one help. How much the question helps beyond the technique there are no data — neither at the simulator nor at `learner-model`, which also rejected a weight without data. Without a new assumption the numbers of `G8` do not shift with the new pin either, and the simulator judges the task as the learner will get it: the evidence carries what the server will record.
 - **Only "there is a question".** The question's words are for the learner, and the simulator reads them no more than the text of the statement. So an edit of the words does not wake the gate of the CI of `modules`, while an added or removed question does.
-- **Without a decisive run.** T43 pins the packages with `time` and questions, and these are new paths in any case. A run here on `modules` v0.2.0 would cost about an hour of the machine for paths that T43 would rewrite at once. There are no candidates now, so the judgement's refusal until T43 holds nobody up.
+- **Without a decisive run.** The pin of the packages with `time` and questions brings new paths in any case. A run with the move on `modules` v0.2.0 would cost about an hour of the machine for paths that the pin would rewrite at once. There were no candidates, so the judgement's refusal until then held nobody up.
 
 — *Rejected:*
 - a rise of its own for the leading question beyond the technique — a value without data;
 - a new population that asks for the question — one more cell of the decisive run, and also without data;
-- translate `time` as `number` — then the simulator would measure another task (option (b) of [architecture.md](architecture.md), subsection 2.5);
+- translate `time` as `number` — then the simulator would measure another task;
 - a new skill of the synthetics with `time` — it would shift the engine's choice for the learner of both synthetics, and the anchor's test would stop seeing the mastered anchor;
-- the decisive run in T42, and T43 inside T42 — see the "Why" and RUN.md, T42.
+- the decisive run with the move, or the pin of the packages inside the move — see the "Why".
 
-— *Consequence:*
-- until T43 reads the paths anew, `sim judge` refuses any judgement: the base is on `learner-model` v0.1.5, and `paths.json` was read on v0.1.4 (R40);
-- the 2026-11-11 amendments to R14, R18, R19 and R27; [architecture.md](architecture.md), subsection 2.5, is done;
-- the merge releases a tag of `sim`, and the gates of the libraries take it by tasks of their own. There is no row «в реестр spec»: the order that the release of `modules` v0.2.1 broke has already been raised by row В38 RUN.md `modules`.
-
-Where it is written: RUN.md, T42; [architecture.md](architecture.md), subsection 2.5 and sections 3, 3.1–3.3; README; `internal/pack/translate.go`, `internal/learner/attempt.go`, `internal/run/run.go`, `internal/synthetic/synthetic.go`.
-
-— *Amendment 2026-11-11 (T43):* the judgement no longer refuses. The paths are read anew on `learner-model` v0.1.5 and the packages of `modules` v0.2.5 (the 2026-11-11 amendment to R04), and the judgement's test holds its runs to the libraries of the paths, as before — now these are the same as in `gate.json`. Why — R42.
-
-— *Amendment 2026-11-11 (T45):* the translation and the truth are the same, and the base is on `learner-model` v0.1.6, where `Readout.Task` is faster with the same bits: both decisive runs and the gate matched the runs on v0.1.5 to the bit. The paths are read anew on it, so the judgement does not refuse. Why — R43.
+— *Consequence:* `internal/pack/translate.go`, `internal/learner/attempt.go`, `internal/run/run.go`, `internal/synthetic/synthetic.go`, `go.mod`, `gate.json`; [architecture.md](architecture.md); [README.md](README.md). The merge releases a tag of `sim`, and the gates of the libraries take it by tasks of their own. There is no row «В реестр spec»: `modules` has already raised the order that its release of v0.2.1 broke.
 
 ## The pin of `modules` v0.2.5
 
-**R42. The simulator is pinned to the release of `modules` v0.2.5 — `olympiad-math` and `grade-3-math` 0.3.0 with the checks `time`, leading questions and worked examples, and `english-essays` 0.2.0. The paths are read anew on it and on `learner-model` v0.1.5, and so are the gate's bands. The sizes of the runs are as before: the gate — 150 learners a cell, the decisive run — 1,500.** The author's answers 2026-11-11 when planning and executing T43 (RUN.md, T43); the rest is a proposal of the execution. Together with R41 it carries out the part of `sim` of row 4.10 of COORDINATION.md `spec` (Д173 RUN.md `spec`).
-- **What was found in planning** (2026-11-11; the sources — [architecture.md](architecture.md), section 4):
+**R42. The simulator is pinned to the release of `modules` v0.2.5 — `olympiad-math` and `grade-3-math` 0.3.0 with the checks `time`, leading questions and worked examples, and `english-essays` 0.2.0. The paths are read anew on it and on `learner-model` v0.1.5, and so are the gate's bands. The sizes of the runs do not change with the pin.** With the check kind `time` and the leading question on the simulator it carries out the rest of `sim`'s part of the order of the releases of format 0.4.
+- **What was found in planning** (2026-11-11, sources 6.4):
   - `modules` v0.2.1 came out 2026-11-10 with both maths at 0.3.0. The index of v0.2.5 is byte for byte the same as that of v0.2.1 — SHA-256 `cebf23cf…aec6a`: in v0.2.2–v0.2.5 only the synthetic samples and the move to `spec` v0.15.0 changed;
   - `olympiad-math` 0.3.0 has 775 tasks instead of 772 and 22 templates instead of 19, a leading question in 322 tasks; checks `number` — 572, `choice` — 166 instead of 196, `fraction` — 7, `time` — 30;
-  - `grade-3-math` 0.3.0 has the same tasks and checks, and in each of the four lessons a new segment — a worked example, two minutes, as any segment without a task (R15);
+  - `grade-3-math` 0.3.0 has the same tasks and checks, and in each of the four lessons a new segment — a worked example, two minutes, as any segment without a task;
   - the simulator reads the new packages without edits of the code, and a sample of the decisive run on a copy of the repository gave all 65 cells.
 - **Decided by the author:**
-  - the pin — the latest release, v0.2.5, not v0.2.1, which the task named;
+  - the pin — the latest release, v0.2.5, not v0.2.1, which the plan named;
   - reproducibility — by a full repeat of the ceiling;
   - in the execution: the decisive run gets 1,500 learners as before, though the base took 47 min 48 s. Neighbouring containers shared the host at that time, and the run holds the rule of the hour.
 - **A proposal of the execution:**
-  - `release-verify` accepted the index — "module-index.json: modules v0.2.5, signed by the shared release.yml of .github v0.1.15" — and both archives from v0.2.1 — "modules v0.2.1, signed by the shared release.yml of .github v0.1.15". The archive of the essays 0.2.0 is the same as the one accepted in R32;
-  - the index lies in `internal/published/v0.2.5/`, the archives in the folders of the releases that their records name: `v0.2.1/` and `v0.2.0/` (the 2026-11-11 amendment to R14);
+  - `release-verify` accepted the index — "module-index.json: modules v0.2.5, signed by the shared release.yml of .github v0.1.15" — and both archives from v0.2.1 — "modules v0.2.1, signed by the shared release.yml of .github v0.1.15". The archive of the essays 0.2.0 is the same as the one accepted with the pin of `modules` v0.2.0;
+  - the index lies in `internal/published/v0.2.5/`, the archives in the folders of the releases that their records name: `v0.2.1/` and `v0.2.0/`;
   - the tests of the facts of the pin — on the new packages, with the facts of 0.4: the checks `time`, the tasks with a leading question, the segment of a worked example. The test of a run's input holds the instance and the fact "solution seen" by whether the task is a template: the new template `squares-on-lines` came into the choice of its learner;
-  - the decisive run, the new paths — the 2026-11-11 amendment to R04 — and the gate's bands (the 2026-11-11 amendments to R26 and R28). The ceiling was repeated whole and matched to the byte. The gate in the container ran for 7 min by the clock on an overloaded host, 28.4 CPU minutes — against 23.6 in T41; the CI of the pull request will show the time on the runners.
+  - the decisive run, the new paths in `paths.json` and the gate's bands in `gate.json`. The ceiling was repeated whole and matched to the byte. The gate in the container ran for 7 min by the clock on an overloaded host, 28.4 CPU minutes — against 23.6 on the pin before; the CI of the pull request shows the time on the runners.
 
 — *Why:*
 - **v0.2.5.** The index is the same, and the simulator names the latest release of `modules`, as it stands on the latest tag of `spec`.
-- **Now, not later.** Since T42 the judgement refuses until the paths are read anew. The pin requires new paths anyway, so one run gives both the packages that the learners will get and the paths on the new library.
-- **1,500 at 47 minutes.** The 45 minutes of R38 are the margin on a free machine, and the run went on a busy host: the CPU per process of the base is about 38.7 minutes against 33 in T41, and part of the difference is the neighbours. The run holds the rule of the hour, while 1,400 learners would make the resolution of "no worse" coarser and would cost one more run of the base.
+- **Now, not later.** Since the move to `learner-model` v0.1.5 the judgement refuses until the paths are read anew. The pin requires new paths anyway, so one run gives both the packages that the learners will get and the paths on the new library.
+- **1,500 at 47 minutes.** The 45 minutes of the rule of the hour are the margin on a free machine, and the run went on a busy host: the CPU per process of the base is about 38.7 minutes against 33 on the pin before, and part of the difference is the neighbours. The run holds the rule of the hour, while 1,400 learners would make the resolution of "no worse" coarser and would cost one more run of the base.
 
 — *Rejected:*
 - v0.2.1 — the same index, but not the latest release;
@@ -1162,69 +1111,61 @@ Where it is written: RUN.md, T42; [architecture.md](architecture.md), subsection
 - 1,400 learners or a new measurement on a free host — see the "Why".
 
 — *Consequence:*
-- the judgement judges again (the 2026-11-11 amendment to R41);
-- the thresholds of the CI of `modules` are taken from the new record of the bands (R27);
-- the merge of the epic's branch releases a tag of `sim` with T42 and T43, and the gates of `learner-model` and `engine` take it by tasks of their own; row 4.10 of COORDINATION.md `spec` — by row В12 of table 3 of RUN.md, «в реестр spec».
-
-Where it is written: RUN.md, T43; [architecture.md](architecture.md), the status, subsection 2.5 and sections 3, 3.3, 3.8 and 4; README; `internal/published/`, `gate.json`, `internal/criterion/paths.json`.
+- the judgement judges again;
+- the thresholds of the CI of `modules` are taken from the new record of the bands;
+- the merge releases a tag of `sim` with the format's checks and this pin, and the gates of `learner-model` and `engine` take it by tasks of their own; a row «В реестр spec» tells `spec` that `sim`'s part of the order is done;
+- the files: `internal/published/`, `gate.json`, `internal/criterion/paths.json`; [architecture.md](architecture.md); [README.md](README.md).
 
 ## The base on `learner-model` v0.1.6
 
-**R43. The base stands on `learner-model` v0.1.6, where `Readout.Task` is faster with the same bits. The paths are read anew on it, and so are the gate's bands, and the numbers did not shift by a single bit. The sizes of the runs are as before: the gate — 150 learners a cell, the decisive run — 1,500; the measurement of epic E5 raises them (Д7).** The author's answer 2026-11-11, after the summing up of E4: «сделай что сейчас можешь из таблицы 4» and the move to v0.1.6 with the paths, not only a preliminary measurement (RUN.md, T45); the rest is a proposal of the execution.
-- **What was found** (2026-11-11; the sources — [architecture.md](architecture.md), section 4):
-  - `learner-model` v0.1.6 came out 2026-11-11, the tag on commit 7d796e2 — "Make Readout.Task faster with the same bits (T40)". Row В39 of its RUN.md promises the same API and the same P to the bit. The module's `go.mod` at the tag has no requirements — only `go 1.27.3` —, so it does not move the tag of `spec`;
+**R43. The base stands on `learner-model` v0.1.6, where `Readout.Task` is faster with the same bits. The paths are read anew on it, and so are the gate's bands, and the numbers did not shift by a single bit. The sizes of the runs do not change with it: a measurement of its own, on a free machine and on the runners, raises them.**
+- **What was found** (2026-11-11, sources 3.7):
+  - `learner-model` v0.1.6 came out 2026-11-11, the tag on commit 7d796e2 — a faster `Readout.Task` with the same bits. Its plan promises the same API and the same P to the bit. The module's `go.mod` at the tag has no requirements — only `go 1.27.3` —, so it does not move the tag of `spec`;
   - `release-verify` accepted `learner-model-proto-v0.1.6.tar.gz` — "learner-model v0.1.6, signed by the shared release.yml of .github v0.1.21";
-  - of the two debts of table 4, only a part of Д7 is done now: Д3 waits for stage 2, and the sizes wait for a measurement on a free machine and on the runners. Neighbouring containers shared the host that day, the load average 25–46 on 20 cores.
+  - of the two debts of table 4 then, only a part of the one of the sizes is done now: Д3 waits for stage 2, and the sizes wait for a measurement on a free machine and on the runners. Neighbouring containers shared the host that day, the load average 25–46 on 20 cores.
+- **Decided by the author:** the move to v0.1.6 with the paths, not only a preliminary measurement.
 - **A proposal of the execution:**
   - `go.mod`, `go.sum` and `gate.json` — on v0.1.6 (7d796e2); the tests that name the pin — too;
-  - `just gate exact` — all 69 numbers are the same to the bit; the bands are recorded anew only for the sake of the reason (the 2026-11-11 amendment to R26);
-  - the decisive runs of the base and of the ceiling on 1,500 learners — the same bytes of the lines as in T43, and new paths with the same values (the 2026-11-11 amendments to R04 and R28).
-- **A measurement of the speed-up, preliminary.** The CPU per process of the base is about 25.9 minutes against 38.7 in T43, a third less; of the ceiling 18.0 against 18.8: the ceiling hardly calls `Readout.Task`. By the clock the base took 62 min 24 s — longer than an hour — at a load average of up to 46. The gate in the container — 1 min 16 s by the clock and 18.7 CPU minutes against 28.4 in T43. This is not the measurement of Д7: that one goes on a free machine and on the runners, and by it E5 chooses the sizes (the 2026-11-11 amendments to R31 and R33).
+  - `just gate exact` — all 69 numbers are the same to the bit; the bands are recorded anew only for the sake of the reason;
+  - the decisive runs of the base and of the ceiling on 1,500 learners — the same bytes of the lines as on v0.1.5, and new paths in `paths.json` with the same values.
+- **A measurement of the speed-up, preliminary** (measurements 1.3). The CPU per process of the base is about 25.9 minutes against 38.7 on v0.1.5, a third less; of the ceiling 18.0 against 18.8: the ceiling hardly calls `Readout.Task`. By the clock the base took 62 min 24 s — longer than an hour — at a load average of up to 46. The gate in the container — 1 min 16 s by the clock and 18.7 CPU minutes against 28.4 on v0.1.5. This is not the measurement of the sizes: that one goes on a free machine and on the runners.
 
 — *Why:*
-- **Now, not in E5.** The move costs the numbers nothing and takes one change of the pin off E5: the second round of the model is judged on one pin of `sim` (row В42 RUN.md `learner-model`), and the measurement of the sizes must already go on v0.1.6. The decisive runs also gave the first estimate of the speed-up on the previous sizes.
-- **The paths anew, though the numbers are the same.** The judgement holds the base to the libraries of the paths (R40): without new paths it would refuse every base on v0.1.6, as from T42 to T43.
-- **Without a second run of the ceiling.** The new ceiling matched the ceiling of T43 to the byte of the lines, and that one was itself repeated whole (R42).
-- **62 minutes under the rule of the hour.** The time by the clock is the neighbours': the base took a third less CPU than in T43, where the run fitted into 47 minutes. The size of the decisive run does not change by this measurement, neither up nor down.
+- **Now, not in the next epic.** The move costs the numbers nothing and takes one change of the pin off the next epic: the second round of the model is judged on one pin of `sim`, as `learner-model` asked (sources 3.7), and the measurement of the sizes must already go on v0.1.6. The decisive runs also gave the first estimate of the speed-up on the previous sizes.
+- **The paths anew, though the numbers are the same.** The judgement holds the base to the libraries of the paths: without new paths it would refuse every base on v0.1.6, as it did between the move to v0.1.5 and the pin of the packages.
+- **Without a second run of the ceiling.** The new ceiling matched the ceiling on v0.1.5 to the byte of the lines, and that one was itself repeated whole.
+- **62 minutes under the rule of the hour.** The time by the clock is the neighbours': the base took a third less CPU than on v0.1.5, where the run fitted into 47 minutes. The size of the decisive run does not change by this measurement, neither up nor down.
 
 — *Rejected:*
-- only a preliminary measurement on a copy of the repository, without the move — the pin would stay on v0.1.5, and the change would fall on E5;
+- only a preliminary measurement on a copy of the repository, without the move — the pin would stay on v0.1.5, and the change would fall on the next epic;
 - the move without new paths — the judgement would refuse;
-- raise the sizes by this measurement — the host is busy, and the rule of the 2026-11-11 amendments to R31 and R33 requires a free machine and the runners.
+- raise the sizes by this measurement — the host is busy, and the rule of the sizes requires a free machine and the runners.
 
-— *Consequence:*
-- Д7 stays: E5 raises the sizes, and its first task is now the measurement and the sizes, without the move to v0.1.6;
-- the merge of the branch of epic E4 releases a tag of `sim` with this move too.
-
-Where it is written: RUN.md, T45; [architecture.md](architecture.md), the status and sections 3, 3.6–3.9 and 4; README; `go.mod`, `gate.json`, `internal/criterion/paths.json`.
+— *Consequence:* `go.mod`, `go.sum`, `gate.json`, `internal/criterion/paths.json`; [architecture.md](architecture.md); [README.md](README.md). The merge releases a tag of `sim` with this move too.
 
 ## Epic E5
 
-**R44. Epic E5 is «Размеры и второй круг модели»: the sizes of the runs on `learner-model` v0.1.6 by measurement (Д7), the judgement `model-2` with a confirmation on `held-out-model-1`, the move of the base to the release of the chosen one and the summing up — T46–T49. The engine's judgement `engine-2` is a separate epic E6 of table 2 of RUN.md, on the base after `model-2`.** The author's answers 2026-11-11, after the summing up of E4 and T45: «разверни эпик E5», and the content — the sizes and `model-2`, with `engine-2` separately (RUN.md, table 1, «Решено автором»); the rest is a proposal of the execution.
+**R44. Epic E5 is «Размеры и второй круг модели»: the sizes of the runs on `learner-model` v0.1.6 by measurement, the judgement `model-2` with a confirmation on `held-out-model-1`, the move of the base to the release of the chosen one and the summing up. The engine's round `engine-2` is not in it: it goes on the base after `model-2`, and no round of `sim` is laid out by plan — a judgement of the engine, or of the model, is an epic only when its library brings a candidate with a reason of its own.**
 - **What was found** (2026-11-11; RUN.md of `learner-model` and of `engine` on `main`, read through `gh api`):
-  - E5 of `learner-model` — «Второй круг кандидатов модели» — is laid out: its T41 waits for a tag of `sim` with the sizes after v0.1.6, T43 is the exploration after the analysis of `M3.settle` for `F-break`, T44 up to three draft pull requests of candidates, T45 the judgement of `sim` and the release of the chosen one;
-  - `engine` is in its E7, «Закрепление в уроке», and its E5 — «Второй круг коридора» — stands in table 2 not laid out: no candidates of the engine are in sight;
-  - `spec` has not recorded rows В42 and В43 RUN.md `learner-model`, «в реестр spec», yet. Their recommendations are one pin of `sim` per round of the model and the round of the model before the round of the engine;
-  - the base is already on `learner-model` v0.1.6 (R43), so the sizes are measured without a move.
-- **A proposal of the execution:** the order of the tasks — RUN.md, «Почему такой порядок»; one pin from the tag of T46 to the choice of the judgement `model-2` — the epic's «Общее для задач»; the gate's size — from 100 to 300, as in the 2026-11-11 amendment to R31, not from 150, as in the row E5 of table 2 that T44 proposed.
+  - E5 of `learner-model` — «Второй круг кандидатов модели» — is laid out: "Gate" on a tag of `sim` with the sizes after v0.1.6, the exploration after the analysis of `M3.settle` for `F-break`, up to three draft pull requests of candidates, the judgement of `sim` and the release of the chosen one;
+  - `engine` is in its E7, «Закрепление в уроке», and its E5 — «Второй круг коридора» — stands in its table 2 not laid out: no candidates of the engine are in sight;
+  - `spec` has not yet recorded two questions of `learner-model` to it: one pin of `sim` per round of the model, and the round of the model before the round of the engine, both with these recommendations (sources 3.7);
+  - the base is already on `learner-model` v0.1.6, so the sizes are measured without a move.
+- **Decided by the author:** the content — the sizes and `model-2`, with `engine-2` apart.
+- **A proposal of the execution:**
+  - one pin from the tag with the sizes to the choice of the judgement `model-2`, but for a tag of `spec` that keeps the bits: the version of `spec` in `go.mod` and `gate.json` is raised in the middle of the round, and the packages, the libraries, the paths and the bands stay as before;
+  - the gate's size — by the rule of the slowest measurement, from 100 to 300, not from 150, as the row of the epic in table 2 proposed;
+  - the epic's order of tasks and its rules common to the tasks are in its archive, [docs/plan/E5.md](plan/E5.md), and stay in force.
 
 — *Why:*
-- **The sizes first.** The exploration and the judgement of `learner-model` go on the sizes of the decisive run of `sim`, and "Gate" of `learner-model` waits for a tag with them. The sizes move the paths and the bands, and in the middle of a round the pin does not change (В42 RUN.md `learner-model`).
-- **`engine-2` separately.** The round of the model first — by the recommendation of В43 RUN.md `learner-model`, and the round of the engine is judged on the base after it. And there are no candidates of the engine even in the plan: an epic that waits for them would stand open without a date, and with it the summing up of the sizes and of the round of the model.
+- **The sizes first.** The exploration and the judgement of `learner-model` go on the sizes of the decisive run of `sim`, and "Gate" of `learner-model` waits for a tag with them. The sizes move the paths and the bands, and in the middle of a round the pin does not change.
+- **`engine-2` apart.** The round of the model first, as `learner-model` recommended, and the round of the engine is judged on the base after it. And there are no candidates of the engine even in the plan: an epic that waits for them would stand open without a date, and with it the summing up of the sizes and of the round of the model.
 
 — *Rejected:*
-- all three rounds in one epic, as T44 proposed (row E5 of table 2 of RUN.md as of commit 77828ca) — see the "Why";
+- all three rounds in one epic, as the row of the epic in table 2 proposed — see the "Why";
 - the judgement `model-2` before the sizes — the round would have to be judged anew or on rough sizes, and "Gate" of `learner-model` waits for a tag with them anyway.
 
-— *Consequence:* E4 is in the archive [docs/plan/E4.md](plan/E4.md); the row E5 of table 2 of RUN.md went to table 1, and in its place stood E6 «Второй круг движка»; T46 closes Д7.
-
-Where it is written: RUN.md, tables 1, 2 and 4 and «Эпик E5»; [architecture.md](architecture.md), the status and section 3; README.
-
-— *Amendment 2026-11-12:* "one pin per round" has an exception, R45: the version of `spec` in `go.mod` and `gate.json` is raised to v0.16.3 in the middle of the round `model-2`, because the bits are the same; the packages, the libraries, the paths and the bands are as before. The move and the rebuilding of the documents by row 7.10 of COORDINATION.md `spec` are the tasks T50–T53, outside an epic.
-
-— *Amendment 2026-11-13 (R47):* RUN.md, «Почему такой порядок» and table 1, «Решено автором», moved word for word to [docs/plan/E5.md](plan/E5.md), «Из RUN.md», when RUN.md was shortened; what they say is in force.
-
-— *Amendment 2026-11-15 (R59):* the separate epic E6, `engine-2`, is no longer in table 2 of RUN.md, and no round of `sim` is laid out by plan: a judgement of the engine, or of the model, is an epic only when the library brings a candidate with a reason of its own.
+— *Consequence:* RUN.md, `run/EPICS.md`, [docs/plan/E4.md](plan/E4.md) and [docs/plan/E5.md](plan/E5.md); [architecture.md](architecture.md).
 
 ## The tag `spec` v0.16.3
 
