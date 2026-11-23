@@ -8,7 +8,7 @@ Table 4 of [RUN.md](../RUN.md): what was put off on purpose, its risk, when to r
 
 ## Table 4. Technical debt
 
-Numbers are not reused: next — Д18.
+Numbers are not reused: next — Д19.
 
 | ID | Debt | From | Risk while open | When to return |
 |---|---|---|---|---|
@@ -18,3 +18,4 @@ Numbers are not reused: next — Д18.
 | Д15 | `docs/architecture.md` cites R31 and R33 by number alone, without their dated amendments (R160 spec), while the headlines of these entries still hold superseded values — R31 100 learners of the gate, R33 1,000 of a decisive run — and the values in force are in their amendments | T86 | A session that follows the citation reads the headline and takes a superseded value, or stops on the contradiction with the architecture | T97 and T98 fold these entries (T94 folded R04, T95 R05), by R171 spec; the last of them deletes the row |
 | Д16 | The headlines of R70, R75 and R77 still say `sim` "stands on `spec` v0.18.4 / v0.18.14 / v0.18.27, the latest tag", and R60 and R70 carry dated amendments of later moves, while R71 says the tag is the submodule's and a move is no entry (R160 spec) | T91 | A session that reads the log before a change takes a past tag for the pin in force, or stops on the contradiction with R71 and `go.mod` | T100 and T102 rewrite these entries: what each decided beyond the tag, the tag left to R71; the last of them deletes the row |
 | Д17 | The Why of R05 in `docs/decisions.md` holds the results of a measurement in planning — the share of items with P* below 0.50 and the corridor `E1` on `G0` and `G2-half`, 300 working learners a cell, `engine` v0.1.0 —, whose home is `docs/measurements.md`; folding R05, T95 kept them in place, since its part touches no other document | T95 | A session reads a measurement in the log instead of in `docs/measurements.md`, and nothing cites it as a measurement | T105, with `docs/measurements.md`: a subsection for the measurement, and the Why of R05 cites it in place of the numbers; T105 deletes the row |
+| Д18 | Two claims about other programs in `docs/decisions.md` have no record of `docs/sources.md`: R19, that the license of `github.com/santhosh-tekuri/jsonschema/v6` is Apache-2.0 by its `LICENSE` read 2026-11-08, and R23, that `skills.go` of `engine` v0.1.0 reads reachability by the model's P no lower than 0.70; folding R14–R25, T96 kept them in place, since its part touches no other document | T96 | A session takes an outside fact for checked that nobody quoted, and the documents check cannot hold it to a source | T105, with `docs/sources.md`: a record for each, and R19 and R23 cite it; T105 deletes the row |

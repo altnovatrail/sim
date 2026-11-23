@@ -85,7 +85,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T93 | Ссылки по R171 spec: план, CLAUDE.md, `.claude/rules/`, комментарии кода | Claude | да | T92 |
 | [x] | T94 | Ссылки по R171 spec: журнал, R01–R04 | Claude | — | T93 |
 | [x] | T95 | Ссылки по R171 spec: журнал, R05–R13 | Claude | — | T93 |
-| [ ] | T96 | Ссылки по R171 spec: журнал, R14–R25 | Claude | — | T93 |
+| [x] | T96 | Ссылки по R171 spec: журнал, R14–R25 | Claude | — | T93 |
 | [ ] | T97 | Ссылки по R171 spec: журнал, R26–R32 | Claude | — | T93 |
 | [ ] | T98 | Ссылки по R171 spec: журнал, R33–R44 | Claude | — | T93 |
 | [ ] | T99 | Ссылки по R171 spec: журнал, R45–R54 | Claude | — | T93 |
@@ -151,14 +151,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Как проверить:** при выборе — `just gate exact`, `just ci-test`, `just ci-lint`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
 - **Отложено (2026-11-16):** `[?]` — вслед за T72, по тому же решению автора (R69): суда нет, и базе не на что переходить; эпик не уходит в архив, пока таблица 1 не вся отмечена (правила RUN.md, «Epics»). Вернуться вместе с T72.
 - **Разделы:** R04, R26, R29, R40, R55, R58, R59; [docs/architecture.md](docs/architecture.md), разделы 3, 3.6 и 3.9; architecture 3.9 spec; dpia 10.2 spec.
-
-#### T96. Ссылки по R171 spec: журнал, R14–R25
-
-- **Цель:** записи R14–R25 [docs/decisions.md](docs/decisions.md) — разделы `##` от «Packages» до «The criteria and the report» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
-- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
-- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
-- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
-- **Разделы:** R171 spec, R160 spec; свои записи R14–R25; `spec/repo-template/files/docs/decisions.md`.
 
 #### T97. Ссылки по R171 spec: журнал, R26–R32
 
