@@ -13,851 +13,171 @@
 ## The tag `spec`
 
 **R01. `sim` stands on `spec` v0.2.9: the submodule `spec/` is at this tag, the links to `spec` pinned to a tag name it, and what came from the template is as in the template v0.2.9. Since then the documents are checked by `just -f spec/justfile docs-check-repo`.**
-- **What the tag brings `sim`** (`git diff v0.1.0 v0.2.9` in `spec/`, read 2026-10-20; Д6 in table 4 of RUN.md `spec`):
-  - R27 spec — the generator of randomness and the derivation of seeds from `spec` — one for the whole platform: `module-kit`, widgets, `engine` and `sim`. The simulator derives the seeds of virtual learners with it, not with a scheme of its own — so card 3.9 spec now says too —, and passes the generator's test vectors in CI, as they do (Т-18). The scheme of standalone's simulator — FNV-64a and PCG, the function `seeded` in `tools/learners/child.go` — stays in `sim` only if epic E2 of `spec` chooses it for the whole platform: it chooses the algorithm by the recommendations of T02 module-kit and T03 engine and takes this scheme into account. This settles the question of T01 "the simulator's own generator or the generator of `spec`";
-  - R28 spec — `learner-model` sets the types of the graph, and `engine` takes them from it; they are simple and not from `module-kit` (architecture 3.8 spec). On the simulator `sim` passes the graph to both libraries, and it translates the graph from a module package into one form, not two — this is the argument of R28 spec itself;
-  - R23 spec — the success corridor is a rule of `engine`, and `learner-model` gives the probability of a correct answer. The "mastered" threshold, which in standalone is tied to the corridor's target, R23 spec left open: where it lives is decided by T01 engine and T01 learner-model, and a change to one goes through `sim` together with the other. This is an input of T02 — whether one criterion serves both libraries — and of T03 — what is put into the CI of each and in what order their releases come out;
-  - R29 spec — the list of the engine's reason codes is a contract in `spec`: T03 engine proposes the codes, and epic E3 of `spec` records them. The simulator checks the reason code of each choice (concepts 12 spec), so this is an input of the measure of T02;
-  - R30 spec — the CI checks are the same for all repositories, and `sim` will have them even before code: the secret scan, DCO, CodeQL, Scorecard and the documents check — shared checks from `.github`. Scorecard is shared if its server accepts the result of the shared workflow, and otherwise it is a copy in the repository (architecture 3.11 spec); for `tutor` the server accepted it (T16 `spec`). All the checks but Scorecard hold the merge, the SonarCloud quality gate among them, and a pull request goes into `main` only by a merge commit. T21 `spec` will connect them: its session writes the CI files here, together with `dependabot.yml` and the exclusion of `spec/**` for SonarCloud (Д7 in table 4 of RUN.md `spec`), and it also sets the ruleset of the branch `main`. Until then `sim` has no CI. The checks of the language will come with the first code of `sim` (repositories 1 spec);
-  - architecture 3.11 spec — which workflows are shared and which are the repository's own was decided by `.github` (R03 .github). Shared are the checks before code and, with the first code of `module-kit`, the wrappers of Go and TypeScript around the repository's recipes, with the license check, and the release with a signature. The gate of `sim` is a workflow of its own in the CI of `learner-model`, `engine` and `modules`, not a shared one, and the test vectors of the generator of `spec` in `sim`, as in `module-kit` and `engine`, are a workflow of its own too (architecture 3.2 .github). The table of `.github`'s own workflows is written by the recommendation of Т-16 — `go.work`. [architecture.md](architecture.md), section 2.3, and T03 said that the detailing of `.github` still decides this;
-  - the opening of architecture 3 spec — an item of the detailing beyond the card is entered into the card by the repository's own "outcome of detailing", with a row of its table 3 «в реестр spec», once the decision is taken. This answers the question that T08 `spec` left when it set up `sim`: whether to add Т-16 to "To decide when detailed" of card 3.9 spec. For `sim` this is section 2.3, and T04 writes the change of the card;
-  - R31 spec — a release of `spec` comes out by itself, after green CI on `main`: the next patch of the line, immutable, with a GitHub attestation. A repository still moves to a new tag by a task of its own;
-  - R32 spec — a repository's documents are checked by the `docs-check` of the `spec` its submodule stands on: the links, its own sections and log, the tables «В» and «Д», and the citations of `spec` by the submodule at its tag. An example of a citation is written in inline code, so that the check does not take it for a citation (RULES.md, Citations);
-  - R33 spec and rule 12 of the template — before a new task the findings of SonarCloud, CodeQL and Scorecard from the last one are closed. A finding that a change cannot close stays open with a reason, and the reasons shared by all repositories are written in R33 spec;
-  - RULES.md, but for the rule about examples of citations: a development or CI tool that ships nowhere and puts none of its own code into what ships may carry another OSI-approved license too, or free terms for open source, but only as a named exception: in the license check or in the decision that brings it in (Hard rules; R12 spec). This concerns the tools of the future code of `sim`;
-  - R24, R25 and R26 spec — about other components: the key for eval, the page of samples, the account with the owner's profile and the children's profiles. They do not change the documents of `sim`;
-  - devcontainer — the base image `devcontainers/base` 3.0.10 by digest; Claude Code is installed without the packages' scripts, its `install.cjs` is run by name, and `claude --version` stops the build on a stub; `git.alwaysSignOff` — a commit from Source Control is signed off by DCO (R22 spec, R30 spec).
+- **What the tag brings `sim`** (`git diff v0.1.0 v0.2.9` in `spec/`, read 2026-10-20):
+  - the random generator and the derivation of seeds are `spec`'s, one for the whole platform: `module-kit`, widgets, `engine` and `sim`. The simulator derives the seeds of virtual learners with it, not with a scheme of its own — so the component's card in `spec` now says too —, and passes the generator's test vectors in CI, as they do. The scheme of standalone's simulator — FNV-64a and PCG, the function `seeded` in `tools/learners/child.go` — stays in `sim` only if `spec` chooses it for the whole platform: `spec` chooses the algorithm by the recommendations of `module-kit` and `engine` and takes this scheme into account. This settles whether the simulator has a generator of its own: it has not;
+  - `learner-model` sets the types of the graph, and `engine` takes them from it; they are simple and not from `module-kit`. On the simulator `sim` passes the graph to both libraries, and it translates the graph from a module package into one form, not two — the very argument for these types;
+  - the success corridor is a rule of `engine`, and `learner-model` gives the probability of a correct answer. Where the "mastered" threshold lives, which in standalone is tied to the corridor's target, the tag left to `engine` and `learner-model`, and a change to one goes through `sim` together with the other. This is an input of the criterion — whether one serves both libraries — and of the gate in CI — what is put into the CI of each and in what order their releases come out;
+  - the list of the engine's reason codes is a contract in `spec`: `engine` proposes the codes, and `spec` records them. The simulator checks the reason code of each choice, as `spec` requires at every choice, so the list is an input of the measures;
+  - the CI checks are the same for all repositories, and `sim` will have them even before code: the secret scan, DCO, CodeQL, Scorecard and the documents check — shared checks from `.github`. Scorecard is shared if its server accepts the result of the shared workflow, and otherwise it is a copy in the repository; for `tutor` the server accepted it. All the checks but Scorecard hold the merge, the SonarCloud quality gate among them, and a pull request goes into `main` only by a merge commit. A task of `spec` connects them: its session writes the CI files here — the calls of the shared workflows, `dependabot.yml`, `.sonarcloud.properties` with the exclusion of `spec/**` —, not a task of this repository, and it also sets the ruleset of the branch `main`. Until then `sim` has no CI. The checks of the language come with the first code of `sim`;
+  - which workflows are shared and which are the repository's own `.github` decided. Shared are the checks before code and, with the first code of `module-kit`, the wrappers of Go and TypeScript around the repository's recipes, with the license check, and the release with a signature. The gate of `sim` is a workflow of its own in the CI of `learner-model`, `engine` and `modules`, not a shared one, and so are the test vectors of the generator of `spec` in `sim`, as in `module-kit` and `engine`. The table of `.github`'s own workflows takes `go.work`, which the libraries' CI writes on the fly; [architecture.md](architecture.md) said that the detailing of `.github` still decides this;
+  - an item of the detailing beyond the card enters the card by the repository's own outcome of detailing, with a row «В реестр spec» of its table 3, once the item is decided. This answers what `spec` left when it set up `sim`: whether the way the libraries' CI takes the simulator goes into "To decide when detailed" of its card. A task of `sim` writes that change of the card;
+  - a release of `spec` comes out by itself, after green CI on `main`: the next patch of the line, immutable, with a GitHub attestation. A repository still moves to a new tag by a task of its own;
+  - a repository's documents are checked by the `docs-check` of the `spec` its submodule stands on: the links, its own sections and log, the tables «В» and «Д», and the citations of `spec` by the submodule at its tag. An example of a citation is written in inline code, so that the check does not take it for one;
+  - before a new task the findings of SonarCloud, CodeQL and Scorecard from the last one are closed, by the template's rules of the plan. A finding that a change cannot close stays open with a reason, and the reasons shared by all repositories are written in `spec`;
+  - the shared rules, but for the rule about examples of citations: a development or CI tool that ships nowhere and puts none of its own code into what ships may carry another OSI-approved license too, or free terms for open source, but only as a named exception: in the license check or in the decision that brings it in. This concerns the tools of the future code of `sim`;
+  - the key for eval, the page of samples, the account with the owner's profile and the children's profiles concern other components and do not change the documents of `sim`;
+  - devcontainer — the base image `devcontainers/base` 3.0.10 by digest; Claude Code is installed without the packages' scripts, its `install.cjs` is run by name, and `claude --version` stops the build on a stub; `git.alwaysSignOff` — a commit from Source Control is signed off by DCO.
 - **What is changed here:**
   - `spec/` — at v0.2.9, commit 5eafb1a. The links to `spec` in README.md and the tag in CLAUDE.md and RUN.md — v0.2.9. That the repository was set up from the template v0.1.0 the opening of the log still says: this is history;
-  - five examples of citations of the old template are in inline code: two in CLAUDE.md, Documents, two in «Ссылках» of RUN.md and one in the opening of the log. Rule 6 of RUN.md and the section Environment in CLAUDE.md name `docs-check-repo`, and rule 12 came into RUN.md. These places are as in the template v0.2.9;
+  - five examples of citations of the old template are in inline code: two in CLAUDE.md, two in the plan's citations of RUN.md and one in the opening of the log. The plan's rule on checks and the environment of CLAUDE.md name `docs-check-repo`, and the rule on closing the findings came into RUN.md. These places are as in the template v0.2.9;
   - `.devcontainer/` — the one that the recipe of `spec` v0.2.9 (`editDevcontainer`) builds for `sim` of the kind `go`. The name of the container and of the network, `postStartCommand` and the Go extension are its own, as on v0.1.0. The move brings in no differences from the template;
-  - what the tag decided for `sim` is named in its documents:
-    - T01 — R27 spec; T02 — R23 and R29 spec; T03 — R23 spec and R03 .github; T04 — the change of the card for section 2.3;
-    - [architecture.md](architecture.md): section 1 — R27, R28 and R30 spec; the opening of section 2 — the change of the card; section 2.1 — R27 spec; section 2.2 — R23 and R29 spec; section 2.3 — R23 spec and R03 .github;
-    - CLAUDE.md, The component, — R27 spec; «Почему такой порядок» and «Не входит» in RUN.md.
+  - what the tag decided for `sim` is named in the tasks of the plan, in [architecture.md](architecture.md) and in CLAUDE.md, on the component.
 
-— *Why now:* T21 `spec` connects the shared checks from `.github` here (R30 spec). The shared `documents.yml` builds the stage `toolchain` from the `.devcontainer/Dockerfile` of its caller and runs `just -f spec/justfile docs-check-repo` in it ([`documents.yml`](https://github.com/altnovatrail/.github/blob/ff2a359/.github/workflows/documents.yml), the release v0.1.0 of `.github`, commit ff2a359, read 2026-10-20). And this recipe is in `spec` only from v0.2.3 (R32 spec): on v0.1.0 the required check "Documents / docs-check-repo" would be red and would hold any merge. v0.2.9 is the latest release of `spec` as of 2026-10-20, and immutable (`gh release view -R altnovatrail/spec`); `gh release verify v0.2.9 -R altnovatrail/spec` confirmed it by its attestation, and the tag is on commit 5eafb1a. Д6 in table 4 of RUN.md `spec` also says to take the latest release at the time of the task.
+— *Why now:* a task of `spec` connects the shared checks from `.github` here. The shared `documents.yml` builds the stage `toolchain` from the `.devcontainer/Dockerfile` of its caller and runs `just -f spec/justfile docs-check-repo` in it ([`documents.yml`](https://github.com/altnovatrail/.github/blob/ff2a359/.github/workflows/documents.yml), the release v0.1.0 of `.github`, commit ff2a359, read 2026-10-20). And this recipe is in `spec` only from v0.2.3: on v0.1.0 the required check "Documents / docs-check-repo" would be red and would hold any merge. v0.2.9 is the latest release of `spec` as of 2026-10-20, and immutable (`gh release view -R altnovatrail/spec`); `gh release verify v0.2.9 -R altnovatrail/spec` confirmed it by its attestation, and the tag is on commit 5eafb1a. `spec` also bids a repository take the latest release at the time of its move.
 
 — *Rejected:*
-- stay on v0.1.0 until the first code: the documents check from T21 `spec` would hold any merge, T01 would read `spec` without R27 spec, and a link to a section of `spec` that the tag does not have, or a gap in the log, would pass unnoticed (Д6 in table 4 of RUN.md `spec`);
-- v0.2.3–v0.2.8: each has `docs-check-repo`, but Д6 says to take the latest release. Rule 12 of the template came in v0.2.7, R33 spec in v0.2.8, and T21 `spec`, which will connect the checks here, only in v0.2.9;
-- move without the devcontainer, or carry over its changes selectively: the container of `sim` is the container of `spec` (CLAUDE.md, Environment), and a difference would have to be recorded as a decision, and there is no reason for one;
-- examples of citations in guillemets, as before: `docs-check-repo` checks a number in guillemets against the log, and R32 spec rejected not checking them;
-- rewrite T01–T04 for the new tag: the tag decided one fork for `sim` — the seed generator in T01 —, and the rest brings the tasks inputs that they sort out themselves. So the tasks have short inserts with a reference to the R.
+- stay on v0.1.0 until the first code: the documents check would hold any merge, the planning of the populations would read `spec` without its generator of seeds, and a link to a section of `spec` that the tag does not have, or a gap in the log, would pass unnoticed;
+- v0.2.3–v0.2.8: each has `docs-check-repo`, but the move takes the latest release. The rule on closing the findings came into the template in v0.2.7, the shared reasons for findings in v0.2.8, and the task that connects the checks here only in v0.2.9;
+- move without the devcontainer, or carry over its changes selectively: the container of `sim` is the container of `spec`, and a difference would have to be recorded as a decision, and there is no reason for one;
+- examples of citations in guillemets, as before: `docs-check-repo` checks a number in guillemets against the log, and `spec` rejected not checking them;
+- rewrite the tasks of the plan for the new tag: the tag decided one fork for `sim` — the seed generator —, and the rest brings the tasks inputs that they sort out themselves. So the tasks took short inserts.
 
-— *Consequence:* T05 goes first in table 1 of RUN.md, and T01 depends on it. The devcontainer image was not built here — Д1 in table 4 of RUN.md: T01 waits for Rebuild Container too. The commit, push and merge of this move are the executor's, by a one-off instruction of the author recorded in T05; rule 7 of RUN.md stays as in the template. The CI files — the calls of the shared workflows, `dependabot.yml`, `.sonarcloud.properties` — are written here by T21 `spec`, not by a task of this repository. — RUN.md, T05, T01–T04; CLAUDE.md; README.md; `.devcontainer/`; [architecture.md](architecture.md), sections 1, 2, 2.1, 2.2 and 2.3.
+— *Consequence:* RUN.md; CLAUDE.md; README.md; `.devcontainer/`; [architecture.md](architecture.md).
 
-**R02. `sim` stands on `spec` v0.9.4, the latest release of `spec`: the submodule `spec/` is at this tag, the links to `spec` pinned to a tag name it, and what came from the template is as in the template v0.9.4. The tag decided for `sim` much of what the tasks of E1 held as options — the modules of the first slice, the format and the package, the seed generator, the reason codes, the level per module, forgetting, the weights of evidence and the anchor skill —, and card 3.9 spec now names five items of the detailing instead of two. The tasks T01–T04 are narrowed to what the tag left to `sim`.** The author's instruction 2026-11-06: move to the latest release of `spec`, in one task, and the commit, pull request and merge are the executor's, as in T05. This is a task of its own, T06 (RULES.md, Across repositories).
-- **What the tag decided for `sim`** (`git -C spec diff v0.2.9 v0.9.4`, read 2026-11-06; the parts of `sim` in Д9, Д12, Д15, Д18, Д20, Д21, Д30–Д32, Д40, Д42, Д44, Д46, Д53, Д59, Д80, Д82, Д83, Д86, Д106 and Д107 of table 4 of RUN.md `spec`; [COORDINATION.md](../spec/COORDINATION.md), rows 4.1, 4.2 and 4.5):
-  - **card 3.9 spec** — five items of "To decide when detailed": the profiles, and forgetting among them; the criterion and the bands with their own measures of forgetting; the weights of evidence — learners with pages of a workbook; command of the anchor skill — a learner with both maths and the measure of a false "knows"; what the gate of `sim` in the CI of `modules` includes. The first four are sorted out by T01 and T02, the fifth by T03 ([architecture.md](architecture.md), section 2). The measures named there are proposals of `learner-model`, not decisions: T02 decides (Д82 `spec`);
-  - **the three modules of the first slice** (R41 spec; О-1 decided): olympiad maths 1–6 on a sheet, grade 3 maths on a workbook and short essays in English for any age, with feedback by a rubric. The profiles are children with a sheet and with a workbook and a learner of any age with essays instead of an adult with a text canvas (Д18 `spec`). There are no language modules in the first slice, and the simulator checks forgetting on the two maths (architecture 3.9 spec). On the simulator the engine holds the corridor on all three graphs where there is a verdict, and goes by the author's order where there is none (product 10 spec; concepts 4 spec);
-  - **the format and the package:** the format has its own version, and while it is v0, the platform reads only the current one — from v0.9.0 this is 0.3 (R44, R101 spec; Д20, Д107 `spec`). `sim` reads the server part of the package, `server.json`, — the canonical view, with the tiers, the anchor skills, the bands and difficulty of the tasks and the numbers of the instances of templates, — by the types `formatv0.CanonicalView` of the Go module `spec`, without `module-kit` (R45, R49–R51, R62, R72 spec; architecture 3.9 spec; Д21, Д30–Д32, Д44, Д46 `spec`). The Go code takes the same tag of `spec` as the version of the Go module: the module's version and the submodule move together, and the module `spec` is excluded from Dependabot `gomod` (R64 spec; Д46 `spec`). This comes with the first code of `sim`. Д59 and Д107 `spec` say that `sim` reads the packages through `module-kit` — this diverges from R62 spec and the card, and the question went out as row В1 of table 3 of RUN.md, «В реестр spec»;
-  - **the seed generator** (R59 spec; Т-18 closed; Д40 `spec`): PCG, as in Go's `math/rand/v2`, and the stream of a place of randomness is derived by FNV-1a 64 from the seed and the names of the place. The function `seeded` of standalone's simulator is a particular case of this derivation: the place of the main seed with the names "experiment, unit, assignment", so the simulator's numbers are kept. The normal and exponential distributions are not in the format, and `sim` is responsible for their portability (architecture 3.9 spec). The simulator chooses the instance of a template by a seed with the same choice as the platform, and for the engine a template is one task (R60 spec; Д42 `spec`);
-  - **the answers of `learner-model`** (card 3.8 spec; Д82, Д86 `spec`): the level is per module, and a learner of two modules has two levels, so the profiles have no option "per area" (R03 learner-model); guessing is per item, by its answer slots (R03 learner-model); forgetting is the retention and stability of a skill, and the profiles have a calendar and laws of forgetting other than the model's law (R04 learner-model); the weights of evidence are the item's first verdict, help and the share of the answer of one attempt, and the profiles have pages of a workbook with dependent answers, help and repeated tasks instead of «серий однотипных пунктов» (R06 learner-model); command of the anchor skill (R07 learner-model);
-  - **the "mastered" threshold and the corridor's target** (the 2026-11-02 amendment to R23 spec; Т-16): the threshold is a constant of `learner-model`, and a new target of the corridor of `engine` is a new constant of the model, and both changes go through `sim` in one run. How the gate runs such a change when a pull request replaces one library is for T03 `sim` to decide;
-  - **the gate in CI of `modules`** (the 2026-11-01 and 2026-11-02 additions to Т-16; R76 spec; Д80 `spec`): until the first tag of `sim` there is no gate of the graph in the CI of `modules`; "the graph changed" means the canonical text of `skill_graph` differs from the newest published version of the same format version, and a move of the format goes without the simulator. What the gate includes — the graph or everything the simulator reads from a package — T03 decides, and until its answer, the graph;
-  - **the engine's inputs** (card 3.8 spec; Д83 `spec`): the lesson runs and the closed attempts of tasks with a rubric. On the simulator `sim` gives them, as it gives the graph;
-  - **the reason codes** (R100 spec; Д106 `spec`): the closed list `ReasonCode` of eight values, without parameters ([contracts text](../spec/contracts/README.md), section 15). At each choice the simulator checks a code from this list;
-  - **the cross-repository plan** (R76 spec; Д53 `spec`): row 4.1 of COORDINATION.md puts the move as the first task of the course of `sim`, row 4.2 epic E1, and 4.5 the code epic and the simulator's first tag;
-  - **the rules and the template:** an archive of the Dockerfile is checked against its sha256 sum (R34 spec; Д12 `spec`); the packages of `apt` come from a snapshot of the Ubuntu archive (R40 spec; Д15 `spec`) — the Dockerfile of `sim` has none; code comes with its tests, and the coverage in Codecov holds the merge (R48 spec); a file of a NovaTrail release enters code or CI only after `release-verify` (R77 spec); a row «В реестр spec» opens a question in table 3, and the session of `spec` finds it by itself (R81 spec); the normative texts for authors are in English (R42 spec); a review is one round (R35 spec) — rule 6 of RUN.md was already so; the status badges in the README (R48 spec);
-  - **devcontainer:** the base image `devcontainers/base` 3.0.12 by digest, Go 1.27.3 and buf 1.75.0 in the stage `toolchain`, a sha256 sum for each archive (R34, R64, R83 spec). The container in CLAUDE.md, Environment, is "Node.js, Go, buf and just";
-  - **`.github`:** `documents.yml` will move to the script `toolchain.sh` once all its callers stand on `spec` v0.2.17 or newer, and it was waiting for four repositories, `sim` among them (Д5 `.github`, by [COORDINATION.md](../spec/COORDINATION.md)). Now `sim` leaves them;
-  - the other decisions R36–R102 spec and the amendments to earlier ones — the interface packages, the path to AI, the rubric and eval, the contract `app` ↔ `api`, admission by age, the database of `api` — are about other components, and enter `sim` only by what is named above.
+**R02. `sim` stands on `spec` v0.9.4, the latest release of `spec`: the submodule `spec/` is at this tag, the links to `spec` pinned to a tag name it, and what came from the template is as in the template v0.9.4. The tag decided for `sim` much of what the tasks of its first epic held as options — the modules of the first slice, the format and the package, the seed generator, the reason codes, the level per module, forgetting, the weights of evidence and the anchor skill —, and the component's card in `spec` now names five items of the detailing instead of two. The tasks of the epic are narrowed to what the tag left to `sim`.** A move to a tag is a task of its own.
+- **What the tag decided for `sim`** (`git -C spec diff v0.2.9 v0.9.4`, read 2026-11-06):
+  - **the component's card** — five items of "To decide when detailed": the profiles, and forgetting among them; the criterion and the bands with their own measures of forgetting; the weights of evidence — learners with pages of a workbook; command of the anchor skill — a learner with both maths and the measure of a false "knows"; what the gate of `sim` in the CI of `modules` includes. The planning of the populations and of the criterion sorts out the first four, that of the gate in CI the fifth ([architecture.md](architecture.md)). The measures named there are proposals of `learner-model`, not decisions: the planning of the criterion decides;
+  - **the three modules of the first slice**: olympiad maths 1–6 on a sheet, grade 3 maths on a workbook and short essays in English for any age, with feedback by a rubric. The profiles are children with a sheet and with a workbook and a learner of any age with essays instead of an adult with a text canvas. There are no language modules in the first slice, and the simulator checks forgetting on the two maths. On the simulator the engine holds the corridor on all three graphs where there is a verdict, and goes by the author's order where there is none;
+  - **the format and the package:** the format has its own version, and while it is v0, the platform reads only the current one — from v0.9.0 this is 0.3. `sim` reads the server part of the package, `server.json`, — the canonical view, with the tiers, the anchor skills, the bands and difficulty of the tasks and the numbers of the instances of templates, — by the types `formatv0.CanonicalView` of the Go module `spec`, without `module-kit`. The Go code takes the same tag of `spec` as the version of the Go module: the module's version and the submodule move together, and the module `spec` is excluded from Dependabot `gomod`. This comes with the first code of `sim`. Some rows of `spec`'s debt said then that `sim` reads the packages through `module-kit`, against the card; the question went to `spec` as a row «В реестр spec», and the card stands;
+  - **the seed generator**: PCG, as in Go's `math/rand/v2`, and the stream of a place of randomness is derived by FNV-1a 64 from the seed and the names of the place. The function `seeded` of standalone's simulator is a particular case of this derivation: the place of the main seed with the names "experiment, unit, assignment", so the simulator's numbers are kept. The normal and exponential distributions are not in the format, and `sim` is responsible for their portability. The simulator chooses the instance of a template by a seed with the same choice as the platform, and for the engine a template is one task;
+  - **the answers of `learner-model`**: the level is per module, and a learner of two modules has two levels, so the profiles have no option "per area"; guessing is per item, by its answer slots; forgetting is the retention and stability of a skill, and the profiles have a calendar and laws of forgetting other than the model's law; the weights of evidence are the item's first verdict, help and the share of the answer of one attempt, and the profiles have pages of a workbook with dependent answers, help and repeated tasks instead of «серий однотипных пунктов»; command of the anchor skill;
+  - **the "mastered" threshold and the corridor's target**: the threshold is a constant of `learner-model`, and a new target of the corridor of `engine` is a new constant of the model, and both changes go through `sim` in one run. How the gate runs such a change when a pull request replaces one library is for the planning of the gate in CI to decide;
+  - **the gate in CI of `modules`**: until the first tag of `sim` there is no gate of the graph in the CI of `modules`; "the graph changed" means the canonical text of `skill_graph` differs from the newest published version of the same format version, and a move of the format goes without the simulator. What the gate includes — the graph or everything the simulator reads from a package — the planning of the gate in CI decides, and until its answer, the graph;
+  - **the engine's inputs**: the lesson runs and the closed attempts of tasks with a rubric. On the simulator `sim` gives them, as it gives the graph;
+  - **the reason codes**: the closed list `ReasonCode` of eight values, without parameters, in `spec/contracts/`. At each choice the simulator checks a code from this list;
+  - **the cross-repository plan** puts the move as the first task of the course of `sim`, then its first epic, then the code epic and the simulator's first tag;
+  - **the rules and the template:** an archive of the Dockerfile is checked against its sha256 sum; the packages of `apt` come from a snapshot of the Ubuntu archive — the Dockerfile of `sim` has none; code comes with its tests, and the coverage in Codecov holds the merge; a file of a NovaTrail release enters code or CI only after `release-verify`; a row «В реестр spec» opens a question in table 3, and the session of `spec` finds it by itself; the normative texts for authors are in English; a review is one round — the plan's rule on checks was already so; the status badges in the README;
+  - **devcontainer:** the base image `devcontainers/base` 3.0.12 by digest, Go and buf in the stage `toolchain` at the versions its `ARG`s set, a sha256 sum for each archive. The container in CLAUDE.md, Environment, is "Node.js, Go, buf and just";
+  - **`.github`:** the shared `documents.yml` moves to the script `toolchain.sh` once all its callers stand on `spec` v0.2.17 or newer, and it was waiting for four repositories, `sim` among them. Now `sim` leaves them;
+  - the other decisions of the tag and the changes to earlier ones — the interface packages, the path to AI, the rubric and eval, the contract `app` ↔ `api`, admission by age, the database of `api` — are about other components, and enter `sim` only by what is named above.
 - **What is changed here:**
-  - `spec/` — at v0.9.4, commit e803736. The tag in CLAUDE.md, README.md, the opening of RUN.md and the status of [architecture.md](architecture.md) — v0.9.4. That the repository was on v0.1.0 and v0.2.9 the opening of the log and R01 say: this is history;
-  - the template: a three-way merge of the template v0.2.9 → v0.9.4 with CLAUDE.md, README.md and RUN.md. CLAUDE.md and RUN.md merged without conflicts, README.md with one: the status badges went above the description. What changed is the container in CLAUDE.md, Environment, the mark «В реестр spec» in rule 2 and the language in rule 10 of RUN.md. The template's AGENTS.md, LICENSE, `.claude/settings.json` and `docs/architecture.md` did not change between the tags;
-  - `.devcontainer/` — the one that the recipe of `spec` v0.9.4 (`editDevcontainer`) builds for `sim` of the kind `go`; `devcontainer.json` did not change, and the Dockerfile is as in `spec`. The move brings in no differences from the template. The image was not built here — Д2 in table 4 of RUN.md;
-  - [architecture.md](architecture.md) — the status, section 1, section 2 — the opening and subsections 2.1–2.3: what the tag decided is named decided, and the items of the card are laid out over the subsections;
-  - RUN.md — table 1 and T06, «Почему такой порядок», the inserts in T01–T04; table 3 — В1 «В реестр spec»; table 4 — Д1 closed, Д2 opened;
-  - CLAUDE.md, The component, — R59, R62 and R72 spec.
+  - `spec/` — at v0.9.4, commit e803736. The tag in CLAUDE.md, README.md, the opening of RUN.md and the status of [architecture.md](architecture.md) — v0.9.4. That the repository was on v0.1.0 and v0.2.9 the opening of the log and the entry before this one say: this is history;
+  - the template: a three-way merge of the template v0.2.9 → v0.9.4 with CLAUDE.md, README.md and RUN.md. CLAUDE.md and RUN.md merged without conflicts, README.md with one: the status badges went above the description. What changed is the container in CLAUDE.md, Environment, the mark «В реестр spec» in the plan's rule on what to read first and the plan's rule on language. The template's AGENTS.md, LICENSE, `.claude/settings.json` and `docs/architecture.md` did not change between the tags;
+  - `.devcontainer/` — the one that the recipe of `spec` v0.9.4 (`editDevcontainer`) builds for `sim` of the kind `go`; `devcontainer.json` did not change, and the Dockerfile is as in `spec`. The move brings in no differences from the template;
+  - [architecture.md](architecture.md) — the status, the purpose and what is to decide when detailed: what the tag decided is named decided, and the items of the card are laid out over the questions to decide;
+  - RUN.md — the tasks of the first epic and their inserts; a row «В реестр spec» of table 3 on reading the packages;
+  - CLAUDE.md, The component, — the generator of `spec`, the server part of the package and the types of the canonical view.
 
-— *Why now:* the author's instruction 2026-11-06. Row 4.1 of [COORDINATION.md](../spec/COORDINATION.md) puts the move as the first task of the course of `sim`, and on v0.2.9 T01 would plan the profiles "per area" as options and an adult with a text canvas, T02 a criterion without measures of forgetting, and the simulator would derive the seeds not by R59 spec (Д18, Д40, Д82 `spec`). v0.9.4 is the latest release as of 2026-11-06, and immutable (`gh release view -R altnovatrail/spec`); `gh release verify v0.9.4 -R altnovatrail/spec` confirmed it by its attestation, and the tag is on commit e803736.
+— *Why now:* the cross-repository plan puts the move as the first task of the course of `sim`, and on v0.2.9 the planning of the populations would lay out profiles "per area" as options and an adult with a text canvas, that of the criterion a criterion without measures of forgetting, and the simulator would derive the seeds not by `spec`'s generator. v0.9.4 is the latest release as of 2026-11-06, and immutable (`gh release view -R altnovatrail/spec`); `gh release verify v0.9.4 -R altnovatrail/spec` confirmed it by its attestation, and the tag is on commit e803736.
 
 — *Rejected:*
-- a tag of the line 0.6, as row 4.1 of COORDINATION.md names: format 0.3 came out only in the line 0.9, and on 0.6 `sim` would read format 0.2, and a second move would be needed (Д107 `spec`);
-- v0.9.0–v0.9.3: the line is the same, but the author asked for the latest release;
-- split the move into two tasks — the move itself and the inserts in T01–T04: the author chose one (rule 11 of RUN.md);
-- rewrite T01–T04 anew: the tag decided the forks, but not the profiles, the measures and the gate — the tasks still decide them. So in the tasks what is decided is named decided, with a reference to the R, and the items that no longer exist are removed;
-- keep Д1 until T01: the check it named passed in this task — the image 3.0.10, `claude --version` answers, `bin/claude.exe` is an ELF binary —, and the new image waits for its own rebuild anyway, Д2;
-- carry over the changes of the devcontainer selectively — by the same arguments as in R01.
+- a tag of the line 0.6, as the cross-repository plan names: format 0.3 came out only in the line 0.9, and on 0.6 `sim` would read format 0.2, and a second move would be needed;
+- v0.9.0–v0.9.3: the line is the same, and the move takes the latest release;
+- split the move into two tasks — the move itself and the inserts into the epic's tasks: one task was chosen for both;
+- rewrite the epic's tasks anew: the tag decided the forks, but not the profiles, the measures and the gate — the tasks still decide them. So in the tasks what is decided is named decided, and the items that no longer exist are removed;
+- keep the debt row on the old image until the planning of the populations: the check it named passed in this move — the image 3.0.10, `claude --version` answers, `bin/claude.exe` is an ELF binary —, and the new image waits for its own rebuild anyway;
+- carry over the changes of the devcontainer selectively: the container of `sim` is the container of `spec`.
 
-— *Consequence:* T06 stands first in table 1 of RUN.md, and T01 depends on it and on Rebuild Container (Д2). The commit, push and merge are the executor's, by a one-off instruction of the author recorded in T06; rule 7 of RUN.md stays as in the template. With the first code of `sim` come the tests and Codecov (R48 spec), the version of the Go module `spec` together with the submodule and its exclusion from Dependabot `gomod` (Д46 `spec`), and CodeQL for Go (Д9 `spec`). — RUN.md, T06, T01–T04, tables 1, 3 and 4; CLAUDE.md; README.md; `.devcontainer/`; [architecture.md](architecture.md), the status and sections 1, 2, 2.1–2.3.
-
-— *Amendment 2026-11-12:* Go of the stage `toolchain` is 1.27.4, not 1.27.3: the move to `spec` v0.16.3 brought it, as to every Go repository (R45; the 2026-11-11 amendment to R64 spec).
+— *Consequence:* RUN.md; CLAUDE.md; README.md; `.devcontainer/`; [architecture.md](architecture.md); with the first code of `sim`, `go.mod` with the Go module `spec` at the submodule's tag, its exclusion from Dependabot `gomod`, the tests and Codecov, and CodeQL for Go.
 
 ## Virtual learners
 
-**R03. The simulator's virtual learner is a model of the truth of its own, not the code of `learner-model`: the base population holds the model's assumptions, and each population changes one of them. Standalone's nineteen populations are carried over as assumptions, and the simulator's code is written anew; the main one is `G2-half` with a calendar. The new populations touch forgetting, the pages of a workbook, the anchor skill, lessons and essays. The criterion and the gate run on the published packages of the three modules, by version, and until their releases on the synthetic packages of `sim`, only for code and tests. The miss of difficulty is the task's, one per run. The seeds are places of randomness of the format, and the held-out learners take a seed of their own.** The author's answers 2026-11-07 in the planning of T01 (RUN.md); the rest is a proposal of the execution. The whole design is in [architecture.md](architecture.md), sections 3.1–3.4.
+**R03. The simulator's virtual learner is a model of the truth of its own, not the code of `learner-model`: the base population holds the model's assumptions, and each population changes one of them. Standalone's nineteen populations are carried over as assumptions, and the simulator's code is written anew; the main one is `G2-half` with a calendar. The new populations touch forgetting, the pages of a workbook, the anchor skill, lessons and essays. The criterion and the gate run on the published packages of the three modules, by version, and the synthetic packages of `sim` serve only code and tests. The miss of difficulty is the task's, one per run. The seeds are places of randomness of the format, and the held-out learners take a seed of their own.** The whole design is in [architecture.md](architecture.md).
 - **Decided by the author:**
-  - standalone's populations are the example: their assumptions as a list "carried over, changed", and the simulator's code is written anew for `learner-model` and `engine`. The MIT notice (R12 spec) only if the code epic carries over a piece of code word for word;
+  - standalone's populations are the example: their assumptions as a list "carried over, changed", and the simulator's code is written anew for `learner-model` and `engine`. Standalone's MIT notice comes only if the code epic carries over a piece of code word for word;
   - the main population is `G2-half` with a calendar: growth of one logit per 200 answers, an assumption of the simulator, not a measurement; `G2` is a stress test. The main one is for both maths;
-  - the graphs: a population is set over the canonical view of any package; the criterion and the gate run on the published packages of the three modules, pinned by version; until the releases of `modules`, on the synthetic packages of `sim` in the form of the three modules, for code and tests, not for the judgement of candidates;
-  - there is no check of the simulator's numbers against live learners at stage 1 — Д3 in table 4 of RUN.md;
-  - T01 is one task, not two (rule 11 of RUN.md).
+  - the graphs: a population is set over the canonical view of any package; the criterion and the gate run on the published packages of the three modules, pinned by version; the synthetic packages of `sim`, in the form of the three modules, are for code and tests, not for the judgement of candidates; a population without a published graph has "no graph";
+  - there is no check of the simulator's numbers against live learners at stage 1 — Д3.
 - **A proposal of the execution, not the author's answer:**
-  - the words: population and virtual learner, and "profile" only in the sense of the vocabulary, and "generator" is not said of populations. Card 3.9 spec calls the populations profiles — row В2 of table 3 of RUN.md, «В реестр spec»;
-  - the truth of the base population: the grade and the starting band as in the model, the module level is the shift of the starting band plus N(0, 1), the skill offset is from N(0, 0.5²), the task's hardness with a miss from N(0, 0.5²), the answer of an item by the model's formula with guessing by answer slots and a slope of 1, retention by the model's law with a stability that the learner's own answers move (R03, R04, R06 learner-model). The truth's stability goes by the model's law, once per attempt and no less than a day. In an attempt there are three rungs of the hint ladder, +0.5 to the logit each, and from the fourth wrong answer the showing of the solution, for a child by an adult's action (concepts 10 spec; R82 spec); a lesson goes to its end; an essay is one submission and "Done";
+  - the words: population and virtual learner, as `spec`'s vocabulary and the component's card have them, and "profile" only in the sense of the vocabulary; "generator" is not said of populations;
+  - the truth of the base population: the grade and the starting band as in the model, the module level is the shift of the starting band plus N(0, 1), the skill offset is from N(0, 0.5²), the task's hardness with a miss from N(0, 0.5²), the answer of an item by the model's formula with guessing by answer slots and a slope of 1, retention by the model's law with a stability that the learner's own answers move. The truth's stability goes by the model's law, once per attempt and no less than a day. In an attempt there are three rungs of the hint ladder, +0.5 to the logit each, and from the fourth wrong answer the showing of the solution, for a child by an adult's action, as `spec` sets them; a lesson goes to its end; an essay is one submission and "Done";
   - the calendar: a day is a session with a probability of 5/7, a session is ten attempts from 15:00 UTC, time is in whole seconds UTC; a run is 200 answers of items with a verdict, for the populations of forgetting 180 days, and a break ends no later than the 120th, for essays no longer than 60 days;
-  - standalone's populations with changes: G4 — the author's miss on the whole band, `G4-band`, instead of the second "host"; G7 — guessing for a choice of 0 or 1.5/k instead of a floor of 0 or 0.3; G8 — a technique on request instead of a hint; `G0-topics*` — `G0-skills*`;
+  - standalone's populations with changes: G4 — the author's miss on the whole band, `G4-band`, instead of the second "host"; G7 — guessing for a choice of 0 or 1.5/k instead of a floor of 0 or 0.3, on grade 3 maths: in the published package of olympiad maths all the answer slots are `number`, while a choice of three options exists in school maths and the essays, and guessing by answer slots is read on maths; the two sides of one assumption go by the parity of the learner's number; G8 — a technique on request instead of a hint; `G0-topics*` — `G0-skills*`;
   - the new populations — by the numbers of `learner-model` that wait for the simulator, and by the items of the card: `S-` — the step of bands, guessing of `predicate`, an adult without a grade, "unreadable"; `F-` — a calendar with breaks and laws of forgetting other than the model's law, a learner who does not forget, and a fall after a break; `W-` — a page with a common shift, an error on the whole page, a bad day, a repeated task; `A-` — a learner of both maths; `L-` and `E-` — lessons and essays;
-  - the miss is the task's: z is one per run, and the populations of the miss change the multiplier at it; a template has one miss for all its instances; the instance is chosen by the attempt's seed with the same choice as the platform (R60 spec);
-  - the seeds: places with the names "experiment, unit, purpose", the unit is `<population>/<number>` or `task/<module ID>/<task ID>`, the purposes are `params`, `calendar`, `answers`, `retries`, `attempts`, `attempt` and `choice`, and for a task `miss`; first answers and repeats are different streams, so that the repeats do not shift the first answers; the held-out learners have a seed of their own and an experiment name of their own; the normal and exponential distributions give the same bits on any build. The seeds themselves come with the criterion of T02.
+  - the miss is the task's: z is one per run, and the populations of the miss change the multiplier at it; a template has one miss for all its instances; the instance is chosen by the attempt's seed with the same choice as the platform;
+  - the seeds: places with the names "experiment, unit, purpose", the unit is `<population>/<number>` or `task/<module ID>/<task ID>`, the purposes are `params`, `calendar`, `answers`, `retries`, `attempts`, `attempt` and `choice`, and for a task `miss`; first answers and repeats are different streams, so that the repeats do not shift the first answers; the populations of fairness by the grade, `D-grade1`, `D-grade3` and `D-grade5`, take the unit of their reference population, `D-grade3/<number>`, for all the purposes, so that the learner n of each grade is the same learner and only the grade differs; the held-out learners have a seed of their own and an experiment name of their own; the normal and exponential distributions give the same bits on any build. The seeds themselves come with the criterion.
 
 — *Why:*
-- **A truth of its own, not the model.** The simulator measures how far the estimate of `learner-model` and the choice of `engine` stray from the learner whom the simulator knows. Were the truth the model itself, the simulator would measure the model on itself; so the base population holds the model's assumptions in its own code, and the populations depart from them — as G0 and the others do in standalone ([architecture.md](architecture.md), section 4).
-- **An example, not a carry-over of code.** Standalone's simulator runs the product's path — `profile.New`, `tutor.Next`, `Profile.Record` — with topics, guessing 0.2 and "every tenth answer starts a new day". In `sim` the model and the choice are two libraries, the level is per module, guessing is by answer slots, time is a calendar (R03, R04 learner-model), so little would be left of standalone's code, and its design would be dragged along with it. The populations' assumptions are carried over whole: on them standalone's simulator chose the model with which `learner-model` begins (R12 learner-model).
-- **`G2-half`.** The criterion's targets are read on the main learner (R163 standalone), and the speed of live learners is unknown, as in standalone. One speed, named an assumption, is more honest than three, and `G2` and `G2-fading` hold it from both sides.
-- **The calendar.** The model's forgetting goes by time, not by the number of the answer (R04 learner-model), and the card requires days, sessions and breaks (architecture 3.9 spec). The breaks of the `F-` populations give pauses from a day to two months, on which the calibration by the length of the pause is read.
+- **A truth of its own, not the model.** The simulator measures how far the estimate of `learner-model` and the choice of `engine` stray from the learner whom the simulator knows. Were the truth the model itself, the simulator would measure the model on itself; so the base population holds the model's assumptions in its own code, and the populations depart from them — as G0 and the others do in standalone.
+- **An example, not a carry-over of code.** Standalone's simulator runs the product's path — `profile.New`, `tutor.Next`, `Profile.Record` — with topics, guessing 0.2 and "every tenth answer starts a new day" (sources 1.2). In `sim` the model and the choice are two libraries, the level is per module, guessing is by answer slots, time is a calendar, so little would be left of standalone's code, and its design would be dragged along with it. The populations' assumptions are carried over whole: on them standalone's simulator chose the model with which `learner-model` begins.
+- **`G2-half`.** The criterion's targets are read on the main learner, as in standalone, and the speed of live learners is unknown, as there. One speed, named an assumption, is more honest than three, and `G2` and `G2-fading` hold it from both sides.
+- **The calendar.** The model's forgetting goes by time, not by the number of the answer, and the component's card requires days, sessions and breaks. The breaks of the `F-` populations give pauses from a day to two months, on which the calibration by the length of the pause is read.
 - **The miss is the task's.** In NovaTrail the author writes a task, once, and all learners see the same task; a miss at every issue, as with the chat model in standalone, would average out over the learners and hide a task that is in fact harder.
-- **Synthetic packages before the releases.** `modules` has no release, and grade 3 maths and the essays are not even in the repository ([COORDINATION.md](../spec/COORDINATION.md), row 3.6). The simulator's code and its tests can go before them, but candidates cannot be judged on packages that the platform does not have: the criterion is read on what the learners see.
-- **A seed of their own for the held-out learners.** The places of one seed share the low word of the state, and FNV-1a does not guard against collisions; the format says outright to take a seed of their own for streams that need to be apart ([format text](../spec/format/README.md), section 22). Standalone did the same — the seed 20261003 and the experiment `held-out`.
+- **Synthetic packages only for code and tests.** The simulator's code and its tests could go before the releases of `modules`, but candidates are not judged on packages that the platform does not have: the criterion is read on what the learners see.
+- **A seed of their own for the held-out learners.** The places of one seed share the low word of the state, and FNV-1a does not guard against collisions; the format, `spec/format/README.md`, says outright to take a seed of their own for streams that need to be apart. Standalone did the same — the seed 20261003 and the experiment `held-out` (sources 1.2).
 
 — *Rejected:*
 - carry over `tools/learners` and rework it: the product design of standalone would come along with the code, and the MIT notice would become required;
 - no main population — the criterion's targets on all populations equally: there would be no "typical learner" on whom the targets are read; a main one of its own for each module — three arbitrary speeds instead of one;
-- wait for the published packages: T02 and the simulator's first code would wait for the content of school maths and the essays;
-- check against live learners now: the simulator holds no data of live learners (architecture 3.9 spec), and `api` stores them, stage 2 (architecture 1 spec; repositories 2.1 spec);
+- wait for the published packages: the criterion and the simulator's first code would wait for the content of school maths and the essays;
+- check against live learners now: the simulator holds no data of live learners, and `api`, which stores them, comes at stage 2;
 - a miss at every issue, as in standalone, and "every tenth answer starts a new day": see "Why";
 - the truth is the code of `learner-model`: the simulator would measure the model on itself;
-- populations "per area" and an adult with a text canvas: the tag v0.9.4 removed them (R02).
+- populations "per area" and an adult with a text canvas: the tag v0.9.4 of `spec` removed them.
 
-— *Consequence:* T02 writes down the measures, targets and bands over the populations of section 3.2, and with them the seeds of the runs. The code epic builds the virtual learner, the calendar, the populations and the synthetic packages. Д2 closed, Д3 — the check against live learners; В2 «В реестр spec» — the populations in card 3.9 spec. — RUN.md, T01, tables 3 and 4; [architecture.md](architecture.md), the status, section 2.1, sections 3.1–3.4 and 4.
-
-— *Amendment 2026-11-07:* the divergence of the card from the vocabulary, row В2 of table 3 of RUN.md, `spec` decided by the recommendation: card 3.9 spec says "populations", and the vocabulary got "virtual learner" and "population" (concepts 15 spec; R103 spec). The same day: `modules` put out its first release, v0.1.0, with the packages of all three modules. The synthetic packages are still only for code and tests, and the criterion and the gate run on the published ones; "no graph" stays where a population has no published graph. — R06.
-
-— *Amendment 2026-11-08:* the graph of `G7` is grade 3 maths, not olympiad maths: in the published package of olympiad maths all the answer slots are `number`, while a choice of three options exists in school maths and the essays ([architecture.md](architecture.md), section 4), and guessing by answer slots is read on maths. The two sides of one assumption go by the parity of the learner's number. — R18; [architecture.md](architecture.md), section 3.2.
-
-— *Amendment 2026-11-14 (T61; R55):* the populations of fairness by the grade, `D-grade1`, `D-grade3` and `D-grade5`, take the unit of their reference population, `D-grade3/<number>`, for all the purposes, not a unit of their own: the learner n of each grade is the same learner, and only the grade differs.
+— *Consequence:* [architecture.md](architecture.md); `internal/learner/`, `internal/population/`, `internal/seed/`, `internal/synthetic/`; `run/DEBT.md`, the row Д3.
 
 ## The criterion and the bands
 
-**R04. The simulator judges changes by two criteria — of the learner model and of the engine — on a common basis: invariants with a tolerance of zero, measures by the learner's truth, the base — the first released versions of the libraries, the ceilings — the model's oracle and a choice by the true probability, the targets — a share of the path from the base to the ceiling, the tolerance — the larger of the author's tolerance and the simulator's resolution, a confirmation once on its own held-out learners, and the exit to the base. The CI gate is the guard: 300 working learners of the gate's populations, numbers in two-sided bands, which a pull request to `sim` writes anew. The criterion and the gate run on the published graphs, and the seeds of the runs are pinned.** Written down 2026-11-07 — before the first run of a candidate: there is no code of the simulator, of `learner-model` or of `engine` yet. The author's answers 2026-11-07 in the planning of T02 (RUN.md); the rest is a proposal of the execution. The whole design is in [architecture.md](architecture.md), sections 3.5–3.8.
+**R04. The simulator judges changes by two criteria — of the learner model and of the engine — on a common basis: invariants with a tolerance of zero, measures by the learner's truth, the base — the first released version of each library, and after a confirmed choice what was chosen, the ceilings — the model's oracle and a choice by the true probability, the targets — a share of the path from the base to the ceiling, pinned before the first candidate, the tolerance — the larger of the author's tolerance and the simulator's resolution, a confirmation once on the held-out learners of its own judgement, and the exit to the base. The CI gate is the guard: the first working learners of the gate's populations, numbers in two-sided bands, which a pull request to `sim` records anew; in the CI of `modules` it holds invariants and thresholds instead. The criterion and the gate run on the published graphs, and the seeds of the runs are pinned.** Written down before the first run of a candidate, when there was no code of the simulator, of `learner-model` or of `engine` yet. The whole design is in [architecture.md](architecture.md).
 - **Decided by the author:**
-  - two criteria on a common basis: each has its own constraints and score, and the measures, the resolution and the tolerance, the choice, the confirmation and the exit are shared. A joint change of the "mastered" threshold and of the corridor's target (the 2026-11-02 amendment to R23 spec) is a candidate pair, and both criteria judge it on one run;
-  - the base is the first released version of each library (R12 learner-model; В24 `learner-model` «в реестр spec»); the model's ceiling is the oracle, which knows the truth, and the engine's ceiling is a choice by P* from the same pool; the targets are a share of the path, and the values of the base and of the ceiling are read on the first run of the base and pinned;
-  - the tolerance is the larger of the author's tolerance and 4.3 standard errors of the paired difference (R163 standalone);
-  - the gate's bands are two-sided, and writing them anew is a pull request to `sim` with a reason and the criterion's report, read at review;
+  - two criteria on a common basis: each has its own constraints and score, and the measures, the resolution and the tolerance, the choice, the confirmation and the exit are shared. A joint change of the "mastered" threshold and of the corridor's target, both constants of `learner-model`, is a candidate pair, and both criteria judge it on one run;
+  - the base is the first released version of each library, released before the first tag of `sim`, and the gate holds every change after it; after a confirmed choice the base is what was chosen. The model's ceiling is the oracle, which knows the truth, and the engine's ceiling is a choice by P* from the same pool; the targets are a share of the path, and the values of the base and of the ceiling are read on a decisive run of the base before the first candidate and pinned;
+  - the tolerance is the larger of the author's tolerance and 4.3 standard errors of the paired difference, as in standalone (sources 1.2);
+  - a measure whose pinned path is positive but no greater than the author's tolerance of that measure leaves the score as a measure with a path no greater than zero does: its share is not read, its weight goes with it, the report names it, and the target on it is not met. It still holds the constraints "no worse";
+  - the gate's bands are two-sided, and recording them anew is a pull request to `sim` with a reason and the criterion's report, read at review. The gate holds the bands on changes of `learner-model`, `engine` and `sim` itself, on the published packages; in the CI of `modules` it holds the invariants `I1`–`I4` and the absolute thresholds of the first slice, on the package that the pull request built, and runs when what the simulator reads from a package has changed;
   - on a graph whose package is not published, the checks are "no graph"; a new package is a new pin and new bands, and earlier choices are not revisited by themselves;
-  - T02 is one task.
+  - "every population" of the checks "no worse", and the populations of the floors, of `neutral`, of the score and of the note `E6`, are those of the 65 cells; the cells of the populations `D-` are read by the constraint `fair` alone.
 - **A proposal of the execution, not the author's answer:**
   - true mastery is the P* of the reference task, of difficulty 3 at the band, without a miss, with five options and at R* = 1, no lower than 0.775, as standalone's "truly mastered"; the truth's command of the anchor skill is with retention at the time of reading;
-  - the invariants `I1`–`I4` — reproducibility, a reason code from `ReasonCode` and true to its meaning, the author's order without a verdict, a task whose solution went to the device not as the next choice;
-  - the measures `M1`–`M10` and `E1`–`E5` with their definitions — the thresholds of pauses of 7 and 14 days, the window of being stuck of 50 choices, "at most two pieces of evidence" for pages, 0.05 for the catching up of forgetting;
+  - the invariants `I1`–`I4` — reproducibility, a reason code from `ReasonCode` and true to its meaning, the author's order without a verdict, a task whose solution went to the device not as the next task. `I2` checks the meaning of the code by the facts that it names, as necessary conditions on one of the skills of the choice — whether the skill was issued, whether it is mastered, whether its date has come, whether the module's trial series has ended, a failure in the last attempt, a rubric, an open run, a skill from the map —, and reads the flags of the trial series from `Read` and the summary of issues: "consolidation" and "probe" are not in the module's trial series; "new skill" — the skill has not been issued, and at "the bottom of the ladder" `engine` gives it even with unmet prerequisites, counting as met a prerequisite that nothing in the input teaches; "in rotation", the ninth value of `ReasonCode` — a skill that was issued before and has gone unissued for longest, but does not fit "the queue": it is mastered, or there are no reachable skills; "the queue" — the skill that has gone unissued for longest in its own module. The order "for longest", reachability, "on pause" and "mastered for the queue" are the rule of `engine`, and its golden vectors hold them. For `I4`, a seen solution is "not as the next task"; the 24 hours with the second pass are the pause of `engine`, not an invariant;
+  - the measures `M1`–`M10` and `E1`–`E5` with their definitions — the thresholds of pauses of 7 and 14 days, the window of being stuck of 50 choices, "at most two pieces of evidence" for pages, 0.05 for the catching up of forgetting —, and `M11` of fairness by the grade, which is in no score group, has no path and no target, and which the gate does not read;
+  - the engine's ceiling: the engine chooses a lesson or a task as a whole, not an item, so the ceiling is the task with the largest share of items whose P* is in the corridor, and on a tie, the one whose mean P* of the items is closer to 0.775; the ceiling of the pool for `E1` is the mean over issues of the largest share of items in the corridor of one reachable task. Both take tasks with the same exclusions as the rule — a task with a seen solution not as the next task. The simulator gives the engine the summary of issues and selects the pool and the lessons, as `api` does, by the age category — one per learner, not per module;
   - the resolution is 4.3 standard errors of the paired difference of the candidate and the base, in the same run;
   - the direction: in the criterion every measure goes so that less is better — a signed measure by its absolute value, a share where more is better by its shortfall; a path where the ceiling is no better than the base leaves the score, and for the measures where the ceiling need not be better — coverage, repetitions, false "mastered" and "knows" — the path goes to perfection;
-  - the author's tolerances — 0.01 logit for errors and lag, 1 point for the corridor and shares, 2 points for false "mastered" and "knows", one answer for the counts of answers, and the others in section 3.6;
+  - the author's tolerances — 0.01 logit for errors and lag, 1 point for the corridor and shares, 2 points for false "mastered" and "knows", one answer for the counts of answers, 0.01 for the shares of `M11` and one answer for `M11.answers`, and the others in [architecture.md](architecture.md);
   - the model's floor — false "mastered" at most 20 % on `G0` and `G0-skills1`, the answers before "mastered" at most 1.5 times the base's; standalone's targets — 0.55 of the path for lag and 0.27 for the corridor on `G2-half`, at most 25 % not caught up on `G3` — only for a candidate of the model that names them as its target; the engine has no number for the target; a candidate names its score group, and it too is better than the base;
+  - the constraint `fair` holds the model's criterion, the engine's criterion and a pair, at the choice and in the confirmation: on `D-grade1` and `D-grade5` the shortfalls of `M11.same`, `M11.answers` and `M11.band` are each no worse than the base, less being better, at the tolerance above;
   - the groups and weights of the score — the model's first four groups as in standalone's step, "Mastered" as in its choice of "mastered", the new groups "Forgets", "Pages" and "Anchor", and the engine's groups "Corridor", "Repetitions" and "Coverage"; a population's weight is a share of the group's weight;
-  - the populations and the gate's numbers; the sizes — 4,000 learners a cell for a decisive run, 300–1,000 for a rough look, 300 for the gate;
-  - the seeds: the working ones — 20261107, the experiment `working`; the held-out ones — their own for each choice of each criterion, `held-out-<criterion>-<n>`: the model's first choice — 20261108, `held-out-model-1`, the engine's first choice — 20261109, `held-out-engine-1`; the seed of each next choice and of each pair — by an amendment to this entry before the first run of its candidate.
+  - the populations and the gate's numbers; the sizes — a decisive run and a confirmation are 2,000 learners a cell, on 68 cells: the 65 and the three of the populations `D-`, which the engine's ceiling does not run, and a run without them leaves `fair` unmet; the choice is taken anew for `I1` only for the first 10 learners of a cell; a rough look is a run of fewer than 2,000 learners and decides nothing; the gate takes the first working learners of its populations, as many as its runner and its time allow;
+  - the paths: the values of the base and of the ceiling are read on the decisive runs of the base and of the engine's ceiling, off a base of 68 cells against a ceiling of 65, the cells `D-` left out of the pairs, and pinned in `internal/criterion/paths.json`, which names the libraries, the set and the size they were read on and the SHA-256 of the runs; their measurement in force is measurements 3.2. They are read anew before the next candidate when what they were read on changes — the graph and the tasks of the pinned packages, the base or the size of the decisive run —, and a new reading changes this entry;
+  - the seeds: the working ones — 20261107, the experiment `working`; the held-out ones — each judgement's own, `held-out-<criterion>-<n>`, and for a judgement of one variant apart from the rounds of its criterion `held-out-<criterion>-<variant>-<n>`:
+    - the model's first choice — 20261108, `held-out-model-1`, looked at by the judgement `model-2`: the model's next round, `model-3`, confirms on `held-out-model-2`;
+    - the engine's first choice — 20261109, `held-out-engine-1`, kept for the round `engine-2`;
+    - consolidation in a lesson, `judgements/engine-lesson-1/` — 20261113, `held-out-engine-lesson-1`;
+    - the round of fairness, `judgements/model-fair-1/` — 20261116, `held-out-model-fair-1`; that judgement's target is `M11.same` of `D-grade1` and `D-grade5` pooled, and the target alone decides "better" there.
+  - the seed of each next choice and of each pair is written into this entry before the first run of its candidate, with the judgement it belongs to; the row judgement → set comes into the table of `internal/seed/sets.go` with the seed, and `sim judge` takes a confirmation only on its judgement's row.
 
 — *Why:*
-- **Two criteria.** The model and the engine choose different things: the model an estimate, the engine what to give. One score for both would mix the estimate's error with the corridor, and an improvement of one would hide a worsening of the other. And five criteria, one for each part, as the step, "mastered" and the "debt" in standalone, would make every new kind of candidate wait for its own entry, while the model's first candidates are several of its numbers at once (Д5–Д7 in table 4 of RUN.md `learner-model`). So the model's criterion covers all the parts of the model by score groups, and a candidate names its own.
-- **The base and the ceiling.** The criterion is written down before the first candidate, not before the first line of code (R12 learner-model): what to compare with must be given by the library itself, not by a copy in `sim`. The ceiling gives a scale: the share of the path does not depend on the units of the measure and carries standalone's targets over as they are — the lag at most 45 % of the service's and c* = 0.27 are shares of the path to the oracle. The values of the base and of the ceiling are calibration, read before the candidate, as c* ([architecture.md](architecture.md), section 4).
-- **The resolution is by the pair "candidate and base".** In standalone the resolution was read on a pair of rules already standing on the simulator, "never from a candidate": a slow constant step beside the service. `sim` has no such close pair: there are no other versions of the libraries on the simulator, the constants are constants of the version, and changing them is a new version (architecture 3.1 learner-model). The standard error of the paired difference is the noise of the comparison on these learners, not the level of the candidate's numbers: with it a candidate equal to the base passes 99 times in 100, and no wider.
+- **Two criteria.** The model and the engine choose different things: the model an estimate, the engine what to give. One score for both would mix the estimate's error with the corridor, and an improvement of one would hide a worsening of the other. And five criteria, one for each part, as the step, "mastered" and the "debt" in standalone, would make every new kind of candidate wait for its own entry, while the model's first candidates are several of its numbers at once. So the model's criterion covers all the parts of the model by score groups, and a candidate names its own.
+- **The base and the ceiling.** The criterion is written down before the first candidate, not before the first line of code: what to compare with must be given by the library itself, not by a copy in `sim`. The ceiling gives a scale: the share of the path does not depend on the units of the measure and carries standalone's targets over as they are — the lag at most 45 % of the service's and c* = 0.27 are shares of the path to the oracle (sources 1.2). The values of the base and of the ceiling are calibration, read before the candidate, as c*. After a confirmed choice the base is what was chosen, and reading the paths on it anew is calibration too, not a choice.
+- **The resolution is by the pair "candidate and base".** In standalone the resolution was read on a pair of rules already standing on the simulator, "never from a candidate": a slow constant step beside the service. `sim` has no such close pair: there are no other versions of the libraries on the simulator, the constants are constants of the version, and changing them is a new version. The standard error of the paired difference is the noise of the comparison on these learners, not the level of the candidate's numbers: with it a candidate equal to the base passes 99 times in 100, and no wider.
+- **A path within the tolerance.** The author's tolerance is what the author has already called "not changed", and a ceiling indistinguishable from the base within the tolerance sets no path. For the measures whose path goes to perfection, as for `E3.end`, the path is the base's own shortfall, and a base no farther than the tolerance from perfection sets no path either. A difference of a few thousandths — within the noise of a decisive run — gives on such a path a share in units and decides the score of the whole group. The rule is one for all measures, and the group "Repetitions" stays with its lateness of `E3`.
 - **The direction of measures.** A signed measure cancels itself out in the mean — in `G1` the learners stand on both sides of the band —, and a share where more is better would give a path with a minus sign. The absolute value and the shortfall give all the measures one direction, as `|r6_lag|` and the shortfall of the corridor in standalone.
-- **Invariants apart.** Reproducibility and the reason code are required by concepts 12 spec at every choice, and the author's order at every skill with a rubric (concepts 4 spec). This is not statistics: one violation is enough, and an interval would mean nothing here.
-- **The engine by coverage, not by learnedness.** The populations' truth grows from the choice only by which skills the learner answers, by the stability τ* that its answers move, and by the lessons of `L-explain` (R03). So the engine's criterion measures the corridor, repetitions and coverage — what the choice moves the truth by.
-- **Two-sided bands.** Bands on learners who are always the same are a place for a change, not for chance: code that shifted nothing reads the recorded numbers to the last digit. An improvement that passes by itself shifts the starting point silently; writing anew at review shows what shifted and why.
-- **Published graphs.** R03 does not allow judging candidates on synthetics, and waiting for all three packages would mean that `learner-model` and `engine` stand still until the releases of school maths and the essays.
-- **Held-out learners of its own for each choice** — as in standalone, where the "debt" had its own set: a set that has been looked at is no longer held out.
+- **Invariants apart.** `spec` requires reproducibility and the reason code at every choice, and the author's order at every skill with a rubric. This is not statistics: one violation is enough, and an interval would mean nothing here. `I2` checks what a code names, not the order of the rule: recomputing the rule in the simulator would mean measuring the engine on itself, like the truth on the model's code.
+- **The engine's ceiling within the rule.** A ceiling that takes tasks the rule has no right to give would make the path to it wider than the rule can go; and since the engine chooses a task as a whole, the ceiling chooses one too.
+- **The engine by coverage, not by learnedness.** The populations' truth grows from the choice only by which skills the learner answers, by the stability τ* that its answers move, and by the lessons of `L-explain`. So the engine's criterion measures the corridor, repetitions and coverage — what the choice moves the truth by.
+- **Two-sided bands.** Bands on learners who are always the same are a place for a change, not for chance: code that shifted nothing reads the recorded numbers to the last digit. An improvement that passes by itself shifts the starting point silently; recording anew at review shows what shifted and why.
+- **Invariants and thresholds in the CI of `modules`.** An edit of content moves the numbers by design, so bands would stop every edit of a package; what holds there is what no package may break.
+- **Published graphs.** Candidates are not judged on synthetic packages, which the learners do not see, and "no graph" on an unpublished package keeps one missing package from holding `learner-model` and `engine` still.
+- **2,000 learners a cell.** A decisive run fits into its time on a free machine at this size (measurements 1.3), and its resolution is narrower than on fewer learners by the square root of their ratio.
+- **Held-out learners of its own for each choice** — as in standalone, where the "debt" had its own set: a set that has been looked at is no longer held out, and a set kept for another round or variant is not this judgement's to look at.
 
 — *Rejected:*
 - one criterion for both libraries; a criterion for each part;
-- a base without a ceiling — the targets would have to be written as numbers without knowing the base's numbers; a copy of standalone's model in `sim` as the base — R12 learner-model rejected it;
+- a base without a ceiling — the targets would have to be written as numbers without knowing the base's numbers; a copy of standalone's model in `sim` as the base — `learner-model` rejected it, since the library itself gives what to compare with;
 - only the author's tolerance — an equal candidate would fail by chance; only the simulator's resolution — on a large run it would catch shifts that the author does not care about;
 - a resolution by the pair "base and ceiling" — their difference is wider than a close candidate's, and the tolerance would let a real worsening through; and where there is no ceiling — for essays and being stuck — there would be no resolution at all;
+- leave a path within the tolerance in the score — noise would decide the score of the groups "Repetitions" and "Forgets"; remove `E3.end` from the group "Repetitions" — a fix of one measure: `M2` after pauses would stay with the same noise, and the next calibration may give a small path to another measure;
 - standalone's c* = 0.27 as the target of the engine's corridor: it is a share of the path to the model's oracle in the choice of the service, and the engine's path goes to a choice by P*;
 - one count of held-out sets for both criteria, or a shared first set: the engine's first choice would take a set that the model's choice has already looked at;
 - standalone's targets as a constraint for every candidate: even the base does not hold them — the choice of the step in standalone came to an exit —, and a candidate of the constants of forgetting would fail on someone else's target;
-- one-sided bands; a paired check "no worse" on every pull request — two builds per run, and that would be for T03 to decide;
-- wait for all three packages; synthetic packages until the releases — this contradicts R03;
+- one-sided bands; a paired check "no worse" on every pull request — two builds per run, beyond the gate's time;
+- 4,000 learners a cell for a decisive run: on the published packages it ran for hours (measurements 1.3);
+- wait for all three packages; judge on synthetic packages: the learners do not see them;
 - a model without forgetting as a second model on `F-none`: the library does not give one, and the simulator compares P with retention and without it on one estimate.
 
-— *Consequence:* the code epic builds the measures, the criteria, the gate and the runs by sections 3.5–3.8 and before the first candidate reads the values of the base and of the ceiling — Д4 in table 4 of RUN.md; they are pinned by an amendment to this entry. T03 decides where the bands lie, the runner, the gate's time, the order of releases and what the gate includes in the CI of `modules`. — RUN.md, T02, table 4; [architecture.md](architecture.md), the status, sections 2.2, 3, 3.2, 3.4–3.8 and 4.
-
-— *Amendment 2026-11-07:* in the CI of `modules` the gate holds not the bands but the invariants `I1`–`I4` and the absolute thresholds of the first slice, on the package that the pull request built, and it runs when what the simulator reads from a package has changed — R05. The bands of section 3.7 the gate holds on changes of `learner-model`, `engine` and `sim` itself, on the published packages, and a new release of `modules` is still a new pin and new bands. The rest of this entry stands. — [architecture.md](architecture.md), sections 3.7 and 3.9.
-
-— *Amendment 2026-11-07:* the base — the first released version of each library — no longer rests on the single row В24 `learner-model`: `spec` recorded it by R103 spec — the first version of each library, released before the first tag of `sim`, and the gate holds every change after it. — R06.
-
-— *Amendment 2026-11-07:* the engine chooses a lesson or a task as a whole, not an item (R104 spec). So the engine's ceiling is the task with the largest share of items whose P* is in the corridor, and on a tie, the one whose mean P* of the items is closer to 0.775, not the item with P* closer to 0.775; the ceiling of the pool for `E1` is the mean over issues of the largest share of items in the corridor of one reachable task. The invariant `I2` also reads the flags of the trial series from `Read` and the summary of issues: "consolidation" and "probe" are not in the module's trial series, "the queue" is the skill that has gone unissued for longest. — R06; [architecture.md](architecture.md), sections 3.5 and 3.6.
-
-— *Amendment 2026-11-08:* the outcome of detailing of `engine` (R107 spec; R03–R10 engine) refines what the simulator checks and gives the engine. (1) `I2`: `ReasonCode` has a ninth value, `REASON_CODE_ROTATION`, "in rotation" — a skill that was issued before and has gone unissued for longest, but does not fit "the queue": it is mastered, or there are no reachable skills; "new skill" — the rule counts the prerequisites as met, and that includes a prerequisite that nothing in the input teaches (the 2026-11-07 amendment to R03 engine); "the queue" — the longest in its own module ([contracts text](../spec/contracts/README.md), section 15). (2) `I4`: "at once" of R82 spec is "not as the next task", and 24 hours with the second pass is the pause of `engine`, not an invariant. (3) The engine's ceiling and the ceiling of the pool of `E1` take tasks with the same exclusions by R82 spec as the rule — otherwise the path to the ceiling would be wider than the rule can go. (4) The summary of issues comes with the additions of R107 spec, and the simulator selects the pool and the lessons, as `api` does, by the age category — one per learner, not per module. — R07; [architecture.md](architecture.md), sections 1, 3, 3.1, 3.4, 3.5 and 3.6.
-
-— *Amendment 2026-11-08:* `I2` checks the meaning of the code by the facts that it names, as necessary conditions on one of the skills of the choice — whether the skill was issued, whether it is mastered, whether its date has come, whether the module's trial series has ended, a failure in the last attempt, a rubric, an open run, a skill from the map —, while the order "for longest", reachability, "on pause" and "mastered for the queue" are the rule of `engine`, and its golden vectors hold them. "New skill" — the skill has not been issued: at "the bottom of the ladder" `engine` gives it even with unmet prerequisites (architecture 3.5 engine). Recomputing the rule in the simulator would mean measuring the engine on itself, like the truth on the model's code (R03). — R17; [architecture.md](architecture.md), section 3.5.
-
-— *Amendment 2026-11-09:* the values of the base and of the ceiling, from which the path of the targets is made up, are read on the first decisive run of the base and pinned. How the code holds them — R28. Д4 of table 4 of RUN.md is closed.
-- **Runs.**
-  - The simulator — commit 6041e1d of `sim` and the recipe `just decisive` (RUN.md, T26).
-  - The base — `learner-model` v0.1.0 (d2620a1) and `engine` v0.1.0 (c6c5bb9), the packages of `modules` v0.1.0.
-  - The working learners — seed 20261107, 4,000 a cell: 41 populations, 65 cells.
-  - The run of the base took 35 minutes on 20 cores of the development container, and its file is SHA-256 `bc6af579c88261c95816e70dd98d3f0d6af6f868095efe22de9a834eacff70d9`.
-  - The run of the engine's ceiling — 9 minutes, SHA-256 `4fc3b92427353d57d7bca64cd12c1b34edf5dfab7e7f1d6af43bf5ce58311968`.
-  - The files do not lie in the repository: the recipe gives them anew to the byte.
-- **Values** — in the criterion's direction, less is better: the share in the corridor of `E1` by its shortfall from one, the R* of `E3` and the share of mastered skills of `E4` too. The ceiling is the oracle for the model's measures, the engine's ceiling for `E1` and zero for the measures "to perfection" ([architecture.md](architecture.md), section 3.6). The path is the base minus the ceiling; a dash is a measure that the run did not read.
-
-| Cell | Measure | Base | Ceiling | Path |
-|---|---|---|---|---|
-| `G0/novatrail/olympiad-math` | `E1.corridor` | 0.8961 | 0.7541 | 0.1420 |
-| `G0/novatrail/olympiad-math` | `M1.rms.200` | 0.3913 | 0.0000 | 0.3913 |
-| `G0/novatrail/olympiad-math` | `M4.false.all` | 0.0094 | 0.0000 | 0.0094 |
-| `G0/novatrail/olympiad-math` | `M6.late` | 4.3034 | 0.0000 | 4.3034 |
-| `G0/novatrail/grade-3-math` | `E1.corridor` | 0.8280 | 0.7510 | 0.0770 |
-| `G0/novatrail/grade-3-math` | `M1.rms.200` | 0.2366 | 0.0000 | 0.2366 |
-| `G0/novatrail/grade-3-math` | `M4.false.all` | 0.0178 | 0.0000 | 0.0178 |
-| `G0/novatrail/grade-3-math` | `M6.late` | 15.8116 | 0.0000 | 15.8116 |
-| `G1/novatrail/olympiad-math` | `M7.error.10` | 1.1702 | 0.0000 | 1.1702 |
-| `G1/novatrail/olympiad-math` | `M7.hard` | 0.4376 | 0.4376 | 0.0000 |
-| `G1/novatrail/grade-3-math` | `M7.error.10` | 1.0513 | 0.0000 | 1.0513 |
-| `G1/novatrail/grade-3-math` | `M7.hard` | 0.3708 | 0.3708 | 0.0000 |
-| `G2/novatrail/olympiad-math` | `E1.corridor` | 0.8812 | 0.7170 | 0.1641 |
-| `G2/novatrail/olympiad-math` | `M3.lag` | 1.2584 | 0.0000 | 1.2584 |
-| `G2/novatrail/grade-3-math` | `E1.corridor` | 0.8694 | 0.7001 | 0.1693 |
-| `G2/novatrail/grade-3-math` | `M3.lag` | 2.4176 | 0.0000 | 2.4176 |
-| `G2-half/novatrail/olympiad-math` | `E1.corridor` | 0.8852 | 0.7252 | 0.1600 |
-| `G2-half/novatrail/olympiad-math` | `E4.mastered` | 0.1154 | 0.0000 | 0.1154 |
-| `G2-half/novatrail/olympiad-math` | `M3.lag` | 0.6722 | 0.0000 | 0.6722 |
-| `G2-half/novatrail/grade-3-math` | `E1.corridor` | 0.8113 | 0.6866 | 0.1247 |
-| `G2-half/novatrail/grade-3-math` | `E4.mastered` | 0.3595 | 0.0000 | 0.3595 |
-| `G2-half/novatrail/grade-3-math` | `M3.lag` | 1.0914 | 0.0000 | 1.0914 |
-| `G2-fading/novatrail/olympiad-math` | `E1.corridor` | 0.8847 | 0.7210 | 0.1637 |
-| `G2-fading/novatrail/olympiad-math` | `M3.lag` | 0.4966 | 0.0000 | 0.4966 |
-| `G2-fading/novatrail/grade-3-math` | `E1.corridor` | 0.8152 | 0.6739 | 0.1413 |
-| `G2-fading/novatrail/grade-3-math` | `M3.lag` | 0.7609 | 0.0000 | 0.7609 |
-| `G3/novatrail/olympiad-math` | `M3.settle` | 53.1216 | 0.0000 | 53.1216 |
-| `G3/novatrail/grade-3-math` | `M3.settle` | 41.0204 | 0.0000 | 41.0204 |
-| `G3-drop/novatrail/olympiad-math` | `M3.settle` | 42.4563 | 0.0000 | 42.4563 |
-| `G3-drop/novatrail/grade-3-math` | `M3.settle` | 54.8831 | 0.0000 | 54.8831 |
-| `G0-skills1/novatrail/olympiad-math` | `M4.false.all` | 0.0196 | 0.0000 | 0.0196 |
-| `G0-skills1/novatrail/olympiad-math` | `M6.late` | 4.3104 | 0.0000 | 4.3104 |
-| `G0-skills1/novatrail/grade-3-math` | `M4.false.all` | 0.0330 | 0.0000 | 0.0330 |
-| `G0-skills1/novatrail/grade-3-math` | `M6.late` | 16.0446 | 0.0000 | 16.0446 |
-| `S-adult/novatrail/olympiad-math` | `M7.error.10` | 1.6674 | 0.0000 | 1.6674 |
-| `S-adult/novatrail/olympiad-math` | `M7.hard` | 0.1431 | 0.1431 | 0.0000 |
-| `F-model/novatrail/olympiad-math` | `E3.end` | 0.0083 | 0.0000 | 0.0083 |
-| `F-model/novatrail/olympiad-math` | `E3.late` | 0.7375 | 0.0000 | 0.7375 |
-| `F-model/novatrail/olympiad-math` | `M2.brier.after7` | 0.1537 | 0.1502 | 0.0035 |
-| `F-model/novatrail/olympiad-math` | `M4.false.break` | — | — | — |
-| `F-model/novatrail/olympiad-math` | `M5.caught` | 5.2860 | 0.0000 | 5.2860 |
-| `F-model/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-model/novatrail/grade-3-math` | `E3.late` | 0.7760 | 0.0000 | 0.7760 |
-| `F-model/novatrail/grade-3-math` | `M2.brier.after7` | 0.1559 | 0.1555 | 0.0004 |
-| `F-model/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-model/novatrail/grade-3-math` | `M5.caught` | 2.7931 | 0.0000 | 2.7931 |
-| `F-exp/novatrail/olympiad-math` | `E3.end` | 0.0104 | 0.0000 | 0.0104 |
-| `F-exp/novatrail/olympiad-math` | `E3.late` | 0.8706 | 0.0000 | 0.8706 |
-| `F-exp/novatrail/olympiad-math` | `M2.brier.after7` | 0.1305 | 0.1131 | 0.0174 |
-| `F-exp/novatrail/olympiad-math` | `M4.false.break` | — | — | — |
-| `F-exp/novatrail/olympiad-math` | `M5.caught` | 5.9726 | 0.0000 | 5.9726 |
-| `F-exp/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-exp/novatrail/grade-3-math` | `E3.late` | 0.7970 | 0.0000 | 0.7970 |
-| `F-exp/novatrail/grade-3-math` | `M2.brier.after7` | 0.1104 | 0.0906 | 0.0198 |
-| `F-exp/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-exp/novatrail/grade-3-math` | `M5.caught` | 3.3137 | 0.0000 | 3.3137 |
-| `F-C1/novatrail/olympiad-math` | `M2.brier.after7` | 0.1334 | 0.1191 | 0.0142 |
-| `F-C1/novatrail/olympiad-math` | `M4.false.break` | — | — | — |
-| `F-C1/novatrail/olympiad-math` | `M5.caught` | 6.3771 | 0.0000 | 6.3771 |
-| `F-C1/novatrail/grade-3-math` | `M2.brier.after7` | 0.1177 | 0.0999 | 0.0178 |
-| `F-C1/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-C1/novatrail/grade-3-math` | `M5.caught` | 2.7257 | 0.0000 | 2.7257 |
-| `F-growth5/novatrail/olympiad-math` | `E3.end` | 0.0116 | 0.0000 | 0.0116 |
-| `F-growth5/novatrail/olympiad-math` | `E3.late` | 0.8175 | 0.0000 | 0.8175 |
-| `F-growth5/novatrail/olympiad-math` | `M2.brier.after7` | 0.1632 | 0.1553 | 0.0079 |
-| `F-growth5/novatrail/olympiad-math` | `M4.false.break` | — | — | — |
-| `F-growth5/novatrail/olympiad-math` | `M5.caught` | 5.5010 | 0.0000 | 5.5010 |
-| `F-growth5/novatrail/grade-3-math` | `E3.end` | 0.0003 | 0.0000 | 0.0003 |
-| `F-growth5/novatrail/grade-3-math` | `E3.late` | 0.9354 | 0.0000 | 0.9354 |
-| `F-growth5/novatrail/grade-3-math` | `M2.brier.after7` | 0.1578 | 0.1564 | 0.0015 |
-| `F-growth5/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-growth5/novatrail/grade-3-math` | `M5.caught` | 2.8993 | 0.0000 | 2.8993 |
-| `F-break/novatrail/olympiad-math` | `M3.settle` | 94.8470 | 0.0000 | 94.8470 |
-| `F-break/novatrail/grade-3-math` | `M3.settle` | 337.6990 | 0.0000 | 337.6990 |
-| `W-shock/novatrail/grade-3-math` | `M2.brier.pages` | 0.1739 | 0.1419 | 0.0320 |
-| `W-shock/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-error/novatrail/grade-3-math` | `M2.brier.pages` | 0.1975 | 0.1196 | 0.0779 |
-| `W-error/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-badday/novatrail/grade-3-math` | `M2.brier.pages` | 0.1555 | 0.1488 | 0.0067 |
-| `W-badday/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `L-explain/novatrail/olympiad-math` | `E4.mastered` | 0.2574 | 0.0000 | 0.2574 |
-
-- **What follows from this.**
-  - The model's targets are readable: on `G2-half` the path of the lag of `M3` is 0.6722 and 1.0914 logit, the path of the corridor of `E1` 0.1600 and 0.1247.
-  - The share of hard first items `M7.hard` has a path of zero: the oracle sees the same chosen items as the base — the measure leaves the score of the group "Out of its band", and that group is judged by `M7` after 10 answers.
-  - `M4` after a break and `M4` from one or two pages the run read in no cell: "mastered" was not declared there. These measures leave the score of their groups too.
-  - The path of R* on the last day, `E3.end`, is from 0.0002 to 0.0116: the base loses almost no retention by the end, and the share of the path on so small a value is noisy.
-- A new pinning run — only by a new amendment to this entry.
-
-— *Amendment 2026-11-09, the author's answer to В7 when planning E3:* a measure whose pinned path is positive but no greater than the author's tolerance of that measure ([architecture.md](architecture.md), section 3.6) leaves the score the same way as a measure with a path no greater than zero: its share is not read, its weight goes with it, the report names it, and the target on it is not met. These measures still hold the constraints "no worse". On the paths of the amendment above these are `E3.end` on 4 cells of 6 — `F-model` on both maths, `F-exp` and `F-growth5` on school maths — and Brier of `M2` after pauses on 2 cells of 8: `F-model` and `F-growth5` on school maths. The table of paths above is not rewritten. The code — T29 RUN.md.
-- *Why:* the author's tolerance is what the author has already called "not changed", and a ceiling indistinguishable from the base within the tolerance sets no path. For the measures whose path goes to perfection, as for `E3.end`, the path is the base's own shortfall, and a base no farther than the tolerance from perfection sets no path either. A difference of a few thousandths — within the noise on 4,000 learners — gives on such a path a share in units and decides the score of the whole group. The rule is one for all measures, and the group "Repetitions" stays with its lateness of `E3`.
-- *Rejected:*
-  - leave it as it is — noise would decide the score of the groups "Repetitions" and "Forgets";
-  - remove `E3.end` from the group "Repetitions" — a fix of one measure: `M2` after pauses would stay with the same noise, and the next calibration may give a small path to another measure.
-
-— *Amendment 2026-11-09, a new pin (T30; R31):* the values of the base and of the ceiling, from which the path of the targets is made up, are read anew, before the first candidate, on the decisive run of the base on the new pin: `modules` v0.1.4 with `olympiad-math` 0.1.1, and the populations `A-` on the pair of maths. They are pinned in `internal/criterion/paths.json` (R28; the 2026-11-09 amendment to R28). The judgement no longer holds the table of the first 2026-11-09 amendment: its values are of the graph of `olympiad-math` 0.1.0.
-- **Runs.**
-  - The simulator — the tree of the pull request of T30 and the recipe `just decisive` (RUN.md, T30). The run went on the tree before the fixes from the review; the fixes touch only the gate, and a small run of the engine and of the ceiling — 3 learners each of `G0`, `A-linked`, `F-model` and `E-base` — gives the same bytes on both trees.
-  - The base — `learner-model` v0.1.0 (d2620a1) and `engine` v0.1.0 (c6c5bb9), the packages of `modules` v0.1.4.
-  - The working learners — seed 20261107, 4,000 a cell: 41 populations, 65 cells.
-  - The run of the base took 6 h 43 min on 20 cores of the development container, not 35 minutes as on 0.1.0. Its file is 2.1 GB, SHA-256 `a36dc5b222696690132c109d389c2b65800fe2329113b390023d4c7039bdd2e4`.
-  - The run of the engine's ceiling — 1 h 31 min, SHA-256 `8a94b5530b85fcf119bb1da4462c88642acbd006eced82a72846abc603c9481e`.
-  - Reproducibility was checked cheaply: one twentieth of the ceiling's run — the parts `k/400` at k = 0, 20, …, 380, on 20 cores in 4 minutes — was run anew and matched the file line for line, 13,000 lines. The full repeat of the ceiling was cancelled, so as not to spend another hour and a half on it.
-  - The files do not lie in the repository: the recipe gives them anew to the byte.
-- **Values** — in the criterion's direction, less is better, as in the first amendment:
-
-| Cell | Measure | Base | Ceiling | Path |
-|---|---|---|---|---|
-| `G0/novatrail/olympiad-math` | `E1.corridor` | 0.7347 | 0.0163 | 0.7184 |
-| `G0/novatrail/olympiad-math` | `M1.rms.200` | 0.5151 | 0.0000 | 0.5151 |
-| `G0/novatrail/olympiad-math` | `M4.false.all` | 0.0300 | 0.0000 | 0.0300 |
-| `G0/novatrail/olympiad-math` | `M6.late` | 4.6300 | 0.0000 | 4.6300 |
-| `G0/novatrail/grade-3-math` | `E1.corridor` | 0.8280 | 0.7510 | 0.0770 |
-| `G0/novatrail/grade-3-math` | `M1.rms.200` | 0.2366 | 0.0000 | 0.2366 |
-| `G0/novatrail/grade-3-math` | `M4.false.all` | 0.0178 | 0.0000 | 0.0178 |
-| `G0/novatrail/grade-3-math` | `M6.late` | 15.8116 | 0.0000 | 15.8116 |
-| `G1/novatrail/olympiad-math` | `M7.error.10` | 1.1797 | 0.0000 | 1.1797 |
-| `G1/novatrail/olympiad-math` | `M7.hard` | 0.3523 | 0.3523 | 0.0000 |
-| `G1/novatrail/grade-3-math` | `M7.error.10` | 1.0513 | 0.0000 | 1.0513 |
-| `G1/novatrail/grade-3-math` | `M7.hard` | 0.3708 | 0.3708 | 0.0000 |
-| `G2/novatrail/olympiad-math` | `E1.corridor` | 0.7313 | 0.0125 | 0.7189 |
-| `G2/novatrail/olympiad-math` | `M3.lag` | 0.9971 | 0.0000 | 0.9971 |
-| `G2/novatrail/grade-3-math` | `E1.corridor` | 0.8694 | 0.7001 | 0.1693 |
-| `G2/novatrail/grade-3-math` | `M3.lag` | 2.4176 | 0.0000 | 2.4176 |
-| `G2-half/novatrail/olympiad-math` | `E1.corridor` | 0.7210 | 0.0110 | 0.7100 |
-| `G2-half/novatrail/olympiad-math` | `E4.mastered` | 0.4284 | 0.0000 | 0.4284 |
-| `G2-half/novatrail/olympiad-math` | `M3.lag` | 0.5019 | 0.0000 | 0.5019 |
-| `G2-half/novatrail/grade-3-math` | `E1.corridor` | 0.8113 | 0.6866 | 0.1247 |
-| `G2-half/novatrail/grade-3-math` | `E4.mastered` | 0.3595 | 0.0000 | 0.3595 |
-| `G2-half/novatrail/grade-3-math` | `M3.lag` | 1.0914 | 0.0000 | 1.0914 |
-| `G2-fading/novatrail/olympiad-math` | `E1.corridor` | 0.7189 | 0.0092 | 0.7097 |
-| `G2-fading/novatrail/olympiad-math` | `M3.lag` | 0.3883 | 0.0000 | 0.3883 |
-| `G2-fading/novatrail/grade-3-math` | `E1.corridor` | 0.8152 | 0.6739 | 0.1413 |
-| `G2-fading/novatrail/grade-3-math` | `M3.lag` | 0.7609 | 0.0000 | 0.7609 |
-| `G3/novatrail/olympiad-math` | `M3.settle` | 55.1020 | 0.0000 | 55.1020 |
-| `G3/novatrail/grade-3-math` | `M3.settle` | 41.0204 | 0.0000 | 41.0204 |
-| `G3-drop/novatrail/olympiad-math` | `M3.settle` | 52.0895 | 0.0000 | 52.0895 |
-| `G3-drop/novatrail/grade-3-math` | `M3.settle` | 54.8831 | 0.0000 | 54.8831 |
-| `G0-skills1/novatrail/olympiad-math` | `M4.false.all` | 0.0592 | 0.0000 | 0.0592 |
-| `G0-skills1/novatrail/olympiad-math` | `M6.late` | 4.6722 | 0.0000 | 4.6722 |
-| `G0-skills1/novatrail/grade-3-math` | `M4.false.all` | 0.0330 | 0.0000 | 0.0330 |
-| `G0-skills1/novatrail/grade-3-math` | `M6.late` | 16.0446 | 0.0000 | 16.0446 |
-| `S-adult/novatrail/olympiad-math` | `M7.error.10` | 1.4971 | 0.0000 | 1.4971 |
-| `S-adult/novatrail/olympiad-math` | `M7.hard` | 0.1106 | 0.1106 | 0.0000 |
-| `F-model/novatrail/olympiad-math` | `E3.end` | 0.0446 | 0.0000 | 0.0446 |
-| `F-model/novatrail/olympiad-math` | `E3.late` | 0.4755 | 0.0000 | 0.4755 |
-| `F-model/novatrail/olympiad-math` | `M2.brier.after7` | 0.1663 | 0.1612 | 0.0051 |
-| `F-model/novatrail/olympiad-math` | `M4.false.break` | 0.0542 | 0.0000 | 0.0542 |
-| `F-model/novatrail/olympiad-math` | `M5.caught` | 3.5453 | 0.0000 | 3.5453 |
-| `F-model/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-model/novatrail/grade-3-math` | `E3.late` | 0.7760 | 0.0000 | 0.7760 |
-| `F-model/novatrail/grade-3-math` | `M2.brier.after7` | 0.1559 | 0.1555 | 0.0004 |
-| `F-model/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-model/novatrail/grade-3-math` | `M5.caught` | 2.7931 | 0.0000 | 2.7931 |
-| `F-exp/novatrail/olympiad-math` | `E3.end` | 0.0588 | 0.0000 | 0.0588 |
-| `F-exp/novatrail/olympiad-math` | `E3.late` | 0.5361 | 0.0000 | 0.5361 |
-| `F-exp/novatrail/olympiad-math` | `M2.brier.after7` | 0.1569 | 0.1474 | 0.0095 |
-| `F-exp/novatrail/olympiad-math` | `M4.false.break` | 0.0476 | 0.0000 | 0.0476 |
-| `F-exp/novatrail/olympiad-math` | `M5.caught` | 3.4966 | 0.0000 | 3.4966 |
-| `F-exp/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-exp/novatrail/grade-3-math` | `E3.late` | 0.7970 | 0.0000 | 0.7970 |
-| `F-exp/novatrail/grade-3-math` | `M2.brier.after7` | 0.1104 | 0.0906 | 0.0198 |
-| `F-exp/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-exp/novatrail/grade-3-math` | `M5.caught` | 3.3137 | 0.0000 | 3.3137 |
-| `F-C1/novatrail/olympiad-math` | `M2.brier.after7` | 0.1606 | 0.1510 | 0.0096 |
-| `F-C1/novatrail/olympiad-math` | `M4.false.break` | 0.0483 | 0.0000 | 0.0483 |
-| `F-C1/novatrail/olympiad-math` | `M5.caught` | 3.5636 | 0.0000 | 3.5636 |
-| `F-C1/novatrail/grade-3-math` | `M2.brier.after7` | 0.1177 | 0.0999 | 0.0178 |
-| `F-C1/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-C1/novatrail/grade-3-math` | `M5.caught` | 2.7257 | 0.0000 | 2.7257 |
-| `F-growth5/novatrail/olympiad-math` | `E3.end` | 0.0918 | 0.0000 | 0.0918 |
-| `F-growth5/novatrail/olympiad-math` | `E3.late` | 0.6435 | 0.0000 | 0.6435 |
-| `F-growth5/novatrail/olympiad-math` | `M2.brier.after7` | 0.1943 | 0.1826 | 0.0117 |
-| `F-growth5/novatrail/olympiad-math` | `M4.false.break` | 0.0449 | 0.0000 | 0.0449 |
-| `F-growth5/novatrail/olympiad-math` | `M5.caught` | 3.4742 | 0.0000 | 3.4742 |
-| `F-growth5/novatrail/grade-3-math` | `E3.end` | 0.0003 | 0.0000 | 0.0003 |
-| `F-growth5/novatrail/grade-3-math` | `E3.late` | 0.9354 | 0.0000 | 0.9354 |
-| `F-growth5/novatrail/grade-3-math` | `M2.brier.after7` | 0.1578 | 0.1564 | 0.0015 |
-| `F-growth5/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-growth5/novatrail/grade-3-math` | `M5.caught` | 2.8993 | 0.0000 | 2.8993 |
-| `F-break/novatrail/olympiad-math` | `M3.settle` | 172.7969 | 0.0000 | 172.7969 |
-| `F-break/novatrail/grade-3-math` | `M3.settle` | 337.6990 | 0.0000 | 337.6990 |
-| `W-shock/novatrail/grade-3-math` | `M2.brier.pages` | 0.1739 | 0.1419 | 0.0320 |
-| `W-shock/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-error/novatrail/grade-3-math` | `M2.brier.pages` | 0.1975 | 0.1196 | 0.0779 |
-| `W-error/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-badday/novatrail/grade-3-math` | `M2.brier.pages` | 0.1555 | 0.1488 | 0.0067 |
-| `W-badday/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0039 | 0.0000 | 0.0039 |
-| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.7703 | 0.0000 | 0.7703 |
-| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0634 | 0.0000 | 0.0634 |
-| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.1968 | 0.0000 | 0.1968 |
-| `L-explain/novatrail/olympiad-math` | `E4.mastered` | 0.5284 | 0.0000 | 0.5284 |
-
-- **What is seen.**
-  - On `olympiad-math` 0.1.1 the ceiling holds almost all the issued items in the corridor — a shortfall of 0.009–0.016 —, and the base only 26–28 %. The path of the corridor of `E1` there is about 0.71, and on 0.1.0 it was 0.14–0.16. The model's targets on `G2-half` are readable: the path of the lag of `M3` is 0.5019 and 1.0914 logit, the path of the corridor of `E1` 0.7100 and 0.1247.
-  - `M4` after a break is now read on olympiad maths; on school maths there is still none.
-  - `M9` is read for `A-unpractised` and `A-fading`, on the pair of maths.
-  - A path no greater than the author's tolerance — the measure leaves the score (the 2026-11-09 amendment to this entry, the answer to В7) — for seven measures: `E3.end` on school maths for `F-model`, `F-exp` and `F-growth5` (0.0002–0.0003 at a tolerance of 0.01); Brier of `M2` after pauses on school maths for `F-model` and `F-growth5` (0.0004 and 0.0015 at 0.002); `M4` on `G0` of school maths (0.0178 at 0.02); `M9.hasFalse` for `A-unpractised` (0.0039 at 0.02). `E3.end` on olympiad maths is 0.045–0.092, and it stays in the score.
-  - The share of hard first items `M7.hard` still has a path of zero.
-- A new pinning run comes only by a new amendment to this entry.
-
-— *Amendment 2026-11-10:* the paths of the amendment "a new pin" stay in force after the move to `spec` v0.12.0 too — the packages of `modules` v0.2.0 in format 0.4 and the libraries v0.1.4 (R32). The first 100 learners of each of the 65 cells on the new simulator give the same bytes as the run of the base of T30: 6,500 lines. T36 writes the paths anew, by a fast run (RUN.md).
-
-— *Amendment 2026-11-10, runs no longer than an hour (T36; R33):* the decisive run and the confirmation go on 1,000 learners a cell, not on 4,000, and the choice repeated for `I1` takes only the first 10 learners of a cell. The resolution of "no worse" is still 4.3 standard errors of the paired difference in the same run, but on four times fewer learners it is 2 times wider. Where it is larger than the author's tolerance, it becomes the tolerance. A rough look is a run of fewer than 1,000 learners. Returning to 4,000 comes by a new amendment to this entry, when `engine` speeds up the choice (row В10 of table 3 of RUN.md). The values of the base and of the ceiling that the path of the targets is made of are read anew on a decisive run of this size. They are pinned in `internal/criterion/paths.json` (R28) in place of the values of the amendment "a new pin".
-- **Runs.**
-  - The simulator is the tree of the pull request of T36 and the recipe `just decisive` (RUN.md, T36).
-  - The base is `learner-model` v0.1.4 (acfc4f2) and `engine` v0.1.4 (ddfed3a), the packages of `modules` v0.2.0.
-  - The working learners are seed 20261107, 1,000 a cell: 41 populations, 65 cells. They are the first 1,000 of the same learners as in the run of T30.
-  - Other containers loaded the host machine the whole time: load average 85–150 on 20 threads, and each of the 20 processes got from a third to a half of a CPU.
-  - The run of the base took 1 h 42 min by the clock and about 37 CPU minutes per process, 748 minutes for all 20. On a free machine this is less than an hour. Its file is 525 MB, SHA-256 `b13a9264353936391f84e52c578805d460461354b4ca0017c22763dc9f9d4c92`.
-  - The run of the engine's ceiling took 41 min by the clock and about 14 CPU minutes per process. Its file is 406 MB, SHA-256 `f579ecdf54bd11493f84da1fca5e687aba12ea0c9f442b0dbaecf8ddc1b4cc7d`.
-  - The run of the ceiling was repeated whole — 46 min on the same busy machine — and matched the file to the byte: the same SHA-256.
-  - The files lie in `runs/` of the working copy and are not in the repository: the recipe gives them anew to the byte.
-- **Values** — in the direction of the criterion, less is better, as in the first amendment:
-
-| Cell | Measure | Base | Ceiling | Path |
-|---|---|---|---|---|
-| `G0/novatrail/olympiad-math` | `E1.corridor` | 0.7331 | 0.0167 | 0.7164 |
-| `G0/novatrail/olympiad-math` | `M1.rms.200` | 0.5103 | 0.0000 | 0.5103 |
-| `G0/novatrail/olympiad-math` | `M4.false.all` | 0.0287 | 0.0000 | 0.0287 |
-| `G0/novatrail/olympiad-math` | `M6.late` | 4.6323 | 0.0000 | 4.6323 |
-| `G0/novatrail/grade-3-math` | `E1.corridor` | 0.8200 | 0.7424 | 0.0777 |
-| `G0/novatrail/grade-3-math` | `M1.rms.200` | 0.2397 | 0.0000 | 0.2397 |
-| `G0/novatrail/grade-3-math` | `M4.false.all` | 0.0135 | 0.0000 | 0.0135 |
-| `G0/novatrail/grade-3-math` | `M6.late` | 15.8219 | 0.0000 | 15.8219 |
-| `G1/novatrail/olympiad-math` | `M7.error.10` | 1.1989 | 0.0000 | 1.1989 |
-| `G1/novatrail/olympiad-math` | `M7.hard` | 0.3500 | 0.3500 | 0.0000 |
-| `G1/novatrail/grade-3-math` | `M7.error.10` | 1.0524 | 0.0000 | 1.0524 |
-| `G1/novatrail/grade-3-math` | `M7.hard` | 0.3738 | 0.3738 | 0.0000 |
-| `G2/novatrail/olympiad-math` | `E1.corridor` | 0.7329 | 0.0131 | 0.7198 |
-| `G2/novatrail/olympiad-math` | `M3.lag` | 0.9860 | 0.0000 | 0.9860 |
-| `G2/novatrail/grade-3-math` | `E1.corridor` | 0.8700 | 0.7025 | 0.1676 |
-| `G2/novatrail/grade-3-math` | `M3.lag` | 2.4492 | 0.0000 | 2.4492 |
-| `G2-half/novatrail/olympiad-math` | `E1.corridor` | 0.7229 | 0.0119 | 0.7110 |
-| `G2-half/novatrail/olympiad-math` | `E4.mastered` | 0.4289 | 0.0000 | 0.4289 |
-| `G2-half/novatrail/olympiad-math` | `M3.lag` | 0.4974 | 0.0000 | 0.4974 |
-| `G2-half/novatrail/grade-3-math` | `E1.corridor` | 0.8126 | 0.6884 | 0.1242 |
-| `G2-half/novatrail/grade-3-math` | `E4.mastered` | 0.3528 | 0.0000 | 0.3528 |
-| `G2-half/novatrail/grade-3-math` | `M3.lag` | 1.0892 | 0.0000 | 1.0892 |
-| `G2-fading/novatrail/olympiad-math` | `E1.corridor` | 0.7199 | 0.0096 | 0.7103 |
-| `G2-fading/novatrail/olympiad-math` | `M3.lag` | 0.4007 | 0.0000 | 0.4007 |
-| `G2-fading/novatrail/grade-3-math` | `E1.corridor` | 0.8128 | 0.6726 | 0.1402 |
-| `G2-fading/novatrail/grade-3-math` | `M3.lag` | 0.7609 | 0.0000 | 0.7609 |
-| `G3/novatrail/olympiad-math` | `M3.settle` | 53.3750 | 0.0000 | 53.3750 |
-| `G3/novatrail/grade-3-math` | `M3.settle` | 40.8951 | 0.0000 | 40.8951 |
-| `G3-drop/novatrail/olympiad-math` | `M3.settle` | 52.4346 | 0.0000 | 52.4346 |
-| `G3-drop/novatrail/grade-3-math` | `M3.settle` | 54.2998 | 0.0000 | 54.2998 |
-| `G0-skills1/novatrail/olympiad-math` | `M4.false.all` | 0.0590 | 0.0000 | 0.0590 |
-| `G0-skills1/novatrail/olympiad-math` | `M6.late` | 4.6284 | 0.0000 | 4.6284 |
-| `G0-skills1/novatrail/grade-3-math` | `M4.false.all` | 0.0360 | 0.0000 | 0.0360 |
-| `G0-skills1/novatrail/grade-3-math` | `M6.late` | 15.9533 | 0.0000 | 15.9533 |
-| `S-adult/novatrail/olympiad-math` | `M7.error.10` | 1.5312 | 0.0000 | 1.5312 |
-| `S-adult/novatrail/olympiad-math` | `M7.hard` | 0.1089 | 0.1089 | 0.0000 |
-| `F-model/novatrail/olympiad-math` | `E3.end` | 0.0471 | 0.0000 | 0.0471 |
-| `F-model/novatrail/olympiad-math` | `E3.late` | 0.4833 | 0.0000 | 0.4833 |
-| `F-model/novatrail/olympiad-math` | `M2.brier.after7` | 0.1675 | 0.1621 | 0.0054 |
-| `F-model/novatrail/olympiad-math` | `M4.false.break` | 0.0602 | 0.0000 | 0.0602 |
-| `F-model/novatrail/olympiad-math` | `M5.caught` | 3.6381 | 0.0000 | 3.6381 |
-| `F-model/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-model/novatrail/grade-3-math` | `E3.late` | 0.6963 | 0.0000 | 0.6963 |
-| `F-model/novatrail/grade-3-math` | `M2.brier.after7` | 0.1576 | 0.1572 | 0.0003 |
-| `F-model/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-model/novatrail/grade-3-math` | `M5.caught` | 4.0788 | 0.0000 | 4.0788 |
-| `F-exp/novatrail/olympiad-math` | `E3.end` | 0.0578 | 0.0000 | 0.0578 |
-| `F-exp/novatrail/olympiad-math` | `E3.late` | 0.5363 | 0.0000 | 0.5363 |
-| `F-exp/novatrail/olympiad-math` | `M2.brier.after7` | 0.1568 | 0.1470 | 0.0098 |
-| `F-exp/novatrail/olympiad-math` | `M4.false.break` | 0.0534 | 0.0000 | 0.0534 |
-| `F-exp/novatrail/olympiad-math` | `M5.caught` | 3.6715 | 0.0000 | 3.6715 |
-| `F-exp/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-exp/novatrail/grade-3-math` | `E3.late` | 0.8342 | 0.0000 | 0.8342 |
-| `F-exp/novatrail/grade-3-math` | `M2.brier.after7` | 0.1098 | 0.0906 | 0.0193 |
-| `F-exp/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-exp/novatrail/grade-3-math` | `M5.caught` | 3.8074 | 0.0000 | 3.8074 |
-| `F-C1/novatrail/olympiad-math` | `M2.brier.after7` | 0.1587 | 0.1487 | 0.0100 |
-| `F-C1/novatrail/olympiad-math` | `M4.false.break` | 0.0538 | 0.0000 | 0.0538 |
-| `F-C1/novatrail/olympiad-math` | `M5.caught` | 3.7889 | 0.0000 | 3.7889 |
-| `F-C1/novatrail/grade-3-math` | `M2.brier.after7` | 0.1170 | 0.1001 | 0.0169 |
-| `F-C1/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-C1/novatrail/grade-3-math` | `M5.caught` | 2.8574 | 0.0000 | 2.8574 |
-| `F-growth5/novatrail/olympiad-math` | `E3.end` | 0.0890 | 0.0000 | 0.0890 |
-| `F-growth5/novatrail/olympiad-math` | `E3.late` | 0.6450 | 0.0000 | 0.6450 |
-| `F-growth5/novatrail/olympiad-math` | `M2.brier.after7` | 0.1946 | 0.1831 | 0.0115 |
-| `F-growth5/novatrail/olympiad-math` | `M4.false.break` | 0.0463 | 0.0000 | 0.0463 |
-| `F-growth5/novatrail/olympiad-math` | `M5.caught` | 3.4889 | 0.0000 | 3.4889 |
-| `F-growth5/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-growth5/novatrail/grade-3-math` | `E3.late` | 0.9128 | 0.0000 | 0.9128 |
-| `F-growth5/novatrail/grade-3-math` | `M2.brier.after7` | 0.1548 | 0.1537 | 0.0012 |
-| `F-growth5/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-growth5/novatrail/grade-3-math` | `M5.caught` | 3.0377 | 0.0000 | 3.0377 |
-| `F-break/novatrail/olympiad-math` | `M3.settle` | 170.0686 | 0.0000 | 170.0686 |
-| `F-break/novatrail/grade-3-math` | `M3.settle` | 336.6550 | 0.0000 | 336.6550 |
-| `W-shock/novatrail/grade-3-math` | `M2.brier.pages` | 0.1730 | 0.1411 | 0.0319 |
-| `W-shock/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-error/novatrail/grade-3-math` | `M2.brier.pages` | 0.1983 | 0.1194 | 0.0788 |
-| `W-error/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-badday/novatrail/grade-3-math` | `M2.brier.pages` | 0.1549 | 0.1484 | 0.0066 |
-| `W-badday/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0036 | 0.0000 | 0.0036 |
-| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.7754 | 0.0000 | 0.7754 |
-| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0559 | 0.0000 | 0.0559 |
-| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.1978 | 0.0000 | 0.1978 |
-| `L-explain/novatrail/olympiad-math` | `E4.mastered` | 0.5087 | 0.0000 | 0.5087 |
-
-- **What is seen.**
-  - The paths are close to the paths of the amendment "a new pin": for the paths of the corridor `E1` the difference is at most 0.002, and for the lag `M3` at most 0.032. The count of answers until the forgotten is caught, `M5.caught`, moved the most, on school maths — by up to 1.3 answers for `F-model`: on 1,000 learners it is noisy.
-  - The path is no larger than the author's tolerance for the same seven measures as before. A measure with such a path leaves the score (the 2026-11-09 amendment to this entry, the answer to В7). They are:
-    - `E3.end` on school maths for `F-model`, `F-exp` and `F-growth5`;
-    - Brier of `M2` after pauses on school maths for `F-model` and `F-growth5` (0.0003 and 0.0012 at a tolerance of 0.002);
-    - `M4` on `G0` of school maths (0.0135 at 0.02);
-    - `M9.hasFalse` for `A-unpractised` (0.0036 at 0.02).
-  - The share of hard first items, `M7.hard`, still has a path of zero.
-- A new pinning run comes only by a new amendment to this entry.
-
-— *Amendment 2026-11-11, the base on `engine` v0.1.6 and 1,500 learners (T41; R31, R33, R38):* the base is `engine` v0.1.6, and the decisive run and the confirmation go on 1,500 learners a cell, not on 1,000. `engine` v0.1.6 is v0.1.5, the fix of R82 spec, plus a speed-up of the choice without a change of the choice (R20 engine). The gate on it reads all 69 numbers the same to the bit as on v0.1.4. The choice became cheaper, and the base on 1,500 learners now fits into 45 minutes on a free machine (the 2026-11-11 amendment to R33). The resolution of "no worse" is still 4.3 standard errors of the paired difference in the same run, but on 1,500 learners it is √1.5 ≈ 1.22 times narrower than on 1,000. A rough look is a run of fewer than 1,500 learners. The values of the base and of the ceiling that the path of the targets is made of are read anew on a decisive run of this size. They are pinned in `internal/criterion/paths.json` (R28) in place of the values of the amendment "runs no longer than an hour".
-- **Runs.**
-  - The simulator is the tree of the pull request of T41 and the recipe `just decisive` (RUN.md, T41).
-  - The base is `learner-model` v0.1.4 (acfc4f2) and `engine` v0.1.6 (57e0ab8), the packages of `modules` v0.2.0. `release-verify` accepted the archive of `engine` v0.1.6.
-  - The working learners are seed 20261107, 1,500 a cell: 41 populations, 65 cells. They are the same working learners as in the runs of T30 and T36: the first 1,000 of them are the learners of the run of T36, and all 1,500 are the first 1,500 of the 4,000 of the run of T30.
-  - The run of the base took 38 min by the clock and about 33 CPU minutes per process, 655 minutes for all 20; the load average at the start was 5. Its file is 788 MB, SHA-256 `c09442e774dc1f9403e5d67fda72e881005241722ed4e464d4ac1f3603b32b4f`.
-  - The run of the engine's ceiling took about 19 CPU minutes per process, 383 minutes for all 20. By the clock it took 1 h 30 min: the processes got less CPU than they asked for — going over an hour speaks of the machine, not of the run. Its file is 609 MB, SHA-256 `8f5382340ed611ddfc285ecab66c429dd349f0e4c3f471ca1c1fc79436c58469`.
-  - The run of the ceiling was repeated whole — 19 min 23 s by the clock — and matched the file to the byte: the same SHA-256.
-  - The files lie in `runs/` of the working copy and are not in the repository: the recipe gives them anew to the byte. The files of the runs on 1,000 learners, which the judgements `engine-1` and `model-1` refer to, lie there too, as `base-1000.jsonl` and `ceiling-1000.jsonl`.
-- **Values** — in the direction of the criterion, less is better, as in the first amendment:
-
-| Cell | Measure | Base | Ceiling | Path |
-|---|---|---|---|---|
-| `G0/novatrail/olympiad-math` | `E1.corridor` | 0.7323 | 0.0168 | 0.7155 |
-| `G0/novatrail/olympiad-math` | `M1.rms.200` | 0.5119 | 0.0000 | 0.5119 |
-| `G0/novatrail/olympiad-math` | `M4.false.all` | 0.0288 | 0.0000 | 0.0288 |
-| `G0/novatrail/olympiad-math` | `M6.late` | 4.6196 | 0.0000 | 4.6196 |
-| `G0/novatrail/grade-3-math` | `E1.corridor` | 0.8240 | 0.7481 | 0.0760 |
-| `G0/novatrail/grade-3-math` | `M1.rms.200` | 0.2302 | 0.0000 | 0.2302 |
-| `G0/novatrail/grade-3-math` | `M4.false.all` | 0.0104 | 0.0000 | 0.0104 |
-| `G0/novatrail/grade-3-math` | `M6.late` | 15.7789 | 0.0000 | 15.7789 |
-| `G1/novatrail/olympiad-math` | `M7.error.10` | 1.1923 | 0.0000 | 1.1923 |
-| `G1/novatrail/olympiad-math` | `M7.hard` | 0.3462 | 0.3462 | 0.0000 |
-| `G1/novatrail/grade-3-math` | `M7.error.10` | 1.0481 | 0.0000 | 1.0481 |
-| `G1/novatrail/grade-3-math` | `M7.hard` | 0.3755 | 0.3755 | 0.0000 |
-| `G2/novatrail/olympiad-math` | `E1.corridor` | 0.7321 | 0.0123 | 0.7198 |
-| `G2/novatrail/olympiad-math` | `M3.lag` | 0.9969 | 0.0000 | 0.9969 |
-| `G2/novatrail/grade-3-math` | `E1.corridor` | 0.8698 | 0.7013 | 0.1685 |
-| `G2/novatrail/grade-3-math` | `M3.lag` | 2.4447 | 0.0000 | 2.4447 |
-| `G2-half/novatrail/olympiad-math` | `E1.corridor` | 0.7241 | 0.0114 | 0.7126 |
-| `G2-half/novatrail/olympiad-math` | `E4.mastered` | 0.4315 | 0.0000 | 0.4315 |
-| `G2-half/novatrail/olympiad-math` | `M3.lag` | 0.5027 | 0.0000 | 0.5027 |
-| `G2-half/novatrail/grade-3-math` | `E1.corridor` | 0.8112 | 0.6882 | 0.1230 |
-| `G2-half/novatrail/grade-3-math` | `E4.mastered` | 0.3647 | 0.0000 | 0.3647 |
-| `G2-half/novatrail/grade-3-math` | `M3.lag` | 1.0970 | 0.0000 | 1.0970 |
-| `G2-fading/novatrail/olympiad-math` | `E1.corridor` | 0.7181 | 0.0084 | 0.7096 |
-| `G2-fading/novatrail/olympiad-math` | `M3.lag` | 0.3994 | 0.0000 | 0.3994 |
-| `G2-fading/novatrail/grade-3-math` | `E1.corridor` | 0.8138 | 0.6749 | 0.1389 |
-| `G2-fading/novatrail/grade-3-math` | `M3.lag` | 0.7497 | 0.0000 | 0.7497 |
-| `G3/novatrail/olympiad-math` | `M3.settle` | 55.9157 | 0.0000 | 55.9157 |
-| `G3/novatrail/grade-3-math` | `M3.settle` | 41.2151 | 0.0000 | 41.2151 |
-| `G3-drop/novatrail/olympiad-math` | `M3.settle` | 52.6909 | 0.0000 | 52.6909 |
-| `G3-drop/novatrail/grade-3-math` | `M3.settle` | 54.3511 | 0.0000 | 54.3511 |
-| `G0-skills1/novatrail/olympiad-math` | `M4.false.all` | 0.0595 | 0.0000 | 0.0595 |
-| `G0-skills1/novatrail/olympiad-math` | `M6.late` | 4.6632 | 0.0000 | 4.6632 |
-| `G0-skills1/novatrail/grade-3-math` | `M4.false.all` | 0.0296 | 0.0000 | 0.0296 |
-| `G0-skills1/novatrail/grade-3-math` | `M6.late` | 16.0122 | 0.0000 | 16.0122 |
-| `S-adult/novatrail/olympiad-math` | `M7.error.10` | 1.5272 | 0.0000 | 1.5272 |
-| `S-adult/novatrail/olympiad-math` | `M7.hard` | 0.1103 | 0.1103 | 0.0000 |
-| `F-model/novatrail/olympiad-math` | `E3.end` | 0.0463 | 0.0000 | 0.0463 |
-| `F-model/novatrail/olympiad-math` | `E3.late` | 0.4779 | 0.0000 | 0.4779 |
-| `F-model/novatrail/olympiad-math` | `M2.brier.after7` | 0.1677 | 0.1627 | 0.0051 |
-| `F-model/novatrail/olympiad-math` | `M4.false.break` | 0.0567 | 0.0000 | 0.0567 |
-| `F-model/novatrail/olympiad-math` | `M5.caught` | 3.5371 | 0.0000 | 3.5371 |
-| `F-model/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-model/novatrail/grade-3-math` | `E3.late` | 0.7332 | 0.0000 | 0.7332 |
-| `F-model/novatrail/grade-3-math` | `M2.brier.after7` | 0.1549 | 0.1545 | 0.0004 |
-| `F-model/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-model/novatrail/grade-3-math` | `M5.caught` | 3.7969 | 0.0000 | 3.7969 |
-| `F-exp/novatrail/olympiad-math` | `E3.end` | 0.0564 | 0.0000 | 0.0564 |
-| `F-exp/novatrail/olympiad-math` | `E3.late` | 0.5484 | 0.0000 | 0.5484 |
-| `F-exp/novatrail/olympiad-math` | `M2.brier.after7` | 0.1571 | 0.1475 | 0.0096 |
-| `F-exp/novatrail/olympiad-math` | `M4.false.break` | 0.0528 | 0.0000 | 0.0528 |
-| `F-exp/novatrail/olympiad-math` | `M5.caught` | 3.6069 | 0.0000 | 3.6069 |
-| `F-exp/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-exp/novatrail/grade-3-math` | `E3.late` | 0.8469 | 0.0000 | 0.8469 |
-| `F-exp/novatrail/grade-3-math` | `M2.brier.after7` | 0.1106 | 0.0906 | 0.0200 |
-| `F-exp/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-exp/novatrail/grade-3-math` | `M5.caught` | 2.9475 | 0.0000 | 2.9475 |
-| `F-C1/novatrail/olympiad-math` | `M2.brier.after7` | 0.1597 | 0.1502 | 0.0095 |
-| `F-C1/novatrail/olympiad-math` | `M4.false.break` | 0.0524 | 0.0000 | 0.0524 |
-| `F-C1/novatrail/olympiad-math` | `M5.caught` | 3.6834 | 0.0000 | 3.6834 |
-| `F-C1/novatrail/grade-3-math` | `M2.brier.after7` | 0.1193 | 0.1021 | 0.0172 |
-| `F-C1/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-C1/novatrail/grade-3-math` | `M5.caught` | 2.7043 | 0.0000 | 2.7043 |
-| `F-growth5/novatrail/olympiad-math` | `E3.end` | 0.0915 | 0.0000 | 0.0915 |
-| `F-growth5/novatrail/olympiad-math` | `E3.late` | 0.6472 | 0.0000 | 0.6472 |
-| `F-growth5/novatrail/olympiad-math` | `M2.brier.after7` | 0.1941 | 0.1827 | 0.0114 |
-| `F-growth5/novatrail/olympiad-math` | `M4.false.break` | 0.0470 | 0.0000 | 0.0470 |
-| `F-growth5/novatrail/olympiad-math` | `M5.caught` | 3.5538 | 0.0000 | 3.5538 |
-| `F-growth5/novatrail/grade-3-math` | `E3.end` | 0.0003 | 0.0000 | 0.0003 |
-| `F-growth5/novatrail/grade-3-math` | `E3.late` | 0.8907 | 0.0000 | 0.8907 |
-| `F-growth5/novatrail/grade-3-math` | `M2.brier.after7` | 0.1561 | 0.1547 | 0.0014 |
-| `F-growth5/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-growth5/novatrail/grade-3-math` | `M5.caught` | 2.4756 | 0.0000 | 2.4756 |
-| `F-break/novatrail/olympiad-math` | `M3.settle` | 173.0952 | 0.0000 | 173.0952 |
-| `F-break/novatrail/grade-3-math` | `M3.settle` | 338.1067 | 0.0000 | 338.1067 |
-| `W-shock/novatrail/grade-3-math` | `M2.brier.pages` | 0.1733 | 0.1415 | 0.0318 |
-| `W-shock/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-error/novatrail/grade-3-math` | `M2.brier.pages` | 0.1977 | 0.1195 | 0.0783 |
-| `W-error/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-badday/novatrail/grade-3-math` | `M2.brier.pages` | 0.1548 | 0.1482 | 0.0066 |
-| `W-badday/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0033 | 0.0000 | 0.0033 |
-| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.7777 | 0.0000 | 0.7777 |
-| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0625 | 0.0000 | 0.0625 |
-| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.1999 | 0.0000 | 0.1999 |
-| `L-explain/novatrail/olympiad-math` | `E4.mastered` | 0.5211 | 0.0000 | 0.5211 |
-
-- **What is seen.**
-  - The paths are close to the paths of the amendment "runs no longer than an hour": for the paths of the corridor `E1` the difference is at most 0.002, for the lag `M3.lag` at most 0.012. Again the count of answers until the forgotten is caught, `M5.caught`, moved the most, on school maths — by up to 0.86 answers for `F-exp` —, and so did the share of false "mastered" `M4` on `G0` and `G0-skills1` of school maths — by 0.003 and 0.006: on the small pools of school maths these measures are noisy.
-  - The path is no larger than the author's tolerance for the same seven measures as before, and a measure with such a path still leaves the score (the 2026-11-09 amendment to this entry, the answer to В7):
-    - `E3.end` on school maths for `F-model`, `F-exp` and `F-growth5`;
-    - Brier of `M2` after pauses on school maths for `F-model` and `F-growth5` (0.0004 and 0.0014 at a tolerance of 0.002);
-    - `M4` on `G0` of school maths (0.0104 at 0.02);
-    - `M9.hasFalse` for `A-unpractised` (0.0033 at 0.02).
-  - The share of hard first items, `M7.hard`, still has a path of zero.
-- A new pinning run comes only by a new amendment to this entry.
-
-— *Amendment 2026-11-11, packages with `time` and leading questions (T43; R41, R42):* the paths are read anew on a new pin — `modules` v0.2.5 with `olympiad-math` and `grade-3-math` 0.3.0 — and on `learner-model` v0.1.5. The rule, the size and the resolution are the same as in the amendment "the base on `engine` v0.1.6 and 1,500 learners": 1,500 working learners a cell, 4.3 standard errors of the paired difference. The paths are pinned in `internal/criterion/paths.json` (R28) in place of the values of that amendment.
-- **Runs.**
-  - The simulator is the tree of the branch of epic E4 with T42 and T43 and the recipe `just decisive` (RUN.md, T43).
-  - The base is `learner-model` v0.1.5 (3a2cd29) and `engine` v0.1.6 (57e0ab8), the packages of `modules` v0.2.5: `olympiad-math` and `grade-3-math` 0.3.0, `english-essays` 0.2.0.
-  - The working learners are the same as in the previous amendment: seed 20261107, 1,500 a cell, 41 populations, 65 cells.
-  - The run of the base took 47 min 48 s by the clock and about 38.7 CPU minutes per process, 774 minutes for all 20. Neighbouring containers shared the host: the 15-minute load average towards the end was 24.4 with 20 processes of its own. Its file is 780 MB, SHA-256 `4567a53214a4fca607cb0d35ba3d4e4969b6213a1f7a2d3206a248d793e61fd4`.
-  - The run of the engine's ceiling took 34 min 45 s by the clock, about 18.8 CPU minutes per process, 377 minutes for all 20, at a load average of about 37–42. Its file is 610 MB, SHA-256 `ea7b9eecf621b920a500b821db07f391dd07425b1fcc2efd5efde0541cfd984b`.
-  - The run of the ceiling was repeated whole — 61 min 21 s by the clock at a load average of up to 72 — and matched the file to the byte: the same SHA-256.
-  - The files lie in `runs/` of the working copy and are not in the repository. The previous files on 1,500 learners are overwritten: only the previous `paths.json` referred to them.
-- **Values** — in the direction of the criterion, less is better, as in the first amendment:
-
-| Cell | Measure | Base | Ceiling | Path |
-|---|---|---|---|---|
-| `G0/novatrail/olympiad-math` | `E1.corridor` | 0.7438 | 0.0193 | 0.7245 |
-| `G0/novatrail/olympiad-math` | `M1.rms.200` | 0.5235 | 0.0000 | 0.5235 |
-| `G0/novatrail/olympiad-math` | `M4.false.all` | 0.0291 | 0.0000 | 0.0291 |
-| `G0/novatrail/olympiad-math` | `M6.late` | 4.6284 | 0.0000 | 4.6284 |
-| `G0/novatrail/grade-3-math` | `E1.corridor` | 0.8240 | 0.7481 | 0.0760 |
-| `G0/novatrail/grade-3-math` | `M1.rms.200` | 0.2300 | 0.0000 | 0.2300 |
-| `G0/novatrail/grade-3-math` | `M4.false.all` | 0.0104 | 0.0000 | 0.0104 |
-| `G0/novatrail/grade-3-math` | `M6.late` | 15.7789 | 0.0000 | 15.7789 |
-| `G1/novatrail/olympiad-math` | `M7.error.10` | 1.1922 | 0.0000 | 1.1922 |
-| `G1/novatrail/olympiad-math` | `M7.hard` | 0.3465 | 0.3465 | 0.0000 |
-| `G1/novatrail/grade-3-math` | `M7.error.10` | 1.0481 | 0.0000 | 1.0481 |
-| `G1/novatrail/grade-3-math` | `M7.hard` | 0.3755 | 0.3755 | 0.0000 |
-| `G2/novatrail/olympiad-math` | `E1.corridor` | 0.7424 | 0.0130 | 0.7294 |
-| `G2/novatrail/olympiad-math` | `M3.lag` | 1.0088 | 0.0000 | 1.0088 |
-| `G2/novatrail/grade-3-math` | `E1.corridor` | 0.8698 | 0.7013 | 0.1685 |
-| `G2/novatrail/grade-3-math` | `M3.lag` | 2.4449 | 0.0000 | 2.4449 |
-| `G2-half/novatrail/olympiad-math` | `E1.corridor` | 0.7341 | 0.0124 | 0.7217 |
-| `G2-half/novatrail/olympiad-math` | `E4.mastered` | 0.4307 | 0.0000 | 0.4307 |
-| `G2-half/novatrail/olympiad-math` | `M3.lag` | 0.5201 | 0.0000 | 0.5201 |
-| `G2-half/novatrail/grade-3-math` | `E1.corridor` | 0.8112 | 0.6882 | 0.1230 |
-| `G2-half/novatrail/grade-3-math` | `E4.mastered` | 0.3647 | 0.0000 | 0.3647 |
-| `G2-half/novatrail/grade-3-math` | `M3.lag` | 1.0970 | 0.0000 | 1.0970 |
-| `G2-fading/novatrail/olympiad-math` | `E1.corridor` | 0.7284 | 0.0094 | 0.7189 |
-| `G2-fading/novatrail/olympiad-math` | `M3.lag` | 0.4180 | 0.0000 | 0.4180 |
-| `G2-fading/novatrail/grade-3-math` | `E1.corridor` | 0.8138 | 0.6749 | 0.1389 |
-| `G2-fading/novatrail/grade-3-math` | `M3.lag` | 0.7502 | 0.0000 | 0.7502 |
-| `G3/novatrail/olympiad-math` | `M3.settle` | 60.1562 | 0.0000 | 60.1562 |
-| `G3/novatrail/grade-3-math` | `M3.settle` | 41.2151 | 0.0000 | 41.2151 |
-| `G3-drop/novatrail/olympiad-math` | `M3.settle` | 47.6854 | 0.0000 | 47.6854 |
-| `G3-drop/novatrail/grade-3-math` | `M3.settle` | 54.3511 | 0.0000 | 54.3511 |
-| `G0-skills1/novatrail/olympiad-math` | `M4.false.all` | 0.0552 | 0.0000 | 0.0552 |
-| `G0-skills1/novatrail/olympiad-math` | `M6.late` | 4.6811 | 0.0000 | 4.6811 |
-| `G0-skills1/novatrail/grade-3-math` | `M4.false.all` | 0.0296 | 0.0000 | 0.0296 |
-| `G0-skills1/novatrail/grade-3-math` | `M6.late` | 16.0122 | 0.0000 | 16.0122 |
-| `S-adult/novatrail/olympiad-math` | `M7.error.10` | 1.5272 | 0.0000 | 1.5272 |
-| `S-adult/novatrail/olympiad-math` | `M7.hard` | 0.1103 | 0.1103 | 0.0000 |
-| `F-model/novatrail/olympiad-math` | `E3.end` | 0.0459 | 0.0000 | 0.0459 |
-| `F-model/novatrail/olympiad-math` | `E3.late` | 0.4752 | 0.0000 | 0.4752 |
-| `F-model/novatrail/olympiad-math` | `M2.brier.after7` | 0.1658 | 0.1604 | 0.0054 |
-| `F-model/novatrail/olympiad-math` | `M4.false.break` | 0.0416 | 0.0000 | 0.0416 |
-| `F-model/novatrail/olympiad-math` | `M5.caught` | 3.5640 | 0.0000 | 3.5640 |
-| `F-model/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-model/novatrail/grade-3-math` | `E3.late` | 0.7070 | 0.0000 | 0.7070 |
-| `F-model/novatrail/grade-3-math` | `M2.brier.after7` | 0.1549 | 0.1545 | 0.0003 |
-| `F-model/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-model/novatrail/grade-3-math` | `M5.caught` | 4.5364 | 0.0000 | 4.5364 |
-| `F-exp/novatrail/olympiad-math` | `E3.end` | 0.0580 | 0.0000 | 0.0580 |
-| `F-exp/novatrail/olympiad-math` | `E3.late` | 0.5485 | 0.0000 | 0.5485 |
-| `F-exp/novatrail/olympiad-math` | `M2.brier.after7` | 0.1567 | 0.1474 | 0.0093 |
-| `F-exp/novatrail/olympiad-math` | `M4.false.break` | 0.0407 | 0.0000 | 0.0407 |
-| `F-exp/novatrail/olympiad-math` | `M5.caught` | 3.7583 | 0.0000 | 3.7583 |
-| `F-exp/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-exp/novatrail/grade-3-math` | `E3.late` | 0.8464 | 0.0000 | 0.8464 |
-| `F-exp/novatrail/grade-3-math` | `M2.brier.after7` | 0.1106 | 0.0906 | 0.0200 |
-| `F-exp/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-exp/novatrail/grade-3-math` | `M5.caught` | 2.9475 | 0.0000 | 2.9475 |
-| `F-C1/novatrail/olympiad-math` | `M2.brier.after7` | 0.1591 | 0.1498 | 0.0093 |
-| `F-C1/novatrail/olympiad-math` | `M4.false.break` | 0.0323 | 0.0000 | 0.0323 |
-| `F-C1/novatrail/olympiad-math` | `M5.caught` | 3.6401 | 0.0000 | 3.6401 |
-| `F-C1/novatrail/grade-3-math` | `M2.brier.after7` | 0.1195 | 0.1024 | 0.0171 |
-| `F-C1/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-C1/novatrail/grade-3-math` | `M5.caught` | 1.8584 | 0.0000 | 1.8584 |
-| `F-growth5/novatrail/olympiad-math` | `E3.end` | 0.0908 | 0.0000 | 0.0908 |
-| `F-growth5/novatrail/olympiad-math` | `E3.late` | 0.6378 | 0.0000 | 0.6378 |
-| `F-growth5/novatrail/olympiad-math` | `M2.brier.after7` | 0.1926 | 0.1815 | 0.0110 |
-| `F-growth5/novatrail/olympiad-math` | `M4.false.break` | 0.0332 | 0.0000 | 0.0332 |
-| `F-growth5/novatrail/olympiad-math` | `M5.caught` | 3.6300 | 0.0000 | 3.6300 |
-| `F-growth5/novatrail/grade-3-math` | `E3.end` | 0.0003 | 0.0000 | 0.0003 |
-| `F-growth5/novatrail/grade-3-math` | `E3.late` | 0.9054 | 0.0000 | 0.9054 |
-| `F-growth5/novatrail/grade-3-math` | `M2.brier.after7` | 0.1559 | 0.1545 | 0.0014 |
-| `F-growth5/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-growth5/novatrail/grade-3-math` | `M5.caught` | 3.0654 | 0.0000 | 3.0654 |
-| `F-break/novatrail/olympiad-math` | `M3.settle` | 158.6395 | 0.0000 | 158.6395 |
-| `F-break/novatrail/grade-3-math` | `M3.settle` | 338.0980 | 0.0000 | 338.0980 |
-| `W-shock/novatrail/grade-3-math` | `M2.brier.pages` | 0.1733 | 0.1415 | 0.0318 |
-| `W-shock/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-error/novatrail/grade-3-math` | `M2.brier.pages` | 0.1977 | 0.1195 | 0.0783 |
-| `W-error/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-badday/novatrail/grade-3-math` | `M2.brier.pages` | 0.1548 | 0.1482 | 0.0066 |
-| `W-badday/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0035 | 0.0000 | 0.0035 |
-| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.7765 | 0.0000 | 0.7765 |
-| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0544 | 0.0000 | 0.0544 |
-| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.1995 | 0.0000 | 0.1995 |
-| `L-explain/novatrail/olympiad-math` | `E4.mastered` | 0.5216 | 0.0000 | 0.5216 |
-
-- **What is seen.**
-  - The paths are close to the paths of the previous amendment: for the corridor `E1` the difference is at most 0.010, for the lag `M3.lag` at most 0.019, for `M1` at most 0.012. The paths of the measures counted in answers moved the most: the answers until the error of the skills holds after a jump — `M3.settle` on olympiad maths — by 14.5 answers for `F-break` (173.1 → 158.6), by 5.0 for `G3-drop` and by 4.2 for `G3`, and the count of answers until the forgotten is caught, `M5.caught`, on school maths — by up to 0.85 answers. Of the shares, the most moved were the share of late repetitions `E3.late` for `F-model` on school maths, by 0.026, and the false "mastered" after a break `M4.false.break` for `F-` on olympiad maths, by up to 0.020. Olympiad maths 0.3.0 is 30 answers as a time instead of a choice and 3 new templates; school maths is a worked example in each lesson.
-  - The path is no larger than the author's tolerance for the same seven measures as before, and a measure with such a path still leaves the score (the 2026-11-09 amendment to this entry, the answer to В7):
-    - `E3.end` on school maths for `F-model`, `F-exp` and `F-growth5`;
-    - Brier of `M2` after pauses on school maths for `F-model` and `F-growth5` (0.0003 and 0.0014 at a tolerance of 0.002);
-    - `M4` on `G0` of school maths (0.0104 at 0.02);
-    - `M9.hasFalse` for `A-unpractised` (0.0035 at 0.02).
-  - The share of hard first items, `M7.hard`, still has a path of zero.
-- A new pinning run comes only by a new amendment to this entry.
-
-— *Amendment 2026-11-11, the base on `learner-model` v0.1.6 (T45; R43):* the paths are read anew on `learner-model` v0.1.6 (7d796e2) with the same `engine` v0.1.6 (57e0ab8), the same packages of `modules` v0.2.5 and the same 1,500 working learners a cell: the judgement holds the base to the libraries of the paths (R40). The values are the same to the last digit as in the amendment "packages with `time` and leading questions", and its table stays the table of the paths.
-- **Runs.**
-  - The simulator is the tree of the branch of epic E4 with T42–T44 and the recipe `just decisive` (RUN.md, T45).
-  - The result lines of both runs are the same bytes as those of the runs of T43; only the header, which names the version of `learner-model`, differs. So the ceiling was not run a second time for reproducibility: its run of T43 was repeated whole and matched to the byte, and the new one matched it.
-  - The run of the base took 62 min 24 s by the clock at a load average of up to 46 on 20 cores and about 25.9 CPU minutes per process against 38.7 in T43. The run of the engine's ceiling took 22 min 28 s and about 18.0 CPU minutes per process against 18.8.
-  - SHA-256: the base `9e40ee6065848078a8d7850f9b03fb8f5b91d2e122db5d58a98169efc630c6e0`, the ceiling `06fcc680110cba673933d2af7fa95a7274a552ad698c1f7510b8b5cc10e538a0`. The files lie in `runs/` of the working copy and are not in the repository.
-
-— *Amendment 2026-11-12, 2,000 learners (T46; the 2026-11-12 amendment to R33):* the decisive run and the confirmation go on 2,000 learners a cell, not on 1,500, on the same base — `learner-model` v0.1.6 (7d796e2), `engine` v0.1.6 (57e0ab8) and the packages of `modules` v0.2.5. The speed-up of `Readout.Task` in `learner-model` v0.1.6 made the base cheaper, and 2,000 learners now fit into 45 minutes on a free machine with room to spare (the 2026-11-12 amendment to R33). The resolution of "no worse" is still 4.3 standard errors of the paired difference in the same run, but on 2,000 learners it is √(4/3) ≈ 1.15 times narrower than on 1,500. A rough look is a run of fewer than 2,000 learners. The values of the base and of the ceiling are read anew on a decisive run of this size and pinned in `internal/criterion/paths.json` (R28) in place of the values of the amendment "packages with `time` and leading questions".
-- **Runs.**
-  - The simulator is the tree of the pull request of T46 and the recipe `just decisive` (RUN.md, T46).
-  - The working learners are seed 20261107, 2,000 a cell: 41 populations, 65 cells. The first 1,500 of them are the learners of the runs of T41–T45, and all 2,000 are the first 2,000 of the 4,000 of the run of T30.
-  - The run of the base took 62 min 37 s by the clock at a load average from 49 at the start to 10 at the end — neighbouring containers shared the host — and about 31.3 CPU minutes per process, 626 minutes for all 20. On a free machine the sample promised about 38 minutes (the 2026-11-12 amendment to R33). Its file is 1,041 MB, SHA-256 `7db81ec7bdf8c02af8826031b671871e23338f812747f2926412cf5547ddc92e`.
-  - The run of the engine's ceiling took 30 min 37 s by the clock at a load average from 10 to 31, about 24.1 CPU minutes per process, 483 minutes for all 20. Its file is 814 MB, SHA-256 `29741eb6ce20013ee66ccc8145693a62b8f7efa2ededecbf41494e74a5338021`.
-  - The run of the ceiling was repeated whole — 29 min 54 s by the clock at a load average from 14 to 31 — and matched the file to the byte: the same SHA-256.
-  - The files lie in `runs/` of the working copy and are not in the repository. The previous files on 1,500 learners lie there too, as `base-1500.jsonl` and `ceiling-1500.jsonl`.
-- **Values** — in the direction of the criterion, less is better, as in the first amendment:
-
-| Cell | Measure | Base | Ceiling | Path |
-|---|---|---|---|---|
-| `G0/novatrail/olympiad-math` | `E1.corridor` | 0.7448 | 0.0192 | 0.7256 |
-| `G0/novatrail/olympiad-math` | `M1.rms.200` | 0.5216 | 0.0000 | 0.5216 |
-| `G0/novatrail/olympiad-math` | `M4.false.all` | 0.0289 | 0.0000 | 0.0289 |
-| `G0/novatrail/olympiad-math` | `M6.late` | 4.6559 | 0.0000 | 4.6559 |
-| `G0/novatrail/grade-3-math` | `E1.corridor` | 0.8226 | 0.7471 | 0.0755 |
-| `G0/novatrail/grade-3-math` | `M1.rms.200` | 0.2348 | 0.0000 | 0.2348 |
-| `G0/novatrail/grade-3-math` | `M4.false.all` | 0.0076 | 0.0000 | 0.0076 |
-| `G0/novatrail/grade-3-math` | `M6.late` | 15.8154 | 0.0000 | 15.8154 |
-| `G1/novatrail/olympiad-math` | `M7.error.10` | 1.1852 | 0.0000 | 1.1852 |
-| `G1/novatrail/olympiad-math` | `M7.hard` | 0.3496 | 0.3496 | 0.0000 |
-| `G1/novatrail/grade-3-math` | `M7.error.10` | 1.0436 | 0.0000 | 1.0436 |
-| `G1/novatrail/grade-3-math` | `M7.hard` | 0.3755 | 0.3755 | 0.0000 |
-| `G2/novatrail/olympiad-math` | `E1.corridor` | 0.7402 | 0.0129 | 0.7273 |
-| `G2/novatrail/olympiad-math` | `M3.lag` | 1.0026 | 0.0000 | 1.0026 |
-| `G2/novatrail/grade-3-math` | `E1.corridor` | 0.8701 | 0.7003 | 0.1698 |
-| `G2/novatrail/grade-3-math` | `M3.lag` | 2.4269 | 0.0000 | 2.4269 |
-| `G2-half/novatrail/olympiad-math` | `E1.corridor` | 0.7332 | 0.0132 | 0.7200 |
-| `G2-half/novatrail/olympiad-math` | `E4.mastered` | 0.4269 | 0.0000 | 0.4269 |
-| `G2-half/novatrail/olympiad-math` | `M3.lag` | 0.5182 | 0.0000 | 0.5182 |
-| `G2-half/novatrail/grade-3-math` | `E1.corridor` | 0.8118 | 0.6890 | 0.1228 |
-| `G2-half/novatrail/grade-3-math` | `E4.mastered` | 0.3629 | 0.0000 | 0.3629 |
-| `G2-half/novatrail/grade-3-math` | `M3.lag` | 1.0917 | 0.0000 | 1.0917 |
-| `G2-fading/novatrail/olympiad-math` | `E1.corridor` | 0.7304 | 0.0107 | 0.7198 |
-| `G2-fading/novatrail/olympiad-math` | `M3.lag` | 0.4237 | 0.0000 | 0.4237 |
-| `G2-fading/novatrail/grade-3-math` | `E1.corridor` | 0.8148 | 0.6746 | 0.1401 |
-| `G2-fading/novatrail/grade-3-math` | `M3.lag` | 0.7551 | 0.0000 | 0.7551 |
-| `G3/novatrail/olympiad-math` | `M3.settle` | 57.5000 | 0.0000 | 57.5000 |
-| `G3/novatrail/grade-3-math` | `M3.settle` | 41.2255 | 0.0000 | 41.2255 |
-| `G3-drop/novatrail/olympiad-math` | `M3.settle` | 47.2078 | 0.0000 | 47.2078 |
-| `G3-drop/novatrail/grade-3-math` | `M3.settle` | 54.4096 | 0.0000 | 54.4096 |
-| `G0-skills1/novatrail/olympiad-math` | `M4.false.all` | 0.0554 | 0.0000 | 0.0554 |
-| `G0-skills1/novatrail/olympiad-math` | `M6.late` | 4.7019 | 0.0000 | 4.7019 |
-| `G0-skills1/novatrail/grade-3-math` | `M4.false.all` | 0.0287 | 0.0000 | 0.0287 |
-| `G0-skills1/novatrail/grade-3-math` | `M6.late` | 16.0443 | 0.0000 | 16.0443 |
-| `S-adult/novatrail/olympiad-math` | `M7.error.10` | 1.5051 | 0.0000 | 1.5051 |
-| `S-adult/novatrail/olympiad-math` | `M7.hard` | 0.1110 | 0.1110 | 0.0000 |
-| `F-model/novatrail/olympiad-math` | `E3.end` | 0.0452 | 0.0000 | 0.0452 |
-| `F-model/novatrail/olympiad-math` | `E3.late` | 0.4787 | 0.0000 | 0.4787 |
-| `F-model/novatrail/olympiad-math` | `M2.brier.after7` | 0.1650 | 0.1598 | 0.0053 |
-| `F-model/novatrail/olympiad-math` | `M4.false.break` | 0.0423 | 0.0000 | 0.0423 |
-| `F-model/novatrail/olympiad-math` | `M5.caught` | 3.6322 | 0.0000 | 3.6322 |
-| `F-model/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-model/novatrail/grade-3-math` | `E3.late` | 0.7043 | 0.0000 | 0.7043 |
-| `F-model/novatrail/grade-3-math` | `M2.brier.after7` | 0.1549 | 0.1546 | 0.0003 |
-| `F-model/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-model/novatrail/grade-3-math` | `M5.caught` | 3.9287 | 0.0000 | 3.9287 |
-| `F-exp/novatrail/olympiad-math` | `E3.end` | 0.0573 | 0.0000 | 0.0573 |
-| `F-exp/novatrail/olympiad-math` | `E3.late` | 0.5357 | 0.0000 | 0.5357 |
-| `F-exp/novatrail/olympiad-math` | `M2.brier.after7` | 0.1568 | 0.1479 | 0.0090 |
-| `F-exp/novatrail/olympiad-math` | `M4.false.break` | 0.0382 | 0.0000 | 0.0382 |
-| `F-exp/novatrail/olympiad-math` | `M5.caught` | 3.7098 | 0.0000 | 3.7098 |
-| `F-exp/novatrail/grade-3-math` | `E3.end` | 0.0002 | 0.0000 | 0.0002 |
-| `F-exp/novatrail/grade-3-math` | `E3.late` | 0.8039 | 0.0000 | 0.8039 |
-| `F-exp/novatrail/grade-3-math` | `M2.brier.after7` | 0.1108 | 0.0907 | 0.0202 |
-| `F-exp/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-exp/novatrail/grade-3-math` | `M5.caught` | 3.3407 | 0.0000 | 3.3407 |
-| `F-C1/novatrail/olympiad-math` | `M2.brier.after7` | 0.1590 | 0.1498 | 0.0092 |
-| `F-C1/novatrail/olympiad-math` | `M4.false.break` | 0.0308 | 0.0000 | 0.0308 |
-| `F-C1/novatrail/olympiad-math` | `M5.caught` | 3.6668 | 0.0000 | 3.6668 |
-| `F-C1/novatrail/grade-3-math` | `M2.brier.after7` | 0.1198 | 0.1026 | 0.0173 |
-| `F-C1/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-C1/novatrail/grade-3-math` | `M5.caught` | 1.7587 | 0.0000 | 1.7587 |
-| `F-growth5/novatrail/olympiad-math` | `E3.end` | 0.0913 | 0.0000 | 0.0913 |
-| `F-growth5/novatrail/olympiad-math` | `E3.late` | 0.6415 | 0.0000 | 0.6415 |
-| `F-growth5/novatrail/olympiad-math` | `M2.brier.after7` | 0.1926 | 0.1816 | 0.0110 |
-| `F-growth5/novatrail/olympiad-math` | `M4.false.break` | 0.0355 | 0.0000 | 0.0355 |
-| `F-growth5/novatrail/olympiad-math` | `M5.caught` | 3.6129 | 0.0000 | 3.6129 |
-| `F-growth5/novatrail/grade-3-math` | `E3.end` | 0.0003 | 0.0000 | 0.0003 |
-| `F-growth5/novatrail/grade-3-math` | `E3.late` | 0.9162 | 0.0000 | 0.9162 |
-| `F-growth5/novatrail/grade-3-math` | `M2.brier.after7` | 0.1580 | 0.1565 | 0.0016 |
-| `F-growth5/novatrail/grade-3-math` | `M4.false.break` | — | — | — |
-| `F-growth5/novatrail/grade-3-math` | `M5.caught` | 2.9646 | 0.0000 | 2.9646 |
-| `F-break/novatrail/olympiad-math` | `M3.settle` | 161.0811 | 0.0000 | 161.0811 |
-| `F-break/novatrail/grade-3-math` | `M3.settle` | 336.3860 | 0.0000 | 336.3860 |
-| `W-shock/novatrail/grade-3-math` | `M2.brier.pages` | 0.1735 | 0.1417 | 0.0317 |
-| `W-shock/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-error/novatrail/grade-3-math` | `M2.brier.pages` | 0.1972 | 0.1195 | 0.0777 |
-| `W-error/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `W-badday/novatrail/grade-3-math` | `M2.brier.pages` | 0.1550 | 0.1484 | 0.0066 |
-| `W-badday/novatrail/grade-3-math` | `M4.false.pages` | — | — | — |
-| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0036 | 0.0000 | 0.0036 |
-| `A-unpractised/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.7762 | 0.0000 | 0.7762 |
-| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.hasFalse` | 0.0795 | 0.0000 | 0.0795 |
-| `A-fading/novatrail/olympiad-math+novatrail/grade-3-math` | `M9.notFalse` | 0.1936 | 0.0000 | 0.1936 |
-| `L-explain/novatrail/olympiad-math` | `E4.mastered` | 0.5218 | 0.0000 | 0.5218 |
-
-- **What is seen.**
-  - The paths are close to the paths of the amendment "packages with `time` and leading questions": for the corridor `E1` the difference is at most 0.003, for the lag `M3.lag` at most 0.018, for `M1` at most 0.005. The paths of the measures counted in answers moved the most: `M3.settle` for `G3` on olympiad maths — by 2.7 answers (60.2 → 57.5), for `F-break` on olympiad maths — by 2.4 (158.6 → 161.1), and `M5.caught` on school maths — by up to 0.61 answers for `F-model` (4.54 → 3.93). Of the shares, the most moved were `E3.late` for `F-exp` on school maths, by 0.0425 (0.846 → 0.804), and `M9.hasFalse` for `A-fading`, by 0.025 (0.054 → 0.080). The learners are the same, the libraries are the same, and 500 are added to the previous 1,500, so the shift comes from the new learners. A measure of rare events, as `M9.hasFalse` for `A-fading`, moves more than the others: on 1,500 its path was 0.054, on 2,000 it is 0.080: the path of such a measure is unsteady, and the judgement reads its share with this caveat.
-  - The path is no larger than the author's tolerance for the same seven measures as before, and a measure with such a path still leaves the score (the 2026-11-09 amendment to this entry, the answer to В7):
-    - `E3.end` on school maths for `F-model`, `F-exp` and `F-growth5`;
-    - Brier of `M2` after pauses on school maths for `F-model` and `F-growth5` (0.0003 and 0.0016 at a tolerance of 0.002);
-    - `M4` on `G0` of school maths (0.0076 at 0.02);
-    - `M9.hasFalse` for `A-unpractised` (0.0036 at 0.02).
-  - The share of hard first items, `M7.hard`, still has a path of zero.
-- A new pinning run comes only by a new amendment to this entry.
-
-— *Amendment 2026-11-13, the base on `theta` (T47; R46):* the paths are read anew on the base after the choice of the judgement `model-2`: `learner-model` at commit a063835 (`v0.1.7-0.20261113040121-a063835087c7` in `go.mod`), the same `engine` v0.1.6 (57e0ab8), the packages of `modules` v0.2.5 and 2,000 working learners a cell. The rule, the size and the resolution are those of the amendment "2,000 learners". This is calibration after a choice, not a choice: the base is what was chosen ([architecture.md](architecture.md), section 3.6). The values are measurements 3.1, pinned in `internal/criterion/paths.json` (R28) in place of the values of the amendment "2,000 learners"; from this amendment on, the table stands there and not here (the 2026-11-13 amendment to R28). 34 of the 85 paths moved, all on the populations `F-`, most of all `M3.settle` of `F-break`: 161.08 → 148.40 on olympiad maths and 336.39 → 293.84 on school maths. `held-out-model-1` is looked at: the model's next round confirms on `held-out-model-2`, whose seed an amendment to this entry writes down before the first run of its candidate.
-
-— *Amendment 2026-11-13, the release of `theta` (T48; R46):* the paths are read anew on the release of `theta`, `learner-model` v0.1.8 (ab688b2), with the code of a063835, the same `engine` v0.1.6 (57e0ab8), the packages of `modules` v0.2.5 and 2,000 working learners a cell: the judgement holds the base to the libraries of the paths (R40). Both decisive runs are, past the header, byte for byte those of the amendment "the base on `theta`", so the values are the same to the last digit: measurements 3.2, in `internal/criterion/paths.json` (R28) with the libraries and the SHA-256 of the new runs.
-
-— *Amendment 2026-11-13 (T55; R49):* the seed of the held-out learners of the judgement of consolidation in a lesson, `judgements/engine-lesson-1/`: 20261113, the experiment `held-out-engine-lesson-1`, written down before the first run of its candidate. It is the set of one variant apart from the rounds of the engine's criterion, so `held-out-engine-1` stays with the round `engine-2` (the 2026-11-13 amendment to R35).
-
-— *Amendment 2026-11-14 (T57; R52):* the amendment that records the seed of a next choice names its judgement too, and the row judgement → set comes into the table of `internal/seed/sets.go` with the seed: every recorded held-out set is the set of one judgement, and `sim judge` takes a confirmation only on its judgement's row.
-
-— *Amendment 2026-11-14 (T61; R55):* the constraint `fair` holds the model's criterion, the engine's criterion and a pair, at the choice and in the confirmation. On `D-grade1` and `D-grade5` the shortfall of `M11.same`, `M11.answers` and `M11.band` are each no worse than the base, less being better. The tolerance is the larger of the author's — 0.01 for the shares, one answer for `M11.answers` — and 4.3 standard errors of the paired difference. `M11` is in no score group, has no path and no target, and the gate does not read it. The decisive run and the confirmation are 68 cells, with the three of the populations `D-`; the engine's ceiling does not run them. A run without them leaves `fair` unmet.
-
-— *Amendment 2026-11-14 (T62; R55, R56):* "every population" of the checks "no worse", and the populations of the floors, of `neutral`, of the score and of the note `E6`, are those of the 65 cells: the cells of the populations `D-` are read by the constraint `fair` alone, by the author's answer in the planning of T62 (the amendment to R55 of that day). The paths are read off a base of 68 cells against a ceiling of 65, the cells `D-` left out of the pairs.
-
-— *Amendment 2026-11-16 (T70; R65):* the seed of the held-out learners of the judgement of the round of fairness, `judgements/model-fair-1/`: 20261116, the experiment `held-out-model-fair-1`, written down before the first run of its candidate. It is the set of one variant apart from the rounds of the model's criterion, so `held-out-model-2` stays with the round `model-3`; its row `model-fair-1` comes into the table of `internal/seed/sets.go` with T71, the code of R65. That judgement's target is `M11.same` of `D-grade1` and `D-grade5` pooled, and the target alone decides "better" there (R65).
+— *Consequence:* [architecture.md](architecture.md); [measurements.md](measurements.md); `internal/criterion/` with `paths.json`; `internal/measure/`; `internal/invariant/`; `internal/gate/` and `gate.json`; `internal/seed/sets.go`.
 
 ## The gate in CI
 
