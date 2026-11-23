@@ -541,21 +541,22 @@
 
 ## The gate
 
-**R26. The gate is the file `gate.json` at the root of `sim`, the recipe `just gate`, the command `sim gate` and the job "Gate" on amd64 and arm64. go.mod names the libraries by the same point as the file. Until T26 the gate holds the bands of its own run on the base. `I1` is a repeat of each learner of the gate.** Decided by the author 2026-11-08 in the planning of T24 (RUN.md, T24) — the goroutines, go.mod, the bands until T26 and `I1`, — and the form of the file and of the checks by the executor.
+**R26. The gate is the file `gate.json` at the root of `sim`, the recipe `just gate`, the command `sim gate` and the job "Gate" on amd64 and arm64. go.mod names the libraries by the same point as the file. The bands are those of the gate's own run on the commits of the file, recorded by `just gate record` with a reason. `I1` is a repeat of each learner of the gate.**
 - **The gate file** — JSON:
-  - `libraries` — by module path: the repository, the full SHA of the commit and the tag of the release on it, empty while there is no release;
+  - `libraries` — by module path: the repository, the full SHA of the commit and the tag of the release on it, empty while there is no release: a candidate chosen and confirmed stands at its commit until its release puts the tag in place of it;
   - `modules` — the release, the digest of the index and the packages (module, version, package digest);
   - `dependencies` — the chosen versions of the shared dependencies, now the Go module `spec`;
   - `go` — the line `go` of each of the three modules;
   - `bands` — the reason of the recording and the band of each number: the cell, the number, whether it was read, the value and the half-width.
 
-  The bands lie in the same file, as [architecture.md](architecture.md), section 3.9, says. A number that the recording did not read is recorded as "not read", and the gate holds exactly that: read later, it is outside the band. Section 3.7 calls an unread number "outside the band" for a number that was read at the recording.
+  The bands lie in the same file as the commits they were recorded on. A number that the recording did not read is recorded as "not read", and the gate holds exactly that: read later, it is outside the band. A number read at the recording and not read later is outside the band too.
 - **The recipe `just gate [bands|exact|record]`:**
-  - takes each library by the commit from the file into a temporary folder (`git fetch` by SHA), and the caller substitutes its code by a folder — `GATE_LEARNER_MODEL` or `GATE_ENGINE`;
+  - takes each library by the commit from the file into a temporary folder (`git fetch` by SHA), and the caller substitutes its code by a folder or a commit by full SHA — `GATE_LEARNER_MODEL` or `GATE_ENGINE`;
   - checks the tag from the file against the commit from the file (`git ls-remote`): the job "Go" builds the tag of `go.mod`, and the gate builds the commit;
-  - writes `go.work` with `use` of the three modules, sets `GOWORK` and builds `sim` once;
+  - writes `go.work` with `use` of the three modules by the hidden recipe `workspace`, one for the gate and for the decisive run of a candidate, sets `GOWORK` and builds `sim` once;
   - runs the gate as processes, a part of the learners per core (`sim gate run -part k/n`), with the commits that it sees in the folders;
   - then `sim gate check` or `sim gate record` joins the parts. A part that failed stops the others. The reason of the recording goes into the command in the shell's quotes.
+- **The job "Gate"** is the workflow `gate.yml` on each architecture: four jobs of `just gate-part <k> 4` and the check `just gate-check exact`, named "Gate / amd64" and "Gate / arm64"; `just gate` is the same run in one. The Go cache is keyed by `go.sum` and the Dockerfile with `restore-keys`, not by `gate.json`, and a pull request only reads it.
 - **The file of results** also names the populations, the learners per graph and the repeat of the run, so `sim merge` joins the parts of one run in its order and rejects the parts of another. Recording the bands rejects a run not on the commits of the file: bands of the caller's code are not a recording.
 - **Checks** — each divergence gives a red gate with a reason:
   - the libraries are built from the workspace;
@@ -565,65 +566,46 @@
   - the packages that the simulator embeds are those that the file names;
   - no learner violated `I1`–`I4`;
   - each number is in its band. `sim`'s own CI holds the numbers as recorded to the bit (`exact`), the callers by the bands.
-- **Cells and numbers** — by section 3.7, in code (`internal/gate`): the first 300 working learners of each cell of the gate's populations, numbers without a direction. The half-width is half the 95 % interval from the same 2,000 resamples. `A-linked` goes only on the synthetic packages (R19), and the gate does not take a synthetic module ([architecture.md](architecture.md), section 3.3). So the gate does not run `A-linked`, and its report calls its numbers "no graph". A run with a synthetic module is red.
-- **The bands until T26** are recorded by a run of the gate on `learner-model` v0.1.0 and `engine` v0.1.0, with the reason "the first record", on the base. T26 records them anew with its own reason.
-- **`I1`** — each learner of the gate is run twice (`bench.Config.Repeat`), and `invariant.Same` checks the two runs against each other to the bit. If a measurement on the runner does not fit into the budget, the repeat is cut by an amendment to this entry.
+- **Cells and numbers** — in code (`internal/gate`): the first working learners of each cell of the gate's populations, as many as `gate.Learners` sets, numbers without a direction. The half-width is half the 95 % interval from the same 2,000 resamples. `A-linked` goes on the pair of published maths. The gate does not take a synthetic module: a run with a synthetic module is red.
+- **The bands** are recorded on the commits and packages of the file, anew at each change of the libraries, the packages, the gate's numbers or its size; when `just gate exact` matches to the bit, they are recorded anew only for the sake of the reason, the numbers and the half-widths the same.
+- **`I1`** — each learner of the gate is run twice (`bench.Config.Repeat`), and `invariant.Same` checks the two runs against each other to the bit. On the repeat the choice anew at every step is taken only for the first `bench.Rechosen` learners of a cell. A repeat that does not fit into the budget on the runner is cut by a change of this entry.
 
 — *Why:*
-- The processes keep R09 and split a run over the cores without goroutines.
+- The processes split a run over the cores and keep goroutines out of the code, as the rule `goroutine` does.
 - go.mod at the same point as the file is the only way to build the job "Go" of the shared `go.yml` on a commit that is not in a release yet. The Go proxy serves a commit by SHA, and the job "Go" builds exactly the code on which the bands are recorded.
-- The bands of its own run give the gate something to hold already in T24, not only from T26.
 
 — *Rejected:*
-- the bands in a separate file — section 3.9 puts them into the gate file;
-- goroutines with an amendment to R09 — the author kept R09;
-- go.mod only as a lower bound — the job "Go" would be red on steps 1–4 of the order of releases;
-- a repeat of a part of the learners at once — the measurement has not said yet that a full repeat does not fit;
+- the bands in a separate file — the gate file names the commits they are recorded on, and one file keeps the two together;
+- goroutines — the code keeps none, and the author kept it so;
+- go.mod only as a lower bound — the job "Go" would be red on the steps of the order of releases before a library's tag;
+- a repeat of a part of the learners at once — a full repeat fits into the budget;
 - `jq` in the recipe — it is not in the stage `toolchain`, and `sim gate libraries` reads the file with the same code as the gate.
 
-— *Consequence:* the callers take the same recipe with `GATE_*` — these are tasks of their repositories. The threshold of the CI of `modules` — T25. The decisive run is split into parts by the same `-part` and joined by `sim merge` — T26. — RUN.md, T24; `gate.json`, `internal/gate/`, `internal/bench/`, `internal/published/`, `gate.go`, `main.go`, `justfile`, `.github/workflows/ci.yml`; [architecture.md](architecture.md), sections 3.7 and 3.9.
+— *Consequence:* `gate.json`, `internal/gate/`, `internal/bench/`, `internal/published/`, `gate.go`, `main.go`, `justfile`, `.github/workflows/ci.yml`, `.github/workflows/gate.yml`; the gates of the callers, which take the same recipe with `GATE_*`; [architecture.md](architecture.md).
 
-— *Amendment 2026-11-09:* the gate has 100 learners a cell, not 300, and on the repeat of the run for `I1` the choice anew at each step is taken only for the first 10 learners of a cell. On `olympiad-math` 0.1.1 the engine's choice takes tens of times longer, and the gate on 300 learners did not fit into `timeout-minutes: 15`. The gate is cut by an edit of `sim`, not by time, as [architecture.md](architecture.md), section 3.9, says. `A-linked` is no longer "no graph": it goes on the pair of published maths. Why — R31.
-
-— *Amendment 2026-11-10:* the gate file names the libraries v0.1.4 — `engine` at ddfed3a, `learner-model` at acfc4f2, — the packages of `modules` v0.2.0 and `spec` v0.12.0. `just gate exact` matched on them to the bit, so the bands are the former ones. Why — R32.
-
-— *Amendment 2026-11-10:* the gate's workspace is written by the hidden recipe `workspace`, one for the gate and for the decisive run of a candidate (R34). The gate takes from `GATE_LEARNER_MODEL` and `GATE_ENGINE` not only the folder but also the commit by full SHA. The check of the tag, the gate itself and its numbers are as before: `just gate exact` on the new recipe matches to the bit.
-
-— *Amendment 2026-11-11 (T41):* the gate file names `engine` v0.1.6 at 57e0ab8; `learner-model` — still v0.1.4 at acfc4f2, the packages — `modules` v0.2.0, `spec` — v0.12.0. On 100 learners `just gate exact` matched on it to the bit, then the gate grew to 150 learners, and the bands were recorded anew by `just gate record` with a reason (the 2026-11-11 amendment to R31).
-
-— *Amendment 2026-11-11 (T43):* the bands are recorded anew on `modules` v0.2.5 — `just gate record` with the reason T43, on 150 learners, and `just gate exact` is green. All 69 numbers are read where they were read before; 39 did not change in a single bit — 26 of school maths, 6 of olympiad maths, 3 of the pair of maths and all 4 of the essays. 23 numbers of olympiad maths shifted, 6 of school maths — of `G0`, `G2`, `G2-half` and `F-model`, in the third to fourth digit: a segment of a worked example was added to the time of the lessons — and `M9.notFalse` of `A-linked`. The share of hard first items `E1.hard` on olympiad maths shifted most of all — by 1.9 of the former half-width for `G0` (0.320 → 0.374) and by 1.5 for `G2-half`, and `E2.stuck` became non-zero for `G0`, `G1` and `G2` of olympiad maths (up to 0.067): 30 choices of one of five became checks of time, and they no longer have guessing. Why — R42.
-
-— *Amendment 2026-11-11 (T45):* the gate file names `learner-model` v0.1.6 at 7d796e2. `just gate exact` matched on it to the bit, all 69 numbers, — and the bands were recorded anew by `just gate record` only for the sake of the reason, as in T42: the numbers and the half-widths are the same. Why — R43.
-
-— *Amendment 2026-11-12 (T46):* the gate goes on 250 learners a cell, not on 150, and the bands are recorded anew by `just gate record` with the reason T46 on the same libraries and packages; `just gate exact` is green — 1 min 52 s by the clock and 29.6 CPU minutes in the container, at a load average of about 40–60 from neighbouring containers. Of the 69 numbers, 25 — with a zero band — are the same. Three numbers that the recording did not read on 150 learners are now read: false "mastered" `M4.false.all` and the lateness `M6.late` of `G0` of school maths, and the share of late repetitions `E3.late` of `F-model` of school maths; two stayed unread — `M4.false.pages` of `W-shock` and `M9.hasFalse` of `A-linked`. Of the 42 numbers with a non-zero band, three — those read for the first time — have no former half-width; for 38 of the other 39 the new value is less than one former half-width away from the former one — most of all `E5.written` of `E-base`, by 0.60, — and the half-width is on average 0.79 of the former one, about √(150/250) ≈ 0.77. The thirty-ninth is the share of pauses after which the model never catches up with forgetting, `M5.never` of `F-model` of school maths: on 150 it was 0 with a zero band, and it became 0.0036 ± 0.0055: among 250 learners there was a pause after which the model did not catch up with forgetting, and among the first 150 there was none. This is a rare event, and the former zero was a zero of the sample, not of the measure. Why the gate grew — the 2026-11-12 amendment to R31.
-
-— *Amendment 2026-11-13 (T47):* the gate file names `learner-model` at commit a063835 without a version — `theta`, chosen and confirmed by the judgement `model-2` (R46) —, and the bands are recorded anew by `just gate record` with the reason T47 on 250 learners; `just gate exact` is green. Of the 69 numbers 61 are the same to the bit. Eight moved, all of `F-model`, each by less than one former half-width: most of all `E2.stuck` of olympiad maths, 0.240 → 0.208 (0.62 of the former half-width), and `M5.caught` of olympiad maths, 3.53 → 3.76 (0.54); the half-widths are within a tenth of the former ones. The release of `theta` puts its tag in place of the commit (RUN.md, T48).
-
-— *Amendment 2026-11-13 (T48):* the gate file names `learner-model` v0.1.8 at ab688b2, the release of `theta` with the code of a063835 (R46). `just gate exact` matched on it to the bit, all 69 numbers, — and the bands were recorded anew by `just gate record` only for the sake of the reason, as in T45: the numbers and the half-widths are the same.
-
-— *Amendment 2026-11-16 (T74; R67):* the job "Gate" is the workflow `gate.yml` on each architecture: four jobs of `just gate-part <k> 4` and the check `just gate-check exact`, named "Gate / amd64" and "Gate / arm64" as before; `just gate` is the same run in one. The Go cache is keyed by `go.sum` and the Dockerfile with `restore-keys`, not by `gate.json`, and a pull request only reads it.
-
-**R27. The gate of the CI of `modules` is the mode `just gate modules` and two commands: `sim gate changed` decides whether what the simulator reads has changed, by the canonical text of the translated module, and `sim gate thresholds` holds the invariants and the thresholds. The gate's numbers are extended by `E1.hard` and `E2.nothing`, from which the thresholds are taken.** Decided by the executor in T25 (RUN.md, T25), except for the thresholds of `E1`: the author decided them — the 2026-11-09 amendment to R05.
-- **What is compared.** The canonical text is the JSON of the translated module, `pack.Module.Text`: the bands and the audience of the module manifest, the graph and the tiers, the tasks with their items, answer slots, traps, canvas and age, the numbers of the instances of templates, the lessons. This is exactly what `pack.Translate` takes, so the list of what the simulator reads is one place in the code, as [architecture.md](architecture.md), section 3.9, says. The texts for the learner and the module's version do not enter the text.
-- **What it is compared with** — the newest published version of the module that is not withdrawn: `api` does not serve a withdrawn one (R63 spec). The states:
+**R27. The gate of the CI of `modules` is the mode `just gate modules` and two commands: `sim gate changed` decides whether what the simulator reads has changed, by the canonical text of the translated module, and `sim gate thresholds` holds the invariants and the thresholds. The gate's numbers are extended by `E1.hard` and `E2.nothing`, from which the thresholds are taken.**
+- **What is compared.** The canonical text is the JSON of the translated module, `pack.Module.Text`: the bands and the audience of the module manifest, the graph and the tiers, the tasks with their items, answer slots, traps, canvas and age, whether a task has a leading question, `time` as a check kind, the numbers of the instances of templates, the lessons. This is exactly what `pack.Translate` takes, so the list of what the simulator reads is one place in the code. The texts for the learner — the words of a leading question too — and the module's version do not enter the text: `sim gate changed` sees an added or removed question and a check `number` that became `time`, but not an edit of the words.
+- **What it is compared with** — the newest published version of the module that is not withdrawn: `api` does not serve a withdrawn one. The states:
   - `new` — there is no published version, or no release at all (`-first`); the whole module has changed;
   - `changed` and `same` — the texts differ or are the same;
-  - `transition` — the published version has another format version; the simulator does not run the module, even with `-all` (the 2026-11-07 amendment to R103 spec);
+  - `transition` — the published version has another format version; the simulator does not run the module, even with `-all`;
   - a package of a format version that the simulator does not read, without a transition — a refusal: a new tag of `sim` is needed;
-  - a broken package — the server part is not the one in the inventory, or the module manifest is not the right one, — a refusal, in a transition too: the inventory holds `server_part` in all format versions ([format text](../spec/format/README.md), section 2).
+  - a broken package — the server part is not the one in the inventory, or the module manifest is not the right one, — a refusal, in a transition too: the inventory holds `server_part` in all format versions, by the format's text, `spec/format/README.md`.
 - **The check of the packages.** A published one — by the chain of digests from the index that `release-verify` accepted: `inventory.json` equals the package digest in the entry, `server.json` — the inventory. A package of a pull request has no entry: `server.json` — against the inventory, the module manifest — against the inventory. `main` reads the files, and `pack` gets the bytes (`pack.ReadFiles`).
-- **What is run** — the cells of the gate each module of whose graph is among the packages that run (`bench.Config.Packages`). The header of the file of results names these packages: module, version and digest. `A-linked` is still "no graph". A module on which not one population of the gate runs the report names, but the gate does not turn red from it: populations on a new graph are an edit of `sim`.
+- **What is run** — the cells of the gate each module of whose graph is among the packages that run (`bench.Config.Packages`). The header of the file of results names these packages: module, version and digest.
+  - `sim gate changed` gives, together with the changed modules, an unchanged one too, when the graph of a population of the gate holds it together with a changed one: so `A-linked` goes on both maths from the pull request if at least one of them has changed. On stdout its folder goes as the line `along <folder>`, the recipe passes it to `sim gate run -along`, and such a package goes only in the cells that it shares with the changed one (`published.Package.Along`), not in all of its own. The line of such a module on stderr names the module that brought it. In code — `gate.Runs` and `partial`.
+  - A module on which not one population of the gate runs, and a cell of the gate that lacks the package of the second module of its graph, the report names, but the gate does not turn red from them: populations on a new graph are an edit of `sim`.
 - **The thresholds** are point values: the gate's learners are always the same. The edges are inclusive, an unread number is red. The values for the thresholds of `E1` and `E2` are taken from the bands of `gate.json` of the same tag:
   - `E2.stuck` and `E2.nothing` — the largest over all the cells plus 1 point;
-  - `E1.hard` and `E1.corridor` — by the cells of `G0` and `G2-half`, by the 2026-11-09 amendment to R05;
+  - `E1.hard` and `E1.corridor` — by the cells of `G0` and `G2-half`;
   - `M4.false.all` on `G0` — no greater than 0.20, `E5.again` on `E-base` — zero.
 - **The check of the run.** The libraries are the commits of the file. All the cells of the packages are there, with all the learners and the repeat for `I1`. The checks of the build are the same as in `sim gate check`. `sim gate check` and `sim gate record` reject a run on substituted packages.
-- **The gate's numbers** are extended: `E2.nothing` — on all populations, `E1.hard` — on `G0` and `G2-half`. `gate.json` is recorded anew with the reason T25. The 47 former bands did not change in a single bit, 18 were added.
-- **The recipe** — `just gate modules <arguments of sim gate changed>`. First `sim gate changed`: if there is nothing to run, the recipe exits with 0 without touching the network. Otherwise — the same build through `go.work` from the file, the parts `sim gate run -package …` and `sim gate thresholds`. Relative paths are from the caller's folder. The form of the call for the job of `modules` — README, "Gate in the CI of modules".
+- **The gate's numbers** are extended: `E2.nothing` — on all populations, `E1.hard` — on `G0` and `G2-half`.
+- **The recipe** — `just gate modules <arguments of sim gate changed>`. First `sim gate changed`: if there is nothing to run, the recipe exits with 0 without touching the network. Otherwise — the same build through `go.work` from the file, the parts `sim gate run -package …` and `sim gate thresholds`. Relative paths are from the caller's folder. The form of the call for the job of `modules` stands in [README.md](README.md) of `docs/`.
 
 — *Why:*
 - The text from `Translate` cannot diverge from what the simulator really reads: a field that `Translate` begins to read enters the comparison by itself.
-- The arguments are as in `module-kit diff` (R11 modules): the CI of `modules` already holds the index accepted by `release-verify` and the published packages as folders.
+- The arguments are those `module-kit diff` takes: the CI of `modules` already holds the index accepted by `release-verify` and the published packages as folders.
 - A point, not an interval: the gate has no randomness between runs, and an interval would shift the threshold by noise that does not exist.
 
 — *Rejected:*
@@ -631,22 +613,16 @@
 - a comparison with a withdrawn version — it is not served, and a comparison with it would say "same" when the learners get something else;
 - the gate red on new modules until there is a population on them — `modules` could not add a module until `sim` pins it, and it pins only what is released.
 
-— *Consequence:* the gate's job in the CI of `modules` will be connected by the session of `modules` by the README — Д5 in table 4 of RUN.md `modules`, after the first tag of `sim` (T27). — RUN.md, T25; `internal/gate/modules.go`, `internal/gate/gate.go`, `internal/pack/`, `internal/bench/`, `gate.go`, `justfile`, `gate.json`, README; [architecture.md](architecture.md), sections 3.7 and 3.9.
+— *Consequence:* `internal/gate/modules.go`, `internal/gate/gate.go`, `internal/pack/`, `internal/bench/`, `gate.go`, `justfile`, `gate.json`, [README.md](README.md); the gate's job in the CI of `modules`, which calls it by that README; [architecture.md](architecture.md).
 
-— *Amendment 2026-11-09:* `sim gate changed` gives, together with the changed modules, an unchanged one too, when the graph of a population of the gate holds it together with a changed one: so `A-linked` goes on both maths from the pull request if at least one of them has changed ([architecture.md](architecture.md), section 3.9). On stdout its folder goes as the line `along <folder>`, the recipe passes it to `sim gate run -along`, and such a package goes only in the cells that it shares with the changed one (`published.Package.Along`), not in all of its own. The line of such a module on stderr names the module that brought it. A cell of the gate that lacked the package of the second module of its graph the report names without turning red. In code — `gate.Runs` and `partial`. Why — R31.
-
-— *Amendment 2026-11-11:* the translation reads whether a task has a leading question, and `time` as a check kind, so the canonical text holds both: `sim gate changed` sees an added or removed question and a check `number` that became `time`, but not an edit of the words of the question — the simulator does not read them. Why — R41.
-
-— *Amendment 2026-11-18 (T83; R77):* the form of the call, "Gate in the CI of modules", stands in [README.md](README.md) of `docs/`, moved from the repository's README as it was: the README is a description alone (the second 2026-11-17 amendment to R21 spec).
-
-**R28. The paths of the targets are pinned by the file `internal/criterion/paths.json`, embedded in the simulator: `sim paths` writes it from the decisive runs of the base and of the engine's ceiling, and a judgement takes the path from it. The decisive run is run by the recipe `just decisive` on the development machine, and the files of its results do not lie in the repository. The first file of bands is recorded on the commits of the releases of the base.** Decided by the author 2026-11-09 in the planning of T26 (RUN.md, T26) — the file of paths, the files of the run, where to run it and the full table in the amendment to R04, — the rest by the executor.
+**R28. The paths of the targets are pinned by the file `internal/criterion/paths.json`, embedded in the simulator: `sim paths` writes it from the decisive runs of the base and of the engine's ceiling, and a judgement takes the path from it. The decisive run is run by the recipe `just decisive` on the development machine, and the files of its results do not lie in the repository.**
 - **The file of paths** — JSON:
   - `libraries`, `set`, `learners` — what the paths were read on;
   - `base` and `ceiling` — the SHA-256 of the files of results of the two runs;
   - `paths` — the cell, the measure, whether the path was read, the value of the base and the value of the ceiling, both in the criterion's direction, so the path is the base minus the ceiling.
 
-  The pairs are each measure of the score groups of both criteria on each cell of a published graph where the population has a weight. The path of `E1` is common to the two criteria. The ceiling is zero for the measures "to perfection", the engine's ceiling for the measures `E…`, the base's oracle for the measures `M…`, as the judgement computed it before.
-- **`sim paths -base <file> -ceiling <file> [-out …] [-table]`** writes the file of paths and prints the rows of the table for the amendment to R04. A refusal if:
+  The pairs are each measure of the score groups of both criteria on each cell of a published graph where the population has a weight. The path of `E1` is common to the two criteria. The ceiling is zero for the measures "to perfection", the engine's ceiling for the measures `E…`, the base's oracle for the measures `M…`.
+- **`sim paths -base <file> -ceiling <file> [-out …] [-table]`** writes the file of paths and prints the rows of its table. A refusal if:
   - the runs are not under the rules `engine` and `ceiling`;
   - the set is not the working one;
   - a part of a run is given;
@@ -654,125 +630,91 @@
   - the base lacks some population of the score groups;
   - the runs have different libraries or learners;
   - the base has a violation of an invariant;
-  - a cell has fewer than 4,000 learners.
-- **The judgement** takes the path from the embedded file: a candidate's share is its paired difference with the judgement's base, divided by the pinned path. A measure that is not in the file, that the file did not read or whose path is no greater than zero is not in the score, and the report names it. Without pinned paths the judgement refuses. The judgement no longer needs a run of the ceiling — the 2026-11-09 amendment to R25.
-- **A test** holds the table of the 2026-11-09 amendment to R04 equal to `Table()` of the embedded file: the value in the log and the value the code judges by are one.
-- **The recipe `just decisive engine|ceiling <file>`** builds the simulator by `go.mod`, where both libraries are v0.1.0. It runs `sim run -populations all -learners 4000 -set working` as processes by parts of the learners on all the cores (R09), then `sim merge` and the SHA-256 of the file.
-- **The first file of bands** — `just gate record` with the reason T26, on the same commits v0.1.0: the numbers are the same to the bit as T24 and T25 recorded, the reason changes.
+  - a cell has fewer learners than a decisive run, `criterion.Decisive`.
+- **The judgement** takes the path from the embedded file: a candidate's share is its paired difference with the judgement's base, divided by the pinned path. A measure that is not in the file, that the file did not read or whose path is no greater than zero is not in the score, and the report names it. Without pinned paths the judgement refuses; it needs no run of the ceiling.
+- **The table of the paths** is a subsection of [measurements.md](measurements.md), one a pin, and a test holds the latest one equal to `Table()` of the embedded file: the value recorded and the value the code judges by are one. `sim paths -table` prints its rows.
+- **The recipe `just decisive engine|ceiling <file> [set]`** runs a set of learners — `working` or `held-out-<criterion>-<n>` — on the learners a cell of a decisive run. It takes a candidate, `CANDIDATE_LEARNER_MODEL`, `CANDIDATE_ENGINE` or both, through the gate's workspace; without a candidate it builds the simulator by `go.mod`, so the file of the base is the one whose SHA-256 `paths.json` names. It runs `sim run -populations all` as processes by parts of the learners on all the cores, then `sim merge` and the SHA-256 of the file, and creates the folder of the file if there is none.
+- **The files of a run** are about 0.8–1.0 GB a rule (measurements 1.3). Between judgements they lie in `runs/` of the working copy: `git` does not see it, and Rebuild Container does not erase it, as it erases `/tmp`.
+- **A pin anew.** The paths are pinned anew before the first candidate on a new graph, and after a change of the packages or of a library of the base, though the numbers do not shift: a judgement holds the base to the libraries of the paths. This is the same calibration on the graphs that the learners will get, not a choice. Reproducibility is checked by a full repeat of the ceiling. A change of what the lines of a run carry — the sums of a note, new cells — runs the base anew: `paths.json` names its new SHA-256, and the ceiling's file and every path stay as they are while their values do not move. A change of `paths.json` releases a tag of `sim`, which the judgements pin.
 
 — *Why:*
-- A path that the judgement reads from its own runs would go after the first choice from the new base, and in the confirmation from the held-out learners, while section 3.6 judges "at a pinned path".
-- The file is in the code, not only in the log: the judgement cannot diverge from the record, and a test holds the record equal to the file.
-- The files of a run are about 2 GB per rule. The seeds and the same bits give them anew, and the SHA-256 in the file of paths says whether it is that run.
+- A path that the judgement reads from its own runs would go after the first choice from the new base, and in the confirmation from the held-out learners, while the criterion judges at a pinned path.
+- The file is in the code, not only in a document: the judgement cannot diverge from the record, and a test holds the record equal to the file.
+- The files of a run take about a gigabyte a rule. The seeds and the same bits give them anew, and the SHA-256 in the file of paths says whether it is that run.
+- The table of a pin is the result of a measurement, and in the log each pin would add a table of about 7 KB to the entry of the criterion.
 
 — *Rejected:*
-- the path from the judgement's runs, as it was — it would drift;
+- the path from the judgement's runs — it would drift;
 - keeping the files of a run as an artifact or a release file — space, retention and a signature check for the sake of what is reproduced;
-- a run on a GitHub runner — 4 cores, about 2.5 hours, an artifact of gigabytes.
+- a run on a GitHub runner — 4 cores, hours of a run, an artifact of gigabytes;
+- the table of each pin in the log, with the limit of its entry raised again — the entry would grow by a table at every pin.
 
-— *Consequence:* the first candidate is judged by the pinned paths. A new pinning run — only by an amendment to R04, like a new held-out set. — RUN.md, T26; `internal/criterion/`, `main.go`, `justfile`, `gate.json`; [architecture.md](architecture.md), sections 3.6–3.8.
+— *Consequence:* `internal/criterion/`, `main.go`, `justfile`, `gate.json`; a new pinning run is a decision of the log, as a new held-out set is; [measurements.md](measurements.md), [architecture.md](architecture.md).
 
-— *Amendment 2026-11-09:* the paths are pinned anew, before the first candidate: the graph changed — `sim` pinned `olympiad-math` 0.1.1, and the populations `A-` went on the published pair of maths. This is not a new choice but the same calibration on the graphs that the learners will get. The runs and the new table of paths — the 2026-11-09 amendment to R04, "a new pin"; why — R31.
-
-— *Amendment 2026-11-10:* a decisive run is 1,000 learners a cell (R33), so `sim paths` refuses a cell with fewer than 1,000 learners, not 4,000. The recipe `just decisive` runs `-learners 1000` and creates the folder of the file if there is none. The files of a run are about 0.5 GB per rule. Between judgements they lie in `runs/` of the working copy: `git` does not see it, and Rebuild Container does not erase it, as it erased the files of T30 in `/tmp`. The paths are pinned anew — the 2026-11-10 amendment to R04, "runs no longer than an hour". Reproducibility is checked by a full repeat of the ceiling: on 1,000 learners this is cheap.
-
-— *Amendment 2026-11-10, a candidate's run (T31; R34):* the recipe `just decisive engine|ceiling <file> [set]` takes a set of learners — `working` or `held-out-<criterion>-<n>` — and a candidate: `CANDIDATE_LEARNER_MODEL`, `CANDIDATE_ENGINE` or both. Without a candidate it builds the simulator by `go.mod`, as before, so the file of the base is the one whose SHA-256 `paths.json` names.
-
-— *Amendment 2026-11-11 (T41; the 2026-11-11 amendment to R33):* a decisive run is 1,500 learners a cell, so `sim paths` refuses a cell with fewer than 1,500 learners, and a judgement calls such a run a rough look. The recipe `just decisive` runs `-learners 1500`. The files of a run are about 0.6–0.8 GB per rule. The paths are pinned anew — the 2026-11-11 amendment to R04. Reproducibility is checked by a full repeat of the ceiling. The former files on 1,000 learners lie in `runs/` as `base-1000.jsonl` and `ceiling-1000.jsonl`, and the judgement files of `engine-1` and `model-1` name the base so.
-
-— *Amendment 2026-11-11 (T43):* the paths are pinned anew after a change of the packages and of a library, not after a candidate: the pin of `modules` v0.2.5 changes the graph and the tasks, and the base since T42 is on `learner-model` v0.1.5. `paths.json` names `learner-model` v0.1.5 and `engine` v0.1.6, the table — the 2026-11-11 amendment to R04, "packages with `time` and leading questions". Reproducibility is checked by a full repeat of the ceiling. Why — R42.
-
-— *Amendment 2026-11-11 (T45):* the paths are pinned anew after a change of the library, though the numbers did not shift: a judgement holds the base to the libraries of the paths (R40), and the base is on `learner-model` v0.1.6. `paths.json` names `learner-model` v0.1.6 and `engine` v0.1.6 and the new SHA-256 of the runs, and the values are the same as T43's, so the table of the 2026-11-11 amendment to R04, "packages with `time` and leading questions", is still the table of paths. Why — R43.
-
-— *Amendment 2026-11-12 (T46; the 2026-11-12 amendment to R33):* a decisive run is 2,000 learners a cell, so `sim paths` refuses a cell with fewer than 2,000 learners, and a judgement calls such a run a rough look. The recipe `just decisive` runs `-learners 2000`. The files of a run are about 0.8–1.0 GB per rule. The paths are pinned anew — the 2026-11-12 amendment to R04. Reproducibility is checked by a full repeat of the ceiling. The former files on 1,500 learners lie in `runs/` as `base-1500.jsonl` and `ceiling-1500.jsonl`; no judgement refers to them.
-
-— *Amendment 2026-11-13 (T47; R46):* the table of the paths is a section of [measurements.md](measurements.md) — measurements 3.1 for the base on `theta` —, and the amendment to R04 that pins new paths cites it. The test holds that section's table equal to `Table()` of the embedded file, not the log's, and `sim paths -table` prints its rows. Why: the results of a measurement go to measurements (RULES.md, How we work; R143 spec), and every new pin added a table of about 7 KB to R04, which stood at 78.6 KB under its limit of 90 KB (measurements 2.1). The tables of the earlier amendments to R04 stay where they are: the log is not rewritten. `paths.json` names `learner-model` `v0.1.7-0.20261113040121-a063835087c7` and the SHA-256 of the new runs. Rejected: raising the limit of an entry again — R04 would grow by a table at every pin.
-
-— *Amendment 2026-11-13 (T48; R46):* the paths are pinned anew on the release of `theta`, though the numbers did not shift, as in T45; the table is a subsection of its own, measurements 3.2, as the amendment of T47 above has it. What and why — the 2026-11-13 amendment to R04, "the release of `theta`".
-
-— *Amendment 2026-11-13 (T55; R49):* the lines of a run under the rule `engine` carry the sums of the note `E6` too, so the base's file was run anew. `paths.json` names its SHA-256, `2e53e18c…`, in place of `7d3cb52e…`; past the keys `E6.` the file is to the byte the base of T48 and T54. The ceiling's file, `00ad8bb7…`, and every path are the same (measurements 3.2).
-
-— *Amendment 2026-11-14 (T64; R58):* the base's decisive run holds the three cells of fairness by the grade too, 68 cells (R55), so it was run anew. `paths.json` names its SHA-256, `9e89cb7c…`, in place of `2e53e18c…`; past its header and without the lines of the populations `D-` the file is to the byte the base of T55, and the header differs only by the three populations. The ceiling's file, `00ad8bb7…`, and every path are the same (measurements 3.2). The change of `paths.json` releases a tag of `sim` (R29), which the judgements `model-3` and `engine-2` pin (the 2026-11-14 amendment to R57).
-
-**R29. The release of `sim` is the shared `release.yml` of `.github` v0.1.21 on the line `0.1`, starting with `v0.1.0`, when a commit of `main` with green CI changes what the gate is built from. The only release file is the archive `sim-<version>.tar.gz` with what builds the simulator and runs the gate, signed without a key. Immutable releases and a ruleset of the tags `v*` are turned on before the first release.** Decided by the author 2026-11-09 in the planning of T27 (RUN.md, T27): the shared release with an archive (the 2026-11-09 amendment to R05), the GitHub settings — by the executor through `gh api`, the merge that releases the tag — by the author. The rest — the executor.
+**R29. The release of `sim` is the shared `release.yml` of `.github` on the line `0.1`, starting with `v0.1.0`, when a commit of `main` with green CI changes what the gate is built from. The only release file is the archive `sim-<version>.tar.gz` with what builds the simulator and runs the gate, signed without a key. Immutable releases and a ruleset of the tags `v*` are on.**
 - **`paths`** — what the release gives:
   - the Go code without tests and `testdata/`;
   - the embedded packages `internal/published/v*` and the paths `internal/criterion/paths.json`;
   - `go.mod`, `go.sum`, `LICENSE`, `.gitattributes`;
-  - the gate file `gate.json`, `justfile` and `.devcontainer/Dockerfile`, on which the gate runs;
+  - the gate file `gate.json`, `justfile`, `.github/workflows/gate.yml`, which runs the gate as jobs and which a caller can call by a tag, and `.devcontainer/Dockerfile`, on whose stages `toolchain-core` and `toolchain` the gate runs;
   - `release.yml` itself.
 
   Tests, documents and the other workflows the release does not give.
 - **The archive** — the recipe `release-files <version>`: the folder `sim-<version>` with the same paths, except `release.yml`. The tar is written the same way on any build: the names in order, without times and owners, mode 0644, `gzip -9n`. The list is taken from the tree, `find`: the shared release runs the recipe in the tree of `git archive`, without git.
-- **`ci-release`** holds the archive, as R15 engine does:
+- **`ci-release`** holds the archive, as `engine`'s release does:
   - two builds in a row — the same bytes;
   - the archive has exactly what git tracks at these paths, and in the same form;
   - the unpacked archive builds.
 
   It is called by `ci-lint`, so the archive is held by "Go / lint".
-- **GitHub settings** (2026-11-09, `gh api`):
+- **The shared `release.yml`** is at the SHA of the tag that the `uses:` of `.github/workflows/release.yml` names. It builds the stage `toolchain-core` of `.devcontainer/Dockerfile`, over which `sim`'s `toolchain` adds nothing, signs and checks its files eight at once and checks the published release by one `gh release verify` (sources 5.4, 5.5).
+- **GitHub settings**, set through `gh api`:
   - immutable releases are turned on;
   - the ruleset `v-tags` (id 26826001) forbids update, deletion and non_fast_forward of the tags `refs/tags/v*`, without bypasses, — the same as `engine`'s.
 
 — *Why:*
 - A shared release is one release code for all the repositories with code, and Dependabot raises it together with the other workflows of `.github`.
-- The archive is exactly what the gate's numbers are recorded on, except the libraries that `gate.json` names. The signature binds it to the tag (R77 spec).
+- The archive is exactly what the gate's numbers are recorded on, except the libraries that `gate.json` names. The signature binds it to the tag, and `release-verify` checks it so.
 - A change of documents or tests gives the callers no new tag.
 
 — *Rejected:*
 - a workflow of its own without files, as `spec` has — release code of its own that only `sim` keeps;
-- an archive of the Go code only, as `engine` has — the gate runs on `gate.json`, `justfile` and the stage `toolchain` too, and without them the archive does not hold that the numbers are recorded on this tag.
+- an archive of the Go code only, as `engine` has — the gate runs on `gate.json`, `justfile` and the stages of the Dockerfile too, and without them the archive does not hold that the numbers are recorded on this tag.
 
-— *Consequence:* the first tag `v0.1.0` comes out with the merge of the pull request of T27. The callers take its tag and SHA — README, "Taking a release" — by their own tasks: Д5 RUN.md `modules`, the gate's job of `learner-model` and `engine`. — RUN.md, T27; `.github/workflows/release.yml`, `justfile`, `.gitignore`, README; [architecture.md](architecture.md), section 3.9.
-
-— *Amendment 2026-11-16 (R63):* the shared `release.yml` is that of `.github` v0.1.24, by the SHA of its tag, fab102d: against v0.1.21 it changes in comments alone (sources 5.3).
-
-— *Amendment 2026-11-16 (T74; R67):* `.github/workflows/gate.yml`, which runs the gate as jobs and which a caller can call by a tag, is a path of the release and a file of its archive.
-
-— *Amendment 2026-11-16 (T75; R68):* the shared `release.yml` is that of `.github` v0.1.30, by the SHA of its tag, 8311cbf: it signs and checks its files eight at once and checks the published release by one `gh release verify`, with the same inputs, identity of the signature and file (R44 .github; sources 5.4).
-
-— *Amendment 2026-11-16 (T76; R70):* the shared `release.yml` is that of `.github` v0.1.31, by the SHA of its tag, 93c848f: it builds the stage `toolchain-core` of `.devcontainer/Dockerfile`, with the same inputs; `toolchain` is built over it and adds nothing, so "the stage `toolchain`" above is the Dockerfile's stages `toolchain-core` and `toolchain`, the path `.devcontainer/Dockerfile` the same.
-
-— *Amendment 2026-11-18 (T83; R77):* the shared `release.yml` is that of `.github` v0.1.33, by the SHA of its tag, f1c7e9e, the file as at v0.1.31, with the same inputs and the same file of the release (sources 5.6); "Taking a release", which the callers read, stands in [README.md](README.md) of `docs/`, moved from the repository's README as it was.
+— *Consequence:* `.github/workflows/release.yml`, `justfile`, `.gitignore`, [README.md](README.md), by which the callers take a tag and its SHA; the gates' jobs of `modules`, `learner-model` and `engine`; [architecture.md](architecture.md).
 
 ## Epic E3
 
-**R30. Epic E3, the first candidates, runs up to the first choices. In it: the small path in the judgement, a new pin of the packages with a new calibration of the paths before the first candidate, the decisive run on a candidate's commit, the judgement of the model's first candidate and of the engine's first candidate, the move to the releases of the chosen ones and the outcome.** These are the author's answers 2026-11-09 when planning E3 (RUN.md, table 1). The order of the tasks T29–T35 is a proposal of the planning.
+**R30. Epic E3, the first candidates, runs up to the first choices. In it: the small path in the judgement, a new pin of the packages with a new calibration of the paths before the first candidate, the decisive run on a candidate's commit, the judgement of the model's first candidate and of the engine's first candidate, the move to the releases of the chosen ones and the outcome.** The order of its tasks is a proposal of the planning.
 - **What was found in planning** (read 2026-11-09):
   - `modules` v0.1.1 published `olympiad-math` 0.1.1 on 2026-11-08 — with new skills and hundreds of tasks. The index of the newest release, v0.1.4, names both versions. `sim` pins `modules` v0.1.0, so the base, the paths and the bands are taken on `olympiad-math` 0.1.0;
   - `just decisive` builds the simulator by `go.mod` and runs only the working learners, so there is nowhere to substitute a candidate. `sim run -set` already takes the held-out learners;
-  - the libraries connect the gate — T22 RUN.md `learner-model` and T23 RUN.md `engine`, — but have not proposed candidates yet. Their basis is Д5–Д7 RUN.md `learner-model`, Д3 and Д4 RUN.md `engine`;
+  - the libraries are connecting the gate in their CI, but have not proposed candidates yet; the grounds for candidates stand in their tables of debt;
   - `spec` has come out up to v0.9.16, but the libraries do not require the Go module `spec`, so the gate needs no move.
 - **Decided by the author:**
-  - the small path — option (a) of В7: the 2026-11-09 amendment to R04, the code — T29;
-  - a new pin — before the candidates: the index of `modules` v0.1.4 with `olympiad-math` 0.1.1, the decisive run of the base and of the ceiling anew, new paths and bands, the next tag of `sim` (T30);
-  - the epic runs up to the first choices: the judgement of the model's first candidate (T32) and of the engine's (T33), the move to their releases (T34) and the outcome (T35).
+  - the small path — a measure whose path lies within its tolerance sets no path, in the criterion and in its code;
+  - a new pin — before the candidates: the index of `modules` v0.1.4 with `olympiad-math` 0.1.1, the decisive run of the base and of the ceiling anew, new paths and bands, the next tag of `sim`;
+  - the epic runs up to the first choices: the judgement of the model's first candidate and of the engine's, the move to their releases and the outcome.
 - **A proposal of the planning:**
-  - the order — the small path (T29), the pin (T30), the recipe of a candidate's run (T31, after T30: the run of the base by the recipe matches to the byte the one whose SHA-256 the new file of paths names), the judgements (T32, T33), the releases (T34), the outcome (T35);
-  - if the candidates come as a pair, one task judges them, T32, by the criterion of the pair. The seed of its held-out learners is written down by an amendment to R04 before the run.
+  - the order — the small path, the pin, the recipe of a candidate's run (after the pin: the run of the base by the recipe matches to the byte the one whose SHA-256 the new file of paths names), the judgements, the releases, the outcome;
+  - if the candidates come as a pair, one task judges them by the criterion of the pair. The seed of its held-out learners is written down in the log before the run.
   - if one library has not proposed a candidate when the other's judgement is done, the author defers its judgement, and the move to the releases and the outcome go without it.
 
 — *Why:*
-- **The pin before the candidates.** The paths are calibration, not a choice, and are read before the first candidate (R04). A candidate chosen on a graph that the learners will not see is chosen on the wrong thing. Pinning after the first choices would mean calibrating anew when judgements had already been made on the paths.
-- **Up to the first choices.** The simulator was built for them: the first version of each library is the base, and what improves it passes through a judgement (R103 spec). The judgements wait for candidates, but this is the work of `sim`, and in the epic it is seen together with what prepares it.
+- **The pin before the candidates.** The paths are calibration, not a choice, and are read before the first candidate. A candidate chosen on a graph that the learners will not see is chosen on the wrong thing. Pinning after the first choices would mean calibrating anew when judgements had already been made on the paths.
+- **Up to the first choices.** The simulator was built for them: the first version of each library is the base, and what improves it passes through a judgement. The judgements wait for candidates, but this is the work of `sim`, and in the epic it is seen together with what prepares it.
 
 — *Rejected:*
 - judging the first candidates on `olympiad-math` 0.1.0, and pinning 0.1.1 after — see the "Why";
 - pinning 0.1.1 and leaving the paths of the olympiad cells from 0.1.0 — those would be the paths of another graph;
 - ending the epic with readiness — the small path, the pin and the recipe, — and leading the judgement of each candidate by a task outside an epic. Then the first choices would enter no epic, and nobody would see their order in advance.
 
-— *Consequence:*
-- E2 is moved to the archive [docs/plan/E2.md](plan/E2.md);
-- table 1 of RUN.md is E3 in the tasks T29–T35;
-- the row E3 left table 2, and В7 table 3;
-- В9 «в реестр spec» tells `spec` that the epic is laid out and the candidates are judged after the tag with the new pin.
-
-Where it is written: RUN.md, tables 1–3 and the bodies of T29–T35; [architecture.md](architecture.md), sections 2.4 and 3.
+— *Consequence:* the archive of E2, [docs/plan/E2.md](plan/E2.md); RUN.md, table 1 and the bodies of the epic's tasks; [run/EPICS.md](../run/EPICS.md), without the epic's row; [run/QUESTIONS.md](../run/QUESTIONS.md), without the question of the small path and with a row «в реестр spec» that tells `spec` the epic is laid out and the candidates are judged after the tag with the new pin; [architecture.md](architecture.md).
 
 ## A new pin of the packages
 
-**R31. The simulator is pinned to the release of `modules` v0.1.4 — `olympiad-math` 0.1.1, `grade-3-math` 0.1.0 and `english-essays` 0.1.0. The populations `A-` run on the pair of published maths. The gate holds 100 learners a cell, and on the repeat of the run takes the choice anew at every step only for the first 10 learners of a cell.** These are the author's answers 2026-11-09 when planning T30 and E3 (R30).
-- **What was found in planning** (2026-11-09, measurements on a copy of the repository; the sources — [architecture.md](architecture.md), section 4):
+**R31. The simulator takes the published `olympiad-math` from 0.1.1 on, with its new skills and tasks, at the release of `modules` that `internal/published/published.go` pins, and the populations `A-` run on the pair of published maths. The gate holds as many learners a cell as its slowest measurement fits into the job's budget with a margin, `gate.Learners` of `internal/gate/gate.go`, and on the repeat of the run takes the choice anew at every step only for the first `bench.Rechosen` learners of a cell.**
+- **What was found in planning** (2026-11-09, measurements on a copy of the repository):
   - `olympiad-math` 0.1.1 has 19 skills instead of 3 and 772 tasks instead of 27, 19 of them with instances of a template. There are now four kinds of answer, not only `number`. There are still no slots `predicate`;
   - two olympiad skills rest on skills that school maths teaches: `fractions-parts` on `core.fractions-of-a-whole`, `number-divisibility` on `core.division-with-remainder`. So the populations `A-` got a published graph;
   - the simulator reads the package without edits of the code; `G0` and `A-` on the pair run without violations of the invariants, and `M9` is read;
@@ -780,84 +722,47 @@ Where it is written: RUN.md, tables 1–3 and the bodies of T29–T35; [architec
     - `engine.Choose` on a pool of 772 tasks — about 60 % of the CPU;
     - of that, about 28 % is the choice that `invariant.Check` takes anew at every step;
     - garbage collection — about 23 %;
-  - the gate on 300 learners ran for 8.5 minutes and 135 CPU minutes on 20 cores — against 45 seconds and 11 minutes before. On the 4 cores of the runner this is about 35–40 minutes, at a budget of `timeout-minutes: 15`;
+  - the gate on 300 learners ran for 8.5 minutes and 135 CPU minutes on 20 cores, about 35–40 minutes on the 4 cores of the runner (measurements 1.2), at a budget of `timeout-minutes: 15`;
   - `sim gate changed` compares with the index that the CI of `modules` passes, so the pin does not touch it. But `A-linked` runs on both maths, and the command gave only the changed modules.
 - **Decided by the author:**
   - the populations `A-` — on the published pair, in this same calibration;
-  - the gate is cut by an edit of `sim`, and the budget stays 15 minutes: 100 learners a cell instead of 300, and on the repeat of the run the choice is not taken anew at every step. The executor, after review, kept the choice anew for the first 10 learners of each cell — about 3 % of the work: the repeat does not see a rule that changes its input in place the same way in both runs;
-  - the index of `modules` v0.1.4 — already when planning E3 (R30).
+  - the gate is cut by an edit of `sim`, and the budget stays 15 minutes; on the repeat of the run the choice is not taken anew at every step but for the first learners of each cell — about 3 % of the work: the repeat does not see a rule that changes its input in place the same way in both runs;
+  - the gate's size — by the slowest measurement of its job: the largest, in steps of 50, from 100 to 300, at which the slowest measurement, recalculated to this size, is no more than 12 minutes — 3 minutes of margin before the timeout; a size that passes the rule right at the edge, with less than a minute to 12, is not taken, and the gate takes the step below;
+  - the index of `modules` v0.1.4, whose `olympiad-math` is 0.1.1, — already when planning the epic of the first candidates.
 - **A proposal of the execution:**
   - the archive of `olympiad-math` 0.1.1 lies in the folder `v0.1.1/`, where the index's record names it, and the unused index and archive of `olympiad-math` 0.1.0 are removed from the embedded files;
   - `gate.Runs` gives, together with a changed module, the unchanged one that the graph of a population of the gate holds together with it;
   - the tests that run the olympiad graph run on fewer learners, so that `ci-test` fits into the budget of the builds of `same-bits`;
-  - the test of the ceiling lets the same task in again after a pause of 24 hours, as the rule does (R82 spec): on 27 tasks this did not happen.
+  - the test of the ceiling lets the same task in again after a pause of 24 hours, as the rule of repetition does: on 27 tasks this did not happen;
+  - the process of the gate's run, like that of the decisive one, runs on one processor and with `GOGC` 400: the bits are the same, and on `ubuntu-24.04-arm` the gate's time fell, while on `ubuntu-24.04` the runner's time wanders more than the edit gave (measurements 1.1).
 
 — *Why:*
 - **`A-` in this calibration.** Otherwise the paths of the group "Anchor" and the bands of `A-linked` would have to be pinned once more — after the first candidates.
-- **100 learners.** [architecture.md](architecture.md), section 3.9, says to cut a gate that does not fit by an edit of `sim`, not by time. The bands become wider by about √3, about 1.7 times. Code that shifted nothing still reads the same numbers to the bit, and the candidates are judged by the decisive run. The gate loses only its sensitivity to a small unintended shift.
-- **The choice anew on the repeat — only for the first 10.** `I1` is held to the bit by the repeat (`Same`), and the engine's refusal of its own input is caught by the run itself. The choice anew at every step for all learners would cost a third of the work. But the repeat does not see a rule that changes its input in place the same way in both runs, while the choice anew does see it, and on the first 10 learners of each cell it costs about 3 %.
+- **The gate cut by an edit of `sim`, not by time.** Code that shifted nothing still reads the same numbers to the bit, and the candidates are judged by the decisive run. A smaller gate loses only its sensitivity to a small unintended shift: its bands widen as one over the root of its size.
+- **The size by the slowest measurement.** The runner's time wanders: on the same code "Gate" ran both 6 min 54 s and 11 min 52 s (measurements 1.1). A gate that fails by timeout holds the merge in three repositories, so the slowest measurement is taken as the measure, with a margin. It must fit at every caller, which keeps no Go cache, not only in its own CI with a cache.
+- **Not right at the edge.** 300 learners passed the rule at about 11 min 59 s at a threshold of 12, while the runner's time on the same code wandered up to 1.7 times and the callers on the new tag were not measured yet; 250 left about two minutes beyond the rule's three of margin (measurements 1.1).
+- **The choice anew on the repeat — only for the first learners.** `I1` is held to the bit by the repeat (`Same`), and the engine's refusal of its own input is caught by the run itself. The choice anew at every step for all learners would cost a third of the work. But the repeat does not see a rule that changes its input in place the same way in both runs, while the choice anew does see it, and on the first 10 learners of each cell it costs about 3 %.
 
 — *Rejected:*
 - raise the budget to 45 minutes and keep 300 learners — then every pull request of three repositories would wait for the gate about 40 minutes;
-- wait until `engine` speeds up the choice on a large pool — the first candidates would wait for someone else's task. The question went as row В10 of table 3 of RUN.md;
-- keep `A-` on synthetics — see the "Why".
+- wait until `engine` speeds up the choice on a large pool — the first candidates would wait for someone else's task;
+- keep `A-` on synthetics — see the "Why";
+- a larger gate with `timeout-minutes: 25` at `learner-model`, as at `engine` — every pull request of `learner-model` would wait for the gate longer, and this is an edit of someone else's workflow;
+- the size by a typical measurement, not by the slowest — a slow runner would bring the gate down;
+- 300 by the letter of the rule, or with a rollback to 250 if the measurement of the pull request goes over 12 minutes — there is no margin for the runner's noise, and one lucky measurement does not protect the callers from a timeout.
 
-— *Consequence:* the runs and the new table of the paths — the 2026-11-09 amendment to R04, "a new pin"; amendments to R14, R17, R19, R21 and R26–R28; a new tag of `sim`, which the gates of the libraries take (В9). Where it is written: RUN.md, T30; [architecture.md](architecture.md), sections 3, 3.2, 3.3, 3.7–3.9 and 4; README.
-
-— *Amendment 2026-11-10:* the process of the gate's run, like that of the decisive one, runs on one processor and with `GOGC` 400 (R33): the bits are the same, and `just gate exact` matches to the bit, while the gate's time on the runner falls. The gate's size is as before — 100 learners a cell and the choice anew for the first 10; giving it back 300 is still for later, by an amendment to this entry.
-
-— *Amendment 2026-11-10, a measurement (T35):* that the gate's time on the runner falls was confirmed only on `ubuntu-24.04-arm`: 7 min 3 s and 6 min 49 s on pull requests #40 and #41, 4 min 36 s and 4 min 42 s on #42 and #43. On `ubuntu-24.04` — 11 min 52 s and 6 min 54 s before T36, 8 min 14 s and 8 min 23 s after: the runner's time wanders more than the edit gave, and the measurement shows no gain there ([architecture.md](architecture.md), section 3.9).
-
-— *Amendment 2026-11-11, after the speed-up of `engine` (T41; R38):* the gate's base is `engine` v0.1.6, and the gate has 150 learners a cell, not 100. The choice anew on the repeat is still for the first 10 learners of a cell, and the budget is still `timeout-minutes: 15`. The author's answers 2026-11-10 and 2026-11-11 when planning and executing T41 (RUN.md, T41).
-- **What was found** (2026-11-10 and 2026-11-11):
-  - on `engine` v0.1.6 the gate on 100 learners reads all 69 numbers the same to the bit as on v0.1.4, and the invariants are intact. The bands on 100 were not written anew;
-  - in the development container, 100 learners: 1 min 44 s by the clock and 25.9 CPU minutes on v0.1.4, 1 min 5 s and 16.5 min on v0.1.6 — 1.57 times less;
-  - "Gate" of `sim` on 100 learners, pull request #49: `ubuntu-24.04` — 5 min 39 s with a cold Go cache and 4 min 27 s with a warm one, `ubuntu-24.04-arm` — 3 min 13 s and 3 min 7 s. The constant part of the job is about 35 seconds, the run with the build up to 5 min on 100 learners;
-  - the callers keep no Go cache, and the gate runs longer at theirs. "Gate" of `engine` on the code of v0.1.6 and 100 learners ran for 5 min 3 s and 7 min 44 s, the gate's step up to 7 min 18 s, at `timeout-minutes: 25` (В27 RUN.md `engine`). "Gate" of `learner-model` on the previous tag of `sim` and the slow choice ran for 8–12 min at `timeout-minutes: 15`; on v0.1.6 this is about 5–7.6 min on 100 learners;
-  - recalculated from the slowest measurement to 150 learners: at `sim` — about 8 min, at `engine` — about 11.5, at `learner-model` — about 11.2. To 200: at `sim` — about 10.6, but at `learner-model` — up to 15, right at the timeout. To 250 at `sim` — about 13.1;
-  - the gate on 150 learners in the development container — 1 min 28 s and 23.6 CPU minutes. All 69 numbers are read in the same places as on 100. Each new value is less than one previous half-width from the previous one, the most of all `M1` for `G0` of school maths, by 0.94. The half-width is on average 0.85 of the previous one, about 1/√1.5.
-  - "Gate" on 150 learners, pull request #49, the second commit: `ubuntu-24.04` — 8 min 21 s with a cold Go cache and 6 min 5 s with a warm one, `ubuntu-24.04-arm` — 4 min 16 s. The recalculation gave about 8 min on a cold one — the measurement matched it.
-- **Decided by the author:**
-  - the gate's size is by the slowest measurement: the largest, in steps of 50, from 100 to 300, at which the slowest measurement, recalculated to this size, is no more than 12 minutes — 3 minutes of margin before the timeout;
-  - 150, not 200: on 200 the gate of `learner-model` without a Go cache would come close to its 15 minutes.
-
-— *Why:* the rule of R38 — the gate gets as many learners as fit into the budget on the runner. The runner's time wanders: on the same code "Gate" ran both 6 min 54 s and 11 min 52 s. A gate that fails by timeout holds the merge in three repositories, so the slowest measurement is taken as the measure, with a margin. It must fit at every caller, not only in its own CI with a cache. 150 learners narrow the bands by about √1.5 ≈ 1.22 times.
-
-— *Rejected:*
-- 200 with `timeout-minutes: 25` at `learner-model`, as at `engine` — every pull request of `learner-model` would wait for the gate longer, and this is an edit of someone else's workflow;
-- 200 as it is — "Gate" of `learner-model` would fail by timeout on a slow runner;
-- 300 — about 16 min even in its own CI;
-- the size by a typical measurement, not by the slowest — a slow runner would bring the gate down.
-
-— *Consequence:* `gate.Learners` is 150; the bands are recorded anew, `just gate record` with a reason; the thresholds of the CI of `modules` are taken from the new record (R27). 300 learners of the gate wait for a speed-up of `learner-model`: a third of the choice is now `Readout.Task` (row В32 RUN.md `engine`, «в реестр spec»). Where it is written: RUN.md, T41; [architecture.md](architecture.md), sections 3.7–3.9; README; `internal/gate/gate.go`, `gate.json`.
-
-— *Amendment 2026-11-12, after the speed-up of `learner-model` (T46; R43, R44):* the gate has 250 learners a cell, not 150. The choice anew on the repeat is still for the first 10 learners of a cell, the budget is still `timeout-minutes: 15`, and the rule of the size is the same: the largest, in steps of 50, from 100 to 300, at which the slowest measurement, recalculated to this size, is no more than 12 minutes — with one refinement of the author: a size that passes the rule right at the edge, with less than a minute to 12, is not taken, and the gate takes the step below. By the rule alone it would come out as 300. The author's answers 2026-11-12 when planning T46 (RUN.md, T46).
-- **What was found** (2026-11-12):
-  - "Gate" of `sim` on the tag v0.1.9 — `learner-model` v0.1.6, `modules` v0.2.5, 150 learners —, both times with a cold Go cache: pull request #52 — 6 min 17 s on `ubuntu-24.04` and 3 min 36 s on `ubuntu-24.04-arm`, the push to main — 5 min 0 s and 3 min 32 s. In T41 on 150 learners with a cold cache it was 8 min 21 s, about 0.75 of this;
-  - the callers have not moved to v0.1.9 yet. "Gate" of `learner-model` on `sim` v0.1.8 runs its already fast code — up to 6 min 12 s. "Gate" of `engine` on `sim` v0.1.6 runs with `learner-model` v0.1.4 — up to 8 min 21 s, about 6 min 16 s recalculated by the ratio 0.75;
-  - recalculating the slowest measurement, about 6 min 17 s, with the constant part of the job about 35 s, as in T41: 200 learners — about 8 min 11 s, 250 — about 10 min 5 s, 300 — about 11 min 59 s;
-  - "Gate" on 250 learners, pull request #53, with a cold Go cache: `ubuntu-24.04` — 7 min 41 s, the gate's step 7 min 3 s; `ubuntu-24.04-arm` — 5 min 28 s; the whole CI is green. A repeat of the job on `ubuntu-24.04` with a warm cache — 5 min 34 s, the gate's step 5 min 6 s. On the second commit of the pull request, also with a warm cache, — 9 min 38 s, the gate's step 9 min 9 s: the runner happened to be slow. The callers have no Go cache, and on such a runner their gate would come close to 12 minutes or a little beyond — about 11 min 45 s – 13 min 17 s, depending on how the cold cache is recalculated —, at a timeout of 15 at `learner-model` and 25 at `engine`. The author decided to keep 250: the slowest measurement is in fact 9 min 38 s, and the callers will show their time on the new tag;
-  - in the development container the gate on 250 learners — 1 min 52 s and 29.6 CPU minutes, at a load average of about 40–60 from neighbouring containers.
-- **Decided by the author:** 250 learners.
-
-— *Why:* by the rule 300 learners pass right at the edge — about 11 min 59 s at a threshold of 12 —, while the runner's time on the same code wandered up to 1.7 times (the 2026-11-10 amendment "a measurement"), and the callers on the new tag have not been measured yet. 250 leave about two minutes beyond the rule's three minutes of margin. The bands on 250 are narrower than on 150 by √(5/3) ≈ 1.29 times.
-
-— *Rejected:*
-- 300 by the letter of the rule — there is no margin for the runner's noise;
-- 300 with a rollback to 250 if the measurement of the pull request goes over 12 minutes — one lucky measurement does not protect the callers from a timeout.
-
-— *Consequence:* `gate.Learners` is 250; the bands are recorded anew, `just gate record` with a reason (the 2026-11-12 amendment to R26); the thresholds of the CI of `modules` are taken from the new record (R27). Д7 is closed together with the 2026-11-12 amendment to R33. Where it is written: RUN.md, T46; [architecture.md](architecture.md), sections 3.7–3.9; README; `internal/gate/gate.go`, `gate.json`.
+— *Consequence:* `internal/published/`, `internal/gate/gate.go`, `internal/bench/`, `gate.json` — its bands recorded anew, and the thresholds of the CI of `modules` taken from them —, `internal/criterion/paths.json`, pinned anew; a new tag of `sim`, which the gates of the libraries take; README; [architecture.md](architecture.md).
 
 ## The tag `spec` v0.12.0
 
-**R32. `sim` stands on `spec` v0.12.0, the latest release of `spec`. With it the packages are pinned to `modules` v0.2.0 — all three modules in format 0.4 —, and the libraries to `learner-model` v0.1.4 and `engine` v0.1.4. The step of gopls in the image is the template's of `spec`, and R11 is superseded.** The author's instruction 2026-11-10 — «перейди на spec последней версии» — and their answers to three questions of the move.
-- **What the tag decided for `sim`** (`git -C spec diff v0.9.9 v0.12.0`, read 2026-11-09 and 2026-11-10; the sources — [architecture.md](architecture.md), section 4):
-  - format 0.4 came out with v0.10.0 (R102, R108, R111 spec). While the format is v0, the platform reads only its current version ([format text](../spec/format/README.md), section 2), so the simulator needs the window 0.4 and packages in 0.4. All the additions of 0.4 are optional, and a module of 0.3 moved to 0.4 gives the same verdicts and numbers. In the types `formatv0` a lesson's explanation is now `ExplanationPart`;
-  - Д137 of table 4 of RUN.md `spec` is the answer to row В24 of `engine`: `sim` takes `engine` and `learner-model` v0.1.3 in the new pin, before the decisive run of the base. They came out through the gate with the same numbers;
-  - Д123 and Д136 are the answers to the rows of `sim` В6, В8 and В9, by their recommendations: rows 4.5 and 4.8 of [COORDINATION.md](../spec/COORDINATION.md) are closed, and the first candidates are row 4.9;
-  - the 2026-11-09 amendment to R103 spec: `sim` judges the candidates of one library in a round — a decisive run on each, one judgement with all of them, a confirmation only of the chosen one (row В31 of `learner-model`). This concerns T32 and T33;
-  - the template's kind `go` gives the step of gopls with a lock file (R102 spec), of the same version 0.24.0 as `sim`'s;
-  - the rest — the data region, the legal questions and the learners' data (R109, R112–R123 spec) — does not concern `sim`: it has no data of live learners.
+**R32. `sim` stands on `spec` v0.12.0, the latest release of `spec`. With it the packages are pinned to `modules` v0.2.0 — all three modules in format 0.4 —, and the libraries to `learner-model` v0.1.4 and `engine` v0.1.4. The step of gopls in the image is the template's of `spec`, in place of a step of `sim`'s own.**
+- **What the tag decided for `sim`** (`git -C spec diff v0.9.9 v0.12.0`, read 2026-11-09 and 2026-11-10):
+  - format 0.4 came out with v0.10.0. While the format is v0, the platform reads only its current version, by the format's text, `spec/format/README.md`, so the simulator needs the window 0.4 and packages in 0.4. All the additions of 0.4 are optional, and a module of 0.3 moved to 0.4 gives the same verdicts and numbers. In the types `formatv0` a lesson's explanation is now `ExplanationPart`;
+  - `spec` answered a question of `engine`: `sim` takes `engine` and `learner-model` v0.1.3 in the new pin, before the decisive run of the base. They came out through the gate with the same numbers;
+  - `spec` answered three questions of `sim` by their recommendations: the rows of its order of work they waited on are closed, and the first candidates have a row of their own;
+  - `sim` judges the candidates of one library in a round — a decisive run on each, one judgement with all of them, a confirmation only of the chosen one —, as `learner-model` asked; this concerns the judgements of the first candidates;
+  - the template's kind `go` gives the step of gopls with a lock file, of the same version 0.24.0 as `sim`'s;
+  - the rest — the data region, the legal questions and the learners' data — does not concern `sim`: it has no data of live learners.
 - **What is changed here:**
   - `spec/` — to v0.12.0, commit 5b4640a; `gh release verify` confirmed the release;
   - `go.mod` — `spec` v0.12.0, `engine` and `learner-model` v0.1.4; `release-verify` accepted the archives of both libraries;
@@ -867,20 +772,20 @@ Where it is written: RUN.md, tables 1–3 and the bodies of T29–T35; [architec
   - the step of gopls and `.devcontainer/gopls/go.mod` — from the template; `go.sum` is the same;
   - the tag — in CLAUDE.md, README.md and the opening of RUN.md.
 - **Decided by the author:**
-  - the paths are written anew in T36, by a fast run, not here: T36 changes the design of the run anyway, and no candidates are judged before it;
+  - the paths are written anew by the fast run, which changes the design of the run anyway, not here: no candidates are judged before it;
   - the libraries — v0.1.4, the latest releases: the code is the same as in v0.1.3, with only documents and the move to `spec` v0.12.0 on top;
   - the step of gopls — the template's.
-- **Found in the move:** the first 100 learners of each of the 65 cells on the new simulator give the same bytes as the run of the base of T30 — 6,500 lines. Neither the fix of the libraries v0.1.3 nor format 0.4 shifted the base's numbers, so the paths of T30 stay in force until T36. But two parts of 0.4 the simulator will not read when a module uses them: the check kind `time` and the leading question `leading_question`. The published packages do not have them; this is an open question — [architecture.md](architecture.md), subsection 2.5, row В11 of table 3 of RUN.md.
+- **Found in the move:** the first 100 learners of each of the 65 cells on the new simulator give the same bytes as the run of the base on the pin before — 6,500 lines. Neither the fix of the libraries v0.1.3 nor format 0.4 shifted the base's numbers, so the paths of that pin stay in force until the fast run. Two parts of 0.4 the simulator did not read then, the check kind `time` and the leading question `leading_question`: the published packages did not have them, and the translation of the packages has taken them up since.
 
-— *Why now:* the author's instruction. v0.12.0 is the latest release of `spec` on 2026-11-10, and `modules`, `engine` and `learner-model` already stand on it. Without it the simulator will not read packages in 0.4, and the gate of the CI of `modules` on `v0.2.0` will not run.
+— *Why now:* v0.12.0 is the latest release of `spec` on 2026-11-10, and `modules`, `engine` and `learner-model` already stand on it. Without it the simulator will not read packages in 0.4, and the gate of the CI of `modules` on `v0.2.0` will not run.
 
 — *Rejected:*
 - stay on v0.9.9 — see the "Why now";
-- the libraries v0.1.3 — exactly what Д137 named, but v0.1.4 is the same code on the same tag of `spec` as `sim`'s;
-- the decisive run now — about 8 hours, and after T36 the paths are written anew anyway;
+- the libraries v0.1.3 — exactly what `spec` named, but v0.1.4 is the same code on the same tag of `spec` as `sim`'s;
+- the decisive run now — about 8 hours, and after the fast run the paths are written anew anyway;
 - a step of gopls of its own — it would diverge from the template, and gopls would have to be raised by hand.
 
-— *Consequence:* table 3 of RUN.md — В6, В8 and В9 closed, В10 stays; R11 is superseded; the 2026-11-10 amendments to R04, R14 and R26. The merge releases the next tag of `sim`, and the gates of the libraries take it. Where it is written: RUN.md, T37; [architecture.md](architecture.md), the status and sections 3, 3.3 and 4; CLAUDE.md, README.md.
+— *Consequence:* `spec/`, `go.mod`, `go.sum`, `internal/pack/`, `internal/published/`, the synthetic packages and their tests, `gate.json`, `.devcontainer/Dockerfile`, `.devcontainer/gopls/go.mod`; CLAUDE.md, README.md, RUN.md; the merge releases the next tag of `sim`, which the gates of the libraries take; [architecture.md](architecture.md).
 
 ## Runs no longer than an hour
 
