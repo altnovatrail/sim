@@ -33,7 +33,7 @@
     ]
   },
   "dependencies": {
-    "github.com/altnovatrail/spec": "v0.19.4"
+    "github.com/altnovatrail/spec": "v0.19.11"
   },
   "go": {
     "github.com/altnovatrail/engine": "1.27.3",
