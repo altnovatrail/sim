@@ -1,6 +1,6 @@
 # RUN.md — work plan of sim
 
-What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.19.11: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
+What sim does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.19.12: the component's card — architecture 3.9 spec. Small tasks, one at a time, gathered in epics; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md). No `run/TASKS.md`: a task outside an epic stands in table 1 of the current epic (R47, R61).
 
 Language (R154 spec): rules and tables in English, terse, for the session; the epic's description, table 1 and the bodies of tasks in Russian — the author writes and reviews them. Commit messages, issues and a pull request's title and description in English, a person's too; a session's terse, for the session, never a copy of the report (R14 spec; R75).
 
@@ -95,11 +95,12 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [ ] | T103 | Ссылки по R171 spec: `docs/architecture.md`, разделы 1–3.4, и `docs/README.md` | Claude | — | T93 |
 | [ ] | T104 | Ссылки по R171 spec: `docs/architecture.md`, разделы 3.5–4 | Claude | — | T94, T95, T97, T98 |
 | [ ] | T105 | Ссылки по R171 spec: `docs/sources.md`, `docs/measurements.md`, ключ `"citations"` | Claude | — | T93–T104 |
+| [x] | T106 | Переход на тег `spec` v0.19.12 | Claude | — | — |
 
 **Почему такой порядок.**
 - Суд — по коммитам черновых pull request кандидатов, не по их релизу: `sim` гонит кандидата из его коммита (R34), а релиз выбранного ждёт полос `sim` (R103 spec).
 - База на релиз — после суда; при выходе T73 только архивирует эпик. Отдельной задачи итога нет: последняя архивирует (R59).
-- T74–T105 — вне эпика, в таблице 1, а не в `run/TASKS.md` (R61): каждая — по строке COORDINATION.md spec, слову автора или эпику `spec` в прогоне его оркестратора (R156 spec), её причина — в её теле; тела сделанных — в [docs/plan/E10.md](docs/plan/E10.md).
+- T74–T106 — вне эпика, в таблице 1, а не в `run/TASKS.md` (R61): каждая — по строке COORDINATION.md spec, слову автора или эпику `spec` в прогоне его оркестратора (R156 spec), её причина — в её теле; тела сделанных — в [docs/plan/E10.md](docs/plan/E10.md).
 - T87–T90 — строка 7.31 COORDINATION.md spec, по одному ревью (правило 11): друг от друга не зависят и не двигают ни бит, ни закрепления.
 - T93–T105 — строка 7.43 COORDINATION.md spec, правило ссылок R171 spec, разбитое по правилу 11 и шагу 9 тела T93: части журнала — по его разделам `##`, друг от друга не зависят; ключ `"citations": true` включает последняя, T105, когда остальные сделаны. В таблице 1, а не в `run/TASKS.md`, которого здесь нет (R61).
 
