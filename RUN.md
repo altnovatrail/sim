@@ -92,7 +92,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T100 | Ссылки по R171 spec: журнал, R55–R63 | Claude | — | T93 |
 | [x] | T101 | Ссылки по R171 spec: журнал, R64–R69 | Claude | — | T93 |
 | [x] | T102 | Ссылки по R171 spec: журнал, R70–R77 | Claude | — | T93 |
-| [ ] | T103 | Ссылки по R171 spec: `docs/architecture.md`, разделы 1–3.4, и `docs/README.md` | Claude | — | T93 |
+| [x] | T103 | Ссылки по R171 spec: `docs/architecture.md`, разделы 1–3.4, и `docs/README.md` | Claude | — | T93 |
 | [ ] | T104 | Ссылки по R171 spec: `docs/architecture.md`, разделы 3.5–4 | Claude | — | T94, T95, T97, T98 |
 | [ ] | T105 | Ссылки по R171 spec: `docs/sources.md`, `docs/measurements.md`, ключ `"citations"` | Claude | — | T93–T104 |
 | [x] | T106 | Переход на тег `spec` v0.19.12 | Claude | — | — |
@@ -151,14 +151,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Как проверить:** при выборе — `just gate exact`, `just ci-test`, `just ci-lint`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
 - **Отложено (2026-11-16):** `[?]` — вслед за T72, по тому же решению автора (R69): суда нет, и базе не на что переходить; эпик не уходит в архив, пока таблица 1 не вся отмечена (правила RUN.md, «Epics»). Вернуться вместе с T72.
 - **Разделы:** R04, R26, R29, R40, R55, R58, R59; [docs/architecture.md](docs/architecture.md), разделы 3, 3.6 и 3.9; architecture 3.9 spec; dpia 10.2 spec.
-
-#### T103. Ссылки по R171 spec: `docs/architecture.md`, разделы 1–3.4, и `docs/README.md`
-
-- **Цель:** разделы 1–3.4 [docs/architecture.md](docs/architecture.md) и [docs/README.md](docs/README.md) — по правилу ссылок R171 spec: ни номеров задач, ни ссылок на поправки, в скобке не больше двух ссылок, и только те, по которым читатель пойдёт действовать, без цепочек.
-- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
-- **Сделать:** шаги 4 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах и файле; `docs/README.md` — для людей, но в `docs/`, и правило его читает. Ключ `"citations"` включает T105.
-- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; `/code-review high`, один круг; в отчёте — ссылок было и стало, по видам.
-- **Разделы:** R171 spec; [docs/architecture.md](docs/architecture.md), разделы 1–3.4; [docs/README.md](docs/README.md).
 
 #### T104. Ссылки по R171 spec: `docs/architecture.md`, разделы 3.5–4
 
