@@ -91,7 +91,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T99 | Ссылки по R171 spec: журнал, R45–R54 | Claude | — | T93 |
 | [x] | T100 | Ссылки по R171 spec: журнал, R55–R63 | Claude | — | T93 |
 | [x] | T101 | Ссылки по R171 spec: журнал, R64–R69 | Claude | — | T93 |
-| [ ] | T102 | Ссылки по R171 spec: журнал, R70–R77 | Claude | — | T93 |
+| [x] | T102 | Ссылки по R171 spec: журнал, R70–R77 | Claude | — | T93 |
 | [ ] | T103 | Ссылки по R171 spec: `docs/architecture.md`, разделы 1–3.4, и `docs/README.md` | Claude | — | T93 |
 | [ ] | T104 | Ссылки по R171 spec: `docs/architecture.md`, разделы 3.5–4 | Claude | — | T94, T95, T97, T98 |
 | [ ] | T105 | Ссылки по R171 spec: `docs/sources.md`, `docs/measurements.md`, ключ `"citations"` | Claude | — | T93–T104 |
@@ -151,14 +151,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Как проверить:** при выборе — `just gate exact`, `just ci-test`, `just ci-lint`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
 - **Отложено (2026-11-16):** `[?]` — вслед за T72, по тому же решению автора (R69): суда нет, и базе не на что переходить; эпик не уходит в архив, пока таблица 1 не вся отмечена (правила RUN.md, «Epics»). Вернуться вместе с T72.
 - **Разделы:** R04, R26, R29, R40, R55, R58, R59; [docs/architecture.md](docs/architecture.md), разделы 3, 3.6 и 3.9; architecture 3.9 spec; dpia 10.2 spec.
-
-#### T102. Ссылки по R171 spec: журнал, R70–R77
-
-- **Цель:** записи R70–R77 [docs/decisions.md](docs/decisions.md) — разделы `##` от «The tag `spec` v0.18.4 and `toolchain-core`» до «The tag `spec` v0.18.27» — по правилу ссылок R171 spec: датированные поправки свёрнуты в действующий текст записи, ссылки — только те, по которым читатель пойдёт действовать, хвост «— *Consequence:*» — без номеров задач.
-- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
-- **Сделать:** шаги 4, 6 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах; R70, R75 и R77 — их часть строки Д16, которую удаляет последняя из T100 и T102. Шапку журнала, другие разделы и документы не трогать; ключ `"citations"` включает T105.
-- **Как проверить:** `just -f spec/justfile docs-check-repo` — зелёный; с ключом `"citations": true`, включённым временно и не закоммиченным, — ни одной ошибки в строках своих разделов; в описании pull request — таблица «поправка → место в новом тексте»; `/code-review high`, один круг; в отчёте — ссылок в своих разделах было и стало, по видам.
-- **Разделы:** R171 spec, R160 spec; свои записи R70–R77; `spec/repo-template/files/docs/decisions.md`.
 
 #### T103. Ссылки по R171 spec: `docs/architecture.md`, разделы 1–3.4, и `docs/README.md`
 
