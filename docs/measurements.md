@@ -24,7 +24,7 @@ The time of the gate and of a decisive run: by it the budget of the job "Gate" a
 
 - The first code of the gate, on 300 learners: in the development container on 20 cores the gate takes 45 seconds, 11 minutes of CPU time with the repeat for `I1`; on the 4 cores of a runner this is about three minutes of run beyond building the stage.
 - On `olympiad-math` 0.1.1 the gate on 300 learners took 8.5 minutes and 135 CPU minutes on 20 cores — about 35–40 minutes on a runner.
-- In the development container the gate on 150 learners took 1 min 28 s and 23.6 CPU minutes on `engine` v0.1.6, and on the pin of `modules` v0.2.1 7 min and 28.4 CPU minutes on a host that neighbouring containers loaded, on `learner-model` v0.1.6 1 min 16 s and 18.7 CPU minutes, and on 250 learners 1 min 52 s and 29.6 CPU minutes at a load average of about 40–60 from neighbouring containers.
+- In the development container the gate on 150 learners took 1 min 28 s and 23.6 CPU minutes on `engine` v0.1.6, and on the pin of `modules` v0.2.5 7 min and 28.4 CPU minutes on a host that neighbouring containers loaded, on `learner-model` v0.1.6 1 min 16 s and 18.7 CPU minutes, and on 250 learners 1 min 52 s and 29.6 CPU minutes at a load average of about 40–60 from neighbouring containers.
 
 ### 1.3. The decisive run
 
@@ -56,13 +56,13 @@ How `sim` keeps the tokens that the move to `spec` v0.16.3 and the translation o
 |---|---|---|
 | CLAUDE.md / RUN.md / DEBT.md | 12 / 96 / 128 | 7.4 / 38.9 / 4.1 |
 | a rule of `.claude/rules/` | 6 | 1.9, `gate` |
-| an entry of the decision log, with its amendments | 90, raised from 40 | 78.6, the entry of the bands; the next is 13.1, and the median 4.6 |
+| an entry of the decision log, with its amendments | 90, raised from 40 | 78.6, the entry of the two criteria; the next is the entry of the published `olympiad-math`, 13.1, and the median 4.6 |
 | the own text under a heading of a document | 24 | 22.0, the gate in CI in `docs/architecture.md` |
 | a row of a table of RUN.md / DEBT.md | 4 / 4 | 1.4, В13 / 1.0, Д3 |
 
-- The one raised limit is the entry's: the entry of the bands holds the bands and the paths of the criteria, and every new pin adds an amendment with the table of its paths. In Russian it was 92.6 KB; the translation took it to 78.6. 90 is the largest plus about 15%, as measurements 1.9 spec sets limits. Raising it again is an edit of `docs-budgets.json`, and the third raise since the last analysis is a threshold of a new analysis of the sessions.
-- Before the translation of the second half of the log the check, with `docs-budgets.json` at `{}`, found only the entry of the bands over its limit: the second half of the log, still Russian, was within 40 KB an entry.
-- Since the judgement of `theta` the table of the paths is a section of this file, and the entry of the bands takes a short amendment that cites it; the test of the paths reads the table here. That entry then stops growing by a table at every new pin.
+- The one raised limit is the entry's: the entry of the two criteria held the bands and the paths of the criteria, and every new pin added an amendment with the table of its paths. In Russian it was 92.6 KB; the translation took it to 78.6. 90 is the largest plus about 15%, as measurements 1.9 spec sets limits. Raising it again is an edit of `docs-budgets.json`, and the third raise since the last analysis is a threshold of a new analysis of the sessions.
+- Before the translation of the second half of the log the check, with `docs-budgets.json` at `{}`, found only the entry of the two criteria over its limit: the second half of the log, still Russian, was within 40 KB an entry.
+- Since the judgement of `theta` the table of the paths is a section of this file, and the entry of the two criteria cites it; the test of the paths reads the table here. That entry then stopped growing by a table at every new pin.
 - The section of `docs/architecture.md` on the gate in CI is 22.0 of 24 KB: the next growth of that section moves a part of it into a section of its own rather than raising the limit.
 
 ### 2.2. The measurement of sessions
