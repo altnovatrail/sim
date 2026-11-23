@@ -93,7 +93,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T101 | Ссылки по R171 spec: журнал, R64–R69 | Claude | — | T93 |
 | [x] | T102 | Ссылки по R171 spec: журнал, R70–R77 | Claude | — | T93 |
 | [x] | T103 | Ссылки по R171 spec: `docs/architecture.md`, разделы 1–3.4, и `docs/README.md` | Claude | — | T93 |
-| [ ] | T104 | Ссылки по R171 spec: `docs/architecture.md`, разделы 3.5–4 | Claude | — | T94, T95, T97, T98 |
+| [x] | T104 | Ссылки по R171 spec: `docs/architecture.md`, разделы 3.5–4 | Claude | — | T94, T95, T97, T98 |
 | [ ] | T105 | Ссылки по R171 spec: `docs/sources.md`, `docs/measurements.md`, ключ `"citations"` | Claude | — | T93–T104 |
 | [x] | T106 | Переход на тег `spec` v0.19.12 | Claude | — | — |
 | [x] | T107 | Ссылки по строгому правилу R171 spec: проход по первой части | Claude | — | T106 |
@@ -151,14 +151,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Как проверить:** при выборе — `just gate exact`, `just ci-test`, `just ci-lint`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
 - **Отложено (2026-11-16):** `[?]` — вслед за T72, по тому же решению автора (R69): суда нет, и базе не на что переходить; эпик не уходит в архив, пока таблица 1 не вся отмечена (правила RUN.md, «Epics»). Вернуться вместе с T72.
 - **Разделы:** R04, R26, R29, R40, R55, R58, R59; [docs/architecture.md](docs/architecture.md), разделы 3, 3.6 и 3.9; architecture 3.9 spec; dpia 10.2 spec.
-
-#### T104. Ссылки по R171 spec: `docs/architecture.md`, разделы 3.5–4
-
-- **Цель:** разделы 3.5–4 [docs/architecture.md](docs/architecture.md) — по правилу ссылок R171 spec, как T103.
-- **Почему:** часть T93 — строки 7.43 COORDINATION.md spec, — разбитой по правилу 11 и шагу 9 её тела.
-- **Сделать:** шаги 4 и 7 тела T93 в архиве ([docs/plan/E10.md](docs/plan/E10.md), `grep -n '^#### T93\.' docs/plan/E10.md`) — только в этих разделах; ссылки на R04, R05, R31 и R33 — сверить с действующим текстом записей, свёрнутым T94, T95, T97 и T98 (строка Д15). Ключ `"citations"` включает T105.
-- **Как проверить:** как T103.
-- **Разделы:** R171 spec; [docs/architecture.md](docs/architecture.md), разделы 3.5–4; строка Д15 [run/DEBT.md](run/DEBT.md).
 
 #### T105. Ссылки по R171 spec: `docs/sources.md`, `docs/measurements.md`, ключ `"citations"`
 
