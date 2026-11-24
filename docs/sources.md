@@ -6,55 +6,6 @@
 >
 > A record is a subsection "N.M" of a topic: one source, or one reading of several sources for one decision. A record's number never changes and is never given again: a new one goes at the end of its topic, a new topic at the end of the file, and a record removed leaves a gap. A source read again with the same text changes the record's date; with another text, the claims and decisions on it are rewritten in the same change and the record holds the new reading alone — where a decision waits on the author, an open question, and both readings stand until it is closed. The model is `spec/docs/sources.md`. The results of measurements are not here but in [measurements.md](measurements.md).
 
-## 1. MathTrail standalone
-
-### 1.1. standalone c6cbeb2: the example for the simulator
-
-The repository standalone, branch `main`, commit c6cbeb2, read 2026-10-19 — the same commit that spec read.
-
-- [`docs/learners.md`](https://github.com/mathtrail/mathtrail-standalone/blob/c6cbeb2/docs/learners.md) — the example for the simulator:
-  - "What it is, and where it comes from": "every tenth answer starts a new day. A child gives 200 answers";
-  - "The children": the children are synthetic, each from a seed of its own, and the same children go through every rule; a table of nineteen generators, G2-half — "The main learner, the speed the author takes as plausible (2026-10-03)"; the chat model's miss — a task "truly harder or easier than the difficulty asked for"; "How fast real children learn is not known: the speeds are the bench's, not a measurement";
-  - "The rules": "the choice of task, the trial series and mastery are the service's for every rule, and only the estimate differs"; "The oracle … the ceiling of every rule that learns of a child from answers"; "It is not a ceiling for a new rule of mastery";
-  - "Choosing mastery": "The score: the share of the way from the baseline to perfect";
-  - "The criterion": the constraints, the score, the choice, the confirmation on the held-out seeds and the exit; "A candidate is chosen on the working seeds, in a decision run of 4,000 children a cell, and confirmed once on the held-out seeds";
-  - "Choosing how a wrong answer is charged": "Its aim is the screen, not the estimate: a single wrong answer should cost the child little on the card";
-  - "The guard": "It runs the service's own path on the first 300 children of each of G0, G1, G2 and G3 … and holds it within two half-widths of the 95 % interval recorded with it"; "CI runs it on every pull request, as a job of its own"; the bands are recorded anew when a change moves the model on purpose, and "the new `guard.csv` is read in the change's review"; "The bands are recorded on amd64, built at `GOAMD64` v1, Go's default, where Go fuses no multiplication with an addition, and on a processor with FMA … elsewhere the last digits of the numbers may part from them, well within any band";
-  - "Reading the live numbers": "Two tables of the service's report hold them to live ones"; the simulator reads its own children the same way, "and this is how the two are laid side by side";
-  - "The paper's numbers": "On arm64 the last digits may differ, since Go fuses a multiplication and an addition there into one step that rounds once, as it does on amd64 at `GOAMD64` v3 and above; so may they on a processor without FMA";
-  - "Running it": "`just ci-learners` runs the guard, a few seconds on the development machine".
-- [`docs/decisions.md`](https://github.com/mathtrail/mathtrail-standalone/blob/c6cbeb2/docs/decisions.md):
-  - the entry on the criterion of a new rule: "A new rule of the student model is chosen by a criterion written down before any candidate ran, on a bench that knows its ceiling". In the same place — the tolerance "never under 4.3 standard errors of the paired difference", and why: the author's tolerances "are finer than the bench resolves on 1,000 children";
-  - the entry on the module `tools/learners`: "`tools/learners` is a Go module of its own … the product through `replace ../..` and no dependency of its own".
-- [`.github/workflows/ci.yml`](https://github.com/mathtrail/mathtrail-standalone/blob/c6cbeb2/.github/workflows/ci.yml), the job `learners-guard` — "Student model guard", `timeout-minutes: 10`, the step `just ci-learners | tee -a "$GITHUB_STEP_SUMMARY"`.
-- [`LICENSE`](https://github.com/mathtrail/mathtrail-standalone/blob/c6cbeb2/LICENSE): "MIT License", "Copyright (c) 2026 MathTrail".
-
-### 1.2. standalone 89986bc: the populations, the criterion and the guard
-
-The repository standalone, branch `main`, commit 89986bc, read 2026-11-07 — the commit that `modules` carries the tasks over from. Between c6cbeb2 and 89986bc, in `tools/learners` and `docs/learners.md` only `go.mod` and `go.sum` changed — Go 1.27.3 and new versions of `golang.org/x` — and the numbers of `testdata`: the assumptions of the populations are the same.
-
-- [`docs/learners.md`](https://github.com/mathtrail/mathtrail-standalone/blob/89986bc/docs/learners.md):
-  - "The children": the base population — "a grade from 1 to 6, and the start the service gives that grade; a true level of the start plus N(0, 1); a true offset per topic of N(0, 0.5²); and a task that is truly harder or easier than the difficulty asked for, by N(0, 0.5²) … A child answers correctly with chance 0.2 + 0.8·σ(level + offset − difficulty), and never asks for the hint"; "The generators each change the base population in one respect"; "A generator's children are drawn from seeds named after it, so a generator added leaves every child of the others as they were"; a table of nineteen populations — G0, G1, G2, G3, G4, G5, G6, G7, G8, G0-exact, G0-miss0.25, G0-miss1, G2-half, G2-fading, G3-drop, G0-start0.5, G0-start2, G0-topics0.3, G0-topics1;
-  - "What it is, and where it comes from": the simulator goes through the product's path — `profile.New`, `tutor.Next`, `Profile.Ask`, `Profile.Issue`, `Profile.Record`; "A task is answered two minutes after it is issued, the next is issued at once, and every tenth answer starts a new day";
-  - "The held-out seeds": the held-out children — "seed 20261003, experiment `held-out`"; "A test proves that no child of any generator is drawn alike in any two of the four sets"; "A set that has been looked at is held out no longer".
-- [`tools/learners/child.go`](https://github.com/mathtrail/mathtrail-standalone/blob/89986bc/tools/learners/child.go): the constants of the populations — `spreadAroundStart = 1.0`, `spreadOfTopics = 0.5`, `writingError = 0.5`, `baseFloor = 0.2`, `misplacedBy = 2.5`, `learningPerAnswer = 0.01`, `topicLearning = 0.02`, `forgetting = 0.01`, `jumpBy = 1.0`, `jumpEarliest = 50`, `jumpLatest = 150`, `harderHostBias = 0.75`, `groupOffset = 0.75`, `spreadInGroup = 0.25`, `hintShare = 0.2`, `fadeAfter = 50.0`; `G2-half` — `c.learn(learningPerAnswer/2, topicLearning/2)`; the miss is drawn at every issue — `writing: c.draws.NormFloat64()` in `answerDraws`; `seeded(unit, purpose)` — FNV-64a of "`%d|%s|%s|%s`" of the main seed, the experiment, the unit and the purpose, and PCG.
-- [`tools/learners/loop.go`](https://github.com/mathtrail/mathtrail-standalone/blob/89986bc/tools/learners/loop.go): `answerTime = 2 * time.Minute`, `answersPerDay = 10`.
-
-The repository standalone, commit 89986bc, read 2026-11-07 — the criterion and the guard that the simulator's criterion and bands were written by.
-
-- [`docs/learners.md`](https://github.com/mathtrail/mathtrail-standalone/blob/89986bc/docs/learners.md):
-  - "The measures": "A topic is truly mastered at a level when the child's true chance on a task of that level and topic at difficulty 3, written as asked, is at least 0.775, the corridor's middle"; "Every number is read off all the children of its cell, with a 95 % interval from 2,000 resamples of the children";
-  - "The criterion": the numbers of the targets and the tolerances "come from the service's rule and the rules already on the bench, never from a candidate: they are calibration, not a choice"; "A number the run cannot read leaves its constraint unmet and its score unread";
-  - "Choosing the step": the targets — "on G2-half, the lag, `|r6_lag|`, is at most 45 % of the service's", "c* = (0.35 − 0.257) / (0.605 − 0.257) = 0.27", "on G3, the share of children not caught up after the jump, `r6_jump_unsettled`, is at most 25 %"; the tolerance — "4.3 standard errors of the paired difference between the slow constant step and the service there, in the same run", and "A candidate exactly as good as the service passes such a check 99 times in 100"; the score — the groups "Stays put" 1, "Learns" 2 (G2-half 1.25, G2-fading 0.5, G2 0.25), "Changes at once" 1 (G3 0.5, G3-drop 0.5), "Placed a level off" 0.5 (G1); "The chosen one is the simplest of A* and its equals"; "no second candidate is tried on the held-out seeds, since a set tried twice is held out no longer";
-  - "Choosing mastery": "false masteries are at most 20 %, on G0 and on G0-topics1"; the number of answers until "mastered" — "at most 1.5 times the baseline's";
-  - "The guard": "holds it within two half-widths of the 95 % interval recorded with it"; "the edges included"; "a band is room for a change, not for chance"; "fails naming each number outside its band with the band itself"; "the new `guard.csv` is read in the change's review, as a snapshot is, since recording turns a red guard green".
-
-Read again 2026-11-12: "The measures" — "The names are those of `cells.csv`".
-
-### 1.3. standalone 6b29dd9
-
-The repository standalone, branch `main`, commit 6b29dd9, read 2026-11-07: since 89986bc, in `tools/learners` and `docs/learners.md` only `tools/learners/go.sum` has changed, so the populations, the criterion and the bands read 89986bc, sources 1.2.
-
 ## 2. GitHub and other external sources
 
 ### 2.3. GitHub Docs: runners and limits
