@@ -2,7 +2,7 @@
 
 > The results of `sim`'s measurements: what was measured, how, on what, and what numbers came out. [architecture.md](architecture.md) refers here and holds only what was decided from them. A measurement is cited by its number: `measurements 1.1`, and from another repository `measurements 1.1 sim`.
 >
-> An external fact a measurement rests on is a record of [sources.md](sources.md).
+> A fact no run checks that a measurement rests on is a record of [sources.md](sources.md).
 
 ## 1. The time of runs
 

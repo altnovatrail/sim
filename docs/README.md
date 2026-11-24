@@ -4,7 +4,7 @@ What the [README](../README.md) of the repository leaves out, which says only wh
 
 - [architecture.md](architecture.md) — the component: what it does and does not do, its data and links, what was decided, and what the code builds.
 - [decisions.md](decisions.md) — the decision log: what was decided, why, and what was rejected.
-- [sources.md](sources.md) — the records of external facts the documents rest on: each source, the date it was read and its quote.
+- [sources.md](sources.md) — the records of the facts no run checks that the documents rest on, each with its address, the date read and a quote.
 - [measurements.md](measurements.md) — the results of measurements: the times of the gate and of decisive runs.
 - [RUN.md](../RUN.md) — the work plan, in epics.
 - `run/` — the plan's other tables: [the epics for later](../run/EPICS.md), [the open questions](../run/QUESTIONS.md) and [the technical debt](../run/DEBT.md).
