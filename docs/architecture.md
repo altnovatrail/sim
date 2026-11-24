@@ -437,6 +437,4 @@ A pull request P that got new commits after the bands were recorded passes the g
 
 The records of the sources are in [sources.md](sources.md). The section stays because the archives of `docs/plan/` cite it. What stood here, by readings:
 - the gate in CI, 2026-11-07: the limits of GitHub — sources 2.3;
-- the planning of the second epic: the Go module `spec` v0.9.9 — sources 7.1;
-- the seeds: `go.yaml.in/yaml/v4` — sources 2.4, AS 241 — sources 2.5;
-- later: the move to `spec` v0.12.0 — sources 7.2, to v0.15.0 — sources 7.3, to v0.16.3 — sources 7.4.
+- the seeds: `go.yaml.in/yaml/v4` — sources 2.4, AS 241 — sources 2.5.

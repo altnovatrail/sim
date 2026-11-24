@@ -103,7 +103,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T111 | `docs/sources.md` по правилу записей: `learner-model` | Claude | — | T109 |
 | [x] | T112 | `docs/sources.md` по правилу записей: `engine` и `modules` | Claude | — | T109 |
 | [x] | T113 | `docs/sources.md` по правилу записей: `.github` | Claude | — | T109 |
-| [ ] | T114 | `docs/sources.md` по правилу записей: `spec` и `module-kit` | Claude | — | T109 |
+| [x] | T114 | `docs/sources.md` по правилу записей: `spec` и `module-kit` | Claude | — | T109 |
 
 **Почему такой порядок.**
 - Суд — по коммитам черновых pull request кандидатов, не по их релизу: `sim` гонит кандидата из его коммита (R34), а релиз выбранного ждёт полос `sim` (R103 spec).
@@ -159,14 +159,3 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Как проверить:** при выборе — `just gate exact`, `just ci-test`, `just ci-lint`; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
 - **Отложено (2026-11-16):** `[?]` — вслед за T72, по тому же решению автора (R69): суда нет, и базе не на что переходить; эпик не уходит в архив, пока таблица 1 не вся отмечена (правила RUN.md, «Epics»). Вернуться вместе с T72.
 - **Разделы:** R04, R26, R29, R40, R55, R58, R59; [docs/architecture.md](docs/architecture.md), разделы 3, 3.6 и 3.9; architecture 3.9 spec; dpia 10.2 spec.
-
-#### T114. `docs/sources.md` по правилу записей: `spec` и `module-kit`
-
-- **Цель:** записи 7.1–7.13 `docs/sources.md` — теги `spec`, его модуль Go и `module-kit` — удалены, утверждения на них — ссылка на файл репозитория на его коммите или теге, по правилу записей `spec/RULES.md` тега v0.19.20: файлы репозиториев NovaTrail и MathTrail — git.
-- **Почему:** строка 7.67 COORDINATION.md spec, по тексту T291 spec; часть T109, разбитой по правилу 11: 18 ссылок на записи 7.1–7.13; тег `spec` — ссылка на тег или подмодуль.
-- **Сделать:**
-  - каждую ссылку на эти записи в `docs/architecture.md`, `docs/decisions.md`, `docs/measurements.md`, `run/` и RUN.md — ссылкой на файл, релиз или тег репозитория на коммите или теге записи, с цитатой записи у утверждения, где утверждение на ней стоит; смысл утверждений не менять;
-  - записи удалить, номера не переиспользовать; тему без записей — удалить; указатель раздела «Sources» `docs/architecture.md` — без удалённых записей;
-  - архивы `docs/plan/` не трогать: `docs-check` не ищет их ссылок на записи.
-- **Как проверить:** `just -f spec/justfile docs-check-repo` и проверки частей, чьи файлы задеты, — зелёные; размер `docs/sources.md` до и после — в отчёт; `/code-review high`, один круг.
-- **Разделы:** `spec/RULES.md`, «The bar» и «Citations»; R171 spec; строка 7.67 COORDINATION.md spec.
